@@ -13,10 +13,10 @@ import collection.JavaConversions.JIterableWrapper
  * @author Claus Stadler
  *
  */
-class QueryCollection(val sparqlEndpoint : ISparqlEndpoint, val query : String, val partitionSize : Int)
+class QueryCollection(val sparqlEndpoint : SparqlEndpoint, val query : String, val partitionSize : Int)
 	extends Iterable[QuerySolution]
 {
-  def this(sparqlEndpoint : ISparqlEndpoint, query : String) = this(sparqlEndpoint, query, 0)
+  def this(sparqlEndpoint : SparqlEndpoint, query : String) = this(sparqlEndpoint, query, 0)
   //def this(graphDao : IGraphDao, query : String, partitionSize : Int) = this(graphDao, query, Some(partitionSize))
 
   def javaIterator[T](it: Iterator[T]) = new java.util.Iterator[T] {

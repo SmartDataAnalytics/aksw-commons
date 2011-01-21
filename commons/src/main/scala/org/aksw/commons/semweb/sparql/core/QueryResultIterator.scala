@@ -7,7 +7,7 @@ import com.hp.hpl.jena.query.{ResultSetFormatter, QuerySolution}
 import org.aksw.commons.util.collections.scala.PrefetchIterator
 
 
-class QueryResultIterator(val sparqlEndpoint : ISparqlEndpoint, val query : String, val limit : Int, var offset : Int)
+class QueryResultIterator(val sparqlEndpoint : SparqlEndpoint, val query : String, val limit : Int, var offset : Int)
 	extends PrefetchIterator[QuerySolution]
 {
 	private var isEndReached : Boolean = false;
