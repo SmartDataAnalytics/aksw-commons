@@ -3,10 +3,9 @@ package org.aksw.commons.semweb.sparql.core
 
 import java.lang.String
 import collection.JavaConversions.JIterableWrapper
-//import collection.JavaConversions._
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP
-import com.hp.hpl.jena.query.{ResultSet, ResultSetFormatter, QuerySolution}
+import com.hp.hpl.jena.query.{ResultSet}
 
 /**
  * Created by Claus Stadler
@@ -16,15 +15,18 @@ import com.hp.hpl.jena.query.{ResultSet, ResultSetFormatter, QuerySolution}
  *
  * A shallow convenience wrapper for Jena's QueryEngineHTTP
  */
-class HttpSparqlEndpoint(val serviceName : String, override val defaultGraphNames : Set[String])
-  extends ISparqlEndpoint
+class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames: Set[String])
+        extends ISparqlEndpoint
 {
-  def this(serviceName : String) = this(serviceName, Set[String]())
-  def this(serviceName : String, defaultGraphName : String) = this(serviceName, if(defaultGraphName == null) Set[String]() else Set(defaultGraphName))
-  def this(serviceName : String, defaultGraphNames : Iterable[String]) = this(serviceName, defaultGraphNames.toSet)
-  def this(serviceName : String, defaultGraphNames : java.lang.Iterable[String]) = this(serviceName, JIterableWrapper(defaultGraphNames))
+  def this(serviceName: String) = this (serviceName, Set[String]())
 
-  private def queryExecution(query : String) : QueryEngineHTTP = {
+  def this(serviceName: String, defaultGraphName: String) = this (serviceName, if (defaultGraphName == null) Set[String]() else Set(defaultGraphName))
+
+  def this(serviceName: String, defaultGraphNames: Iterable[String]) = this (serviceName, defaultGraphNames.toSet)
+
+  def this(serviceName: String, defaultGraphNames: java.lang.Iterable[String]) = this (serviceName, JIterableWrapper(defaultGraphNames))
+
+  private def queryExecution(query: String): QueryEngineHTTP = {
 
     //println("Query is: " + query)
 
@@ -35,16 +37,16 @@ class HttpSparqlEndpoint(val serviceName : String, override val defaultGraphName
     return result
   }
 
-  def executeConstruct(query : String) : Model = {
+  def executeConstruct(query: String): Model = {
     return queryExecution(query).execConstruct
   }
 
-  def executeAsk(query: String) : Boolean = {
+  def executeAsk(query: String): Boolean = {
     return queryExecution(query).execAsk
   }
 
 
-  def executeSelect(query: String) : ResultSet = {
+  def executeSelect(query: String): ResultSet = {
     return queryExecution(query).execSelect()
   }
 
