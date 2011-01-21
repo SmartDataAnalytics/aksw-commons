@@ -1,4 +1,6 @@
-package org.aksw.commons.semweb.sparql.core
+package org.aksw.commons.semweb.sparql.core.decorator
+
+import org.aksw.commons.semweb.sparql.core.SparqlEndpoint
 
 /**
  * A wrapper for graphdaos which delays execution of queries
@@ -8,8 +10,8 @@ package org.aksw.commons.semweb.sparql.core
  * Date: Oct 6, 2010
  * Time: 8:25:26 PM
  */
-class DelayingSparqlEndpoint(val decoratee : ISparqlEndpoint, val delay : Long)
-  extends ISparqlEndpoint
+class DelayingSparqlEndpoint(val decoratee : SparqlEndpoint, val delay : Long)
+  extends SparqlEndpoint
 {
   private var lastExecutionTime = 0l;
 
