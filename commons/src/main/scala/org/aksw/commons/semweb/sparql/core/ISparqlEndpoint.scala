@@ -37,6 +37,6 @@ trait ISparqlEndpoint
   /**
    * used for one of tests to see if the endpoint is alive
    */
-  //def isAlive(): Boolean
+  def isAlive(): Boolean
 
 }
