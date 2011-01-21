@@ -1,7 +1,5 @@
-package org.aksw.commons.semweb.sparql.core
+package org.aksw.commons.semweb.sparql.core.decorator
 
-
-import collection.JavaConversions._
 import java.lang.String
 import java.net.URLEncoder
 import com.hp.hpl.jena.query._
@@ -9,6 +7,8 @@ import java.io._
 import java.security.MessageDigest
 import org.slf4j.LoggerFactory
 import org.aksw.commons.jena.ClosingResultSet
+import org.aksw.commons.semweb.sparql.core.impl.HttpSparqlEndpoint
+import org.aksw.commons.semweb.sparql.core.{QueryCollection, SparqlEndpoint}
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,8 +17,8 @@ import org.aksw.commons.jena.ClosingResultSet
  * Time: 2:45:30 PM
  * To change this template use File | Settings | File Templates.
  */
-class CachingSparqlEndpoint(val decoratee : ISparqlEndpoint, val basePath : String)
-  extends ISparqlEndpoint
+class CachingSparqlEndpoint(val decoratee : SparqlEndpoint, val basePath : String)
+  extends SparqlEndpoint
 {
   private def logger = LoggerFactory.getLogger(classOf[CachingSparqlEndpoint])
   

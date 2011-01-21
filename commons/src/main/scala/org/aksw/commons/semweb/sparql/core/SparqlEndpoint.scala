@@ -11,7 +11,7 @@ import com.hp.hpl.jena.query.{ResultSet}
  * Time: 12:19:28 PM
  */
 
-trait ISparqlEndpoint
+trait SparqlEndpoint
 {
   def executeSelect(query: String): ResultSet
 
@@ -32,11 +32,19 @@ trait ISparqlEndpoint
   /**
    * This method must never return null
    */
-  def defaultGraphNames(): Set[String]
+  def defaultGraphNames(): Set[String] 
 
   /**
    * used for one of tests to see if the endpoint is alive
    */
-  def isAlive(): Boolean
+  def isAlive(): Boolean = {
+    try {
+			executeAsk("ASK {?s ?p ?o} ")
+		}
+		catch {
+      case e: Exception => false
+    }
+    
+  }
 
 }

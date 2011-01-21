@@ -1,11 +1,11 @@
-package org.aksw.commons.semweb.sparql.core
-
+package org.aksw.commons.semweb.sparql.core.impl
 
 import java.lang.String
 import collection.JavaConversions.JIterableWrapper
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP
 import com.hp.hpl.jena.query.{ResultSet}
+import org.aksw.commons.semweb.sparql.core.SparqlEndpoint
 
 /**
  * Created by Claus Stadler
@@ -16,7 +16,7 @@ import com.hp.hpl.jena.query.{ResultSet}
  * A shallow convenience wrapper for Jena's QueryEngineHTTP
  */
 class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames: Set[String])
-        extends ISparqlEndpoint
+        extends SparqlEndpoint
 {
   def this(serviceName: String) = this (serviceName, Set[String]())
 
@@ -51,6 +51,8 @@ class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames
   }
 
   override def id() = serviceName
+
+  
 
   /*
   def executeSelect(query: String) : Iterable[QuerySolution] = {
