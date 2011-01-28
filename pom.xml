@@ -115,7 +115,7 @@
 
     <dependencyManagement>
         <dependencies>
-           
+
             <!--Junits-->
             <dependency>
                 <groupId>junit</groupId>
@@ -193,6 +193,13 @@
                 <artifactId>collections-generic</artifactId>
                 <version>4.01</version>
             </dependency>
+
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>3.2.1</version>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>
