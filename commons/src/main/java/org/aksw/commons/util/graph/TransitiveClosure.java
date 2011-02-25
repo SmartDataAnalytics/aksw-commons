@@ -1,5 +1,7 @@
 package org.aksw.commons.util.graph;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import org.aksw.commons.util.collections.MultiMaps;
 import org.aksw.commons.util.collections.NaturalComparator;
 
@@ -14,18 +16,14 @@ public class TransitiveClosure {
 
     public static <T extends Comparable<T>> Map<T, Set<T>>transitiveClosure(Map<T, Set<T>> source)
     {
-        return transitiveClosure(source, new NaturalComparator<T>(), false);
+        return transitiveClosure(source, false);
     }
 
-    public static <T> Map<T, Set<T>>transitiveClosure(Map<T, Set<T>> source, Comparator<? super T> comparator)
-    {
-        return transitiveClosure(source, comparator, false);
-    }
 
-    public static <T> Map<T, Set<T>>transitiveClosure(Map<T, Set<T>> source, Comparator<? super T> comparator, boolean inPlace)
+    public static <T> Map<T, Set<T>>transitiveClosure(Map<T, Set<T>> source, boolean inPlace)
     {
         Map<T, Set<T>> result = (inPlace == true) ? source : MultiMaps.copy(source);
-        transitiveClosureInPlace(result, comparator);
+        transitiveClosureInPlace(result);
 
         return result;
     }
@@ -37,6 +35,7 @@ public class TransitiveClosure {
      * @param <T>
      * @return
      */
+    /*
     public static <T> void transitiveClosureInPlace(Map<T, Set<T>> source, Comparator<? super T> comparator)
     {
         //NavigableSet<T> nodes = new TreeSet<T>(comparator);
@@ -55,4 +54,30 @@ public class TransitiveClosure {
             }
         }
     }
+    */
+
+    public static <T> void transitiveClosureInPlace(Map<T, Set<T>> source)
+    {
+        Map<T, Set<T>> changeSet = new HashMap<T, Set<T>>();
+
+        do {
+            for(Map.Entry<T, Set<T>> entry : source.entrySet()) {
+                T a = entry.getKey();
+
+                for(T b : entry.getValue()) {
+                    for(T c : MultiMaps.safeGet(source, b)) {
+                        if(!MultiMaps.containsEntry(source, a, c)) {
+                            MultiMaps.put(changeSet, a, c);
+                        }
+                    }
+                }
+                T from = entry.getKey();
+            }
+
+            MultiMaps.putAll(source, changeSet);
+            changeSet.clear();
+
+        } while (!changeSet.isEmpty());
+    }
+
 }
