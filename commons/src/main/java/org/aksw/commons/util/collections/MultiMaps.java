@@ -79,7 +79,7 @@ public class MultiMaps
      * @param <V>
      * @return
      */
-    public static <K, V> Set<V> safeGet(Map<K, Set<V>> map, K key)
+    public static <K, V> Set<V> safeGet(Map<K, Set<V>> map, Object key)
     {
         Set<V> values = map.get(key);
         return (values == null)
