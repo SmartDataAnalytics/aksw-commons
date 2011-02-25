@@ -56,7 +56,7 @@ public class TransitiveClosure {
     }
     */
 
-    public static <T> void transitiveClosureInPlace(Map<T, Set<T>> source)
+    public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> source)
     {
         Map<T, Set<T>> changeSet = new HashMap<T, Set<T>>();
 
@@ -71,13 +71,14 @@ public class TransitiveClosure {
                         }
                     }
                 }
-                T from = entry.getKey();
             }
 
             MultiMaps.putAll(source, changeSet);
             changeSet.clear();
 
         } while (!changeSet.isEmpty());
+
+        return source;
     }
 
 }
