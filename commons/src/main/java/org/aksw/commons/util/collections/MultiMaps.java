@@ -164,7 +164,7 @@ public class MultiMaps
         Map<T, Set<T>> open = map;
         Map<T, Set<T>> next = new HashMap<T, Set<T>>();
 
-        do {
+        for(;;) {
             // Check if any edge leading to an open edge would create a new edge
             for(Map.Entry<T, Set<T>> edgeB : open.entrySet()) {
 
@@ -183,14 +183,16 @@ public class MultiMaps
                 }
             }
 
+            // Exit condition
+            if(next.isEmpty()) {
+                break;
+            }
+
+            // Preparation of next iteration
             putAll(map, next);
 
             if(open == map) {
-                if(next.isEmpty()) {
-                    break;
-                } else {
-                    open = new HashMap<T, Set<T>>();
-                }
+                open = new HashMap<T, Set<T>>();
             } else {
                 open.clear();
             }
@@ -199,7 +201,7 @@ public class MultiMaps
             next = open;
             open = tmp;
 
-        } while (!open.isEmpty());
+        }// while (!open.isEmpty());
 
         return map;
     }
