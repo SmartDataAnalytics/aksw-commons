@@ -167,7 +167,7 @@ public class StringUtils
      * @param str
      * @return
      */
-    public String encodeUtf8(String str)
+    public static String encodeUtf8(String str)
     {
         try {
             return URLEncoder.encode(str, "UTF8");
@@ -177,7 +177,7 @@ public class StringUtils
         return null;
     }
 
-    public String decodeUtf8(String str)
+    public static String decodeUtf8(String str)
     {
         try {
             return URLDecoder.decode(str, "UTF8");
