@@ -1,6 +1,5 @@
 package org.aksw.commons.util.collections;
 
-import scala.collection.immutable.*;
 
 import java.lang.Iterable;
 import java.util.*;
@@ -156,6 +155,45 @@ public class MultiMaps
 
     public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map)
     {
+        Map<T, Set<T>> open = map;
+        Map<T, Set<T>> next = new HashMap<T, Set<T>>();
+
+        for(;;) {
+            // Check if any edge following an open edge would create a new edge
+            for(Map.Entry<T, Set<T>> edge : open.entrySet()) {
+                T nodeA = edge.getKey();
+                for(T nodeB : edge.getValue()) {
+                    for(T nodeC : safeGet(map, nodeB)) {
+                        if(!containsEntry(map, nodeA, nodeC)) {
+                            put(next, nodeA, nodeC);
+                        }
+                    }
+                }
+            }
+
+            // Exit condition
+            if(next.isEmpty()) {
+                return map;
+            }
+
+            // Preparation of next iteration
+            putAll(map, next);
+
+            if(open == map) {
+                open = new HashMap<T, Set<T>>();
+            } else {
+                open.clear();
+            }
+
+            Map<T, Set<T>> tmp = next;
+            next = open;
+            open = tmp;
+        }
+    }
+
+    /*
+    public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map)
+    {
         return transitiveClosureInPlace(map, reverse(map));
     }
 
@@ -205,6 +243,6 @@ public class MultiMaps
 
         return map;
     }
+    */
 
-    //public static <K, V>
 }
