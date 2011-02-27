@@ -2,6 +2,9 @@ package org.aksw.commons.util.strings;
 
 import com.hp.hpl.jena.sparql.pfunction.library.str;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
 
 public class StringUtils
@@ -157,6 +160,32 @@ public class StringUtils
         }
     }
 
+    /**
+     * Helper functions to get rid of that exception.
+     * Afaik UTF8 en/de-coding cannot fail (read it somewhere, not confirmed)
+     *
+     * @param str
+     * @return
+     */
+    public String encodeUtf8(String str)
+    {
+        try {
+            return URLEncoder.encode(str, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public String decodeUtf8(String str)
+    {
+        try {
+            return URLDecoder.decode(str, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     /*
     public static void main(String[] args) {
