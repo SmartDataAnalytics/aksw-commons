@@ -63,9 +63,27 @@ public class StringUtils
 			: str.substring(0,1).toLowerCase() + str.substring(1);
 	}
 
+    public static String toLowerCamelCase(String s)
+    {
+        return toCamelCase(s, false);
+    }
 
-	public static String toLowerCamelCase(String s)
+    public static String toUpperCamelCase(String s)
+    {
+        return toCamelCase(s, false);
+    }
+
+	public static String toCamelCase(String s, boolean upper)
 	{
+        String result = "";
+        for(String part : s.split("_")) {
+            result += ucFirst(part);
+        }
+
+        result = upper ? result : lcFirst(result);
+
+        return result;
+        /*
 		int offset = 0;
 		String result = "";
 		for(;;) {
@@ -80,6 +98,7 @@ public class StringUtils
 		}
 
 		return result;
+		*/
 	}
 
     /**
@@ -159,6 +178,25 @@ public class StringUtils
             lookup = StringUtils.commonPrefix(lookup, key);
         }
     }
+
+    public static <T> Map.Entry<String, T> getMatchBySuffix(String str, Map<String, T> map)
+    {
+        Map.Entry<String, T> bestMatch = null;
+        for(Map.Entry<String, T> entry : map.entrySet()) {
+            String key = entry.getKey();
+
+            if(str.endsWith(key)) {
+                bestMatch = (bestMatch == null)
+                    ? entry
+                    : (key.length() > bestMatch.getKey().length())
+                        ? entry
+                        : bestMatch;
+            }
+        }
+
+        return bestMatch;
+    }
+
 
     /**
      * Helper functions to get rid of that exception.
