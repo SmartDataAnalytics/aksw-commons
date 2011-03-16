@@ -2,6 +2,9 @@ package org.aksw.commons.util.strings;
 
 import com.hp.hpl.jena.sparql.pfunction.library.str;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
 
 public class StringUtils
@@ -60,9 +63,27 @@ public class StringUtils
 			: str.substring(0,1).toLowerCase() + str.substring(1);
 	}
 
+    public static String toLowerCamelCase(String s)
+    {
+        return toCamelCase(s, false);
+    }
 
-	public static String toLowerCamelCase(String s)
+    public static String toUpperCamelCase(String s)
+    {
+        return toCamelCase(s, false);
+    }
+
+	public static String toCamelCase(String s, boolean upper)
 	{
+        String result = "";
+        for(String part : s.split("_")) {
+            result += ucFirst(part);
+        }
+
+        result = upper ? result : lcFirst(result);
+
+        return result;
+        /*
 		int offset = 0;
 		String result = "";
 		for(;;) {
@@ -77,6 +98,7 @@ public class StringUtils
 		}
 
 		return result;
+		*/
 	}
 
     /**
@@ -157,6 +179,51 @@ public class StringUtils
         }
     }
 
+    public static <T> Map.Entry<String, T> getMatchBySuffix(String str, Map<String, T> map)
+    {
+        Map.Entry<String, T> bestMatch = null;
+        for(Map.Entry<String, T> entry : map.entrySet()) {
+            String key = entry.getKey();
+
+            if(str.endsWith(key)) {
+                bestMatch = (bestMatch == null)
+                    ? entry
+                    : (key.length() > bestMatch.getKey().length())
+                        ? entry
+                        : bestMatch;
+            }
+        }
+
+        return bestMatch;
+    }
+
+
+    /**
+     * Helper functions to get rid of that exception.
+     * Afaik UTF8 en/de-coding cannot fail (read it somewhere, not confirmed)
+     *
+     * @param str
+     * @return
+     */
+    public static String encodeUtf8(String str)
+    {
+        try {
+            return URLEncoder.encode(str, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String decodeUtf8(String str)
+    {
+        try {
+            return URLDecoder.decode(str, "UTF8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     /*
     public static void main(String[] args) {

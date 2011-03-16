@@ -1,6 +1,12 @@
 package org.aksw.commons.util.collections;
 
+
+import java.lang.Iterable;
 import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Claus Stadler
@@ -56,7 +62,7 @@ public class MultiMaps
 
     public static <K, V> void addAllKeys(Map<K, Set<V>> map, Iterable<K> keys)
     {
-        for(K key : keys) {
+        for(K key :  keys) {
             addKey(map, key);
         }
     }
@@ -71,6 +77,28 @@ public class MultiMaps
     }
 
     /**
+     * Creates a new map that is the reverse of the source
+     * 
+     * @param source
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K, V> Map<V, Set<K>> reverse(Map<K, Set<V>> source)
+    {
+        Map<V, Set<K>> result = new HashMap<V, Set<K>>();
+
+        for(Map.Entry<K, Set<V>> entry : source.entrySet()) {
+            for(V value : entry.getValue()) {
+                put(result, value, entry.getKey());
+            }
+        }
+
+        return result;
+    }
+
+
+    /**
      * This method returns an empty set (Collections.emptySet) for keys that are not in the map.
      *
      * @param map
@@ -79,12 +107,142 @@ public class MultiMaps
      * @param <V>
      * @return
      */
-    public static <K, V> Set<V> safeGet(Map<K, Set<V>> map, K key)
+    public static <K, V> Set<V> safeGet(Map<K, Set<V>> map, Object key)
     {
         Set<V> values = map.get(key);
         return (values == null)
                 ? Collections.<V>emptySet()
                 : values;
     }
-    //public static <K, V>
+
+    public static <T> Set<T> transitiveGet(Map<T, Set<T>> map, Object key)
+    {
+        Set<T> result = new HashSet<T>(safeGet(map, key));
+        Set<T> open = new HashSet<T>(result);
+        Set<T> next = new HashSet<T>();
+
+        do {
+            for(T a : open) {
+                for(T b : safeGet(map, a)) {
+                    if(result.contains(b))
+                        continue;
+
+                    next.add(b);
+                }
+            }
+
+            open.clear();
+            result.addAll(next);
+
+            Set<T> tmp = next;
+            next = open;
+            open = tmp;
+
+        } while(!open.isEmpty());
+
+        return result;
+    }
+
+    public static <T> Map<T, Set<T>> transitiveClosure(Map<T, Set<T>> map)
+    {
+        return transitiveClosure(map, false);
+    }
+
+    public static <T> Map<T, Set<T>> transitiveClosure(Map<T, Set<T>> map, boolean inPlace)
+    {
+        return transitiveClosureInPlace(inPlace ? map : copy(map));
+    }
+
+    public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map)
+    {
+        Map<T, Set<T>> open = map;
+        Map<T, Set<T>> next = new HashMap<T, Set<T>>();
+
+        for(;;) {
+            // Check if any edge following an open edge would create a new edge
+            for(Map.Entry<T, Set<T>> edge : open.entrySet()) {
+                T nodeA = edge.getKey();
+                for(T nodeB : edge.getValue()) {
+                    for(T nodeC : safeGet(map, nodeB)) {
+                        if(!containsEntry(map, nodeA, nodeC)) {
+                            put(next, nodeA, nodeC);
+                        }
+                    }
+                }
+            }
+
+            // Exit condition
+            if(next.isEmpty()) {
+                return map;
+            }
+
+            // Preparation of next iteration
+            putAll(map, next);
+
+            if(open == map) {
+                open = new HashMap<T, Set<T>>();
+            } else {
+                open.clear();
+            }
+
+            Map<T, Set<T>> tmp = next;
+            next = open;
+            open = tmp;
+        }
+    }
+
+    /*
+    public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map)
+    {
+        return transitiveClosureInPlace(map, reverse(map));
+    }
+
+    public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map, Map<T, Set<T>> rev)
+    {
+        Map<T, Set<T>> open = map;
+        Map<T, Set<T>> next = new HashMap<T, Set<T>>();
+
+        for(;;) {
+            // Check if any edge leading to an open edge would create a new edge
+            for(Map.Entry<T, Set<T>> edgeB : open.entrySet()) {
+
+                for(T nodeA : safeGet(rev, edgeB.getKey())) {
+                    for(T nodeC : edgeB.getValue()) {
+
+                        if(!containsEntry(map, nodeA, nodeC)) {
+
+                            // We would need the following statement if
+                            // put(next, nodeA, nodeC) allowed duplicates
+                            // put(map, nodeA, nodeC);
+                            put(rev, nodeC, nodeA);
+                            put(next, nodeA, nodeC);
+                        }
+                    }
+                }
+            }
+
+            // Exit condition
+            if(next.isEmpty()) {
+                break;
+            }
+
+            // Preparation of next iteration
+            putAll(map, next);
+
+            if(open == map) {
+                open = new HashMap<T, Set<T>>();
+            } else {
+                open.clear();
+            }
+
+            Map<T, Set<T>> tmp = next;
+            next = open;
+            open = tmp;
+
+        }// while (!open.isEmpty());
+
+        return map;
+    }
+    */
+
 }
