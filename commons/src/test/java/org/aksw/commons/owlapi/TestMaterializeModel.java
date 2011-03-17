@@ -9,6 +9,8 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
@@ -16,44 +18,32 @@ import java.net.URISyntaxException;
 public class TestMaterializeModel {
 
     @Test
-    public void testPizza() {
+    public void test() {
         try {
+
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 
-            IRI iri = IRI.create("http://www.co-ode.org/ontologies/pizza/pizza.owl");
-            OWLOntology pizzaOntology = null;
+            List<IRI> iris = new ArrayList<IRI>();
+            iris.add(IRI.create("http://www.co-ode.org/ontologies/pizza/pizza.owl"));
+            iris.add(IRI.create(getClass().getClassLoader().getResource("fish.owl").toURI()));
+            for (IRI iri : iris) {
 
-            pizzaOntology = manager.loadOntologyFromOntologyDocument(iri);
-            System.out.println("Loaded ontology: " + pizzaOntology);
+                OWLOntology ontology = null;
 
-            MaterializeModel.convertToInferredModel(pizzaOntology);
+                ontology = manager.loadOntologyFromOntologyDocument(iri);
+                System.out.println("Loaded ontology: " + ontology);
 
-        } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+                MaterializeModel.convertToInferredModel(ontology);
+
+            }
 
 
-    }
-
-     @Test
-    public void testFish() {
-        try {
-            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-
-            IRI iri = IRI.create(getClass().getClassLoader().getResource("fish.owl").toURI());
-            OWLOntology pizzaOntology = null;
-
-            pizzaOntology = manager.loadOntologyFromOntologyDocument(iri);
-            System.out.println("Loaded ontology: " + pizzaOntology);
-
-            MaterializeModel.convertToInferredModel(pizzaOntology);
-
-        } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } catch (URISyntaxException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (OWLOntologyCreationException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
-
-
     }
+
+
 }
