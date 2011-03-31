@@ -2,6 +2,10 @@ package org.aksw.commons.experiments;
 
 import com.jamonapi.Monitor;
 import com.jamonapi.MonitorFactory;
+import org.aksw.commons.experiments.impl.GNUPlotColumnFormatter;
+import org.aksw.commons.experiments.impl.GNUPlotRowFormatter;
+import org.aksw.commons.experiments.impl.LatexColumnFormatter;
+import org.aksw.commons.experiments.impl.LatexRowFormatter;
 import org.junit.Before;
 import org.junit.Test;
 
