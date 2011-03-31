@@ -7,14 +7,13 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.alpha</version>
     <name>AKSW Commons parent</name>
 
     <properties>
         <!--  tell the compiler we can use 1.6 -->
         <compiler.version>1.6</compiler.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <commons.version>1.0-SNAPSHOT</commons.version>
 
         <scala.version>2.8.0</scala.version>
         <junit.version>4.8.1</junit.version>
