@@ -21,7 +21,13 @@
     </properties>
 
     <modules>
-        <module>commons</module>
+        <module>sparql</module>
+        <module>sparql-scala</module>
+        <module>collections</module>
+        <module>collections-scala</module>
+        <module>experiments</module>
+        <module>util</module>
+        <module>model</module>
     </modules>
 
     <build>
@@ -92,11 +98,14 @@
     </build>
 
     <dependencies>
+
+
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
         </dependency>
+
 
         <dependency>
             <groupId>junit</groupId>
@@ -115,6 +124,36 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>collections-scala</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>commons</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>collections</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>sparql-scala</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>sparql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <!--Junits-->
             <dependency>
@@ -198,6 +237,28 @@
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.1</version>
+            </dependency>
+
+            <!-- Vendor specific Jena implementations/extensions -->
+            <!-- This should be a transitive dependency of virt_jena -->
+            <dependency>
+                <groupId>com.openlink.virtuoso</groupId>
+                <artifactId>virtjdbc3</artifactId>
+                <version>6.1.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.openlink.virtuoso</groupId>
+                <artifactId>virt_jena</artifactId>
+                <version>6.1.2</version>
+            </dependency>
+
+
+            <!-- Collection APIs -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>r07</version>
             </dependency>
 
 
