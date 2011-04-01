@@ -20,12 +20,12 @@
     </properties>
 
     <modules>
-        <module>sparql</module>
-        <module>sparql-scala</module>
-        <module>collections</module>
-        <module>collections-scala</module>
-        <module>experiments</module>
         <module>util</module>
+        <module>collections-scala</module>
+        <module>collections</module>
+        <module>sparql-scala</module>
+        <module>sparql</module>
+        <module>experiments</module>
         <module>model</module>
     </modules>
 

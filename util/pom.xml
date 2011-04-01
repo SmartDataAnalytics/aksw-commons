@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.aksw.commons</groupId>
-    <artifactId>commons</artifactId>
+    <artifactId>util</artifactId>
     <packaging>jar</packaging>
 
     <name>AKSW Commons Util</name>
