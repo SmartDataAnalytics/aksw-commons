@@ -6,7 +6,6 @@ import com.hp.hpl.jena.query._
 import java.io._
 import java.security.MessageDigest
 import org.slf4j.LoggerFactory
-import org.aksw.commons.jena.ClosingResultSet
 import org.aksw.commons.sparql.core.impl.HttpSparqlEndpoint
 import org.aksw.commons.sparql.core.{QueryCollection, SparqlEndpoint}
 
