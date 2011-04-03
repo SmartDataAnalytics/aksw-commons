@@ -1,4 +1,4 @@
-package org.aksw.commons.sparql.core
+package org.aksw.commons.sparql.core.decorator
 
 import com.hp.hpl.jena.query.QuerySolution
 import com.hp.hpl.jena.query.ResultSet
@@ -6,6 +6,7 @@ import com.hp.hpl.jena.sparql.engine.binding.Binding
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.InputStream
+import org.aksw.commons.sparql.core.DecoratorResultSet
 
 /**
  * Created by Claus Stadler
