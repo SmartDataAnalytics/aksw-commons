@@ -1,6 +1,10 @@
 package org.aksw.commons.jena.sparql;
 
+import org.aksw.commons.sparql.core.AA;
+
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -10,7 +14,9 @@ import java.util.Set;
 public class SampleSparqlEndpoint {
 
     public static void main(String[] args) {
-
+        List<String> aaaa = new ArrayList <String> ();
+        AA a = new AA();
+        a.some(aaaa);
         //Set("http://dbpedia.org")
         Set<String> s = new HashSet<String>();
        // HttpSparqlEndpoint coreEndpoint = new HttpSparqlEndpoint("http://dbpedia.org/sparql", s);
