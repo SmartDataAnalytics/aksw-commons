@@ -10,13 +10,14 @@ import com.hp.hpl.jena.rdf.model.RDFNode
  * Date: 03.04.11
  */
 
-class ResultSetRenderer {
+object ResultSetRenderer {
 
   /**
-   * Based on two assumptions:
-   * 1. the ResultSet only has one variable
-   * the
+   * Based on the assumption, that the ResultSet only has one variable
+   * will return anything as a string set
+   * @return a set of URIs
    */
+
   def asStringSet(r: ResultSet): java.util.Set[String] = {
     require(r.getResultVars.size == 1)
 
@@ -28,7 +29,6 @@ class ResultSetRenderer {
       val rdfnode: RDFNode = querySolution.get(v)
       if (rdfnode.isURIResource) {
         ret += rdfnode.asResource.getURI
-
       } else if (rdfnode.isLiteral) {
         ret += rdfnode.asLiteral.getLexicalForm
       }

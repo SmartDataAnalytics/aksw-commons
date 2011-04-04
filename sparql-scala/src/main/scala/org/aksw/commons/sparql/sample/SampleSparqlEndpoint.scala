@@ -13,9 +13,10 @@ object SampleSparqlEndpoint {
   def main(args: Array[String]): Unit = {
     val coreEndpoint = new HttpSparqlEndpoint("http://dbpedia.org/sparql", Set("http://dbpedia.org"))
 
-    val r = coreEndpoint.executeSelect( "Select ?s ?p ?o From <http://dbpedia.org> { ?s ?p ?p . } Limit 10")
 
-    print(r)
+    //val r = coreEndpoint.executeSelect( "Select ?s ?p ?o From <http://dbpedia.org> { ?s ?p ?p . } Limit 10")
+
+    println(coreEndpoint.like("test", Set("aa", "bb")))
 
 
   }

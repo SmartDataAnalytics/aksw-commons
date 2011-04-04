@@ -19,7 +19,7 @@
 
         <dependency>
             <groupId>org.aksw.commons</groupId>
-            <artifactId>commons</artifactId>
+            <artifactId>util</artifactId>
         </dependency>
 
          <dependency>

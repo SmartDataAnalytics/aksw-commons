@@ -25,5 +25,8 @@ class AA {
     _age = x
   }
 
+ object Test extends Application{
+
+ }
 
 }
