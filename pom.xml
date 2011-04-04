@@ -124,6 +124,12 @@
         <dependencies>
 
             <dependency>
+                <groupId>velocity</groupId>
+                <artifactId>velocity</artifactId>
+                <version>1.5</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
@@ -148,7 +154,7 @@
             </dependency>
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>commons</artifactId>
+                <artifactId>util</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
