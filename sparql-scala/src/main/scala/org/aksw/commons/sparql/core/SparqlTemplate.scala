@@ -6,12 +6,39 @@ import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
 import org.apache.velocity.{Template, VelocityContext}
 
+import scalaj.collection.Imports._
+
 /**
  * User: Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann 
  * Date: 04.04.11
  */
 
-object SparqlTemplate extends Application{
+class SparqlTemplate(var limit: Int, var from: String*) {
+  //TODO should be a list
+  def this(limit: Int) = this (limit, null)
+
+  var filterList: java.util.List[String] = new java.util.ArrayList[String]();
+
+  def addFilter(s: String) {
+    filterList.add(s);
+  }
+
+  def getQuery(templateFile: String, velocityContext: VelocityContext): String = {
+    velocityContext.put("limit", limit);
+    if (from == null) {
+      velocityContext.put("from", from);
+    }
+    if (!filterList.isEmpty) {
+      velocityContext.put("filterList", filterList)
+    }
+    val writer = new StringWriter
+    SparqlTemplate.ve.getTemplate(templateFile).merge(velocityContext, writer)
+    writer.toString
+  }
+
+}
+
+object SparqlTemplate extends Application {
 
   lazy val ve: VelocityEngine = {
     val tmp = new VelocityEngine
@@ -23,13 +50,20 @@ object SparqlTemplate extends Application{
     tmp.init
     tmp
   }
-  lazy val classesOfInstance = ve.getTemplate("sparqltemplates/classesOfInstance.vm")
-  lazy val instancesOfClasses = ve.getTemplate("sparqltemplates/instancesOfClasses.vm")
 
+  lazy val map = Map[String, Template]("sparqltemplates/allClasses.vm" -> allClasses)
+
+  lazy val allClasses = ve.getTemplate("sparqltemplates/allClasses.vm")
+
+  lazy val classesOfInstance = ve.getTemplate("sparqltemplates/classesOfInstance.vm")
+  lazy val instancesOfClass = ve.getTemplate("sparqltemplates/instancesOfClass.vm")
+
+
+  def allClasses(context: VelocityContext): String = (doit(allClasses, context))
 
   def classesOfInstance(context: VelocityContext): String = (doit(classesOfInstance, context))
 
-  def instancesOfClasses(context: VelocityContext): String = (doit(instancesOfClasses, context))
+  def instancesOfClass(context: VelocityContext): String = (doit(instancesOfClass, context))
 
 
   def doit(t: Template, context: VelocityContext): String = {
@@ -47,7 +81,6 @@ object SparqlTemplate extends Application{
     //getClasses(new VelocityContext())
 
   }
-
 
 
 }

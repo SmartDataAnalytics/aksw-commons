@@ -4,8 +4,9 @@ import java.lang.String
 import collection.JavaConversions.JIterableWrapper
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP
-import com.hp.hpl.jena.query.{ResultSet}
+import com.hp.hpl.jena.query.ResultSet
 import org.aksw.commons.sparql.core.SparqlEndpoint
+import org.slf4j.{LoggerFactory, Logger}
 
 /**
  * Created by Claus Stadler
@@ -15,9 +16,13 @@ import org.aksw.commons.sparql.core.SparqlEndpoint
  *
  * A shallow convenience wrapper for Jena's QueryEngineHTTP
  */
+
+object HttpSparqlEndpoint {
+  val logger: Logger = LoggerFactory.getLogger(classOf[HttpSparqlEndpoint])
+}
+
 class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames: Set[String])
-        extends SparqlEndpoint
-{
+  extends SparqlEndpoint {
   def this(serviceName: String) = this (serviceName, Set[String]())
 
   def this(serviceName: String, defaultGraphName: String) = this (serviceName, if (defaultGraphName == null) Set[String]() else Set(defaultGraphName))
@@ -28,7 +33,8 @@ class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames
 
   private def queryExecution(query: String): QueryEngineHTTP = {
 
-    //println("Query is: " + query)
+    HttpSparqlEndpoint.logger.debug("Query is: " + query)
+    println("Query is: " + query)
 
     val result = new QueryEngineHTTP(serviceName, query)
 
@@ -52,7 +58,6 @@ class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames
 
   override def id() = serviceName
 
-  
 
   /*
   def executeSelect(query: String) : Iterable[QuerySolution] = {

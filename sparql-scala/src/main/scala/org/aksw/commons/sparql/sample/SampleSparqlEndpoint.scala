@@ -11,7 +11,7 @@ import org.aksw.commons.sparql.core.impl.HttpSparqlEndpoint
 object SampleSparqlEndpoint {
 
   def main(args: Array[String]): Unit = {
-    val coreEndpoint = new HttpSparqlEndpoint("http://dbpedia.org/sparql", Set("http://dbpedia.org"))
+    val coreEndpoint = new HttpSparqlEndpoint("http://dbpedia.org/sparql", Set("http://dbpedia.org"))  with WithoutLikeSupport
 
 
     //val r = coreEndpoint.executeSelect( "Select ?s ?p ?o From <http://dbpedia.org> { ?s ?p ?p . } Limit 10")

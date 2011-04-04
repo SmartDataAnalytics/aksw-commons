@@ -20,6 +20,8 @@ trait SparqlEndpoint {
 
   def executeConstruct(query: String): Model
 
+  //def like(variable: String, patterns: String*): String = (like(variable, patterns))
+
   def like(variable: String, patterns: Set[String]): String = (like(variable, patterns.asJava))
 
   /**
