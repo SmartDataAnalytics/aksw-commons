@@ -11,7 +11,7 @@ import java.util.Iterator;
  */
 
 public class ChainIterator<T>
-	extends PrefetchIterator<T>
+	extends PrefetchIteratorJava<T>
 {
 	private Iterator<? extends Iterable<T>>	metaIterator;
 
