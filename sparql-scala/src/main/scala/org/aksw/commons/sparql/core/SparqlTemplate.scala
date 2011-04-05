@@ -48,7 +48,6 @@ class SparqlTemplate(val template: Template) {
   def getVelocityContext : VelocityContext = (velocityContext)
 
   def getQuery(): String = {
-    val velocityContext = new VelocityContext
 
     velocityContext.put("limit", limit);
 
