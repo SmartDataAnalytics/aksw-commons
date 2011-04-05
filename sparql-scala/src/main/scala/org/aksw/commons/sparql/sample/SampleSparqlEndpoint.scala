@@ -1,6 +1,7 @@
-package org.aksw.commons.sparql.core
+package org.aksw.commons.sparql.core.sample
 
 import org.aksw.commons.sparql.core.impl.HttpSparqlEndpoint
+import org.aksw.commons.sparql.core.WithoutLikeSupport
 
 /**
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
