@@ -12,8 +12,8 @@ import java.util.ArrayList
  * User: Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann 
  * Date: 04.04.11
  */
-
-class SparqlTemplate(val template: Template) {
+@Deprecated
+class SparqlTemplateOld(val template: Template) {
 
   def this(classpathFile: String) = this (SparqlTemplate.ve.getTemplate(classpathFile))
 
@@ -68,8 +68,8 @@ class SparqlTemplate(val template: Template) {
   }
 
 }
-
-object SparqlTemplate extends Application {
+@Deprecated
+object SparqlTemplateOld extends Application {
 
   lazy val ve: VelocityEngine = {
     val tmp = new VelocityEngine
