@@ -1,5 +1,6 @@
 package org.aksw.commons.collections;
 
+
 import java.util.Iterator;
 
 /**
@@ -7,17 +8,17 @@ import java.util.Iterator;
  * Date: Oct 9, 2010
  * Time: 5:39:36 PM
  */
-public abstract class PrefetchIterator<T>
+public abstract class PrefetchIteratorJava<T>
 	implements Iterator<T>
 {
-	//private static Logger logger = Logger.getLogger(PrefetchIterator.class);
+	//private static Logger logger = Logger.getLogger(PrefetchIteratorJava.class);
 	private Iterator<T>	current		= null;
 	private boolean		finished	= false;
 
 	abstract protected Iterator<T> prefetch()
 		throws Exception;
 
-	protected PrefetchIterator()
+	protected PrefetchIteratorJava()
 	{
 	}
 
