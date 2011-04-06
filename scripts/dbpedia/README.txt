@@ -9,4 +9,4 @@ In order to load a DBpedia dataset into a virtuoso store, please follow this pro
 wget -i <uri-list-file> -nd -P virtload_status/todo
 
 3.) Process the todo-list by executing
-./virtload_list <graphname> <port> <username> <password>
+./virtload_list.sh <graphname> <port> <username> <password>
