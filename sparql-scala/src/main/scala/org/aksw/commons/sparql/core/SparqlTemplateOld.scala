@@ -6,39 +6,70 @@ import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
 import org.apache.velocity.{Template, VelocityContext}
 
-import scalaj.collection.Imports._
+import java.util.ArrayList
 
 /**
  * User: Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann 
  * Date: 04.04.11
  */
+@Deprecated
+class SparqlTemplateOld(val template: Template) {
 
-class SparqlTemplate(var limit: Int, var from: String*) {
-  //TODO should be a list
-  def this(limit: Int) = this (limit, null)
+  def this(classpathFile: String) = this (SparqlTemplate.ve.getTemplate(classpathFile))
 
-  var filterList: java.util.List[String] = new java.util.ArrayList[String]();
+  var limit = 1000
+  var from = new java.util.HashSet[String]()
+  var filter = new java.util.HashSet[String]()
+  val velocityContext = new VelocityContext
+  var usePrefixes = false
 
-  def addFilter(s: String) {
-    filterList.add(s);
+  def setLimit(i: Int) {
+    limit = i
   }
 
-  def getQuery(templateFile: String, velocityContext: VelocityContext): String = {
+  def setUsePrefixes(b:Boolean) = (usePrefixes =b)
+
+  def addFrom(s: String) {
+    from.add(s)
+  }
+
+  def addFrom(s: java.util.Collection[String]) {
+    from.addAll(s)
+  }
+
+  def addFilter(s: String) {
+    filter.add(s)
+  }
+
+  def addFilter(s: java.util.Collection[String]) {
+    filter.addAll(s)
+  }
+
+  def getVelocityContext : VelocityContext = (velocityContext)
+
+  def getQuery(): String = {
+
     velocityContext.put("limit", limit);
-    if (from == null) {
-      velocityContext.put("from", from);
+
+    if (!from.isEmpty) {
+      velocityContext.put("fromList", new ArrayList[String](from));
     }
-    if (!filterList.isEmpty) {
-      velocityContext.put("filterList", filterList)
+    if (!filter.isEmpty) {
+      velocityContext.put("filterList", new ArrayList[String](filter))
     }
+
+    if(usePrefixes){
+      velocityContext.put("prefix", usePrefixes)
+    }
+
     val writer = new StringWriter
-    SparqlTemplate.ve.getTemplate(templateFile).merge(velocityContext, writer)
+    template.merge(velocityContext, writer)
     writer.toString
   }
 
 }
-
-object SparqlTemplate extends Application {
+@Deprecated
+object SparqlTemplateOld extends Application {
 
   lazy val ve: VelocityEngine = {
     val tmp = new VelocityEngine
@@ -51,12 +82,12 @@ object SparqlTemplate extends Application {
     tmp
   }
 
-  lazy val map = Map[String, Template]("sparqltemplates/allClasses.vm" -> allClasses)
+  /*lazy val map = Map[String, Template]("org.aksw.commons.sparqltemplates/allClasses.vm" -> allClasses)
 
-  lazy val allClasses = ve.getTemplate("sparqltemplates/allClasses.vm")
+  lazy val allClasses = ve.getTemplate("org.aksw.commons.sparqltemplates/allClasses.vm")
 
-  lazy val classesOfInstance = ve.getTemplate("sparqltemplates/classesOfInstance.vm")
-  lazy val instancesOfClass = ve.getTemplate("sparqltemplates/instancesOfClass.vm")
+  lazy val classesOfInstance = ve.getTemplate("org.aksw.commons.sparqltemplates/classesOfInstance.vm")
+  lazy val instancesOfClass = ve.getTemplate("org.aksw.commons.sparqltemplates/instancesOfClass.vm")
 
 
   def allClasses(context: VelocityContext): String = (doit(allClasses, context))
@@ -81,6 +112,6 @@ object SparqlTemplate extends Application {
     //getClasses(new VelocityContext())
 
   }
-
+         */
 
 }

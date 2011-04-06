@@ -1,4 +1,5 @@
-package org.aksw.commons.collections.scala
+package org.aksw.commons.collections
+
 
 /**
  * An abstract base class for iterating over containers of unknown size. This
