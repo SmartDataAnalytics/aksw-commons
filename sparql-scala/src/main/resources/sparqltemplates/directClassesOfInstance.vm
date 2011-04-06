@@ -1,0 +1,9 @@
+#if ($prefix)
+$prefix
+#end
+SELECT ?classes #parse("sparqltemplates/from.vm") {
+    <$instance>  rdf:type ?classes .
+    Optional{ ?sub rdfs:subClassOf ?classes }
+    Filter (!bound(?sub)).
+    #parse("sparqltemplates/filter.vm")
+} #parse("sparqltemplates/limit.vm")
