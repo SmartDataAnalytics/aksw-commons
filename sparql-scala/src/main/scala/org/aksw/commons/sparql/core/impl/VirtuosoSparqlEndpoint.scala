@@ -13,25 +13,14 @@ import org.aksw.commons.sparql.core.SparqlEndpoint
  * Bugs: Does not take defaultGraphNames into account!
  *
  */
-class VirtuosoSparqlEndpoint(val virtGraph: VirtGraph, val defaultGraphNames: Set[String])
-        extends SparqlEndpoint
+class VirtuosoSparqlEndpoint(val virtGraph: VirtGraph, override val defaultGraphNames: Set[String])
+        extends QueryExecutionSparqlEndpoint
 {
   def this(virtGraph: VirtGraph) = this (virtGraph, Set[String]())
-
   def this(virtGraph: VirtGraph, graphName: String) = this (virtGraph, if (graphName == null) Set[String]() else Set(graphName))
 
 
-  def createQueryExecution(query: String): QueryExecution = {
-    val qe = VirtuosoQueryExecutionFactory.create(query, virtGraph);
-
-    return qe;
-  }
-
-  def executeSelect(query: String) = createQueryExecution(query).execSelect
-
-  def executeAsk(query: String) = createQueryExecution(query).execAsk
-
-  def executeConstruct(query: String) = createQueryExecution(query).execConstruct
+  override def createQueryExecution(query: String): QueryExecution = VirtuosoQueryExecutionFactory.create(query, virtGraph);
 
   override def id() = defaultGraphNames.mkString("_")
 }

@@ -11,6 +11,10 @@ import scalaj.collection.Imports._
  * User: raven
  * Date: Sep 8, 2010
  * Time: 12:19:28 PM
+ *
+ * TODO The 'like' stuff does not belong here - it should go into something like an
+ *      abstract SparqlQueryBuilder class with vendor specific implementations.
+ *
  */
 
 trait SparqlEndpoint {
@@ -58,16 +62,17 @@ trait SparqlEndpoint {
   def defaultGraphNames(): Set[String]
 
   /**
-   * used for one of tests to see if the endpoint is alive
+   * Tests whether the sparql endpoint is alive.
    */
   def isAlive(): Boolean = {
     try {
-      executeAsk("ASK {?s ?p ?o} ")
+      executeAsk("Ask {?s a ?o}")
     }
     catch {
       case e: Exception => false
     }
 
+    true
   }
 
 }

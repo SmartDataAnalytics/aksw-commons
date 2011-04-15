@@ -13,6 +13,15 @@ import org.aksw.commons.sparql.core.DecoratorResultSet
  * Date: Oct 21, 2010
  * Time: 8:39:43 PM
  *
+ * Unlike JCDB, Jena does not provide the close method on the ResultSet, but on the object that
+ * created the result set. Therefore:
+ *
+ * TODO Make this resultset have a reference to its creating class, so that a close method on this
+ *      class cleanly closes.
+ *
+ * ---------------------------------
+ * Forget the following comments.
+ *
  * Due to "Too many open files" problems with ResultSetFactory.fromXml(InputStream in)
  * I assume the default jena implementation doesn't close the stream
  * properly. For bugtracking I provide this implementation which
