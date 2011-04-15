@@ -1,11 +1,12 @@
 package org.aksw.commons.util.strings;
 
-import com.hp.hpl.jena.sparql.pfunction.library.str;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.NavigableMap;
 
 public class StringUtils
 {
@@ -244,4 +245,27 @@ public class StringUtils
         System.out.println(longestPrefixLookup("", m));
     }
     */
+
+    public static String md5Hash(String string) {
+        // calculate md5 hash of the string (code is somewhat
+        // difficult to read, but there doesn't seem to be a
+        // single function call in Java for md5 hashing)
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        md5.reset();
+        md5.update(string.getBytes());
+        byte[] result = md5.digest();
+
+        StringBuffer hexString = new StringBuffer();
+        for (int i = 0; i < result.length; i++) {
+            hexString.append(Integer.toHexString(0xFF & result[i]));
+        }
+        String str = hexString.toString();
+        return str;
+    }
+
 }
