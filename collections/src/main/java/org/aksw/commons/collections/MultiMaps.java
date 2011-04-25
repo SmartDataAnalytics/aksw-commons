@@ -107,7 +107,7 @@ public class MultiMaps
      * @param <V>
      * @return
      */
-    public static <K, V> Set<V> safeGet(Map<K, Set<V>> map, Object key)
+    public static <K, V> Set<V> safeGet(Map<K, ? extends Set<V>> map, Object key)
     {
         Set<V> values = map.get(key);
         return (values == null)
@@ -115,15 +115,34 @@ public class MultiMaps
                 : values;
     }
 
-    public static <T> Set<T> transitiveGet(Map<T, Set<T>> map, Object key)
+
+    /**
+     * TODO Add to collection utils
+     *
+     * @param map
+     * @param key
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K, V> Collection<V> safeGetC(Map<K, ? extends Collection<V>> map, Object key)
     {
-        Set<T> result = new HashSet<T>(safeGet(map, key));
+        Collection<V> values = map.get(key);
+        return (values == null)
+                ? Collections.<V>emptySet()
+                : values;
+    }
+
+
+    public static <T> Set<T> transitiveGet(Map<T, ? extends Collection<T>> map, Object key)
+    {
+        Set<T> result = new HashSet<T>(safeGetC(map, key));
         Set<T> open = new HashSet<T>(result);
         Set<T> next = new HashSet<T>();
 
         do {
             for(T a : open) {
-                for(T b : safeGet(map, a)) {
+                for(T b : safeGetC(map, a)) {
                     if(result.contains(b))
                         continue;
 
