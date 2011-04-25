@@ -17,6 +17,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.aksw.commons</groupId>
+            <artifactId>collections</artifactId>
+        </dependency>
+
+
+        <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>jena</artifactId>
         </dependency>

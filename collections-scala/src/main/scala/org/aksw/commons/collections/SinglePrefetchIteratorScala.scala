@@ -16,7 +16,7 @@ import java.util.Iterator
  * @author raven_arkadon
  * @param <T>
  */
-abstract class SinglePrefetchIterator[T >: Null <: AnyRef]
+abstract class SinglePrefetchIteratorScala[T >: Null <: AnyRef]
 	extends Iterator[T]
 {
 	private var current : T = null;
