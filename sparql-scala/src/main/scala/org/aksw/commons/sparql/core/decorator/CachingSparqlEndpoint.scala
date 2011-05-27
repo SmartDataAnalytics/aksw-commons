@@ -8,6 +8,7 @@ import java.security.MessageDigest
 import org.slf4j.LoggerFactory
 import org.aksw.commons.sparql.core.impl.HttpSparqlEndpoint
 import org.aksw.commons.sparql.core.{QueryCollection, SparqlEndpoint}
+import com.hp.hpl.jena.rdf.model.Model
 
 /**
  * User: raven
@@ -43,6 +44,7 @@ class CachingSparqlEndpoint(val decoratee : SparqlEndpoint, val basePath : Strin
   def defaultGraphNames() = decoratee.defaultGraphNames
 
   def executeConstruct(query: String) = decoratee.executeConstruct(query)
+  def executeConstruct(query: String, model: Model) = decoratee.executeConstruct(query, model)
 
   def executeAsk(query: String) = decoratee.executeAsk(query)
 

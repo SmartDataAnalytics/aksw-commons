@@ -1,6 +1,7 @@
 package org.aksw.commons.sparql.core.decorator
 
 import org.aksw.commons.sparql.core.SparqlEndpoint
+import com.hp.hpl.jena.rdf.model.Model
 
 /**
  * A wrapper for graphdaos which delays execution of queries
@@ -31,6 +32,7 @@ class DelayingSparqlEndpoint(val decoratee : SparqlEndpoint, val delay : Long)
   def executeSelect(query : String) = { doDelay; decoratee.executeSelect(query) }
 	def executeAsk(query : String) = { doDelay; decoratee.executeAsk(query) }
 	def executeConstruct(query : String) = { doDelay; decoratee.executeConstruct(query) }
+  def executeConstruct(query : String, model: Model) = { doDelay; decoratee.executeConstruct(query, model) }
 
 	def defaultGraphNames() = decoratee.defaultGraphNames
 

@@ -23,6 +23,7 @@ trait SparqlEndpoint {
   def executeAsk(query: String): Boolean
 
   def executeConstruct(query: String): Model
+  def executeConstruct(query: String, model: Model): Model
 
   //def like(variable: String, patterns: String*): String = (like(variable, patterns))
 
