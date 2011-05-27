@@ -4,10 +4,10 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import org.nlp2rdf.oliaconnector.impl.OntologyCache;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.String;import java.util.ArrayList;import java.util.HashMap;import java.util.HashSet;import java.util.List;import java.util.Map;import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -15,7 +15,7 @@ import java.lang.String;import java.util.ArrayList;import java.util.HashMap;impo
  * skips complex classes per default, this does not affect the hierarchy outcome
  */
 public class ClassIndexer {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(ClassIndexer.class);
+    private static Logger log = LoggerFactory.getLogger(ClassIndexer.class);
 
     //Options
     private boolean copyLabels = true;
@@ -30,7 +30,8 @@ public class ClassIndexer {
     //internal variables
     private Map<String, OntModel> classUriToClassHierarchy = new HashMap<String, OntModel>();
 
-    public ClassIndexer() {}
+    public ClassIndexer() {
+    }
 
     public void index(OntModel from) {
         Set<OntClass> classes = from.listClasses().toSet();
