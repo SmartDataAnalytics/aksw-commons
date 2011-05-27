@@ -15,9 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
- * Time:  21.09.2010 09:03:30
+ *  @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
+ *  Time:  21.09.2010 09:03:30
  */
 public class StringConverter {
     private static final Logger logger = Logger.getLogger(StringConverter.class);

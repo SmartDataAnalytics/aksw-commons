@@ -11,9 +11,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Created by Claus Stadler
- * Date: 2/25/11
- * Time: 12:54 PM
+ * @author Claus Stadler
  */
 public class ModelUtils {
 

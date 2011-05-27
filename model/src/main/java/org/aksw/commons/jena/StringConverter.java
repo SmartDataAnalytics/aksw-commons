@@ -12,15 +12,18 @@ import org.apache.log4j.Logger;
 import java.io.*;
 
 /**
+ *
+ * Best to use Claus ModelUtils
  * NOTE, the proper way would be to capture the string right away, this does not always seem to work, especially with
  * Models with reasoning capabilities...
  * 
  *
  *
- * Created by IntelliJ IDEA.
- * User: Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
+ *  @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  * Time:  20.09.2010 18:23:35
  */
+
+@Deprecated
 public class StringConverter {
     private static final Logger logger = Logger.getLogger(StringConverter.class);
 

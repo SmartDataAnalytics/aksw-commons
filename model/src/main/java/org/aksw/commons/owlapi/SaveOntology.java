@@ -14,8 +14,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
+ *  @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  * Time:  21.09.2010 09:05:42
  */
 public class SaveOntology {

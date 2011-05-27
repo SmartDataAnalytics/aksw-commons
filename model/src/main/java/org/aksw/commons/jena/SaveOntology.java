@@ -1,20 +1,22 @@
 package org.aksw.commons.jena;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * As simple Helper to save ontologies
- * Created by IntelliJ IDEA.
- * User: Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
- * Time:  20.09.2010 18:18:11
+ *
+ * use Claus ModelUtils
+ * @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  */
+
+@Deprecated()
 public class SaveOntology {
-    private static final Logger logger = Logger.getLogger(SaveOntology.class);
-    
+    private static Logger logger = LoggerFactory.getLogger(SaveOntology.class);
+
 
     public static void saveAsRDFXML(Model model, String file) {
 		write(model, file, Constants.RDFXML);
@@ -24,7 +26,7 @@ public class SaveOntology {
 		write(model, file, Constants.RDF_XML_ABBREV);
 	}
 
-     public static void saveAsNTripleL(Model model, String file) {
+     public static void saveAsNTriple(Model model, String file) {
 		write(model, file, Constants.N_TRIPLE);
 	}
 
@@ -45,7 +47,7 @@ public class SaveOntology {
 			m.write(new FileWriter(file), format);
 			logger.debug("Model written to " + file);
 		} catch (IOException e) {
-			e.printStackTrace();
+            logger.debug("Failed writing to " + file, e);
 		}
 	}
 }
