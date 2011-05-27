@@ -23,5 +23,12 @@ trait QueryExecutionSparqlEndpoint
 
   override def executeConstruct(query: String) = createQueryExecution(query).execConstruct
 
+  override def executeConstruct(query: String, model: Model): Model = {
+      if(model == null)
+        executeConstruct(query)
+      else
+        createQueryExecution(query).execConstruct(model)
+  }
+
   override def defaultGraphNames(): Set[String] = Set()
 }

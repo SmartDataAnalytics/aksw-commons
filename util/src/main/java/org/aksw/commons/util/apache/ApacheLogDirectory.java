@@ -1,5 +1,9 @@
 package org.aksw.commons.util.apache;
 
+import com.google.common.io.PatternFilenameFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,11 +13,6 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.io.PatternFilenameFilter;
 
 public class ApacheLogDirectory
 {
@@ -86,4 +85,10 @@ public class ApacheLogDirectory
 		
 		return new ApacheLogRangeEntryIterator(subMap.entrySet().iterator(), low, lowInclusive, high, highInclusive);
 	}
+
+
+    public void main(String[] args)
+    {
+        
+    }
 }

@@ -22,7 +22,7 @@ object HttpSparqlEndpoint {
 }
 
 class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames: Set[String])
-  extends SparqlEndpoint {
+  extends QueryExecutionSparqlEndpoint {
   def this(serviceName: String) = this (serviceName, Set[String]())
 
   def this(serviceName: String, defaultGraphName: String) = this (serviceName, if (defaultGraphName == null) Set[String]() else Set(defaultGraphName))
@@ -31,10 +31,10 @@ class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames
 
   def this(serviceName: String, defaultGraphNames: java.lang.Iterable[String]) = this (serviceName, JIterableWrapper(defaultGraphNames))
 
-  private def queryExecution(query: String): QueryEngineHTTP = {
+  def createQueryExecution(query: String): QueryEngineHTTP = {
 
-    HttpSparqlEndpoint.logger.debug("Query is: " + query)
-    println("Query is: " + query)
+    HttpSparqlEndpoint.logger.trace("Executing query: " + query)
+    //println("Query is: " + query)
 
     val result = new QueryEngineHTTP(serviceName, query)
 
@@ -43,36 +43,5 @@ class HttpSparqlEndpoint(val serviceName: String, override val defaultGraphNames
     return result
   }
 
-  def executeConstruct(query: String): Model = {
-    return queryExecution(query).execConstruct
-  }
-
-  def executeAsk(query: String): Boolean = {
-    return queryExecution(query).execAsk
-  }
-
-
-  def executeSelect(query: String): ResultSet = {
-    return queryExecution(query).execSelect()
-  }
-
   override def id() = serviceName
-
-
-  /*
-  def executeSelect(query: String) : Iterable[QuerySolution] = {
-    /*
-    val rs = queryExecution(query).execSelect()
-    return rs;
-    */
-
-
-    val rs = queryExecution(query).execSelect()
-    val tmp = ResultSetFormatter.toList(rs)
-    //val result = new collection.JavaConversions.JListWrapper(tmp)
-
-    return tmp;
-  }
-  */
-
 }
