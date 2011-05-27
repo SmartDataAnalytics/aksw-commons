@@ -42,15 +42,7 @@ public class ModelUtils {
 
     private static Logger logger = LoggerFactory.getLogger(ModelUtils.class);
 
-    public static Map<String, String> extensionToJenaFormat = new HashMap<String, String>();
 
-    static {
-        extensionToJenaFormat.put(".rdfxml", "RDF/XML");
-        extensionToJenaFormat.put(".rdf", "RDF/XML");
-        extensionToJenaFormat.put(".n3", "N3");
-        extensionToJenaFormat.put(".nt", "N-TRIPLE");
-        extensionToJenaFormat.put(".ttl", "TURTLE");
-    }
 
 
     /**
@@ -111,7 +103,7 @@ public class ModelUtils {
         // Auto detect language by file name extension
         String fileName = file.getPath().toLowerCase();
 
-        for(Map.Entry<String, String> entry : extensionToJenaFormat.entrySet()) {
+        for(Map.Entry<String, String> entry : Constants.extensionToJenaFormat.entrySet()) {
             if(fileName.endsWith(entry.getKey().toLowerCase())) {
                 langs = Collections.singleton(entry.getValue());
                 break;
@@ -119,7 +111,7 @@ public class ModelUtils {
         }
 
         if(langs == null) {
-            langs = new HashSet<String>(extensionToJenaFormat.values());
+            langs = new HashSet<String>(Constants.extensionToJenaFormat.values());
         }
 
         String logMessage = "Parsing file '" + fileName + "' with languages " + langs + ": ";
@@ -187,7 +179,7 @@ public class ModelUtils {
     public static Model write(Model model, File file)
         throws IOException
     {
-        Map.Entry<String, String> extToLang = StringUtils.getMatchBySuffix(file.getPath(), extensionToJenaFormat);
+        Map.Entry<String, String> extToLang = StringUtils.getMatchBySuffix(file.getPath(), Constants.extensionToJenaFormat);
         String lang = (extToLang == null) ? null : extToLang.getValue();
 
         return write(model, file, lang);
