@@ -1,10 +1,10 @@
-package org.nlp2rdf.oliaconnector.impl;
+package org.aksw.commons.jena.impl;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import org.aksw.commons.jena.OntologyLoader;
 import org.apache.log4j.Logger;
-import org.nlp2rdf.oliaconnector.OntologyLoader;
 
 import java.io.File;
 import java.io.FileOutputStream;
