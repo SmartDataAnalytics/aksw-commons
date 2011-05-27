@@ -1,0 +1,6 @@
+#!/bin/bash
+#Update the aksw-commons repo on start up
+
+cd /opt/aksw-commons
+hg pull
+hg merge
