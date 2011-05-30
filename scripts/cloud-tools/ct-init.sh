@@ -24,15 +24,14 @@ echo "Hostname : $hostname"
 echo "IP-suffix: $ipSuffix"
 echo "Setup Hd : $setUpHd"
 
-while [[ "$confirmation" != "yes" && "$confirmation" != "no" ]]
-do
+while [[ "$confirmation" != "yes" && "$confirmation" != "no" ]]; do
      echo "Are these settings ok (yes/no)?"
      read confirmation
 done
 
 if [[ "$confirmation" == "no" ]]; then
     exit 0
-if
+fi
 
 if [ -n "$username" ]; then
 	echo "Changing username not implemented"
