@@ -4,3 +4,4 @@
 cd /opt/aksw-commons
 hg pull
 hg merge
+hg update
