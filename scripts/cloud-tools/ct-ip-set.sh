@@ -2,6 +2,11 @@
 newIpv4=$1
 newIpv6=`echo "$1" | tr '.' ':'`
 
+if [[ "$USER" != "root" ]]; then
+        echo "Must be run as root"
+        exit 1
+fi
+
 if [ -z "$1" ]; then
         echo "No ip given."
         exit 1
@@ -20,10 +25,11 @@ newIpv6=`./ct-ip-merge.sh "$baseIpv6" "$newIpv6" ":"`
 #echo $newIpv4
 #echo $newIpv6
 
-cat /etc/network/interfaces | sed -r "s/address\s+(([0-9]+)(\.[0-9]+)+)/address $newIpv4/g" | sed -r "s/address\s(([0-9]+)(:[0-9]*)+)/address $newIpv6/g" > /etc/network/interfaces
+content=`cat /etc/network/interfaces | sed -r "s/address\s+(([0-9]+)(\.[0-9]+)+)/address $newIpv4/g" | sed -r "s/address\s(([0-9]+)(:[0-9]*)+)/address $newIpv6/g"`
+echo "$content" > /etc/network/interfaces
 
-sudo ifdown eth0
-sudo ifup eth0
+ifdown eth0
+ifup eth0
 
 #cat /etc/network/interfaces | sed -r "s/address(\s+(\d\.)+)/$newIpv4/g" address $newIpv4
 #context=""
