@@ -38,7 +38,7 @@ if [ -n "$username" ]; then
 fi
 
 if [ -n "$hostname" ]; then
-    .\ct-set-hostname.sh "$hostname"
+    .\ct-hostname-set.sh "$hostname"
 fi
 
 if [ -n "$ipSuffix" ]; then
