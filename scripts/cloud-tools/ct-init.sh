@@ -15,7 +15,7 @@ read setUpHd
 
 if [[ "$setUpHd" != "yes" ]]; then
     setUpHd="no"
-if
+fi
 
 echo ""
 echo "Your settings are:"
