@@ -12,7 +12,7 @@ if [ -z "$oldName" ]; then
         exit 1
 fi
 
-echo "$newName" > /etc/hostname
-cat /etc/hosts | sed -r "s/(\s)$oldName(\s|$)/\1$newName\2/g" > /etc/hosts
+sudo echo "$newName" > /etc/hostname
+sudo cat /etc/hosts | sed -r "s/(\s)$oldName(\s|$)/\1$newName\2/g" > /etc/hosts
 
-service hostname restart
+sudo service hostname restart
