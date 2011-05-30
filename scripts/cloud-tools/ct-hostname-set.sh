@@ -2,6 +2,11 @@
 newName=$1
 oldName=`cat /etc/hostname`
 
+if [[ "$USER" != "root" ]]; then
+        echo "Must be run as root"
+        exit 1
+fi
+
 if [ -z "$newName" ]; then
         echo "New hostname is empty"
         exit 1
@@ -12,7 +17,10 @@ if [ -z "$oldName" ]; then
         exit 1
 fi
 
-sudo echo "$newName" > /etc/hostname
-sudo cat /etc/hosts | sed -r "s/(\s)$oldName(\s|$)/\1$newName\2/g" > /etc/hosts
+hostname "$newName"
 
-sudo service hostname restart
+content=`cat /etc/hosts | sed -r "s/(\s)$oldName(\s|$)/\1$newName\2/g"`
+echo "$content" > /etc/hosts
+echo "$newName" > /etc/hostname
+
+service hostname restart
