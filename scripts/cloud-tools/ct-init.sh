@@ -16,12 +16,14 @@ echo "Username : $username"
 echo "Hostname : $hostname"
 echo "IP-suffix: $ipSuffix"
 
-echo "Are these settings ok (yes/no)?"
-read confirmation
+while [[ "$confirmation" != "yes" && "$confirmation" != "no" ]]
+do
+     echo "Are these settings ok (yes/no)?"
+     read confirmation
+done
 
-
-if [ -z "$username ]; then
-
+if [ -z "$username" ]; then
+	echo "blah"
 fi
 
 
