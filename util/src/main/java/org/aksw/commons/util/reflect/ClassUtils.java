@@ -1,17 +1,12 @@
 package org.aksw.commons.util.reflect;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Created by IntelliJ IDEA.
- * User: raven
+ * @author Claus Stadler
+ *
  * Date: 6/3/11
- * Time: 3:54 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ClassUtils {
-    	/**
+    /**
 	 * Returns the minimum distance of two classes in an inheritance hierarchy
 	 * Null if there is no distance
 	 */
@@ -71,13 +66,14 @@ public class ClassUtils {
         return result;
     }
 
-    public static int[] getDistance(Class<?>[] a, Class<?>[] b)
+    public static Integer[] getDistance(Class<?>[] a, Class<?>[] b)
     {
         int n = Math.min(a.length, b.length);
 
-        int[] result = new int[n];
+        Integer[] result = new Integer[n];
         for(int i = 0; i < n; ++i) {
-            result[i] = getDistance(a[i], b[i]);
+            Integer d = getDistance(a[i], b[i]);
+            result[i] = d;
         }
 
         return  result;
@@ -90,13 +86,19 @@ public class ClassUtils {
      * @param b
      * @return L, LE, E, GE, G, Mixed
      */
-    public static Integer getRelation(int[] a, int[] b)
+    public static Integer getRelation(Integer[] a, Integer[] b)
     {
         boolean hasGreater = false;
         boolean hasLess = false;
 
         for(int i = 0; i < a.length; ++i) {
-            int d = b[i] - a[i];
+            if(a[i] == null || b[i] == null) {
+                //return null;
+                throw new NullPointerException();
+                // TODO Throw an exception or return null?
+            }
+
+            int d = a[i] - b[i];
 
             if (d > 0) {
                 hasGreater = true;
