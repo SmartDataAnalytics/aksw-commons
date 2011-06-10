@@ -8,12 +8,20 @@ package org.aksw.commons.util.reflect;
 abstract class InvocationException
 	extends RuntimeException
 {
+    private String methodName;
 	private Object[] args;
 
-	public InvocationException(Object[] args)
+	public InvocationException(String methodName, Object[] args)
 	{
 		this.args = args;
+        this.methodName = methodName;
 	}
+
+    public String getMethodName()
+    {
+        return methodName;
+    }
+
 
 	public Object[] getArgs()
 	{
