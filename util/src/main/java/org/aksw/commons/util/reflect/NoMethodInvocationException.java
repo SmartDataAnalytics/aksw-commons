@@ -1,6 +1,10 @@
 package org.aksw.commons.util.reflect;
 
 
+import org.aksw.commons.util.strings.StringUtils;
+
+import java.util.Arrays;
+
 /**
  * @author Claus Stadler
  *
@@ -9,14 +13,14 @@ package org.aksw.commons.util.reflect;
 public class NoMethodInvocationException
 	extends InvocationException
 {
-	public NoMethodInvocationException(Object[] args)
+	public NoMethodInvocationException(String methodName, Object[] args)
 	{
-		super(args);
+		super(methodName, args);
 	}
 
 	@Override
 	public String toString()
 	{
-		return "No matching method found.";
+		return "No method '" + getMethodName() + "' found for arguments " + Arrays.toString(ClassUtils.getTypeSignature(getArgs()));
 	}
 }

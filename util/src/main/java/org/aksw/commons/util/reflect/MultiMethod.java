@@ -40,28 +40,16 @@ public class MultiMethod
 	{
 		Method m = findInvocationMethod(clazz, name, args);
 
-        // FIXME Not multithreading safe
-        boolean isAccessible = m.isAccessible();
-        m.setAccessible(true);
-
-		try {
-			return m.invoke(null, args);
-		} catch (Exception e) {
-			throw new RuntimeException("Invocation failed", e);
-		} finally {
-            m.setAccessible(isAccessible);
-        }
+        return ClassUtils.forceInvoke(null, m, args);
 	}
+
+
 
 	public static Object invoke(Object o, String name, Object ...args)
 	{
 		Method m = findInvocationMethod(o.getClass(), name, args);
 
-		try {
-			return m.invoke(o, args);
-		} catch (Exception e) {
-			throw new RuntimeException("Invocation failed", e);
-		}
+		return ClassUtils.forceInvoke(o, m, args);
 	}
 
 	public static <T> Method findInvocationMethod(Class<T> clazz, String name, Object ...args)
@@ -104,9 +92,9 @@ public class MultiMethod
 		}
 
 		if(bestMatches.size() == 0) {
-			throw new NoMethodInvocationException(args);
+			throw new NoMethodInvocationException(name, args);
 		} else if(bestMatches.size() > 1) {
-			throw new MultipleMethodsInvocationException(args);
+			throw new MultipleMethodsInvocationException(name, args, bestMatches.keySet());
 		}
 
 		return bestMatches.entrySet().iterator().next().getKey();

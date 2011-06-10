@@ -1,11 +1,34 @@
 package org.aksw.commons.util.reflect;
 
+import java.lang.reflect.Method;
+
 /**
  * @author Claus Stadler
  *
  * Date: 6/3/11
  */
 public class ClassUtils {
+
+    public static Object forceInvoke(Method m, Object[] args)
+    {
+        return forceInvoke(null, m, args);
+    }
+
+    public static Object forceInvoke(Object o, Method m, Object[] args)
+    {
+        // FIXME Not multithreading safe
+        boolean isAccessible = m.isAccessible();
+        m.setAccessible(true);
+
+		try {
+			return m.invoke(o, args);
+		} catch (Exception e) {
+			throw new RuntimeException("Invocation failed", e);
+		} finally {
+            m.setAccessible(isAccessible);
+        }
+    }
+
     /**
 	 * Returns the minimum distance of two classes in an inheritance hierarchy
 	 * Null if there is no distance

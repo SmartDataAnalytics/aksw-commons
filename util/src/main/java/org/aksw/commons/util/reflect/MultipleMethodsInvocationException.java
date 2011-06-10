@@ -1,5 +1,9 @@
 package org.aksw.commons.util.reflect;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Set;
+
 /**
  * @author Claus Stadler
  *
@@ -8,14 +12,17 @@ package org.aksw.commons.util.reflect;
 public class MultipleMethodsInvocationException
 	extends InvocationException
 {
-	public MultipleMethodsInvocationException(Object[] args)
+    private Set<Method> methods;
+
+	public MultipleMethodsInvocationException(String methodName, Object[] args, Set<Method> methods)
 	{
-		super(args);
+		super(methodName, args);
+        this.methods = methods;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "Multiple matching methods found.";
+		return "Multiple matches found for '" + getMethodName() + "' with args " + Arrays.toString(ClassUtils.getTypeSignature(getArgs())) + ", candidates are: " + methods.toString();
 	}
 }
