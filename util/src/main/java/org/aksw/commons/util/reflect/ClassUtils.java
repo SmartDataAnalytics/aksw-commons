@@ -1,5 +1,8 @@
 package org.aksw.commons.util.reflect;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
 
 /**
@@ -8,6 +11,8 @@ import java.lang.reflect.Method;
  * Date: 6/3/11
  */
 public class ClassUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClassUtils.class);
 
     public static Object forceInvoke(Method m, Object[] args)
     {
@@ -21,9 +26,10 @@ public class ClassUtils {
         m.setAccessible(true);
 
 		try {
+            logger.debug("Invoking " + m + " on " + o);
 			return m.invoke(o, args);
 		} catch (Exception e) {
-			throw new RuntimeException("Invocation failed", e);
+			//throw new RuntimeException("Invocation failed", e);
 		} finally {
             m.setAccessible(isAccessible);
         }
