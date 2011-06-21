@@ -55,12 +55,12 @@ public class MapUtils {
 		return elze;
 	}
 
-	public static <K, V> Map<K, V> createChainMap(Map<K, ?> a, Map<?, V> b) {
+  	public static <K, V> Map<K, V> createChainMap(Map<K, ?> a, Map<?, V> b) {
 		Map<K, V> result = new HashMap<K, V>();
 
 		for(Map.Entry<K, ?> entry : a.entrySet()) {
-			if(b.containsKey(entry.getKey())) {
-				result.put(entry.getKey(), b.get(entry.getKey()));
+			if(b.containsKey(entry.getValue())) {
+				result.put(entry.getKey(), b.get(entry.getValue()));
 			}
 		}
 

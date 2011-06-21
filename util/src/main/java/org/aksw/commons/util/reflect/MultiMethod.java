@@ -58,7 +58,7 @@ public class MultiMethod
 
 
 		Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
-		for(Method m : clazz.getMethods()) {
+		for(Method m : clazz.getDeclaredMethods()) {
 			if(!m.getName().equals(name)) {
 				continue;
 			}
