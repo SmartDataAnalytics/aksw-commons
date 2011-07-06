@@ -1,5 +1,7 @@
 package org.aksw.commons.collections;
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,4 +68,29 @@ public class MapUtils {
 
 		return result;
 	}
+
+    public static <K, V> V getOrCreate(Map<K, V> map, K key, Class<V> clazz, Object ... ctorArgs)
+    {
+        V result = map.get(key);
+        if(result == null) {
+            // TODO Invoke the correct constructor based on the arguments
+            //Class[] classes = new Class[ctorArgs.length];
+            //clazz.getConstructor();
+
+
+            if(ctorArgs.length > 0) {
+                throw new RuntimeException("Constructor arguments not supported yet");
+            } else  {
+                try {
+                    result = (V)clazz.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            map.put(key, result);
+        }
+
+        return result;
+    }
 }

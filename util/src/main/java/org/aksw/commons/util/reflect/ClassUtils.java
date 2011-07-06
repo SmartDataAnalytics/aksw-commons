@@ -26,10 +26,11 @@ public class ClassUtils {
         m.setAccessible(true);
 
 		try {
-            logger.debug("Invoking " + m + " on " + o);
+            logger.trace("Invoking " + m + " on " + o);
 			return m.invoke(o, args);
 		} catch (Exception e) {
 			//throw new RuntimeException("Invocation failed", e);
+            throw new RuntimeException(e);
 		} finally {
             m.setAccessible(isAccessible);
         }
