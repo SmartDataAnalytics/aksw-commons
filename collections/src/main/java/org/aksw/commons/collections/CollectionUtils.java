@@ -1,7 +1,9 @@
 package org.aksw.commons.collections;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * User: raven
@@ -26,4 +28,26 @@ public class CollectionUtils {
 
         return it.hasNext() ? it.next() : Collections.<S>emptySet();
     }
+
+    public static <T> List<List<T>> chunk(Iterable<T> col, int batchSize)
+    {
+        List<List<T>> result = new ArrayList<List<T>>();
+
+        List<T> chunk = new ArrayList<T>();
+
+        Iterator<T> it = col.iterator();
+        while(it.hasNext()) {
+            chunk.add(it.next());
+
+            if(chunk.size() >= batchSize || !it.hasNext()) {
+                result.add(chunk);
+
+                if(it.hasNext())
+                    chunk = new ArrayList<T>();
+            }
+        }
+
+        return result;
+    }
+
 }

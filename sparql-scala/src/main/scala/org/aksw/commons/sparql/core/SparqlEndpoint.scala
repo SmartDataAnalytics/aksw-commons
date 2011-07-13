@@ -2,9 +2,11 @@ package org.aksw.commons.sparql.core
 
 
 import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.ResultSet
 
 import scalaj.collection.Imports._
+import org.apache.commons.lang.NotImplementedException
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,6 +32,8 @@ trait SparqlEndpoint {
   def like(variable: String, patterns: Set[String]): String = (like(variable, patterns.asJava))
 
   /**
+   * TODO This stuff does not belong here and is subject to removal
+   *
    * @return the respective like paradigm
    */
   def like(variable: String, patterns: java.util.Set[String]): String = {
@@ -47,9 +51,13 @@ trait SparqlEndpoint {
     stringBuffer.append("))").toString
   }
 
-  def insert(model: Model, graphName: String): Unit = {}
+  //def insert(triples: Iterable[Triple], graphName: String): Unit = { throw new NotImplementedException(); }
 
-  def remove(model: Model, graphName: String): Unit = {}
+  //def remove(triples: Iterable[Triple], graphName: String): Unit = { throw new NotImplementedException(); }
+
+  def insert(model: Model, graphName: String): Unit = { throw new NotImplementedException(); }
+
+  def remove(model: Model, graphName: String): Unit = { throw new NotImplementedException(); }
 
   /**
    * Ideally this method returns an id uniquely identifying a specific
