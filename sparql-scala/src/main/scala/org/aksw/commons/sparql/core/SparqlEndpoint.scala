@@ -59,6 +59,7 @@ trait SparqlEndpoint {
 
   def remove(model: Model, graphName: String): Unit = { throw new NotImplementedException(); }
 
+
   /**
    * Ideally this method returns an id uniquely identifying a specific
    * sparql endpoint

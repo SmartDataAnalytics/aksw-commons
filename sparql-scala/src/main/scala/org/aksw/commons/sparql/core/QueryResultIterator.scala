@@ -1,11 +1,11 @@
 package org.aksw.commons.sparql.core
 
 import com.hp.hpl.jena.query.{ResultSetFormatter, QuerySolution}
-import org.aksw.commons.collections.PrefetchIterator
+import org.aksw.commons.collections.PrefetchIteratorScala
 
 
 class QueryResultIterator(val sparqlEndpoint : SparqlEndpoint, val query : String, val limit : Int, var offset : Int)
-	extends PrefetchIterator[QuerySolution]
+	extends PrefetchIteratorScala[QuerySolution]
 {
 	private var isEndReached : Boolean = false;
 

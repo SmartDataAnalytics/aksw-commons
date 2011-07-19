@@ -4,6 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Claus Stadler
@@ -147,4 +151,35 @@ public class ClassUtils {
 
         return 0;
     }
+
+    /**
+     * Returns all non-overridden methods for the given class.
+     *
+     *
+     * @param clazz
+     * @return
+     */
+    public static List<Method> getAllNonOverriddenlMethods(Class<?> clazz)
+    {
+        List<Method> result = new ArrayList<Method>();
+
+        Set<MethodSignature> signatures = new HashSet<MethodSignature>();
+        while(clazz != null) {
+            for(Method method : clazz.getDeclaredMethods()) {
+
+                MethodSignature signature = new MethodSignature(method);
+
+                if(!signatures.contains(signature)) {
+                    result.add(method);
+
+                    signatures.add(signature);
+                }
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return result;
+    }
+
 }

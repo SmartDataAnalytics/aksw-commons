@@ -15,7 +15,7 @@ package org.aksw.commons.collections
  * @author raven_arkadon
  * @param <T>
  */
-abstract class PrefetchIterator[T]
+abstract class PrefetchIteratorScala[T]
 	extends Iterator[T]
 {
 	private var	current : Iterator[T] = null;
@@ -24,7 +24,7 @@ abstract class PrefetchIterator[T]
 	protected def prefetch() : Iterator[T];
 
 	/*
-	protected def PrefetchIterator()
+	protected def PrefetchIteratorScala()
 	{
 	}
 	*/

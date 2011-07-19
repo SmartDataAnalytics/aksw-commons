@@ -8,17 +8,17 @@ import java.util.Iterator;
  * Date: Oct 9, 2010
  * Time: 5:39:36 PM
  */
-public abstract class PrefetchIteratorJava<T>
+public abstract class PrefetchIterator<T>
 	implements Iterator<T>
 {
-	//private static Logger logger = Logger.getLogger(PrefetchIteratorJava.class);
+	//private static Logger logger = Logger.getLogger(PrefetchIterator.class);
 	private Iterator<T>	current		= null;
 	private boolean		finished	= false;
 
 	abstract protected Iterator<T> prefetch()
 		throws Exception;
 
-	protected PrefetchIteratorJava()
+	protected PrefetchIterator()
 	{
 	}
 
