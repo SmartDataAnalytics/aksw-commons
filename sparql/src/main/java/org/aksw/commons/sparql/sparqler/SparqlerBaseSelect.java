@@ -6,8 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.aksw.sparqlify.core.SparqlerRdfViewSystem;
-import org.aksw.update.QueryUtils;
+import org.aksw.commons.jena.util.QueryUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,7 @@ public abstract class SparqlerBaseSelect
 	extends SparqlerFrontString
 {
 	private static final Logger logger = LoggerFactory
-			.getLogger(SparqlerRdfViewSystem.class);
+			.getLogger(SparqlerBaseSelect.class);
 
 	abstract protected ResultSet executeCoreSelect(Query query);
 	
