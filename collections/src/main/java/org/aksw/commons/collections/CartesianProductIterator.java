@@ -7,7 +7,7 @@ import java.util.*;
 /**
  *
  *
- * FIXME Make use of PrefetchIterator
+ * FIXME Make use of PrefetchIteratorScala
  *
  * @param <T>
  */
