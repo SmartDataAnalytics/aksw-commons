@@ -1,9 +1,6 @@
 package org.aksw.commons.collections;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: raven
@@ -50,4 +47,8 @@ public class CollectionUtils {
         return result;
     }
 
+    public static <T> Set<T> asSet(Collection<T> c)
+    {
+        return (c instanceof Set) ? (Set)c : new HashSet<T>(c);
+    }
 }

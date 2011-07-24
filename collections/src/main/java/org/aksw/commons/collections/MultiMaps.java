@@ -1,6 +1,8 @@
 package org.aksw.commons.collections;
 
 
+import com.google.common.collect.Sets;
+
 import java.lang.Iterable;
 import java.util.*;
 import java.util.HashMap;
@@ -107,14 +109,30 @@ public class MultiMaps
      * @param <V>
      * @return
      */
-    public static <K, V> Set<V> safeGet(Map<K, ? extends Set<V>> map, Object key)
+    public static <K, V> Set<V> safeGet(Map<K, ? extends Collection<V>> map, Object key)
     {
-        Set<V> values = map.get(key);
+        Collection<V> values = map.get(key);
         return (values == null)
                 ? Collections.<V>emptySet()
-                : values;
+                : CollectionUtils.asSet(values);
     }
 
+    /**
+     * Returns the set of successors for a given set of keys
+     *
+     * @param map
+     * @param keys
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K, V> Set<V> safeGetAll(Map<K, ? extends Collection<V>> map, Collection<?> keys) {
+        Set<V> result = new HashSet<V>();
+        for(Object key : keys) {
+            result.addAll(safeGet(map, key));
+        }
+        return result;
+    }
 
     /**
      * TODO Add to collection utils
@@ -209,6 +227,59 @@ public class MultiMaps
             open = tmp;
         }
     }
+
+
+	/**
+	 * Find the nearest set of nodes that are parents of both given nodes.
+	 *
+	 *
+	 * @param map A mapping from children to parents
+	 * @param a
+	 * @param b
+	 */
+	public static <T> Set<T> getCommonParent(Map<T, ? extends Collection<T>> map, T a, T b)
+	{
+		// The set of nodes for which all successors have already been visited
+		Set<T> stableA = new HashSet<T>();
+		Set<T> stableB = new HashSet<T>();
+
+		// The set of nodes for which their successors have not been visited yet
+		Set<T> frontierA = new HashSet<T>();
+		Set<T> frontierB = new HashSet<T>();
+
+		frontierA.add(a);
+		frontierB.add(b);
+
+		while(!frontierA.isEmpty() || !frontierB.isEmpty()) {
+
+            Set<T> allA = Sets.union(frontierA, stableA);
+            Set<T> allB = Sets.union(frontierB, stableB);
+
+			Set<T> intersection = Sets.intersection(allA, allB);
+			// If there is an overlap in the nodes, we are done
+			if(!intersection.isEmpty()) {
+				return intersection;
+			}
+
+			// No overlap, keep looking - Move up one level
+			Set<T> nextFrontierA = MultiMaps.safeGetAll(map, frontierA);
+			Set<T> nextFrontierB = MultiMaps.safeGetAll(map, frontierB);
+
+			stableA.addAll(frontierA);
+			stableB.addAll(frontierB);
+
+			// OPTIMIZE Maybe this is more efficient: nextFrontierA.removeAll(Sets.intersection(frontierA,stableA));
+			// The intersection with the smaller set first would avoid scannig all nodes
+			// Note sure if java's removeAll already does such optimization
+			nextFrontierA.removeAll(stableA);
+			nextFrontierB.removeAll(stableB);
+
+			frontierA = nextFrontierA;
+			frontierB = nextFrontierB;
+		}
+
+		return Collections.emptySet();
+	}
 
     /*
     public static <T> Map<T, Set<T>> transitiveClosureInPlace(Map<T, Set<T>> map)
