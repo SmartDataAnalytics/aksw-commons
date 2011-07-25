@@ -206,7 +206,7 @@ public class StringUtils
      * @param str
      * @return
      */
-    public static String encodeUtf8(String str)
+    public static String urlEncode(String str)
     {
         try {
             return URLEncoder.encode(str, "UTF8");
@@ -216,7 +216,7 @@ public class StringUtils
         return null;
     }
 
-    public static String decodeUtf8(String str)
+    public static String urlDecode(String str)
     {
         try {
             return URLDecoder.decode(str, "UTF8");
@@ -246,7 +246,8 @@ public class StringUtils
     }
     */
 
-    public static String md5Hash(String string) {
+    public static String md5Hash(byte[] bytes)
+    {
         // calculate md5 hash of the string (code is somewhat
         // difficult to read, but there doesn't seem to be a
         // single function call in Java for md5 hashing)
@@ -257,7 +258,7 @@ public class StringUtils
             e.printStackTrace();
         }
         md5.reset();
-        md5.update(string.getBytes());
+        md5.update(bytes);
         byte[] result = md5.digest();
 
         StringBuffer hexString = new StringBuffer();
@@ -266,6 +267,10 @@ public class StringUtils
         }
         String str = hexString.toString();
         return str;
+    }
+
+    public static String md5Hash(String string) {
+        return md5Hash(string.getBytes());
     }
 
 }

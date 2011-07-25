@@ -170,7 +170,7 @@ public class NTripleIterator
 
                 skipWhiteSpace();
                 if (in.eof()) {
-                    return null;
+                    return finish();
                 }
 
                 subject = readResource();
