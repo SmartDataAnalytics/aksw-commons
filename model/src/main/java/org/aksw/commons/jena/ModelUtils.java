@@ -270,8 +270,8 @@ public class ModelUtils {
 		String[] tmp = decompose(uri, prefixMap);
 
 		String result = (tmp[0].isEmpty())
-			? StringUtils.decodeUtf8(tmp[1])
-			: tmp[0] + ":" + StringUtils.decodeUtf8(tmp[1]);
+			? StringUtils.urlDecode(tmp[1])
+			: tmp[0] + ":" + StringUtils.urlDecode(tmp[1]);
 
 			return result;
 	}
