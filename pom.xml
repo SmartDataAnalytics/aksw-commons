@@ -10,6 +10,12 @@
     <version>1.0-SNAPSHOT</version>
     <name>AKSW Commons parent</name>
 
+    <scm>
+        <connection>scm:hg:https://nlp2rdf.googlecode.com/hg/connection></connection>
+        <!-- developerConnection></developerConnection -->
+        <!-- url>https://my-project.googlecode.com/svn</url -->
+    </scm>
+
     <properties>
         <!--  tell the compiler we can use 1.6 -->
         <compiler.version>1.6</compiler.version>
