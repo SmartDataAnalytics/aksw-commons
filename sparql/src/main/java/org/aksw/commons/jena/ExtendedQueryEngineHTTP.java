@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Claus Stadler
@@ -84,7 +85,9 @@ class DisconnectorThread
 /**
  * A QueryEngineHTTP that is capable of closing connections after a given timeout.
  *
+ * Jena now provides one on its own
  */
+@Deprecated
 public class ExtendedQueryEngineHTTP
         implements QueryExecution {
     private static Logger log = LoggerFactory.getLogger(QueryEngineHTTP.class);
@@ -310,6 +313,26 @@ public class ExtendedQueryEngineHTTP
                 retainedConnection = null;
             }
         }
+    }
+
+    @Override
+    public void setTimeout(long timeout, TimeUnit timeoutUnits) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setTimeout(long timeout) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setTimeout(long timeout1, TimeUnit timeUnit1, long timeout2, TimeUnit timeUnit2) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setTimeout(long timeout1, long timeout2) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
 //    public boolean isActive() { return false ; }

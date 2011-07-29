@@ -1,6 +1,6 @@
 package org.aksw.commons.sparql.core;
 
-
+/*
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * User: Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  * Date: 04.04.11
- */
+ * /
 
 public class SparqlTemplate {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(SparqlTemplate.class);
@@ -118,4 +118,4 @@ public class SparqlTemplate {
     }
 
 }
-
+*/

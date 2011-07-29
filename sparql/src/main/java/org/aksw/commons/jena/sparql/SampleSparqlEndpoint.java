@@ -1,6 +1,5 @@
 package org.aksw.commons.jena.sparql;
 
-import org.aksw.commons.sparql.core.AA;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,7 +9,7 @@ import java.util.Set;
 /**
  * Created by Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  * Date: 13.03.11
- */
+ * /
 public class SampleSparqlEndpoint {
 
     public static void main(String[] args) {
@@ -27,3 +26,4 @@ public class SampleSparqlEndpoint {
 
     }
 }
+*/
