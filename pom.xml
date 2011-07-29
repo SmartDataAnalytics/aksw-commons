@@ -11,7 +11,7 @@
     <name>AKSW Commons parent</name>
 
     <scm>
-        <connection>scm:hg:https://nlp2rdf.googlecode.com/hg/connection></connection>
+        <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection>
         <!-- developerConnection></developerConnection -->
         <!-- url>https://my-project.googlecode.com/svn</url -->
     </scm>
