@@ -39,16 +39,33 @@ import com.hp.hpl.jena.update.UpdateRequest;
  *
  */
 public abstract class QueryExecutionBaseSelect
-//	implements QueryExecution
+	extends QueryExecutionDecorator
 {
 	private static final Logger logger = LoggerFactory
 			.getLogger(QueryExecutionBaseSelect.class);
 
-	abstract protected ResultSet executeCoreSelect(Query query);
+    private Query query;
+
+    public QueryExecutionBaseSelect(Query query) {
+        super(null);
+        this.query = query;
+    }
+
+    //private QueryExecution running = null;
+
+	abstract protected QueryExecution executeCoreSelectX(Query query);
 	
-	
-	//@Override
-	public boolean executeAsk(Query query) {
+    protected ResultSet executeCoreSelect(Query query) {
+        if(this.decoratee != null) {
+            throw new RuntimeException("A query is already running");
+        }
+
+        this.decoratee = executeCoreSelectX(query);
+        return decoratee.execSelect();
+    }
+
+	@Override
+	public boolean execAsk() {
 		if (!query.isAskType()) {
 			throw new RuntimeException("ASK query expected. Got: ["
 					+ query.toString() + "]");
@@ -72,13 +89,13 @@ public abstract class QueryExecutionBaseSelect
 		return rowCount > 0;
 	}
 
-	//@Override
-	public Model executeDescribe(Model result, Query query) {
+	@Override
+	public Model execDescribe(Model result) {
 		throw new RuntimeException("Sorry, DESCRIBE is not implemted yet.");
 	}
 
-	//@Override
-	public Model executeConstruct(Model result, Query query) {
+	@Override
+	public Model execConstruct(Model result) {
 		if (!query.isConstructType()) {
 			throw new RuntimeException("CONSTRUCT query expected. Got: ["
 					+ query.toString() + "]");
@@ -112,8 +129,8 @@ public abstract class QueryExecutionBaseSelect
 		return result;
 	}
 
-	//@Override
-	public ResultSet executeSelect(Query query) {
+	@Override
+	public ResultSet execSelect() {
 		if (!query.isSelectType()) {
 			throw new RuntimeException("SELECT query expected. Got: ["
 					+ query.toString() + "]");
