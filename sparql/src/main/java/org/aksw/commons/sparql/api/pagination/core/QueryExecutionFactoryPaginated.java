@@ -19,6 +19,7 @@ public class QueryExecutionFactoryPaginated
 
     public QueryExecutionFactoryPaginated(QueryExecutionFactory decoratee, long pageSize) {
         this.pageSize = pageSize;
+        this.decoratee = decoratee;
     }
 
     @Override

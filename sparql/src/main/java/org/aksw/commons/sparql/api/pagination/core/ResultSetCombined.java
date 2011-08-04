@@ -3,18 +3,23 @@ package org.aksw.commons.sparql.api.pagination.core;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.sparql.engine.QueryIterator;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import org.openjena.atlas.iterator.Iter;
 
 import java.util.Iterator;
 import java.util.List;
 
+
 /**
+ * Not used
+ *
+ *
  * @author Claus Stadler
  *         <p/>
  *         Date: 7/26/11
  *         Time: 11:56 PM
- */
+ * /
 public class ResultSetCombined
     implements ResultSet
 {
@@ -26,13 +31,18 @@ public class ResultSetCombined
     }
 
     private boolean checkCurrent() {
-        if(current == null) {
+        System.out.println("Checking current");
+        while(current == null) {
             if(!it.hasNext()) {
                 return false;
             }
             current = it.next();
+
+            if(!current.hasNext()) {
+                continue;
+            }
         }
-        return current.hasNext();
+        return true;
     }
 
     public QuerySolution next() {
@@ -50,7 +60,9 @@ public class ResultSetCombined
 
     @Override
     public boolean hasNext() {
-        return it.hasNext() || current != null && current.hasNext();
+        return checkCurrent();
+        // TODO something goes wrong here
+        //return it.hasNext() || current != null && current.hasNext();
     }
 
     @Override
@@ -75,3 +87,4 @@ public class ResultSetCombined
 
 
 }
+*/

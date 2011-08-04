@@ -39,8 +39,10 @@ public abstract class PrefetchIterator<T>
 			//logger.error(ExceptionUtils.toString(e));
             e.printStackTrace();
 		}
-		if (current == null)
+		if (current == null) {
+            close();
 			finished = true;
+        }
 	}
 
 	private Iterator<T> getCurrent()
@@ -60,6 +62,10 @@ public abstract class PrefetchIterator<T>
 	{
 		return getCurrent().next();
 	}
+
+    public void close() {
+        
+    }
 
 	public void remove()
 	{
