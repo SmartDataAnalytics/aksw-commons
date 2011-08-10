@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.api.cache.core;
 
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import org.aksw.commons.sparql.api.cache.extra.Cache;
@@ -10,6 +9,10 @@ import org.aksw.commons.sparql.api.cache.extra.CacheResource;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 
 /**
@@ -30,6 +33,7 @@ public class QueryExecutionCache
     public QueryExecutionCache(QueryExecution decoratee, String queryString, Cache cache) {
         super(decoratee);
 
+        this.queryString = queryString;
         this.cache = cache;
     }
 
@@ -53,14 +57,26 @@ public class QueryExecutionCache
                 }
             }
 
-            //ResultSetFormatter.u
-            //resource = cache.write(queryString, rs);
+            cache.write(queryString, rs);
+            resource = cache.lookup(queryString);
+            if(resource == null) {
+                throw new RuntimeException("Cache error: Lookup of just written data failed");
+            }
+
         }
 
         return resource.asResultSet();
     }
 
     public Model doCacheModel(Model result) {
+        try {
+            return _doCacheModel(result);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Model _doCacheModel(Model result) throws IOException {
         CacheResource resource = cache.lookup(queryString);
 
         Model model = ModelFactory.createDefaultModel();
@@ -80,7 +96,11 @@ public class QueryExecutionCache
                 }
             }
 
-            //resource = cache.write(queryString, model);
+            cache.write(queryString, model);
+            resource = cache.lookup(queryString);
+            if(resource == null) {
+                throw new RuntimeException("Cache error: Lookup of just written data failed");
+            }
         }
 
         return resource.asModel(result);

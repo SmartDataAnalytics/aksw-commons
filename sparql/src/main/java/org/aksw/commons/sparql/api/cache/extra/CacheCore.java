@@ -13,5 +13,4 @@ import java.io.InputStream;
 public interface CacheCore {
     CacheResource lookup(String queryString);
     void write(String queryString, InputStream in);
-
 }

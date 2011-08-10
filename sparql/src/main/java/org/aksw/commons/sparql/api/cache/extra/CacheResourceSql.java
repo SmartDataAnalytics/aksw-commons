@@ -107,7 +107,7 @@ public class CacheResourceSql
     public Model _asModel(Model result) throws SQLException {
         InputStream in = clob.getAsciiStream();
 
-	    result.read(in, null, "N-TRIPLE");
+	    result.read(in, null, "N-TRIPLES");
         try {
             in.close();
         } catch (Exception e) {

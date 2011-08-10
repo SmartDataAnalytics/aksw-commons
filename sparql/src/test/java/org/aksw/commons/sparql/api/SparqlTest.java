@@ -2,9 +2,7 @@ package org.aksw.commons.sparql.api;
 
 import static junit.framework.Assert.*;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.sparql.util.ResultSetUtils;
@@ -72,7 +70,7 @@ public class SparqlTest {
 
     }
 
-    @Test
+    //@Test
     public void testPagination() {
         System.out.println("Starting testPagination");
 
@@ -98,21 +96,82 @@ public class SparqlTest {
 
     }
 
+    //@Test
+    public void testPaginationComplex() {
+        System.out.println("Starting testPagination");
+
+        Model model = ModelFactory.createDefaultModel();
+        model.add(RDF.type, RDF.type, RDF.type);
+        model.add(RDF.List, RDF.type, RDF.List);
+
+        QueryExecutionFactory f = new QueryExecutionFactoryModel(model);
+
+
+        //QueryExecutionFactory f = createService();
+        //f = new QueryExecutionFactoryDelay(f, 5000);
+
+
+        f = new QueryExecutionFactoryPaginated(f, 1);
+
+        String queryString = "SELECT ?p (COUNT(?s) AS ?count) WHERE {?s ?p ?o. {SELECT ?s ?o WHERE {?s a ?o.} } }";
+
+        Query query = QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
+
+        QueryExecution q = f.createQueryExecution(queryString);
+        ResultSet rs = q.execSelect();
+        while(rs.hasNext()) {
+            System.out.println("Here");
+            System.out.println(rs.next());
+        }
+
+
+
+
+        /*
+        String query = String.format(queryTemplate, propertyToDescribe, limit, offset);
+Map<ObjectProperty, Integer> result = new HashMap<ObjectProperty, Integer>();
+ObjectProperty prop;
+Integer oldCnt;
+boolean repeat = true;
+QueryExecutionFactory f = new QueryExecutionFactoryHttp(ks.getEndpoint().getURL().toString(), ks.getEndpoint().getDefaultGraphURIs());
+f = new QueryExecutionFactoryPaginated(f, limit);
+QueryExecution exec = f.createQueryExecution(QueryFactory.create(query, Syntax.syntaxARQ));
+ResultSet rs = exec.execSelect();
+int i = 0;
+QuerySolution qs;
+while(rs.hasNext() && ++i <= maxFetchedRows){
+qs = rs.next();
+prop = new ObjectProperty(qs.getResource("p").getURI());
+int newCnt = qs.getLiteral("count").getInt();
+oldCnt = result.get(prop);
+if(oldCnt == null){
+oldCnt = Integer.valueOf(newCnt);
+}
+result.put(prop, oldCnt);
+qs.getLiteral("count").getInt();
+}
+*/
+    }
+
+
     @Test
     public void testHttpDelayCache()
+        throws Exception
     {
-        /*
         QueryExecutionFactory f = createService();
 
         long delay = 5000;
         f = new QueryExecutionFactoryDelay(f, delay);
 
-        CacheCore cacheCore = CacheCoreH2.create();
-        Cache cache = new CacheImpl(cacheCore);
+        CacheCore core = CacheCoreH2.create("unittest-1");
+        Cache cache = new CacheImpl(core);
+        f = new QueryExecutionFactoryCache(f, cache);
 
-        f = new QueryExecutionFactoryCache(f);
-        */
-        // TBD
+        ResultSet rs = f.createQueryExecution("Select * {?s ?p ?o .} limit 3").execSelect();
+        ResultSetFormatter.outputAsCSV(System.out, rs);
+
+        rs = f.createQueryExecution("Select * {?s ?p ?o .} limit 3").execSelect();
+        ResultSetFormatter.outputAsCSV(System.out, rs);
     }
 
     @Test

@@ -33,10 +33,10 @@ public class CacheCoreH2
     enum Query
         implements QueryString
     {
-        CREATE("\"CREATE TABLE IF NOT EXISTS query_cache(query_hash BINARY PRIMARY KEY, query_string VARCHAR(20000), data CLOB, time TIMESTAMP)"),
+        CREATE("CREATE TABLE IF NOT EXISTS query_cache(query_hash BINARY PRIMARY KEY, query_string VARCHAR(15000), data CLOB, time TIMESTAMP)"),
         LOOKUP("SELECT * FROM query_cache WHERE query_hash=? LIMIT 1"),
         INSERT("INSERT INTO query_cache VALUES(?,?,?,?)"),
-        UPDATE("UPDATE query_cache SET TRIPLES=?, STORE_TIME=? WHERE query_hash=?"),
+        UPDATE("UPDATE query_cache SET data=?, time=? WHERE query_hash=?"),
         ;
 
         private String queryString;
@@ -56,6 +56,12 @@ public class CacheCoreH2
 
 	private Connection conn;
 
+
+    public static CacheCoreH2 create(String dbName)
+            throws ClassNotFoundException, SQLException
+    {
+        return create(true, "cache/sparql", dbName, 1 * 24 * 60 * 60 * 1000);
+    }
 
     /**
      * Loads the driver
@@ -84,6 +90,12 @@ public class CacheCoreH2
     {
         super(Arrays.asList(Query.values()));
 
+        try {
+            conn.createStatement().executeUpdate(Query.CREATE.getQueryString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         setConnection(conn);
 
         this.lifespan = lifespan;
@@ -106,7 +118,7 @@ public class CacheCoreH2
 
         try {
             if(rs.next()) {
-                Timestamp timestamp = rs.getTimestamp("store_time");
+                Timestamp timestamp = rs.getTimestamp("time");
                 Clob data = rs.getClob("data");
 
                 return new CacheResourceSql(timestamp.getTime(), lifespan, rs, data);
@@ -152,6 +164,8 @@ public class CacheCoreH2
                 rs.close();
             }
         }
+
+        //return lookup(queryString);
     }
 
 

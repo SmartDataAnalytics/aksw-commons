@@ -1,8 +1,13 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
 import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.rdf.model.Model;
 
-import java.sql.ResultSet;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 /**
  * @author Claus Stadler
@@ -22,21 +27,75 @@ public class CacheImpl
 
     @Override
     public void write(String queryString, ResultSet resultSet) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        try {
+            _write(queryString, resultSet);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void _write(String queryString, final ResultSet resultSet) throws IOException {
+        PipedInputStream in = new PipedInputStream();
+        final PipedOutputStream out = new PipedOutputStream(in);
+        new Thread(
+          new Runnable(){
+            public void run(){
+                ResultSetFormatter.outputAsXML(out, resultSet);
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+          }
+        ).start();
+        cacheCore.write(queryString, in);
     }
 
     @Override
     public void write(Query query, ResultSet resultSet) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        write(query.toString(), resultSet);
+    }
+
+    @Override
+    public void write(String queryString, final Model model) {
+        try {
+            _write(queryString, model);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void _write(String queryString, final Model model) throws IOException {
+        PipedInputStream in = new PipedInputStream();
+        final PipedOutputStream out = new PipedOutputStream(in);
+        new Thread(
+          new Runnable(){
+            public void run(){
+                model.write(out, "N-TRIPLES");
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+          }
+        ).start();
+        cacheCore.write(queryString, in);
+    }
+
+    @Override
+    public void write(Query query, Model model) {
+        write(query, model);
     }
 
     @Override
     public CacheResource lookup(String queryString) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return cacheCore.lookup(queryString);
     }
 
     @Override
     public CacheResource lookup(Query query) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return cacheCore.lookup(query.toString());
     }
 }
