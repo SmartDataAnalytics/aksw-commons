@@ -63,6 +63,12 @@ public class CacheCoreH2
         return create(true, "cache/sparql", dbName, 1 * 24 * 60 * 60 * 1000);
     }
 
+    public static CacheCoreH2 create(String dbName, long lifespan)
+            throws ClassNotFoundException, SQLException
+    {
+        return create(true, "cache/sparql", dbName, lifespan);
+    }
+
     /**
      * Loads the driver
      */
@@ -101,7 +107,7 @@ public class CacheCoreH2
         this.lifespan = lifespan;
     }
 
-    public CacheResource lookup(String queryString)
+    public synchronized CacheResource lookup(String queryString)
     {
         try {
             return _lookup(queryString);
@@ -134,7 +140,7 @@ public class CacheCoreH2
         return null;
     }
 
-    public void write(String queryString, InputStream in) {
+    public synchronized void write(String queryString, InputStream in) {
         try {
             _write(queryString, in);
         } catch (SQLException e) {

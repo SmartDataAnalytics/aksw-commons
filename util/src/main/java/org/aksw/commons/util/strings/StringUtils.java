@@ -246,11 +246,14 @@ public class StringUtils
     }
     */
 
+    /**
+     * calculate md5 hash of the string
+     * 
+     * @param bytes
+     * @return
+     */
     public static String md5Hash(byte[] bytes)
     {
-        // calculate md5 hash of the string (code is somewhat
-        // difficult to read, but there doesn't seem to be a
-        // single function call in Java for md5 hashing)
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
@@ -261,12 +264,18 @@ public class StringUtils
         md5.update(bytes);
         byte[] result = md5.digest();
 
-        StringBuffer hexString = new StringBuffer();
+        String hexString = "";
         for (int i = 0; i < result.length; i++) {
-            hexString.append(Integer.toHexString(0xFF & result[i]));
+            int value = 0xff & result[i];
+
+            if(value < 16) {
+                hexString += "0";
+            }
+
+            hexString += Integer.toHexString(value);
         }
-        String str = hexString.toString();
-        return str;
+
+        return hexString;
     }
 
     public static String md5Hash(String string) {
