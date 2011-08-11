@@ -51,18 +51,22 @@ public class QueryExecutionCache
                 logger.warn("Error communicating with backend", e);
 
                 if(resource != null) {
+                    //logger.trace("Cache hit for " + queryString);
                     return resource.asResultSet();
                 } else {
                     throw new RuntimeException(e);
                 }
             }
 
+            logger.trace("Cache write: " + queryString);
             cache.write(queryString, rs);
             resource = cache.lookup(queryString);
             if(resource == null) {
                 throw new RuntimeException("Cache error: Lookup of just written data failed");
             }
 
+        } else {
+            logger.trace("Cache hit: " + queryString);
         }
 
         return resource.asResultSet();
@@ -96,11 +100,14 @@ public class QueryExecutionCache
                 }
             }
 
+            logger.trace("Cache write: " + queryString);
             cache.write(queryString, model);
             resource = cache.lookup(queryString);
             if(resource == null) {
                 throw new RuntimeException("Cache error: Lookup of just written data failed");
             }
+        } else {
+            logger.trace("Cache hit: " + queryString);
         }
 
         return resource.asModel(result);

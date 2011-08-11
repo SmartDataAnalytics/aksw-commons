@@ -17,7 +17,9 @@ import org.aksw.commons.sparql.api.delay.core.QueryExecutionFactoryDelay;
 import org.aksw.commons.sparql.api.http.QueryExecutionFactoryHttp;
 import org.aksw.commons.sparql.api.model.QueryExecutionFactoryModel;
 import org.aksw.commons.sparql.api.pagination.core.QueryExecutionFactoryPaginated;
+import org.apache.log4j.PropertyConfigurator;
 import org.junit.Test;
+import sun.reflect.generics.tree.VoidDescriptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -158,24 +160,104 @@ qs.getLiteral("count").getInt();
     public void testHttpDelayCache()
         throws Exception
     {
-        QueryExecutionFactory f = createService();
+        PropertyConfigurator.configure("log4j.properties");
 
-        long delay = 5000;
-        f = new QueryExecutionFactoryDelay(f, delay);
+        /*
+        System.out.println(Integer.toHexString(0));
 
-        CacheCore core = CacheCoreH2.create("unittest-1");
+        if(true) {
+            System.exit(666);
+        }*/
+
+        Model model = ModelFactory.createDefaultModel();
+        model.add(RDF.type, RDF.type, RDF.type);
+        model.add(RDF.List, RDF.type, RDF.List);
+
+        QueryExecutionFactory f = new QueryExecutionFactoryModel(model);
+
+        long delay = 50;
+        //f = new QueryExecutionFactoryDelay(f, delay);
+
+        CacheCore core = CacheCoreH2.create("unittest-1", 10);
         Cache cache = new CacheImpl(core);
         f = new QueryExecutionFactoryCache(f, cache);
 
+
+        Thread[] threads = new Thread[] {
+                new QueryThread(f, "Select * {?s ?p ?o .}", true),
+                new QueryThread(f, "Select * {?s a ?o .}", true)
+        };
+
+        for(Thread thread : threads) {
+            thread.start();
+        }
+
+        Thread.sleep(10000);
+
+        for(Thread thread : threads) {
+            thread.interrupt();
+        }
+
+        Thread.sleep(1000);
+        System.exit(0);
+
+
+        /*
         ResultSet rs = f.createQueryExecution("Select * {?s ?p ?o .} limit 3").execSelect();
         ResultSetFormatter.outputAsCSV(System.out, rs);
 
         rs = f.createQueryExecution("Select * {?s ?p ?o .} limit 3").execSelect();
         ResultSetFormatter.outputAsCSV(System.out, rs);
+
+        Model ma = f.createQueryExecution("Construct {?s ?p ?o } {?s ?p ?o .} limit 3").execConstruct();
+        ma.write(System.out, "N-TRIPLES");
+
+
+        Model mb = f.createQueryExecution("Construct {?s ?p ?o } {?s ?p ?o .} limit 3").execConstruct();
+        mb.write(System.out, "N-TRIPLES");
+*/
     }
 
     @Test
     public void testHttpDelayCachePagination() {
         // TBD
+    }
+}
+
+
+
+class QueryThread
+    extends Thread
+{
+    private String queryString;
+    private QueryExecutionFactory factory;
+    private boolean queryType;
+
+    private boolean isCancelled = false;
+
+    public QueryThread(QueryExecutionFactory factory, String queryString, boolean queryType) {
+        this.factory = factory;
+        this.queryString = queryString;
+        this.queryType = queryType;
+    }
+
+    @Override
+    public void interrupt() {
+        this.isCancelled = true;
+        super.interrupt();
+    }
+
+    @Override
+    public void run() {
+        while(!isCancelled) {
+            QueryExecution qe = factory.createQueryExecution(queryString);
+
+            if(queryType == true) {
+                ResultSet rs = qe.execSelect();
+                ResultSetFormatter.consume(rs);
+            } else {
+                Model m = qe.execConstruct();
+            }
+        }
     }
 }
