@@ -8,9 +8,30 @@ import java.util.*;
  * Created by Claus Stadler
  * Date: Oct 9, 2010
  * Time: 5:43:50 PM
+ * Updated by Konrad Höffner 12.8.2011
  */
 public class RandomUtils
 {
+	/** Returns a random sample of the given universe. If n <= universe.length, then Arrays.copyOf of the universe is returned.
+	 * The implementation runs in O(n) (aside from the copy).
+	 * @author Konrad Höffner*/
+	public static <T> T[] randomSample(T[] universe, int n)
+	{
+		int m = universe.length;
+		if(m<=n) return universe.clone();
+		// new T[n] does not work because you cannot create a generic array
+		T[] sample =  Arrays.copyOf(universe, n);
+	    int rndIndex;
+	     Random rnd = new Random();	  
+	     for (int i = 0; i < n; i++)
+	     {
+	         rndIndex = rnd.nextInt(m - i);
+	         sample[i] = universe[rndIndex];
+	         universe[rndIndex] = universe[m - i -1];
+	     }	  	     		
+		return sample;
+	}
+
     /**
      * Extracts a random sample of a specified maximum size from the given collection.
      * Warning: Shuffles elements of the source list.
