@@ -1,6 +1,8 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
 import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.engine.QueryIterator;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
@@ -10,8 +12,11 @@ import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
 import com.hp.hpl.jena.sparql.serializer.SerializationContext;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
+import org.aksw.commons.sparql.api.pagination.extra.PaginationState;
 import org.openjena.atlas.io.IndentedWriter;
 import org.openjena.atlas.lib.Closeable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.transform.Result;
 import java.util.Iterator;
@@ -33,6 +38,9 @@ import java.util.List;
 public class QueryExecutionPaginated
         extends QueryExecutionDecorator
 {
+    private static final Logger logger = LoggerFactory.getLogger(QueryExecutionPaginated.class);
+
+
     private QueryExecutionFactory factory;
     private Query query;
     private long pageSize;
@@ -67,6 +75,36 @@ public class QueryExecutionPaginated
         ResultSet rs = ResultSetFactory.create(itClosable, resultVars);
 
         return rs;
+    }
+
+
+    @Override
+    public Model execConstruct() {
+        return execConstruct(ModelFactory.createDefaultModel());
+    }
+
+    @Override
+    public Model execConstruct(Model result) {
+        PaginationState state = new PaginationState(query, pageSize);
+
+        Query query;
+        try {
+            while((query = state.next()) != null) {
+                current = factory.createQueryExecution(query);
+
+                logger.trace("Executing query: " + query);
+                Model tmp = current.execConstruct();
+                if(tmp.isEmpty()) {
+                    break;
+                }
+
+                result.add(tmp);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return result;
     }
 }
 

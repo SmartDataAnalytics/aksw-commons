@@ -18,6 +18,7 @@ import org.aksw.commons.sparql.api.http.QueryExecutionFactoryHttp;
 import org.aksw.commons.sparql.api.model.QueryExecutionFactoryModel;
 import org.aksw.commons.sparql.api.pagination.core.QueryExecutionFactoryPaginated;
 import org.apache.log4j.PropertyConfigurator;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import sun.reflect.generics.tree.VoidDescriptor;
 
@@ -31,6 +32,11 @@ import java.util.List;
  *         Time: 12:27 AM
  */
 public class SparqlTest {
+
+    @BeforeClass
+    public static void setUp() {
+        PropertyConfigurator.configure("log4j.properties");
+    }
 
     public QueryExecutionFactory createService() {
         String service = "http://dbpedia.org/sparql";
@@ -98,8 +104,41 @@ public class SparqlTest {
 
     }
 
+
+    @Test
+    public void testPaginationSelectConstruct() {
+
+        System.out.println("Starting testPagination");
+
+        Model model = ModelFactory.createDefaultModel();
+        model.add(RDF.type, RDF.type, RDF.type);
+        model.add(RDF.List, RDF.type, RDF.List);
+        model.add(RDF.Seq, RDF.type, RDF.Seq);
+
+        QueryExecutionFactory f = new QueryExecutionFactoryModel(model);
+
+
+        //QueryExecutionFactory f = createService();
+        //f = new QueryExecutionFactoryDelay(f, 5000);
+
+
+        f = new QueryExecutionFactoryPaginated(f, 1);
+
+        String queryString = "Construct { ?s a ?o } { ?s a ?o }";
+
+        Query query = QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
+
+        QueryExecution q = f.createQueryExecution(queryString);
+        Model result = q.execConstruct();
+
+        model.write(System.out, "N-TRIPLES");
+        System.out.println("Blah");
+        result.write(System.out, "N-TRIPLES");
+        //assertEquals(model, result);
+    }
+
     //@Test
-    public void testPaginationComplex() {
+    public void testPaginationSelectComplex() {
         System.out.println("Starting testPagination");
 
         Model model = ModelFactory.createDefaultModel();
@@ -156,7 +195,7 @@ qs.getLiteral("count").getInt();
     }
 
 
-    @Test
+    //@Test
     public void testHttpDelayCache()
         throws Exception
     {
