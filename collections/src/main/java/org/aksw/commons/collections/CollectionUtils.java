@@ -64,13 +64,13 @@ public class CollectionUtils {
 	 * Based on <a href="http://stackoverflow.com/questions/109383/how-to-sort-a-mapkey-value-on-the-values-in-java"/>
 	 * Stack Overflow: How to sort a Map<Key, Value> on the values in Java?<a/> .
 	 * @author Konrad Höffner */
-	static class ValueComparator<T extends Comparable<T>> implements Comparator<T>
+	static class ValueComparator<S,T extends Comparable<T>> implements Comparator<S>
 	{
-		Map<?,T> base;
-		public ValueComparator(Map<?, T> base) {this.base = base;}
+		Map<S,T> base;
+		public ValueComparator(Map<S, T> base) {this.base = base;}
 
 		@Override
-		public int compare(T t, T u) {return base.get(t). compareTo(base.get(u));}
+		public int compare(S s, S t) {return base.get(s). compareTo(base.get(t));}
 	}
 
 }
