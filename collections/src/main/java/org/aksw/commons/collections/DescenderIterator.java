@@ -8,8 +8,11 @@ package org.aksw.commons.collections;
  */
 
 import com.google.common.collect.Iterables;
+import com.hp.hpl.jena.graph.query.BufferPipe;
 
 import java.util.*;
+
+
 
 /**
  * Derived from
@@ -18,50 +21,34 @@ import java.util.*;
 public class DescenderIterator<T> implements Iterator<List<T>> {
 	// This list is used as a stack:
 	// Every current element may be descended into
-	private List<Collection<? extends T>> collections = new ArrayList<Collection<? extends T>>();
-	private List<Iterator<? extends T>> iterators;
+	//private List<Collection<? extends T>> collections = new ArrayList<Collection<? extends T>>();
+	private List<Iterator<? extends T>> iterators = new ArrayList<Iterator<? extends T>>();
+	private List<T> current = new ArrayList<T>();
 
-	private List<T> current;
 
-	private List<T> result;
+	//private List<T> result;
 	private List<T> resultView;
 
 	private Descender<T> descender;
 
-	private boolean hasNext = true;
+    //private Iterable<T> currentChildren = null;
+    private Iterator<T> childIterator = null;
+    private boolean canDescend = false;
+
+    //private boolean hasNext = true;
+    private boolean nextCalled = true;
+    private boolean finished = false;
 
 	public DescenderIterator(T base, Descender<T> descender) {
 		this.descender = descender;
 
+        iterators.add(Collections.singleton(base).iterator());
+        current.add(null);
 
-		Collection<T> collection = descender.getDescendCollection(base);
-		if(collection == null || collection.isEmpty()) {
-			hasNext = false;
-			return;
-		}
-
-		collections.add(collection);
-		init();
+        resultView = Collections.unmodifiableList(current);
 	}
 
 
-	private void init() {
-
-		iterators = new ArrayList<Iterator<? extends T>>();
-
-		current = new ArrayList<T>();
-		result = new ArrayList<T>();
-
-		/*
-		Iterator<? extends T> it = collections.get(0).iterator();
-		iterators.add(it);
-		current.add(it.next());
-		result.add(null);
-*/
-		addIterator(collections.get(0).iterator());
-
-		resultView = Collections.unmodifiableList(result);
-	}
 
 	public static <T> List<Integer> getIndexesOfEmptySubIterables(List<? extends Iterable<? extends T>> iterables) {
 		List<Integer> result = new ArrayList<Integer>();
@@ -78,71 +65,58 @@ public class DescenderIterator<T> implements Iterator<List<T>> {
 	}
 
 
+    public void loadChildren() {
+        if(current.isEmpty()) {
+            canDescend = false;
+            return;
+        }
+
+        if(childIterator != null) {
+            return;
+        }
+
+        T item = current.get(current.size() - 1);
+
+        childIterator = descender.getDescendCollection(item).iterator();
+        canDescend = childIterator.hasNext();
+    }
+
 	public boolean canDescend() {
-		return iterators.size() < collections.size();
+        loadChildren();
+        return canDescend;
 	}
 
 
+    /**
+     * Set the iterator to the children of the current node.
+     *
+     */
 	public void descend() {
-		int index = iterators.size();
+        loadChildren();
 
-		if (index >= collections.size()) {
-			throw new IndexOutOfBoundsException("Index: " + index + " Size: " + collections.size());
-		}
+        iterators.add(childIterator);
+        current.add(null);
+        nextCalled = true;
 
-		Iterator<? extends T> it = collections.get(index).iterator();
-
-
-		addIterator(it);
+        childIterator = null;
 	}
 
-	public void addIterator(Iterator<? extends T> it) {
-		iterators.add(it);
-		T item = it.next();
-		current.add(item);
-
-		Collection<T> collection = descender.getDescendCollection(item);
-		if(collection != null && !collection.isEmpty()) {
-			collections.add(collection);
-		}
-	}
 
 	@Override
 	public boolean hasNext() {
-		return hasNext;
+        prepareNext();
+		return !finished;
 	}
 
-	public List<T> peek()
-	{
-		adjustResultSize();
 
-		for (int i = 0; i < current.size(); ++i)
-			result.set(i, current.get(i));
+    private void prepareNext() {
+		if (finished || !nextCalled)
+			return;
 
-		return result;
-	}
+        nextCalled = false;
 
-	private void adjustResultSize()
-	{
-		// Adjust the size of the result
-		while(result.size() < current.size()) {
-			result.add(null);
-		}
-
-		while(result.size() > current.size()) {
-			result.remove(result.size() - 1);
-		}
-	}
-
-	@Override
-	public List<T> next() {
-		if (!hasNext)
-			return null;
-
-		adjustResultSize();
-
-		for (int i = 0; i < current.size(); ++i)
-			result.set(i, current.get(i));
+        //adjustResultSize();
+        childIterator = null;
 
 		// increment iterators
 		for (int i = iterators.size() - 1; i >= 0; --i) {
@@ -152,7 +126,7 @@ public class DescenderIterator<T> implements Iterator<List<T>> {
 			// next iterator - otherwise break.
 			if (!it.hasNext()) {
 				if(i == 0) {
-					hasNext = false;
+                    finished = true;
 					break;
 				}
 
@@ -163,13 +137,18 @@ public class DescenderIterator<T> implements Iterator<List<T>> {
 				T item = it.next();
 				current.set(i, item);
 
-				Collection<T> collection = descender.getDescendCollection(item);
-				if(collection != null && !collection.isEmpty()) {
-					collections.add(collection);
-				}
 				break;
 			}
 		}
+    }
+
+	@Override
+	public List<T> next() {
+        prepareNext();
+        nextCalled = true;
+
+        // TODO Potentially close the child iterator
+        childIterator = null;
 
 		return resultView;
 	}
