@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.aksw.commons</groupId>
             <artifactId>collections-scala</artifactId>
-        </dependency>
+       </dependency>  
     </dependencies>
     <build>
     	<pluginManagement>
