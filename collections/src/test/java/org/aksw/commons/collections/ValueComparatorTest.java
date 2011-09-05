@@ -11,7 +11,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-public class CollectionUtilsTest {
+public class ValueComparatorTest {
 
 	@Test
 	public void testValueComparator()
@@ -23,7 +23,7 @@ public class CollectionUtilsTest {
 		gehalt.put("Seter",1000);
 		List<String> personen = new ArrayList<String>(gehalt.keySet());
 		List<String> shouldBe = Arrays.asList(new String[] {"Seter", "Peter", "Beter", "Schmeter"});
-		Collections.sort(personen, new CollectionUtils.ValueComparator<String,Integer>(gehalt));
+		Collections.sort(personen, new ValueComparator<String,Integer>(gehalt));
 		assertTrue(personen.equals(shouldBe));
 	}
 }
