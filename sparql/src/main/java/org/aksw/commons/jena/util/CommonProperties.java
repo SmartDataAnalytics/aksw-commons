@@ -1,16 +1,13 @@
 package org.aksw.commons.jena.util;
 
 import java.util.LinkedHashMap;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.List;
 
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.Range;
 import net.sf.oval.guard.Guarded;
-
-import org.aksw.commons.collections.ValueComparator;
 
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
@@ -20,13 +17,46 @@ import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
 @Guarded
 public class CommonProperties
 {
-	/**@param endpoint the URL of the SPARQL endpoint to be queried
+	/** For a given SPARQL where clause, creates a table of their most common properties.
+	 * Also available with a file cache: {@link CachedCommonProperties}.
+	 * The following example shows the 5 most common properties for the where clause "?s a dbpedia-owl:Settlement".
+	 * <em>Attention: You may only use ?s, ?p and ?o as variable names for subject, predicate and object respectively.</em> 
+	 * <table class="sparql" border="1">
+  <tr>
+    <th>p</th>
+    <th>count</th>
+  </tr>
+  <tr>
+    <td>http://www.w3.org/1999/02/22-rdf-syntax-ns#type</td>
+    <td>50</td>
+
+  </tr>
+  <tr>
+    <td>http://www.w3.org/2000/01/rdf-schema#label</td>
+    <td>50</td>
+  </tr>
+  <tr>
+    <td>http://xmlns.com/foaf/0.1/page</td>
+
+    <td>50</td>
+  </tr>
+  <tr>
+    <td>http://www.w3.org/2000/01/rdf-schema#comment</td>
+    <td>49</td>
+  </tr>
+  <tr>
+
+    <td>http://purl.org/dc/terms/subject</td>
+    <td>49</td>
+  </tr>
+</table>
+	@see CachedCommonProperties
+	 * @param endpoint the URL of the SPARQL endpoint to be queried
 	 * @param where the contents of a SPARQL select "where" clause <em>which may only use 
 	 * ?s, ?p and ?o as variable names for subject, predicate and object.</em>
 	 * @param threshold a value between 0 and 1, specifying what fraction of the instances must have this property 
 	 * for it to be counted as common property. Set to null if you want no restriction on this. 
 	 * @param maxResultSize a non-negative integer value, specifying the maximum amount of properties to return.
-	 * If there are more than {@link limit} after the exclusion with {@threshold}, the most common properties of those are returned. 
 	 * @param sampleSize the number of instances whose triples are examined. Set to null to look at all triples (may take a long time).
 	 * On the other hand, using a sample instead of all data may give a wrong result even for a big sample size because the sample is not random
 	 * but the selection depends on the SPARQL server (uses Virtuoso SPARQL for subqueries).
