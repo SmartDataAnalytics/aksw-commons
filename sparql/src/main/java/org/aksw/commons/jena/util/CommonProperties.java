@@ -20,12 +20,12 @@ import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
 @Guarded
 public class CommonProperties
 {
-	
-// TODO: finish method / change from cache to direct endpoint querying
-	/**
+	/**@param endpoint the URL of the SPARQL endpoint to be queried
+	 * @param where the contents of a SPARQL select "where" clause <em>which may only use 
+	 * ?s, ?p and ?o as variable names for subject, predicate and object.</em>
 	 * @param threshold a value between 0 and 1, specifying what fraction of the instances must have this property 
 	 * for it to be counted as common property. Set to null if you want no restriction on this. 
-	 * @param limit a non-negative integer value, specifying the maximum amount of properties to return.
+	 * @param maxResultSize a non-negative integer value, specifying the maximum amount of properties to return.
 	 * If there are more than {@link limit} after the exclusion with {@threshold}, the most common properties of those are returned. 
 	 * @param sampleSize the number of instances whose triples are examined. Set to null to look at all triples (may take a long time).
 	 * On the other hand, using a sample instead of all data may give a wrong result even for a big sample size because the sample is not random
@@ -35,74 +35,35 @@ public class CommonProperties
 	 * Example: getCommonProperties(0.5) will only return properties which are used by at least half of the uris in the cache.
 	 */	
 	public static LinkedHashMap<String,Integer> getCommonProperties
-	(@NotEmpty @NotNull String endpoint,@NotEmpty @NotNull String where,
-	 @Range(min=0, max=1) Double threshold,@Min(1) Integer limit,@Min(1) Integer sampleSize)
+	(
+		@NotEmpty @NotNull String endpoint,
+		@NotEmpty @NotNull String where,
+		@Range(min=0, max=1) Double threshold,
+		@Min(1) Integer maxResultSize,
+		@Min(1) Integer sampleSize
+	)
 	{		
-		final String query = "select ?p, count(?p) as ?count where {{select ?s ?p where {"+where+". ?s ?p ?o.} limit "+sampleSize+"}} ORDER BY DESC(?count) limit "+limit;
+		final String sampleSizeLimit	= sampleSize	==null?"":("limit "+sampleSize);
+		final String maxResultSizeLimit	= maxResultSize	==null?"":("limit "+maxResultSize);
+		
+		final String innerSubquery = "select ?s where {"+where+"}"+sampleSizeLimit;
+		final String outerSubquery = "select distinct ?s ?p where {?s ?p ?o. {"+innerSubquery+"}}";		
+		final String query = "select ?p, count(?p) as ?count where {{"+outerSubquery+"}} ORDER BY DESC(?count) "+maxResultSizeLimit;
 		System.out.println(query);
 		final ResultSet rs = new QueryEngineHTTP(endpoint, query).execSelect();
 		final LinkedHashMap<String,Integer> commonProperties = new LinkedHashMap<String,Integer>();
 		//		final ValueComparator<String,Integer> valueComparator = new ValueComparator<String,Integer>(null);
-//		final SortedMap<String,Integer> commonProperties = new TreeMap<String,Integer>(valueComparator);
-//		valueComparator.setMap(commonProperties);		
-		
-		while(rs.hasNext())
+		//		final SortedMap<String,Integer> commonProperties = new TreeMap<String,Integer>(valueComparator);
+		//		valueComparator.setMap(commonProperties);		
+
+		final int minCount = (int)Math.ceil(threshold * sampleSize);
+		while(rs.hasNext()&&commonProperties.size()<maxResultSize)
 		{
 			QuerySolution qs = rs.next();
-			commonProperties.put(qs.getResource("p").getURI(), Integer.valueOf(qs.getLiteral("count").getLexicalForm()));
+			int count = Integer.valueOf(qs.getLiteral("count").getLexicalForm());
+			if(count<minCount) {break;}
+			commonProperties.put(qs.getResource("p").getURI(), count);
 		}
-		System.out.println(commonProperties);
-		//		String query = ;
-//		
-//		final HashMap<String,Integer> propertyOccurrences = new HashMap<String,Integer>();
-//		for(String uri: this.instanceMap.keySet())
-//		{
-//			Instance instance = instanceMap.get(uri);
-//			for(String property: instance.properties.keySet())
-//			{
-//				if(!propertyOccurrences.containsKey(property))
-//				{
-//					propertyOccurrences.put(property, 1);
-//				} else
-//				{
-//					propertyOccurrences.put(property,propertyOccurrences.get(property)+1);
-//				}
-//			}
-//		}
-//
-//		List<String> allProperties = new LinkedList<String>(propertyOccurrences.keySet());		
-//		// sort by occurrence in descending order
-//		
-//		Collections.sort(allProperties,
-//				new Comparator<String>()
-//				{
-//					@Override
-//					public int compare(String p1, String p2)
-//					{
-//						int c = -(new Integer(propertyOccurrences.get(p1)).compareTo(propertyOccurrences.get(p2))); 
-//						// natural order is ascending but we want descending order, thats why the minus is there
-//						if(c!=0) return c;
-//						return p1.compareTo(p2);
-//					}
-//				}
-//		);
-//		
-//		//for(String property:allProperties) {System.out.println("\\nolinkurl{"+PrefixHelper.abbreviate(URLDecoder.decode(property))+"}			&"+propertyOccurrences.get(property)+"\\\\");}
-//		
-//		if(threshold==null&&limit==null){return propertyOccurrences.keySet().toArray(new String[0]);}
-//
-//		int absoluteThreshold = (int) (threshold * instanceMap.size());  				
-//
-//		List<String> properties = new LinkedList<String>();
-//		
-//		for(String property: allProperties)
-//		{
-//			if(properties.size()>=limit) break;
-//			if(propertyOccurrences.get(property)>=absoluteThreshold) {properties.add(property);}			
-//		}
-//		
-//		
-//		return properties.toArray(new String[0]);		
 		return commonProperties;
 	}
 }
