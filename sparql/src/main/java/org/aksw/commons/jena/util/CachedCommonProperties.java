@@ -20,16 +20,20 @@ import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.Range;
 import net.sf.oval.guard.Guarded;
 
-/** @author Konrad Höffner */
+/** Cached version of {@link CommonProperties}.
+ * The constructor tries to load the cache from the given file. If the file does not exist, an empty cache is created and 
+ * filled with every cache miss. Call {@link save()} to write the cache on disk. Set {@link offline} to true if you want to 
+ * use the cached values only. Values from the cache are used regardless of the original parameters for {@link threshold}, {@link endpoint} and {@link sampleSize}.
+ *  @author Konrad Höffner */
 @Guarded(applyFieldConstraintsToConstructors=true)
 public class CachedCommonProperties
 {
-	final Map<Integer,LinkedHashMap<String,Integer>> whereToProperties;
-	final @NotNull File cacheFile;
-	final @NotNull @NotEmpty String endpoint;
-	final @Range(min=0, max=1) Double threshold;
-	final @Min(1) Integer maxResultSize;
-	final @Min(1) Integer sampleSize;
+	private final Map<Integer,LinkedHashMap<String,Integer>> whereToProperties;
+	private final @NotNull File cacheFile;
+	private final @NotNull @NotEmpty String endpoint;
+	private final @Range(min=0, max=1) Double threshold;
+	private final @Min(1) Integer maxResultSize;
+	private final @Min(1) Integer sampleSize;
 
 	public boolean offline = false;
 	
@@ -63,7 +67,7 @@ public class CachedCommonProperties
 	}
 
 	@SuppressWarnings("unchecked")
-	public HashMap<Integer,LinkedHashMap<String,Integer>> load() throws IOException
+	private HashMap<Integer,LinkedHashMap<String,Integer>> load() throws IOException
 	{
 		InputStream fis = null;
 		fis = new FileInputStream( cacheFile);
@@ -78,7 +82,7 @@ public class CachedCommonProperties
 	{
 		OutputStream fos = new FileOutputStream( cacheFile);
 		ObjectOutputStream o = new ObjectOutputStream( fos );
-		o.writeObject(whereToProperties);
+		synchronized(whereToProperties) {	o.writeObject(whereToProperties);}
 		fos.close();
 	}
 }
