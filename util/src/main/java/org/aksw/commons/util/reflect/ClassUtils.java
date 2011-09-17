@@ -114,6 +114,30 @@ public class ClassUtils {
     }
 
     /**
+     * Including return types
+     *
+     * @param ra
+     * @param rb
+     * @param a
+     * @param b
+     * @return
+     */
+    public static Integer[] getDistance(Class<?> ra, Class<?> rb, Class<?>[] a, Class<?>[] b)
+    {
+        int n = Math.min(a.length, b.length);
+
+        Integer[] result = new Integer[n + 1];
+        result[0] = getDistance(rb, ra);
+
+        for(int i = 0; i < n; ++i) {
+            Integer d = getDistance(a[i], b[i]);
+            result[i + 1] = d;
+        }
+
+        return  result;
+    }
+
+    /**
      *
      *
      * @param a
