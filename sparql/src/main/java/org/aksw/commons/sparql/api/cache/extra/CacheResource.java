@@ -20,4 +20,5 @@ public interface CacheResource
 
     Model asModel(Model result);
     ResultSet asResultSet();
+    boolean asBoolean();
 }
