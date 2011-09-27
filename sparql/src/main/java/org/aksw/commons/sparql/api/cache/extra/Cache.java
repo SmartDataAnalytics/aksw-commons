@@ -18,6 +18,9 @@ public interface Cache
 
     void write(String queryString, Model model);
     void write(Query query, Model model);
+    
+    void write(String queryString, boolean value);
+    void write(Query query, boolean value);
 
     CacheResource lookup(String queryString);
     CacheResource lookup(Query query);

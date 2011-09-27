@@ -117,6 +117,23 @@ public class CacheResourceSql
 
         return result;
     }
+    
+    @Override
+    public boolean asBoolean() {
+        try {
+            return _asBoolean();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean _asBoolean() throws SQLException {
+        boolean result = Boolean.parseBoolean(clob.getSubString(1l, (int)clob.length()));
+
+        this.close();
+
+        return result;
+    }
 
 
     @Override
