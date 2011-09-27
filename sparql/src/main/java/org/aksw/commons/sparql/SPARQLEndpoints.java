@@ -22,7 +22,7 @@ public class SPARQLEndpoints
 	 * "http://dbpedia/sparql" -> "http://dbpedia/resource".
 	 * This is useful to guess from which endpoint an instance originally came from.
 	 * */
-	public static String getMostCommonResourcePrefix(String endpoint)
+	public static String prefix(String endpoint)
 	{
 		if(endpointToPrefixMap==null) {initMap();}
 		return endpointToPrefixMap.get(endpoint);

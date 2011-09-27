@@ -10,7 +10,7 @@ public class SPARQLEndpointsTest
 	@Test
 	public void testGetMostCommonResourcePrefix()
 	{
-		assertTrue(SPARQLEndpoints.getMostCommonResourcePrefix(SPARQLEndpoints.DBPEDIA).equals("http://dbpedia.org/resource/"));
+		assertTrue(SPARQLEndpoints.prefix(SPARQLEndpoints.DBPEDIA).equals("http://dbpedia.org/resource/"));
 	}
 
 }
