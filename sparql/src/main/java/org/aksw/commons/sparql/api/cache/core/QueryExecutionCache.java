@@ -1,18 +1,17 @@
 package org.aksw.commons.sparql.api.cache.core;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
+import java.io.IOException;
+
 import org.aksw.commons.sparql.api.cache.extra.Cache;
 import org.aksw.commons.sparql.api.cache.extra.CacheResource;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 
 /**
@@ -112,6 +111,40 @@ public class QueryExecutionCache
 
         return resource.asModel(result);
     }
+    
+    public boolean doCacheBoolean()
+    {
+        CacheResource resource = cache.lookup(queryString);
+
+        boolean ret;
+        if(resource == null || resource.isOutdated()) {
+
+            try {
+                ret = getDecoratee().execAsk();
+            } catch(Exception e) {
+                logger.warn("Error communicating with backend", e);
+
+                if(resource != null) {
+                    //logger.trace("Cache hit for " + queryString);
+                    return resource.asBoolean();
+                } else {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            logger.trace("Cache write: " + queryString);
+            cache.write(queryString, ret);
+            resource = cache.lookup(queryString);
+            if(resource == null) {
+                throw new RuntimeException("Cache error: Lookup of just written data failed");
+            }
+
+        } else {
+            logger.trace("Cache hit: " + queryString);
+        }
+
+        return resource.asBoolean();
+    }
 
 
     @Override
@@ -141,6 +174,6 @@ public class QueryExecutionCache
 
      @Override
      public boolean execAsk() {
-         return super.execAsk();
+         return doCacheBoolean();
      }
 }
