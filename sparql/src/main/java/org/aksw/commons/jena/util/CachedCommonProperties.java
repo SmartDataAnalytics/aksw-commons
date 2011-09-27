@@ -49,7 +49,6 @@ public class CachedCommonProperties
 		return properties;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public CachedCommonProperties(File cacheFile, String endpoint, Double threshold, Integer maxResultSize, Integer sampleSize) throws IOException
 	{
 		this.cacheFile = cacheFile;
