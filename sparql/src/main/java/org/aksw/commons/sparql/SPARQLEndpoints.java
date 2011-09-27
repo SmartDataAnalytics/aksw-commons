@@ -1,5 +1,6 @@
 package org.aksw.commons.sparql;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class SPARQLEndpoints
@@ -11,7 +12,11 @@ public class SPARQLEndpoints
 	public static final String LINKEDMDB			= "http://data.linkedmdb.org/sparql";
 
 	private static Map<String,String> endpointToPrefixMap = null;	
-	private static void initMap() {for(String[] row: endpointToPrefix) {endpointToPrefixMap.put(row[0],row[1]);}}
+	private static void initMap()
+	{
+		endpointToPrefixMap = new HashMap<String,String>();
+		for(String[] row: endpointToPrefix) {endpointToPrefixMap.put(row[0],row[1]);}
+		}
 
 	/** @return the most common resource prefix for a sparql endpoint, e.g.
 	 * "http://dbpedia/sparql" -> "http://dbpedia/resource".
@@ -22,11 +27,11 @@ public class SPARQLEndpoints
 		if(endpointToPrefixMap==null) {initMap();}
 		return endpointToPrefixMap.get(endpoint);
 	}
-	
-private final static String[][] endpointToPrefix =
-{
-	{DBPEDIA,"http://dbpedia.org/resource/"},
-	{LINKEDGEODATA,"http://linkedgeodata.org/triplify/"},
-	{LINKEDMDB,"http://data.linkedmdb.org/resource/film/"},
-};
+
+	private final static String[][] endpointToPrefix =
+		{
+		{DBPEDIA,"http://dbpedia.org/resource/"},
+		{LINKEDGEODATA,"http://linkedgeodata.org/triplify/"},
+		{LINKEDMDB,"http://data.linkedmdb.org/resource/film/"},
+		};
 }
