@@ -10,6 +10,7 @@ public class SPARQLEndpoints
 	public static final String LINKEDGEODATA 		= "http://linkedgeodata.org/sparql";
 	public static final String LINKEDGEODATA_LIVE	= "http://live.linkedgeodata.org/sparql";
 	public static final String LINKEDMDB			= "http://data.linkedmdb.org/sparql";
+	public static final String FACTBOOK			= "http://www4.wiwiss.fu-berlin.de/factbook/sparql";
 
 	private static Map<String,String> endpointToPrefixMap = null;	
 	private static void initMap()
