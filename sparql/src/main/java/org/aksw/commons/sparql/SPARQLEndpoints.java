@@ -12,6 +12,12 @@ public class SPARQLEndpoints
 	public static final String LINKEDMDB			= "http://data.linkedmdb.org/sparql";
 	public static final String FACTBOOK			= "http://www4.wiwiss.fu-berlin.de/factbook/sparql";
 
+	public static String endpointName(String endpoint)
+	{
+		if(endpoint.startsWith("http://")) return endpoint.substring("http://".length()).replace("/sparql", "");
+		return "unknown"+endpoint!=null?(" ("+endpoint+")"):"";
+	}
+	
 	private static Map<String,String> endpointToPrefixMap = null;	
 	private static void initMap()
 	{
