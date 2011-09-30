@@ -47,8 +47,16 @@ public class CollectionUtils {
         return result;
     }
 
-    public static <T> Set<T> asSet(Collection<T> c)
+	public static <T> Set<T> asSet(Collection<T> c)
     {
-        return (c instanceof Set) ? (Set)c : new HashSet<T>(c);
+        return (c instanceof Set) ? (Set<T>)c : new HashSet<T>(c);
     }
+ 
+	/** Transforms an array into a Hashset. @author Konrad Höffner */
+	static <T> Set<T> asSet(T[] a)
+	{
+		Set<T> s = new HashSet<T>();
+		for(T e:a) {s.add(e);}
+		return s;
+	}
 }
