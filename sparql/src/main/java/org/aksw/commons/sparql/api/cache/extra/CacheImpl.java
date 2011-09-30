@@ -5,6 +5,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -86,7 +87,7 @@ public class CacheImpl
 
     @Override
     public void write(Query query, Model model) {
-        write(query, model);
+        write(query.toString(), model);
     }
 
     @Override
@@ -98,4 +99,25 @@ public class CacheImpl
     public CacheResource lookup(Query query) {
         return cacheCore.lookup(query.toString());
     }
+
+
+	@Override
+	public void write(String queryString, boolean value) {
+		try {
+            _write(queryString, value);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+		
+	}
+	
+	public void _write(String queryString, final boolean value) throws IOException {
+        cacheCore.write(queryString, new ByteArrayInputStream(String.valueOf(value).getBytes()));
+    }
+
+
+	@Override
+	public void write(Query query, boolean value) {
+		write(query.toString(), value);
+	}
 }
