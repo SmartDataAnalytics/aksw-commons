@@ -91,7 +91,6 @@ public class Conversion {
         }
     }
 
-
     public static String toStringNTriples(RDFGraph graph) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -110,7 +109,7 @@ public class Conversion {
         Set<RDFTriple> triples = extractTriples(graph);
 
         for(RDFTriple triple : triples) {
-           out.println(toStringNTriples(triple) + "\n");
+           out.println(toStringNTriples(triple));
         }
     }
 
@@ -140,13 +139,15 @@ public class Conversion {
 			if(n.getLang() != null && !n.getLang().isEmpty())
 				result += "@" + n.getLang().toLowerCase();
 
-			if(n.getDatatype() != null)
+			if(n.getDatatype() != null) {
 				result += "^^" + "<" + n.getDatatype() + ">";
+            }
 
 			return result;
 		}
-		else // resource
+		else { // resource
 			return  node.toString();
+        }
 	}
 
     public static String sparqlEscapeLiteral(String literal)
