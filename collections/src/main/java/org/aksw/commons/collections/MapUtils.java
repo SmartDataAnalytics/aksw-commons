@@ -1,5 +1,10 @@
 package org.aksw.commons.collections;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.thoughtworks.xstream.io.binary.Token;
+import org.apache.commons.collections15.MultiMap;
+import org.mindswap.pellet.KBLoader;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
@@ -47,6 +52,16 @@ public class MapUtils {
 
 		return true;
 	}
+
+    public static <K, V> Multimap<V, K> reverse(Map<K, V> map) {
+        Multimap<V, K> result = HashMultimap.create();
+
+        for(Map.Entry<K, V> entry : map.entrySet()) {
+            result.put(entry.getValue(), entry.getKey());
+        }
+
+        return result;
+    }
 
 	public static <K, V> V getOrElse(Map<? extends K, ? extends V> map, K key, V elze)
 	{

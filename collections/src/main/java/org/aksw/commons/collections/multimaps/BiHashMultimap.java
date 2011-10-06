@@ -83,6 +83,18 @@ public class BiHashMultimap<K, V>
 		return forward.get((K) key);
 	}
 
+    public boolean containsEntry(Object key, Object value) {
+        return forward.containsEntry(key, value);
+    }
+
+    public boolean containsValue(Object value) {
+        return forward.containsValue(value);
+    }
+
+    public boolean containsKey(Object key) {
+        return forward.containsKey(key);
+    }
+
 	@Override
 	public Set<Entry<K, V>> entries()
 	{
