@@ -52,13 +52,9 @@ public class MultiMethod
 		return (X)ClassUtils.forceInvoke(o, m, args);
 	}
 
-
-	public static <T> Method findInvocationMethod(Class<T> clazz, String name, Object ...args)
-	{
-		Class<?>[] typeSignature = ClassUtils.getTypeSignature(args);
-
-
-		Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
+    public static <T> Map<Method, Integer[]> findMethodCandidates(Class<T> clazz, String name, Class<?> ...typeSignature)
+    {
+    	Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
 		for(Method m : ClassUtils.getAllNonOverriddenlMethods(clazz)) {
 			if(!m.getName().equals(name)) {
 				continue;
@@ -92,13 +88,43 @@ public class MultiMethod
 			}
 		}
 
+        return bestMatches;
+    }
+
+
+    public static <T> Method findMethodByParams(Class<T> clazz, String name, Class<?> ...typeSignature)
+    {
+        Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
+
+		if(bestMatches.size() == 0) {
+			throw new NoMethodInvocationException(name, null);
+		} else if(bestMatches.size() > 1) {
+			throw new MultipleMethodsInvocationException(name, null, bestMatches.keySet());
+		}
+
+		return bestMatches.entrySet().iterator().next().getKey();
+    }
+
+    @Deprecated // Use findMethodByArgs instead
+    public static <T> Method findInvocationMethod(Class<T> clazz, String name, Object ...args)
+    {
+        return findMethodByArgs(clazz, name, args);
+    }
+
+
+	public static <T> Method findMethodByArgs(Class<T> clazz, String name, Object ...args)
+	{
+		Class<?>[] typeSignature = ClassUtils.getTypeSignature(args);
+
+        Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
+
 		if(bestMatches.size() == 0) {
 			throw new NoMethodInvocationException(name, args);
 		} else if(bestMatches.size() > 1) {
 			throw new MultipleMethodsInvocationException(name, args, bestMatches.keySet());
 		}
-
-		return bestMatches.entrySet().iterator().next().getKey();
+        
+        return bestMatches.entrySet().iterator().next().getKey();
 	}
 
 

@@ -17,6 +17,10 @@ public interface ISetMultimap<K, V>
 	Set<V> get(Object key);
 	
 	Set<Entry<K, V>> entries();
-	
+
+    boolean containsEntry(Object key, Object value);
+    boolean containsValue(Object value);
+    boolean containsKey(Object key);
+
 	void clear();
 }
