@@ -22,5 +22,7 @@ public interface ISetMultimap<K, V>
     boolean containsValue(Object value);
     boolean containsKey(Object key);
 
+    int size();
+
 	void clear();
 }

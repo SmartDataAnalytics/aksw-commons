@@ -7,7 +7,17 @@ import java.util.Map;
 import java.util.Set;
 
 import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.sdb.core.Generator;
+import com.hp.hpl.jena.sdb.core.Gensym;
+import com.hp.hpl.jena.sparql.core.BasicPattern;
+import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.engine.QueryExecutionBase;
+import com.hp.hpl.jena.sparql.syntax.Element;
+import com.hp.hpl.jena.sparql.syntax.ElementGroup;
+import com.hp.hpl.jena.sparql.syntax.ElementPathBlock;
+import com.hp.hpl.jena.xmloutput.impl.Basic;
 import org.aksw.commons.jena.util.QueryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +32,32 @@ import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Template;
 import com.hp.hpl.jena.sparql.util.ModelUtils;
 import com.hp.hpl.jena.update.UpdateRequest;
+
+
+class TestQueryExecutionBaseSelect
+    extends QueryExecutionBaseSelect
+{
+
+    public TestQueryExecutionBaseSelect(Query query) {
+        super(query);
+    }
+
+    @Override
+    protected QueryExecution executeCoreSelectX(Query query) {
+        System.out.println("Got a query string: " + query);
+        return null;
+    }
+
+    public static void main(String[] args) {
+        Query query = QueryFactory.create("Describe ?x <http://aaaa> {?x a <http://blah> .}");
+        query = QueryFactory.create("Describe <http://aaaa>");
+        query = QueryFactory.create("Describe");
+        TestQueryExecutionBaseSelect x = new TestQueryExecutionBaseSelect(query);
+
+        x.execDescribe();
+
+    }
+}
 
 /**
  * A Sparqler-class that implements ask, describe, and construct
@@ -46,6 +82,7 @@ public abstract class QueryExecutionBaseSelect
 
     private Query query;
 
+
     public QueryExecutionBaseSelect(Query query) {
         super(null);
         this.query = query;
@@ -61,6 +98,11 @@ public abstract class QueryExecutionBaseSelect
         }
 
         this.decoratee = executeCoreSelectX(query);
+
+        if(this.decoratee == null) {
+            throw new RuntimeException("Failed to obtain a QueryExecution for query: " + query);
+        }
+
         return decoratee.execSelect();
     }
 
@@ -89,44 +131,144 @@ public abstract class QueryExecutionBaseSelect
 		return rowCount > 0;
 	}
 
+    @Override
+    public Model execDescribe() {
+        return execDescribe(ModelFactory.createDefaultModel());
+    }
+
+    /**
+     * A describe query is translated into a construct query.
+     *
+     * TODO Add support for concise bounded descriptions...
+     *
+     * @param result
+     * @return
+     */
 	@Override
 	public Model execDescribe(Model result) {
-		throw new RuntimeException("Sorry, DESCRIBE is not implemted yet.");
+        if (!query.isDescribeType()) {
+            throw new RuntimeException("DESCRIBE query expected. Got: ["
+                    + query.toString() + "]");
+        }
+
+        // TODO Right now we only support describe with a single constant.
+
+        Element queryPattern = query.getQueryPattern();
+        if(query.getQueryPattern() != null || !query.getResultVars().isEmpty() || query.getResultURIs().size() > 1) {
+            throw new RuntimeException("Sorry, DESCRIBE is only implemented for a single resource argument");
+        }
+
+        Node node = query.getResultURIs().get(0);
+        Var p = Var.alloc("p");
+        Var o = Var.alloc("o");
+        Triple triple = new Triple(node, p, o);
+
+        BasicPattern basicPattern = new BasicPattern();
+        basicPattern.add(triple);
+
+        Template template = new Template(basicPattern);
+
+        ElementGroup elementGroup = new ElementGroup();
+        ElementPathBlock pathBlock = new ElementPathBlock();
+        elementGroup.addElement(pathBlock);
+
+        pathBlock.addTriple(triple);
+
+        Query query = new Query();
+        query.setQueryConstructType();
+        query.setConstructTemplate(template);
+        query.setQueryPattern(elementGroup);
+
+        return execConstruct(query, result);
+
+        /*
+        Generator generator = Gensym.create("xx_generated_var_");
+
+        Element queryPattern = query.getQueryPattern();
+        ElementPathBlock pathBlock;
+
+        if(queryPattern == null) {
+            ElementGroup elementGroup = new ElementGroup();
+
+            pathBlock = new ElementPathBlock();
+            elementGroup.addElement(pathBlock);
+        } else {
+
+            ElementGroup elementGroup = (ElementGroup)queryPattern;
+
+            pathBlock = (ElementPathBlock)elementGroup.getElements().get(0);
+        }
+
+        //Template template = new Template();
+        //template.
+
+        BasicPattern basicPattern = new BasicPattern();
+
+        System.out.println(queryPattern.getClass());
+
+        for(Node node : query.getResultURIs()) {
+            Var p = Var.alloc(generator.next());
+            Var o = Var.alloc(generator.next());
+
+            Triple triple = new Triple(node, p, o);
+
+            basicPattern.add();
+            //queryPattern.
+        }
+
+        for(String var : query.getResultVars()) {
+
+        }
+
+
+        Template template = new Template(basicPattern);
+
+
+        Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
+
+        ResultSet rs = executeCoreSelect(selectQuery);
+*/
+
+		//throw new RuntimeException("Sorry, DESCRIBE is not implemted yet.");
 	}
+
+    private Model execConstruct(Query query, Model result) {
+        if (!query.isConstructType()) {
+            throw new RuntimeException("CONSTRUCT query expected. Got: ["
+                    + query.toString() + "]");
+        }
+
+
+        //Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
+        query.setQueryResultStar(true);
+        ResultSet rs = executeCoreSelect(query);
+
+        // insertPrefixesInto(result) ;
+        Template template = query.getConstructTemplate();
+
+        // Build each template substitution as triples.
+        while(rs.hasNext()) {
+            Set<Triple> set = new HashSet<Triple>();
+            Map<Node, Node> bNodeMap = new HashMap<Node, Node>();
+            Binding binding = rs.nextBinding();
+            template.subst(set, bNodeMap, binding);
+
+            // Convert and merge into Model.
+            for (Iterator<Triple> iter = set.iterator(); iter.hasNext();) {
+                Triple t = iter.next();
+                Statement stmt = ModelUtils.tripleToStatement(result, t);
+                if (stmt != null) {
+                    result.add(stmt);
+                }
+            }
+        }
+
+        return result;
+    }
 
 	@Override
 	public Model execConstruct(Model result) {
-		if (!query.isConstructType()) {
-			throw new RuntimeException("CONSTRUCT query expected. Got: ["
-					+ query.toString() + "]");
-		}
-
-		
-		//Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
-		query.setQueryResultStar(true);
-		ResultSet rs = executeCoreSelect(query);
-
-		// insertPrefixesInto(result) ;
-		Template template = query.getConstructTemplate();
-
-		// Build each template substitution as triples.
-		while(rs.hasNext()) {
-			Set<Triple> set = new HashSet<Triple>();
-			Map<Node, Node> bNodeMap = new HashMap<Node, Node>();
-			Binding binding = rs.nextBinding();
-			template.subst(set, bNodeMap, binding);
-
-			// Convert and merge into Model.
-			for (Iterator<Triple> iter = set.iterator(); iter.hasNext();) {
-				Triple t = iter.next();
-				Statement stmt = ModelUtils.tripleToStatement(result, t);
-				if (stmt != null) {
-					result.add(stmt);
-				}
-			}
-		}
-		
-		return result;
+		return execConstruct(this.query, result);
 	}
 
 	@Override

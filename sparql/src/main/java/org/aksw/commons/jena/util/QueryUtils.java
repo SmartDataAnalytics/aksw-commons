@@ -14,16 +14,38 @@ import com.hp.hpl.jena.sparql.syntax.Element;
 
 public class QueryUtils {
 
+    /**
+     *
+     *
+     * @param pattern    a pattern of a where-clause
+     * @param resultVar  an optional result variable (used for describe queries)
+     * @return
+     */
+    public static Query elementToQuery(Element pattern, String resultVar) {
+
+        if ( pattern == null )
+            return null ;
+        Query query = new Query() ;
+        query.setQueryPattern(pattern) ;
+        query.setQuerySelectType() ;
+
+        if(resultVar == null) {
+            query.setQueryResultStar(true) ;
+        }
+
+        query.setResultVars() ;
+
+        if(resultVar != null) {
+            query.getResultVars().add(resultVar);
+        }
+
+        return query ;
+
+    }
+
 	public static Query elementToQuery(Element pattern)
 	{
-	    if ( pattern == null )
-	        return null ;
-	    Query query = new Query() ;
-	    query.setQueryPattern(pattern) ;
-	    query.setQuerySelectType() ;
-	    query.setQueryResultStar(true) ;
-	    query.setResultVars() ;
-	    return query ;
+        return elementToQuery(pattern, null);
 	}
 
 	/**

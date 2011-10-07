@@ -115,6 +115,10 @@ public class BiHashMultimap<K, V>
 		return forward.toString();
 	}
 
+    public int size() {
+        return forward.size();
+    }
+
 	@Override
 	public void clear()
 	{
