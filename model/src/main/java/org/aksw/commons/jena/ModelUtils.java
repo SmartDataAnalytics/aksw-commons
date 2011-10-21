@@ -232,11 +232,15 @@ public class ModelUtils {
 
 
     /**
-     * Decomposes a string into namespace-prefix and name.
-     * Always returns an array of size 2 containing non-null items.
-     * (zero-length rather than null)
+     * An efficient method for separating a URI into namespace and prefix,
+     * given a set of arbitrary namespace prefixes.
+     * Note: This method is mainly intended for a nice representation,
+     * as a decomposition with arbitrary prefixes may not work with cerain RDF
+     * serializations.
      *
-     * Warning: Not tested, might not work as expected.
+     * (e.g. <http://ex.org/this/is/a/test> with prefix p:<http://ex.org/this>
+     * becomes p:is/a/test)
+     *
      *
      * @param uri
      * @param prefixMap
