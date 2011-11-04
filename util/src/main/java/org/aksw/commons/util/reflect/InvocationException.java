@@ -9,11 +9,11 @@ abstract class InvocationException
 	extends RuntimeException
 {
     private String methodName;
-	private Object[] args;
+	private Class<?>[] types;
 
-	public InvocationException(String methodName, Object[] args)
+	public InvocationException(String methodName, Class<?>[] types)
 	{
-		this.args = args;
+		this.types = types;
         this.methodName = methodName;
 	}
 
@@ -23,14 +23,14 @@ abstract class InvocationException
     }
 
 
-	public Object[] getArgs()
+	public Object[] getTypes()
 	{
-		return args;
+		return types;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "InvocationException [args=" + java.util.Arrays.toString(args) + "]";
+		return "InvocationException [types=" + java.util.Arrays.toString(types) + "]";
 	}
 }

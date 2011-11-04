@@ -97,7 +97,7 @@ public class MultiMethod
         Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
 
 		if(bestMatches.size() == 0) {
-			throw new NoMethodInvocationException(name, null);
+			throw new NoMethodInvocationException(name, typeSignature);
 		} else if(bestMatches.size() > 1) {
 			throw new MultipleMethodsInvocationException(name, null, bestMatches.keySet());
 		}
@@ -119,9 +119,9 @@ public class MultiMethod
         Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
 
 		if(bestMatches.size() == 0) {
-			throw new NoMethodInvocationException(name, args);
+			throw new NoMethodInvocationException(name, typeSignature);
 		} else if(bestMatches.size() > 1) {
-			throw new MultipleMethodsInvocationException(name, args, bestMatches.keySet());
+			throw new MultipleMethodsInvocationException(name, typeSignature, bestMatches.keySet());
 		}
         
         return bestMatches.entrySet().iterator().next().getKey();
