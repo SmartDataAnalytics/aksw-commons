@@ -13,14 +13,14 @@ import java.util.Arrays;
 public class NoMethodInvocationException
 	extends InvocationException
 {
-	public NoMethodInvocationException(String methodName, Object[] args)
+	public NoMethodInvocationException(String methodName, Class<?>[] types)
 	{
-		super(methodName, args);
+		super(methodName, types);
 	}
 
 	@Override
 	public String toString()
 	{
-		return "No method '" + getMethodName() + "' found for arguments " + Arrays.toString(ClassUtils.getTypeSignature(getArgs()));
+		return "No method '" + getMethodName() + "' found for argument types " + Arrays.toString(getTypes());
 	}
 }

@@ -14,15 +14,15 @@ public class MultipleMethodsInvocationException
 {
     private Set<Method> methods;
 
-	public MultipleMethodsInvocationException(String methodName, Object[] args, Set<Method> methods)
+	public MultipleMethodsInvocationException(String methodName, Class<?>[] types, Set<Method> methods)
 	{
-		super(methodName, args);
+		super(methodName, types);
         this.methods = methods;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "Multiple matches found for '" + getMethodName() + "' with args " + Arrays.toString(ClassUtils.getTypeSignature(getArgs())) + ", candidates are: " + methods.toString();
+		return "Multiple matches found for '" + getMethodName() + "' with types " + Arrays.toString(getTypes()) + ", candidates are: " + methods.toString();
 	}
 }

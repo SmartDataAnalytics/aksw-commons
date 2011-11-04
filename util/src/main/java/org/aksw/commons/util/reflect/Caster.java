@@ -28,7 +28,13 @@ public class Caster {
     {
         try {
             Method method = MultiMethod.findInvocationMethod(Caster.class, targetClass, value.getClass());
-            return method.invoke(null, value);
+
+            try {
+                return method.invoke(null, value);
+            }
+            catch(NumberFormatException e) {
+                return null;
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -37,6 +43,7 @@ public class Caster {
     public static void main(String[] args) {
         System.out.println(tryCast("123.4", Double.class));
         System.out.println(tryCast(123.4, String.class));
+        System.out.println(tryCast("test", Double.class));
     }
 
     public static String toString(Object o) {
