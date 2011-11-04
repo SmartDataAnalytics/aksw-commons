@@ -29,14 +29,13 @@ public class Caster {
         try {
             Method method = MultiMethod.findInvocationMethod(Caster.class, targetClass, value.getClass());
 
-            try {
-                return method.invoke(null, value);
-            }
-            catch(NumberFormatException e) {
-                return null;
-            }
+            return method.invoke(null, value);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            if(e.getCause() instanceof NumberFormatException) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
