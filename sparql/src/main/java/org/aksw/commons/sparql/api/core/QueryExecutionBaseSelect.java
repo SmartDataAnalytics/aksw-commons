@@ -18,6 +18,7 @@ import com.hp.hpl.jena.sparql.syntax.Element;
 import com.hp.hpl.jena.sparql.syntax.ElementGroup;
 import com.hp.hpl.jena.sparql.syntax.ElementPathBlock;
 import com.hp.hpl.jena.xmloutput.impl.Basic;
+import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.jena.util.QueryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Template;
-import com.hp.hpl.jena.sparql.util.ModelUtils;
 import com.hp.hpl.jena.update.UpdateRequest;
 
 
@@ -59,6 +59,8 @@ class TestQueryExecutionBaseSelect
     }
 }
 
+
+
 /**
  * A Sparqler-class that implements ask, describe, and construct
  * based on the executeCoreSelect(Query) method.
@@ -75,12 +77,36 @@ class TestQueryExecutionBaseSelect
  *
  */
 public abstract class QueryExecutionBaseSelect
-	extends QueryExecutionDecorator
+        extends QueryExecutionDecorator
+        implements QueryExecutionStreaming
 {
 	private static final Logger logger = LoggerFactory
 			.getLogger(QueryExecutionBaseSelect.class);
 
     private Query query;
+
+
+
+    // TODO Move these two utility methods to a utility class
+    // Either the whole Sparql API should go to the jena module
+    // or it needs a dependency on that module...
+    public static Model createModel(Iterator<Triple> it) {
+        return createModel(ModelFactory.createDefaultModel(), it);
+    }
+
+    public static Model createModel(Model result, Iterator<Triple> it) {
+
+        while(it.hasNext()) {
+            Triple t = it.next();
+            Statement stmt = com.hp.hpl.jena.sparql.util.ModelUtils.tripleToStatement(result, t);
+            if (stmt != null) {
+                result.add(stmt);
+            }
+        }
+
+        return result;
+    }
+
 
 
     public QueryExecutionBaseSelect(Query query) {
@@ -136,16 +162,10 @@ public abstract class QueryExecutionBaseSelect
         return execDescribe(ModelFactory.createDefaultModel());
     }
 
-    /**
-     * A describe query is translated into a construct query.
-     *
-     * TODO Add support for concise bounded descriptions...
-     *
-     * @param result
-     * @return
-     */
-	@Override
-	public Model execDescribe(Model result) {
+
+
+    @Override
+    public Iterator<Triple> execDescribeStreaming() {
         if (!query.isDescribeType()) {
             throw new RuntimeException("DESCRIBE query expected. Got: ["
                     + query.toString() + "]");
@@ -179,7 +199,21 @@ public abstract class QueryExecutionBaseSelect
         query.setConstructTemplate(template);
         query.setQueryPattern(elementGroup);
 
-        return execConstruct(query, result);
+        return executeConstructStreaming(query);
+    }
+
+    /**
+     * A describe query is translated into a construct query.
+     *
+     * TODO Add support for concise bounded descriptions...
+     *
+     * @param result
+     * @return
+     */
+	@Override
+	public Model execDescribe(Model result) {
+        createModel(result, execDescribeStreaming());
+        return result;
 
         /*
         Generator generator = Gensym.create("xx_generated_var_");
@@ -232,12 +266,11 @@ public abstract class QueryExecutionBaseSelect
 		//throw new RuntimeException("Sorry, DESCRIBE is not implemted yet.");
 	}
 
-    private Model execConstruct(Query query, Model result) {
+    private Iterator<Triple> executeConstructStreaming(Query query) {
         if (!query.isConstructType()) {
             throw new RuntimeException("CONSTRUCT query expected. Got: ["
                     + query.toString() + "]");
         }
-
 
         //Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
         query.setQueryResultStar(true);
@@ -246,30 +279,23 @@ public abstract class QueryExecutionBaseSelect
         // insertPrefixesInto(result) ;
         Template template = query.getConstructTemplate();
 
-        // Build each template substitution as triples.
-        while(rs.hasNext()) {
-            Set<Triple> set = new HashSet<Triple>();
-            Map<Node, Node> bNodeMap = new HashMap<Node, Node>();
-            Binding binding = rs.nextBinding();
-            template.subst(set, bNodeMap, binding);
+        return new ConstructIterator(template, rs);
+    }
 
-            // Convert and merge into Model.
-            for (Iterator<Triple> iter = set.iterator(); iter.hasNext();) {
-                Triple t = iter.next();
-                Statement stmt = ModelUtils.tripleToStatement(result, t);
-                if (stmt != null) {
-                    result.add(stmt);
-                }
-            }
-        }
-
+    private Model executeConstruct(Query query, Model result) {
+        createModel(result, executeConstructStreaming(query));
         return result;
     }
 
 	@Override
 	public Model execConstruct(Model result) {
-		return execConstruct(this.query, result);
+		return executeConstruct(this.query, result);
 	}
+
+    @Override
+    public Iterator<Triple> execConstructStreaming() {
+        return executeConstructStreaming(this.query);
+    }
 
 	@Override
 	public ResultSet execSelect() {
