@@ -1,5 +1,6 @@
 package org.aksw.commons.jena;
 
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.RDFS;
 import org.aksw.commons.collections.MultiMaps;
@@ -14,6 +15,7 @@ import java.util.*;
  * @author Claus Stadler
  */
 public class ModelUtils {
+
 
     /**
      * Extracts a mapping childClass -> parentClass from a given Model.
