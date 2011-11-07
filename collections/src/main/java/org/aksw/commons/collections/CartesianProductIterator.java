@@ -59,6 +59,12 @@ public class CartesianProductIterator<T>
 
 		current = new ArrayList<T>(collections.size());
 		result = new ArrayList<T>(collections.size());
+
+        // If there are no iterators, we're empty
+        if(iterators.isEmpty()) {
+            this.hasNext = false;
+        }
+
 		for (Iterator<? extends T> it : iterators) {
 			if (!it.hasNext()) {
 				this.hasNext = false;
