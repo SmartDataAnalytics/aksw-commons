@@ -8,24 +8,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-class Time
-{
-    private long time;
-    private TimeUnit timeUnit;
-
-    public Time(long time, TimeUnit timeUnit) {
-        this.time = time;
-        this.timeUnit = timeUnit;
-    }
-
-    public long getTime() {
-        return time;
-    }
-
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
-    }
-}
 
 /**
  * @author Claus Stadler
