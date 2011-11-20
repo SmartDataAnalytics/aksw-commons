@@ -15,18 +15,22 @@ import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
  *         Date: 11/19/11
  *         Time: 11:33 PM
  */
-public class QueryExecutionFactoryLimit
-    extends QueryExecutionFactoryDecorator
+public class QueryExecutionFactoryLimit<T extends QueryExecution>
+    extends QueryExecutionFactoryDecorator<T>
 {
     private Long limit;
     private boolean doCloneQuery = false;
 
-    public QueryExecutionFactoryLimit(QueryExecutionFactory decoratee, boolean doCloneQuery, Long limit) {
+    public static <U extends QueryExecution> QueryExecutionFactoryLimit<U> decorate(QueryExecutionFactory<U> decoratee, boolean doCloneQuery, Long limit) {
+        return new QueryExecutionFactoryLimit<U>(decoratee, doCloneQuery, limit);
+    }
+
+    public QueryExecutionFactoryLimit(QueryExecutionFactory<? extends T> decoratee, boolean doCloneQuery, Long limit) {
         super(decoratee);
         this.limit = limit;
     }
 
-    public QueryExecution createQueryExecution(Query query) {
+    public T createQueryExecution(Query query) {
         if(limit != null) {
             if(query.getLimit() == Query.NOLIMIT) {
                 if(doCloneQuery) {
@@ -51,7 +55,7 @@ public class QueryExecutionFactoryLimit
     }
 
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
+    public T createQueryExecution(String queryString) {
         return createQueryExecution(QueryFactory.create(queryString));
     }
 

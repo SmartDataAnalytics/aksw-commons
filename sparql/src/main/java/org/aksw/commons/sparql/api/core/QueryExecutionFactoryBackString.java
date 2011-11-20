@@ -9,11 +9,11 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Date: 7/23/11
  *         Time: 9:44 PM
  */
-public abstract class QueryExecutionFactoryBackString
-    implements QueryExecutionFactory
+public abstract class QueryExecutionFactoryBackString<T extends QueryExecution>
+    implements QueryExecutionFactory<T>
 {
     @Override
-    public QueryExecution createQueryExecution(Query query) {
+    public T createQueryExecution(Query query) {
         return createQueryExecution(query.toString());
     }
 }

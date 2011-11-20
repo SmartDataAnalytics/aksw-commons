@@ -10,11 +10,11 @@ import com.hp.hpl.jena.query.QueryFactory;
  *         Date: 7/23/11
  *         Time: 9:39 PM
  */
-public abstract class QueryExecutionFactoryBackQuery
-    implements QueryExecutionFactory
+public abstract class QueryExecutionFactoryBackQuery<T extends QueryExecution>
+    implements QueryExecutionFactory<T>
 {
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
+    public T createQueryExecution(String queryString) {
         return createQueryExecution(QueryFactory.create(queryString));
     }
 }

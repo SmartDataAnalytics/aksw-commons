@@ -9,12 +9,12 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Date: 7/26/11
  *         Time: 12:53 PM
  */
-public class QueryExecutionFactoryDecorator
+public class QueryExecutionFactoryDecorator<T extends QueryExecution>
     implements QueryExecutionFactory
 {
-    private QueryExecutionFactory decoratee;
+    private QueryExecutionFactory<? extends T> decoratee;
 
-    public QueryExecutionFactoryDecorator(QueryExecutionFactory decoratee) {
+    public QueryExecutionFactoryDecorator(QueryExecutionFactory<? extends T> decoratee) {
         this.decoratee = decoratee;
     }
 
@@ -29,12 +29,12 @@ public class QueryExecutionFactoryDecorator
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
+    public T createQueryExecution(Query query) {
         return decoratee.createQueryExecution(query);
     }
 
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
+    public T createQueryExecution(String queryString) {
         return decoratee.createQueryExecution(queryString);
     }
 }

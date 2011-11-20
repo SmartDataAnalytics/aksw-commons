@@ -10,6 +10,6 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Date: 7/23/11
  *         Time: 9:30 PM
  */
-public interface QueryExecutionFactoryQuery {
-    QueryExecution createQueryExecution(Query query);
+public interface QueryExecutionFactoryQuery<T extends QueryExecution> {
+    T createQueryExecution(Query query);
 }
