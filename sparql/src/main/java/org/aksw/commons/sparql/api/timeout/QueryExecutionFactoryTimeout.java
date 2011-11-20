@@ -22,27 +22,31 @@ import java.util.concurrent.TimeUnit;
  *         Date: 7/26/11
  *         Time: 10:27 AM
  */
-public class QueryExecutionFactoryTimeout
-        extends QueryExecutionFactoryDecorator {
+public class QueryExecutionFactoryTimeout<T extends QueryExecution>
+        extends QueryExecutionFactoryDecorator<T> {
 
     private Time maxExecutionTime = null;
     private Time maxRetrievalTime = null;
 
+    public static <U extends QueryExecution> QueryExecutionFactoryTimeout<U> decorate(QueryExecutionFactory<U> decoratee, long timeout) {
+        return new QueryExecutionFactoryTimeout<U>(decoratee, timeout);
+    }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee) {
+
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee) {
         super(decoratee);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout) {
         this(decoratee, timeout, TimeUnit.MILLISECONDS);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout, TimeUnit timeUnit) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout, TimeUnit timeUnit) {
         super(decoratee);
         this.maxExecutionTime = new Time(timeout, timeUnit);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout1, long timeout2) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout1, long timeout2) {
         this(decoratee, timeout1, TimeUnit.MILLISECONDS, timeout2, TimeUnit.MILLISECONDS);
     }
 
@@ -60,14 +64,14 @@ public class QueryExecutionFactoryTimeout
             if(maxRetrievalTime != null) {
                 qe.setTimeout(maxExecutionTime.getTime(), maxExecutionTime.getTimeUnit(), maxRetrievalTime.getTime(), maxRetrievalTime.getTimeUnit());
             } else {
-                qe.setTimeout(maxExecutionTime.getTime(), maxRetrievalTime.getTimeUnit());
+                qe.setTimeout(maxExecutionTime.getTime(), maxExecutionTime.getTimeUnit());
             }
         }
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
-        QueryExecution result = super.createQueryExecution(query);
+    public T createQueryExecution(Query query) {
+        T result = super.createQueryExecution(query);
 
         configureWithTimeout(result);
 
@@ -75,8 +79,8 @@ public class QueryExecutionFactoryTimeout
     }
 
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
-        QueryExecution result = super.createQueryExecution(queryString);
+    public T createQueryExecution(String queryString) {
+        T result = super.createQueryExecution(queryString);
 
         configureWithTimeout(result);
 

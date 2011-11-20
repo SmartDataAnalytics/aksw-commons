@@ -14,18 +14,16 @@ import java.util.concurrent.TimeUnit;
  *         <p/>
  *         Date: 11/19/11
  *         Time: 10:17 PM
- *
- * A helper for timeouts on QueryExecutions:
- *
- * Setting maxExecution time will result in a call to
- * queryExecution.abort() after the time limit is reached.
- *
- * Setting max retrievalTime will result in a call to
- * queryExecution.close() after the time limit has been reached.
- *
+ *         <p/>
+ *         A helper for timeouts on QueryExecutions:
+ *         <p/>
+ *         Setting maxExecution time will result in a call to
+ *         queryExecution.abort() after the time limit is reached.
+ *         <p/>
+ *         Setting max retrievalTime will result in a call to
+ *         queryExecution.close() after the time limit has been reached.
  */
-public class QueryExecutionTimeoutHelper
-{
+public class QueryExecutionTimeoutHelper {
     private static final Logger logger = LoggerFactory.getLogger(QueryExecutionTimeoutHelper.class);
 
     // For now we assume that calls to "abort" and "close" do not block
@@ -42,39 +40,42 @@ public class QueryExecutionTimeoutHelper
     private TimerTask executionTask = null;
     private TimerTask retrievalTask = null;
 
-    public QueryExecutionTimeoutHelper(QueryExecution queryExecution)
-    {
+    public QueryExecutionTimeoutHelper(QueryExecution queryExecution) {
         this.queryExecution = queryExecution;
     }
 
     public synchronized void startExecutionTimer() {
-        if(maxExecutionTime != null) {
+        if (maxExecutionTime != null) {
             long delay = maxExecutionTime.getTimeUnit().toMillis(maxExecutionTime.getTime());
 
-            executionTimer.schedule(new TimerTask() {
+            executionTask = new TimerTask() {
                 @Override
                 public void run() {
                     try {
                         queryExecution.abort();
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         logger.warn("Exception while aborting a QueryExecution that has reached its execution timeout", e);
                     }
+
+                    //throw new RuntimeException("Query execution has reached its time limit.");
                 }
-            }, delay);
+            };
+
+            executionTimer.schedule(executionTask, delay);
         }
     }
 
     public synchronized void stopExecutionTimer() {
-        if(executionTask != null) {
+        if (executionTask != null) {
             executionTask.cancel();
         }
     }
 
     public synchronized void startRetrieval() {
-        if(maxRetrievalTime != null) {
+        if (maxRetrievalTime != null) {
             long delay = maxRetrievalTime.getTimeUnit().toMillis(maxRetrievalTime.getTime());
 
-            executionTimer.schedule(new TimerTask() {
+            retrievalTask = new TimerTask() {
                 @Override
                 public void run() {
                     try {
@@ -83,12 +84,14 @@ public class QueryExecutionTimeoutHelper
                         logger.warn("Exception while closing a QueryExecution that has reached its retrieval timeout", e);
                     }
                 }
-            }, delay);
+            };
+
+            retrievalTimer.schedule(retrievalTask, delay);
         }
     }
 
     public synchronized void stopRetrieval() {
-        if(retrievalTask != null) {
+        if (retrievalTask != null) {
             retrievalTask.cancel();
         }
 
