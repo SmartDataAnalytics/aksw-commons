@@ -71,7 +71,7 @@ public class StringUtils
 
     public static String toUpperCamelCase(String s)
     {
-        return toCamelCase(s, false);
+        return toCamelCase(s, true);
     }
 
 	public static String toCamelCase(String s, boolean upper)
