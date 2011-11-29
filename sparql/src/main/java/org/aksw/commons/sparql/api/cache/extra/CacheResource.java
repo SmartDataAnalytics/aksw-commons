@@ -5,6 +5,8 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import org.aksw.commons.collections.IClosable;
 
+import java.io.InputStream;
+
 /**
  * @author Claus Stadler
  *         <p/>

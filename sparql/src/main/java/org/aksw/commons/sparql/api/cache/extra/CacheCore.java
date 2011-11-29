@@ -11,6 +11,6 @@ import java.io.InputStream;
  *         Time: 5:12 PM
  */
 public interface CacheCore {
-    CacheResource lookup(String queryString);
+    CacheEntry lookup(String queryString);
     void write(String queryString, InputStream in);
 }

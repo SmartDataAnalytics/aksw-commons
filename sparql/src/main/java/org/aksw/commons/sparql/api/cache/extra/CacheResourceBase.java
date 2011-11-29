@@ -1,6 +1,8 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
 /**
+ * CURRENTLY NOT USED
+ *
  * @author Claus Stadler
  *         <p/>
  *         Date: 7/26/11
