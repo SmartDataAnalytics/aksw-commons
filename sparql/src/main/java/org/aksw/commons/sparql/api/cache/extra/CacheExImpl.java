@@ -4,6 +4,8 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.sun.jmx.remote.util.Service;
+import sun.beans.editors.StringEditor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,26 +18,26 @@ import java.io.PipedOutputStream;
  *         Date: 7/26/11
  *         Time: 5:12 PM
  */
-public class CacheImpl
-    implements Cache
+public class CacheExImpl
+    implements CacheEx
 {
-    private CacheCore cacheCore;
+    private CacheCoreEx cacheCore;
 
-    public CacheImpl(CacheCore cacheCore) {
+    public CacheExImpl(CacheCoreEx cacheCore) {
         this.cacheCore = cacheCore;
     }
 
 
     @Override
-    public void write(String queryString, ResultSet resultSet) {
+    public void write(String service, String queryString, ResultSet resultSet) {
         try {
-            _write(queryString, resultSet);
+            _write(service, queryString, resultSet);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void _write(String queryString, final ResultSet resultSet) throws IOException {
+    public void _write(String service, String queryString, final ResultSet resultSet) throws IOException {
         PipedInputStream in = new PipedInputStream();
         final PipedOutputStream out = new PipedOutputStream(in);
         new Thread(
@@ -50,24 +52,24 @@ public class CacheImpl
             }
           }
         ).start();
-        cacheCore.write(queryString, in);
+        cacheCore.write(service, queryString, in);
     }
 
     @Override
-    public void write(Query query, ResultSet resultSet) {
-        write(query.toString(), resultSet);
+    public void write(String service, Query query, ResultSet resultSet) {
+        write(service, query.toString(), resultSet);
     }
 
     @Override
-    public void write(String queryString, final Model model) {
+    public void write(String service, String queryString, final Model model) {
         try {
-            _write(queryString, model);
+            _write(service, queryString, model);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void _write(String queryString, final Model model) throws IOException {
+    public void _write(String service, String queryString, final Model model) throws IOException {
         PipedInputStream in = new PipedInputStream();
         final PipedOutputStream out = new PipedOutputStream(in);
         new Thread(
@@ -82,25 +84,25 @@ public class CacheImpl
             }
           }
         ).start();
-        cacheCore.write(queryString, in);
+        cacheCore.write(service, queryString, in);
     }
 
     @Override
-    public void write(Query query, Model model) {
-        write(query.toString(), model);
+    public void write(String service, Query query, Model model) {
+        write(service, query.toString(), model);
     }
 
     @Override
-    public CacheResource lookup(String queryString) {
-        CacheEntry cacheEntry = cacheCore.lookup(queryString);
+    public CacheResource lookup(String service, String queryString) {
+        CacheEntry cacheEntry = cacheCore.lookup(service, queryString);
         return cacheEntry == null
                 ? null
                 : new CacheResourceCacheEntry(cacheEntry);
     }
 
     @Override
-    public CacheResource lookup(Query query) {
-        CacheEntry cacheEntry = cacheCore.lookup(query.toString());
+    public CacheResource lookup(String service, Query query) {
+        CacheEntry cacheEntry = cacheCore.lookup(service, query.toString());
         return cacheEntry == null
                 ? null
                 : new CacheResourceCacheEntry(cacheEntry);
@@ -108,22 +110,22 @@ public class CacheImpl
 
 
 	@Override
-	public void write(String queryString, boolean value) {
+	public void write(String service, String queryString, boolean value) {
 		try {
-            _write(queryString, value);
+            _write(service, queryString, value);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 		
 	}
 	
-	public void _write(String queryString, final boolean value) throws IOException {
-        cacheCore.write(queryString, new ByteArrayInputStream(String.valueOf(value).getBytes()));
+	public void _write(String service, String queryString, final boolean value) throws IOException {
+        cacheCore.write(service, queryString, new ByteArrayInputStream(String.valueOf(value).getBytes()));
     }
 
 
 	@Override
-	public void write(Query query, boolean value) {
-		write(query.toString(), value);
+	public void write(String service, Query query, boolean value) {
+		write(service, query.toString(), value);
 	}
 }

@@ -163,9 +163,7 @@ public abstract class QueryExecutionBaseSelect
     }
 
 
-
-    @Override
-    public Iterator<Triple> execDescribeStreaming() {
+    public static Node extractDescribeNode(Query query) {
         if (!query.isDescribeType()) {
             throw new RuntimeException("DESCRIBE query expected. Got: ["
                     + query.toString() + "]");
@@ -178,7 +176,15 @@ public abstract class QueryExecutionBaseSelect
             throw new RuntimeException("Sorry, DESCRIBE is only implemented for a single resource argument");
         }
 
-        Node node = query.getResultURIs().get(0);
+        Node result = query.getResultURIs().get(0);
+
+        return result;
+    }
+
+    @Override
+    public Iterator<Triple> execDescribeStreaming() {
+
+        Node node = extractDescribeNode(query);
         Var p = Var.alloc("p");
         Var o = Var.alloc("o");
         Triple triple = new Triple(node, p, o);

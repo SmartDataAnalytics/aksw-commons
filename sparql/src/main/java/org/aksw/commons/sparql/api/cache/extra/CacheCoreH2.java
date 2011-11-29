@@ -19,16 +19,31 @@ import java.util.GregorianCalendar;
  * Provides the connection to an H2 database in a light weight, configuration free
  * manner.
  *
- * Note: Currently, either select ot construct has to be used (not both).
+ * Important: This implementation of the CacheCoreEx interface uses combined hashes of services and
+ * queries.
  *
- * @author Jens Lehmann
+ *
+ * @author Jens Lehmann, Claus Stadler
  *
  */
 public class CacheCoreH2
     extends SqlDaoBase
-    implements CacheCore
+    implements CacheCore, CacheCoreEx
 {
     private static final Logger logger = LoggerFactory.getLogger(CacheCoreH2.class);
+
+    
+    private String defaultService = "";
+
+    @Override
+    public CacheEntry lookup(String queryString) {
+        return lookup(defaultService, queryString);
+    }
+
+    @Override
+    public void write(String queryString, InputStream in) {
+        write(defaultService, queryString, in);
+    }
 
     enum Query
         implements QueryString
@@ -74,20 +89,36 @@ public class CacheCoreH2
      */
     public static CacheCoreH2 create(boolean autoServerMode, String dbDir, String dbName, long lifespan)
             throws ClassNotFoundException, SQLException {
-        Class.forName("org.h2.Driver");
+        return (CacheCoreH2)create(autoServerMode, dbDir, dbName, lifespan, false);
+    }
 
-        String jdbcString = "";
-        if(autoServerMode) {
-            jdbcString = ";AUTO_SERVER=TRUE";
-        }
+    public static CacheCoreEx create(boolean autoServerMode, String dbDir, String dbName, long lifespan, boolean useCompression)
+            throws ClassNotFoundException, SQLException
+    {
+            Class.forName("org.h2.Driver");
 
-        // connect to database (created automatically if not existing)
-        Connection conn = DriverManager.getConnection("jdbc:h2:" + dbDir + "/" + dbName + jdbcString, "sa", "");
+            String jdbcString = "";
+            if(autoServerMode) {
+                jdbcString = ";AUTO_SERVER=TRUE";
+            }
 
-        // create cache table if it does not exist
-        Statement stmt = conn.createStatement();
+            // connect to database (created automatically if not existing)
+            Connection conn = DriverManager.getConnection("jdbc:h2:" + dbDir + "/" + dbName + jdbcString, "sa", "");
 
-        return new CacheCoreH2(conn, lifespan);
+            // create cache table if it does not exist
+            Statement stmt = conn.createStatement();
+
+            CacheCoreH2 tmp = new CacheCoreH2(conn, lifespan);
+
+        return useCompression
+            ? new CacheCoreExBZip2(tmp)
+            : tmp;
+    }
+
+    public static CacheCoreEx create(String dbName, long lifespan, boolean useCompression)
+            throws ClassNotFoundException, SQLException
+    {
+        return create(true, "cache/sparql", dbName, lifespan, useCompression);
     }
 
     
@@ -107,19 +138,21 @@ public class CacheCoreH2
         this.lifespan = lifespan;
     }
 
-    public synchronized CacheResource lookup(String queryString)
+    public synchronized CacheEntry lookup(String service, String queryString)
     {
         try {
-            return _lookup(queryString);
+            return _lookup(service, queryString);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public CacheResource _lookup(String queryString)
+    public CacheEntry _lookup(String service, String queryString)
             throws SQLException
     {
-        String md5 = StringUtils.md5Hash(queryString);
+        String md5 = StringUtils.md5Hash(createHashRoot(service, queryString));
+        //String md5 = StringUtils.md5Hash(queryString);
+
         ResultSet rs = executeQuery(Query.LOOKUP, md5);
 
         try {
@@ -127,7 +160,7 @@ public class CacheCoreH2
                 Timestamp timestamp = rs.getTimestamp("time");
                 Clob data = rs.getClob("data");
 
-                return new CacheResourceSql(timestamp.getTime(), lifespan, rs, data);
+                return new CacheEntry(timestamp.getTime(), lifespan, new InputStreamProviderResultSetClob(rs, data));
             }
 
             if(rs.next()) {
@@ -140,18 +173,20 @@ public class CacheCoreH2
         return null;
     }
 
-    public synchronized void write(String queryString, InputStream in) {
+    public synchronized void write(String service, String queryString, InputStream in) {
         try {
-            _write(queryString, in);
+            _write(service, queryString, in);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void _write(String queryString, InputStream in)
+    public void _write(String service, String queryString, InputStream in)
             throws SQLException
     {
-        String md5 = StringUtils.md5Hash(queryString);
+        String md5 = StringUtils.md5Hash(createHashRoot(service, queryString));
+        //String md5 = StringUtils.md5Hash(queryString);
+
         Timestamp timestamp = new Timestamp(new GregorianCalendar().getTimeInMillis());
 
         Reader reader = new InputStreamReader(in);
@@ -174,6 +209,8 @@ public class CacheCoreH2
         //return lookup(queryString);
     }
 
-
+    public String createHashRoot(String service, String queryString) {
+        return service + queryString;
+    }
 
 }

@@ -5,6 +5,7 @@ import com.hp.hpl.jena.query.ResultSetFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import org.aksw.commons.collections.IClosable;
 import org.aksw.commons.sparql.api.core.ResultSetClosing;
+import org.aksw.commons.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,51 +15,21 @@ import java.sql.Clob;
 import java.sql.SQLException;
 
 
-class ClosableCacheSql
-    implements IClosable
-{
-    private CacheResource resource;
-    private InputStream in;
-
-    public ClosableCacheSql(CacheResource resource, InputStream in) {
-        this.resource = resource;
-        this.in = in;
-    }
-
-
-    @Override
-    public void close() {
-        //SqlUtils.close(rs);
-        resource.close();
-        if(in != null) {
-            try {
-                in.close();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-        }
-    }
-}
-
-
 /**
  * @author Claus Stadler
  *         <p/>
  *         Date: 7/26/11
  *         Time: 3:46 PM
  */
-public class CacheResourceSql
-    extends CacheResourceBase
+public class CacheResourceCacheEntry
+    implements CacheResource
 {
-    private static Logger logger = LoggerFactory.getLogger(CacheResourceSql.class);
-    private java.sql.ResultSet rs;
-    private Clob clob;
+    private static Logger logger = LoggerFactory.getLogger(CacheResourceCacheEntry.class);
 
-    public CacheResourceSql(long timestamp, long lifespan, java.sql.ResultSet rs, Clob clob) {
-        super(timestamp, lifespan);
+    private CacheEntry cacheEntry;
 
-        this.rs = rs;
-        this.clob = clob;
+    public CacheResourceCacheEntry(CacheEntry cacheEntry) {
+        this.cacheEntry = cacheEntry;
     }
 
 
@@ -91,8 +62,13 @@ public class CacheResourceSql
     public ResultSet _asResultSet()
             throws SQLException
     {
-        InputStream in = clob.getAsciiStream();
+        InputStream in = cacheEntry.getInputStreamProvider().open();
         return new ResultSetClosing(ResultSetFactory.fromXML(in), new ClosableCacheSql(this, in));
+    }
+
+    @Override
+    public boolean isOutdated() {
+        return System.currentTimeMillis() - cacheEntry.getTimestamp() > cacheEntry.getLifespan();
     }
 
     @Override
@@ -105,7 +81,7 @@ public class CacheResourceSql
     }
 
     public Model _asModel(Model result) throws SQLException {
-        InputStream in = clob.getAsciiStream();
+        InputStream in = cacheEntry.getInputStreamProvider().open();
 
 	    result.read(in, null, "N-TRIPLES");
         try {
@@ -113,7 +89,7 @@ public class CacheResourceSql
         } catch (Exception e) {
             logger.warn("Error", e);
         }
-        this.close();
+        cacheEntry.getInputStreamProvider().close();
 
         return result;
     }
@@ -122,22 +98,24 @@ public class CacheResourceSql
     public boolean asBoolean() {
         try {
             return _asBoolean();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public boolean _asBoolean() throws SQLException {
-        boolean result = Boolean.parseBoolean(clob.getSubString(1l, (int)clob.length()));
+    public boolean _asBoolean() throws SQLException, IOException {
+        String str = StreamUtils.toString(cacheEntry.getInputStreamProvider().open());
 
-        this.close();
+        boolean result = Boolean.parseBoolean(str);
+
+        cacheEntry.getInputStreamProvider().close();
 
         return result;
     }
 
-
     @Override
     public void close() {
-        SqlUtils.close(rs);
+        cacheEntry.getInputStreamProvider().close();
     }
+
 }
