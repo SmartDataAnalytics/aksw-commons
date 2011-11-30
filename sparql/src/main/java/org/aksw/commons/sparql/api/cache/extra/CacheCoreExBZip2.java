@@ -31,7 +31,10 @@ public class CacheCoreExBZip2
     public CacheEntry lookup(String service, String queryString) {
         CacheEntry raw = decoratee.lookup(service, queryString);
 
-        return new CacheEntry(raw.getTimestamp(), raw.getLifespan(), new InputStreamProviderBZip2(raw.getInputStreamProvider()));
+        return raw == null
+            ? null
+            : new CacheEntry(raw.getTimestamp(), raw.getLifespan(),
+                new InputStreamProviderBZip2(raw.getInputStreamProvider()));
     }
 
     @Override
