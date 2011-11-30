@@ -71,22 +71,22 @@ public class QueryExecutionCache
         return resource.asResultSet();
     }
 
-    public Model doCacheModel(Model result) {
+    public Model doCacheModel(Model result, ModelProvider modelProvider) {
         try {
-            return _doCacheModel(result);
+            return _doCacheModel(result, modelProvider);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Model _doCacheModel(Model result) throws IOException {
+    public Model _doCacheModel(Model result, ModelProvider modelProvider) throws IOException {
         CacheResource resource = cache.lookup(queryString);
 
         Model model = ModelFactory.createDefaultModel();
         if(resource == null || resource.isOutdated()) {
 
             try {
-                model = getDecoratee().execConstruct();
+                model = modelProvider.getModel(); //getDecoratee().execConstruct();
             } catch(Exception e) {
                 logger.warn("Error communicating with backend", e);
 
@@ -152,25 +152,35 @@ public class QueryExecutionCache
         return doCacheResultSet();
      }
 
-     @Override
-     public Model execConstruct() {
-         return doCacheModel(ModelFactory.createDefaultModel());
-     }
+    @Override
+    public Model execConstruct() {
+        return execConstruct(ModelFactory.createDefaultModel());
+    }
 
-     @Override
-     public Model execConstruct(Model model) {
-        return doCacheModel(model);
-     }
+    @Override
+    public Model execConstruct(Model model) {
+       return doCacheModel(model, new ModelProvider() {
+           @Override
+           public Model getModel() {
+               return getDecoratee().execConstruct();
+           }
+       });
+    }
 
-     @Override
-     public Model execDescribe() {
-         return super.execDescribe();
-     }
+    @Override
+    public Model execDescribe() {
+        return execDescribe(ModelFactory.createDefaultModel());
+    }
 
-     @Override
-     public Model execDescribe(Model model) {
-         return super.execDescribe(model);
-     }
+    @Override
+    public Model execDescribe(Model model) {
+        return doCacheModel(model, new ModelProvider() {
+            @Override
+            public Model getModel() {
+                return getDecoratee().execDescribe();
+            }
+        });
+    }
 
      @Override
      public boolean execAsk() {
