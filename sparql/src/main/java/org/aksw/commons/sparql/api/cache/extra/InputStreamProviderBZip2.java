@@ -1,6 +1,6 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
-import org.apache.commons.compress.bzip2.CBZip2InputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import java.io.InputStream;
 
@@ -14,15 +14,23 @@ public class InputStreamProviderBZip2
     implements InputStreamProvider
 {
     private InputStreamProvider decoratee;
+    private CompressorStreamFactory streamFactory;
+    private String compression;
 
-    public InputStreamProviderBZip2(InputStreamProvider decoratee)
+    public InputStreamProviderBZip2(InputStreamProvider decoratee, CompressorStreamFactory streamFactory, String compression)
     {
         this.decoratee = decoratee;
+        this.streamFactory = streamFactory;
+        this.compression = compression;
     }
 
     @Override
     public InputStream open() {
-        return new CBZip2InputStream(decoratee.open());
+        try {
+        return streamFactory.createCompressorInputStream(compression, decoratee.open());
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

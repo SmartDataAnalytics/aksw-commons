@@ -2,10 +2,6 @@ package org.aksw.commons.collections;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.thoughtworks.xstream.io.binary.Token;
-import org.apache.commons.collections15.MultiMap;
-import org.mindswap.pellet.KBLoader;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.Map;

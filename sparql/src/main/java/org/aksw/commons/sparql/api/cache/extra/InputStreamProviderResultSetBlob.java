@@ -1,6 +1,7 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
 import java.io.InputStream;
+import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 
@@ -10,22 +11,22 @@ import java.sql.SQLException;
  *         Date: 11/28/11
  *         Time: 11:54 PM
  */
-public class InputStreamProviderResultSetClob
+public class InputStreamProviderResultSetBlob
     implements InputStreamProvider
 {
     private java.sql.ResultSet rs;
-    private Clob clob;
+    private Blob blob;
 
-    public InputStreamProviderResultSetClob(java.sql.ResultSet rs, Clob clob) {
+    public InputStreamProviderResultSetBlob(java.sql.ResultSet rs, Blob blob) {
         this.rs = rs;
-        this.clob = clob;
+        this.blob = blob;
     }
 
 
     @Override
     public InputStream open() {
         try {
-            return clob.getAsciiStream();
+            return blob.getBinaryStream();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

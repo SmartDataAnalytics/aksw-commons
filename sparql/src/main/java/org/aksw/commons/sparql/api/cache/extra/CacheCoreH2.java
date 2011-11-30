@@ -48,7 +48,7 @@ public class CacheCoreH2
     enum Query
         implements QueryString
     {
-        CREATE("CREATE TABLE IF NOT EXISTS query_cache(query_hash BINARY PRIMARY KEY, query_string VARCHAR(15000), data CLOB, time TIMESTAMP)"),
+        CREATE("CREATE TABLE IF NOT EXISTS query_cache(query_hash BINARY PRIMARY KEY, query_string VARCHAR(15000), data BLOB, time TIMESTAMP)"),
         LOOKUP("SELECT * FROM query_cache WHERE query_hash=? LIMIT 1"),
         INSERT("INSERT INTO query_cache VALUES(?,?,?,?)"),
         UPDATE("UPDATE query_cache SET data=?, time=? WHERE query_hash=?"),
@@ -158,16 +158,17 @@ public class CacheCoreH2
         try {
             if(rs.next()) {
                 Timestamp timestamp = rs.getTimestamp("time");
-                Clob data = rs.getClob("data");
+                Blob data = rs.getBlob("data");
 
-                return new CacheEntry(timestamp.getTime(), lifespan, new InputStreamProviderResultSetClob(rs, data));
+                return new CacheEntry(timestamp.getTime(), lifespan, new InputStreamProviderResultSetBlob(rs, data));
             }
 
             if(rs.next()) {
                 logger.warn("Multiple cache hits found, just one expected.");
             }
         } finally {
-            SqlUtils.close(rs);
+            //Note we must not close the rs here - the InputStreamProvider of the CacheEntry must be closed
+            //SqlUtils.close(rs);
         }
 
         return null;
@@ -189,16 +190,17 @@ public class CacheCoreH2
 
         Timestamp timestamp = new Timestamp(new GregorianCalendar().getTimeInMillis());
 
-        Reader reader = new InputStreamReader(in);
+
+        //Reader reader = new InputStreamReader(in);
 
         ResultSet rs = null;
         try {
             rs = executeQuery(Query.LOOKUP, md5);
 
             if(rs != null && rs.next()) {
-                execute(Query.UPDATE, null, reader, timestamp, md5);
+                execute(Query.UPDATE, null, in, timestamp, md5);
             } else {
-                execute(Query.INSERT, null, md5, queryString, reader, timestamp);
+                execute(Query.INSERT, null, md5, queryString, in, timestamp);
             }
         } finally {
             if(rs != null) {
