@@ -107,9 +107,9 @@
             <artifactId>collections</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-compress</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>20050911</version>
+            <version>1.2</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>

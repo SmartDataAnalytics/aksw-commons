@@ -4,8 +4,6 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.sun.jmx.remote.util.Service;
-import sun.beans.editors.StringEditor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

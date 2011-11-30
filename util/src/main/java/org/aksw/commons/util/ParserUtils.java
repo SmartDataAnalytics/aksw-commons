@@ -1,8 +1,6 @@
 package org.aksw.commons.util;
 
-import com.sun.org.apache.bcel.internal.generic.LLOAD;
 import org.aksw.commons.util.reflect.Caster;
-import org.mindswap.pellet.KBLoader;
 
 import java.io.Serializable;
 import java.util.Arrays;
