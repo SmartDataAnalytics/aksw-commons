@@ -14,15 +14,23 @@ import org.deri.any23.Any23;
 public class QueryExecutionFactoryDereference
     extends QueryExecutionFactoryBackQuery<QueryExecution>
 {
-    public String userAgent = null;
+    public static final String DEFAULT_ID = "http://aksw.org/ontology/WebOfData";
 
-    public QueryExecutionFactoryDereference(String userAgent) {
-        this.userAgent = userAgent;
+    private String id;
+    private Dereferencer dereferencer;
+
+    public QueryExecutionFactoryDereference(Dereferencer dereferencer) {
+        this(dereferencer, DEFAULT_ID);
+    }
+
+    public QueryExecutionFactoryDereference(Dereferencer dereferencer, String id) {
+        this.dereferencer = dereferencer;
+        this.id = id;
     }
 
     @Override
     public String getId() {
-        return "http://aksw.org/commons/TheInternet";
+        return id;
     }
 
     @Override
@@ -30,14 +38,13 @@ public class QueryExecutionFactoryDereference
         return "";
     }
 
+    public Dereferencer getDereferencer()
+    {
+        return dereferencer;
+    }
+
     @Override
     public QueryExecution createQueryExecution(Query query) {
-        Any23 runner = new Any23();
-
-        if(userAgent != null) {
-            runner.setHTTPUserAgent(userAgent);
-        }
-
-        return new QueryExecutionDereference(query, runner);
+        return new QueryExecutionDereference(query, dereferencer);
     }
 }

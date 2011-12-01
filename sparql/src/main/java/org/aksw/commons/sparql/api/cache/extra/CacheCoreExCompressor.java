@@ -1,10 +1,5 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import org.aksw.commons.sparql.api.cache.core.QueryExecutionFactoryCacheEx;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.dereference.QueryExecutionFactoryDereference;
-import org.aksw.commons.util.StreamUtils;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import java.io.*;
@@ -15,7 +10,7 @@ import java.io.*;
  *         Date: 11/28/11
  *         Time: 11:26 PM
  */
-public class CacheCoreExBZip2
+public class CacheCoreExCompressor
     implements CacheCoreEx
 {
     private CacheCoreEx decoratee;
@@ -23,12 +18,12 @@ public class CacheCoreExBZip2
     private final CompressorStreamFactory streamFactory = new CompressorStreamFactory();
     private String compression = CompressorStreamFactory.BZIP2;
 
-    public CacheCoreExBZip2(CacheCoreEx decoratee) {
+    public CacheCoreExCompressor(CacheCoreEx decoratee) {
         this.decoratee = decoratee;
     }
 
-    public static CacheCoreExBZip2 wrap(CacheCoreEx decoratee) {
-        return new CacheCoreExBZip2(decoratee);
+    public static CacheCoreExCompressor wrap(CacheCoreEx decoratee) {
+        return new CacheCoreExCompressor(decoratee);
     }
 
 
@@ -90,7 +85,11 @@ public class CacheCoreExBZip2
     }
 
 
+    public CacheCoreEx getDecoratee() {
+        return decoratee;
+    }
 
+    /*
     public static void main(String[] args)
             throws Exception
     {
@@ -108,5 +107,5 @@ public class CacheCoreExBZip2
         Model result = factory.createQueryExecution("DESCRIBE <http://dbpedia.org/resource/London>").execDescribe();
         result.write(System.out, "N-TRIPLES", null);
 
-    }
+    }*/
 }

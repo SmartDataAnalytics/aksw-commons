@@ -21,13 +21,20 @@ public class QueryExecutionFactoryHttp
 {
     private String service;
 
-    // Note: TreeSet ensures fixed order of the graphs
     private List<String> defaultGraphs = new ArrayList<String>();
+
+    public QueryExecutionFactoryHttp(String service) {
+        this(service, Collections.<String>emptySet());
+    }
+
+    public QueryExecutionFactoryHttp(String service, String defaultGraphName) {
+        this(service, Collections.singleton(defaultGraphName));
+    }
 
     public QueryExecutionFactoryHttp(String service, Collection<String> defaultGraphs) {
         this.service = service;
         this.defaultGraphs = new ArrayList<String>(defaultGraphs);
-        Collections.sort(this.defaultGraphs);;
+        Collections.sort(this.defaultGraphs);
     }
 
     @Override

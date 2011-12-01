@@ -140,4 +140,5 @@ class MyQueryIteratorWrapper
     @Override
     public void output(IndentedWriter out, SerializationContext sCxt) {
     }
+
 }
