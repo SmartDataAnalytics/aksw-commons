@@ -5,9 +5,7 @@ import org.aksw.commons.util.strings.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.GregorianCalendar;
@@ -32,6 +30,7 @@ public class CacheCoreH2
 {
     private static final Logger logger = LoggerFactory.getLogger(CacheCoreH2.class);
 
+    private boolean validateHash = true;
     
     private String defaultService = "";
 
@@ -52,6 +51,7 @@ public class CacheCoreH2
         LOOKUP("SELECT * FROM query_cache WHERE query_hash=? LIMIT 1"),
         INSERT("INSERT INTO query_cache VALUES(?,?,?,?)"),
         UPDATE("UPDATE query_cache SET data=?, time=? WHERE query_hash=?"),
+        DUMP("SELECT * FROM query_cache")
         ;
 
         private String queryString;
@@ -111,7 +111,7 @@ public class CacheCoreH2
             CacheCoreH2 tmp = new CacheCoreH2(conn, lifespan);
 
         return useCompression
-            ? new CacheCoreExBZip2(tmp)
+            ? new CacheCoreExCompressor(tmp)
             : tmp;
     }
 
@@ -138,6 +138,23 @@ public class CacheCoreH2
         this.lifespan = lifespan;
     }
 
+    public void writeContents(OutputStream out)
+            throws SQLException
+    {
+        PrintWriter writer = new PrintWriter(out);
+
+        ResultSet rs = executeQuery(Query.DUMP);
+        try {
+            while(rs.next()) {
+                String queryString = rs.getString("query_string");
+
+                writer.println(queryString);
+            }
+        } finally {
+            rs.close();
+        }
+    }
+
     public synchronized CacheEntry lookup(String service, String queryString)
     {
         try {
@@ -159,6 +176,15 @@ public class CacheCoreH2
             if(rs.next()) {
                 Timestamp timestamp = rs.getTimestamp("time");
                 Blob data = rs.getBlob("data");
+
+                if(validateHash) {
+                    String cachedQueryString = rs.getString("query_string");
+
+                    if(!cachedQueryString.equals(queryString)) {
+                        logger.error("HASH-CLASH:\n" + "Service: " + service + "\nNew QueryString: " + queryString + "\nOld QueryString: " + cachedQueryString);
+                        return null;
+                    }
+                }
 
                 return new CacheEntry(timestamp.getTime(), lifespan, new InputStreamProviderResultSetBlob(rs, data));
             }

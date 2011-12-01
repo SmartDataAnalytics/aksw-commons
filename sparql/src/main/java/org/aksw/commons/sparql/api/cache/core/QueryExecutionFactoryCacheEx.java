@@ -19,6 +19,10 @@ public class QueryExecutionFactoryCacheEx
     private CacheEx cache;
     private String service;
 
+    public QueryExecutionFactoryCacheEx(QueryExecutionFactory decoratee, CacheEx cache) {
+        this(decoratee, decoratee.getId(), cache);
+    }
+
     public QueryExecutionFactoryCacheEx(QueryExecutionFactory decoratee, String service, CacheEx cache) {
         super(decoratee);
         this.service = service;
