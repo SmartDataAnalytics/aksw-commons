@@ -24,8 +24,11 @@ public class CannedQueryUtils {
     {
         Query query = QueryFactory.create();
         query.setQuerySelectType();
-        query.setResultVars();
 
+        Triple triple = new Triple(s, p, o);
+        ElementGroup group = new ElementGroup();
+        group.addTriplePattern(triple);
+        query.setQueryPattern(group);
 
         if(s.isVariable()) {
             query.getProject().add(Var.alloc(s.getName()));
@@ -36,11 +39,6 @@ public class CannedQueryUtils {
         if(o.isVariable()) {
             query.getProject().add(Var.alloc(o.getName()));
         }
-
-        Triple triple = new Triple(s, p, o);
-        ElementGroup group = new ElementGroup();
-        group.addTriplePattern(triple);
-        query.setQueryPattern(group);
 
         return query;
     }
