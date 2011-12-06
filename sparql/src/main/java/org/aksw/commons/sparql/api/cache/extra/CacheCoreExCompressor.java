@@ -3,6 +3,7 @@ package org.aksw.commons.sparql.api.cache.extra;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import java.io.*;
+import java.util.Iterator;
 
 /**
  * @author Claus Stadler
@@ -26,15 +27,18 @@ public class CacheCoreExCompressor
         return new CacheCoreExCompressor(decoratee);
     }
 
+    public CacheEntry wrap(CacheEntry raw) {
+        return raw == null
+            ? null
+            : new CacheEntryBase(raw.getTimestamp(), raw.getLifespan(),
+                new InputStreamProviderBZip2(raw.getInputStreamProvider(), streamFactory, compression));
+    }
 
     @Override
     public CacheEntry lookup(String service, String queryString) {
         CacheEntry raw = decoratee.lookup(service, queryString);
 
-        return raw == null
-            ? null
-            : new CacheEntry(raw.getTimestamp(), raw.getLifespan(),
-                new InputStreamProviderBZip2(raw.getInputStreamProvider(), streamFactory, compression));
+        return wrap(raw);
     }
 
     @Override

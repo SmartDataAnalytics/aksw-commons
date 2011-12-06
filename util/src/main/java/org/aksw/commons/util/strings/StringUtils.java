@@ -262,20 +262,24 @@ public class StringUtils
         }
         md5.reset();
         md5.update(bytes);
-        byte[] result = md5.digest();
+        byte[] rawResult = md5.digest();
 
-        String hexString = "";
-        for (int i = 0; i < result.length; i++) {
-            int value = 0xff & result[i];
+        return bytesToHexString(rawResult);
+    }
+
+    public static String bytesToHexString(byte[] bytes) {
+        String result = "";
+        for (int i = 0; i < bytes.length; i++) {
+            int value = 0xff & bytes[i];
 
             if(value < 16) {
-                hexString += "0";
+                result += "0";
             }
 
-            hexString += Integer.toHexString(value);
+            result += Integer.toHexString(value);
         }
 
-        return hexString;
+        return result;
     }
 
     public static String md5Hash(String string) {

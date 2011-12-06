@@ -66,6 +66,12 @@ public class RandomUtils
 		tmp.clear();
 	}
 
+    public static <T> void retainRandomSample(List<T> inout, int sampleSize, Random random)
+    {
+        Collections.shuffle(inout, random);
+
+        inout.subList(Math.min(sampleSize, inout.size()), inout.size());
+    }
 
 	public static <T> Set<T> randomSampleSet(Collection<T> source, int sampleSize, Random random)
 	{

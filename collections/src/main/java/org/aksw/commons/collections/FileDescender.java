@@ -31,7 +31,7 @@ public class FileDescender
 
 	@SuppressWarnings("unchecked")
 	public Collection<File> getDescendCollection(File item) {
-        if(!item.isDirectory()) {
+        if(item == null || !item.isDirectory()) {
             return new ArrayList<File>();
         }
 
