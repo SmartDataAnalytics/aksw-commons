@@ -54,6 +54,11 @@ public class QueryExecutionCacheEx
             try {
                 rs = getDecoratee().execSelect();
             } catch(Exception e) {
+                // New strategie:
+                // If something goes wrong, just pass the exception on
+                // Don't try to return a resource from cache instead
+
+                /*
                 logger.warn("Error communicating with backend", e);
 
                 if(resource != null) {
@@ -61,10 +66,12 @@ public class QueryExecutionCacheEx
                     return resource.asResultSet();
                 } else {
                     throw new RuntimeException(e);
-                }
+                }*/
+
+                throw new RuntimeException(e);
             }
 
-            logger.trace("Cache write: " + queryString);
+            logger.trace("Cache write [" + service + "]: " + queryString);
             cache.write(service, queryString, rs);
             resource = cache.lookup(service, queryString);
             if(resource == null) {
@@ -72,7 +79,7 @@ public class QueryExecutionCacheEx
             }
 
         } else {
-            logger.trace("Cache hit: " + queryString);
+            logger.trace("Cache hit [" + service + "]:" + queryString);
         }
 
         return resource.asResultSet();
@@ -89,12 +96,13 @@ public class QueryExecutionCacheEx
     public Model _doCacheModel(Model result, ModelProvider modelProvider) throws IOException {
         CacheResource resource = cache.lookup(service, queryString);
 
-        Model model = ModelFactory.createDefaultModel();
         if(resource == null || resource.isOutdated()) {
 
+            Model model;
             try {
                 model = modelProvider.getModel(); //getDecoratee().execConstruct();
             } catch(Exception e) {
+                /*
                 logger.warn("Error communicating with backend", e);
 
                 if(resource != null) {
@@ -104,16 +112,19 @@ public class QueryExecutionCacheEx
                 } else {
                     throw new RuntimeException(e);
                 }
+                */
+
+                throw new RuntimeException(e);
             }
 
-            logger.trace("Cache write: " + queryString);
+            logger.trace("Cache write [" + service + "]: " + queryString);
             cache.write(service, queryString, model);
             resource = cache.lookup(service, queryString);
             if(resource == null) {
                 throw new RuntimeException("Cache error: Lookup of just written data failed");
             }
         } else {
-            logger.trace("Cache hit: " + queryString);
+            logger.trace("Cache hit [" + service + "]:" + queryString);
         }
 
         return resource.asModel(result);
@@ -129,6 +140,7 @@ public class QueryExecutionCacheEx
             try {
                 ret = getDecoratee().execAsk();
             } catch(Exception e) {
+                /*
                 logger.warn("Error communicating with backend", e);
 
                 if(resource != null) {
@@ -137,9 +149,12 @@ public class QueryExecutionCacheEx
                 } else {
                     throw new RuntimeException(e);
                 }
+                */
+
+                throw new RuntimeException(e);
             }
 
-            logger.trace("Cache write: " + queryString);
+            logger.trace("Cache write [" + service + "]: " + queryString);
             cache.write(service, queryString, ret);
             resource = cache.lookup(service, queryString);
             if(resource == null) {
@@ -147,7 +162,7 @@ public class QueryExecutionCacheEx
             }
 
         } else {
-            logger.trace("Cache hit: " + queryString);
+            logger.trace("Cache hit [" + service + "]:" + queryString);
         }
 
         return resource.asBoolean();

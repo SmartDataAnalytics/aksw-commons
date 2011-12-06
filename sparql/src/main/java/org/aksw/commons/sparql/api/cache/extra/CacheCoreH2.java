@@ -1,5 +1,8 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
+import com.hp.hpl.jena.util.iterator.ClosableIterator;
+import org.aksw.commons.collections.PrefetchIterator;
+import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.sparql.api.cache.core.QueryString;
 import org.aksw.commons.util.strings.StringUtils;
 import org.slf4j.Logger;
@@ -9,7 +12,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.GregorianCalendar;
-
+import java.util.Iterator;
 
 
 /**
@@ -138,21 +141,44 @@ public class CacheCoreH2
         this.lifespan = lifespan;
     }
 
-    public void writeContents(OutputStream out)
+    /**
+     * Note: Do not close the InputStream provider on the cache entries
+     * as this closes the underlying result set.
+     *
+     * @return
+     * @throws SQLException
+     */
+    public Iterator<CacheEntryH2> iterator()
             throws SQLException
     {
-        PrintWriter writer = new PrintWriter(out);
+        final ResultSet rs = executeQuery(Query.DUMP);
 
-        ResultSet rs = executeQuery(Query.DUMP);
-        try {
-            while(rs.next()) {
+        return new SinglePrefetchIterator<CacheEntryH2>() {
+
+            @Override
+            protected CacheEntryH2 prefetch() throws Exception {
+                if(!rs.next()) {
+                    return null;
+                }
+                byte[] rawQueryHash = rs.getBytes("query_hash");
+
+                String queryHash = StringUtils.bytesToHexString(rawQueryHash);
                 String queryString = rs.getString("query_string");
+                Timestamp timestamp = rs.getTimestamp("time");
+                Blob data = rs.getBlob("data");
 
-                writer.println(queryString);
+                return new CacheEntryH2(timestamp.getTime(), lifespan, new InputStreamProviderResultSetBlob(rs, data), queryString, queryHash);
             }
-        } finally {
-            rs.close();
-        }
+
+            @Override
+            public void close() {
+                try {
+                    rs.close();
+                } catch(Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
     }
 
     public synchronized CacheEntry lookup(String service, String queryString)
@@ -186,7 +212,7 @@ public class CacheCoreH2
                     }
                 }
 
-                return new CacheEntry(timestamp.getTime(), lifespan, new InputStreamProviderResultSetBlob(rs, data));
+                return new CacheEntryBase(timestamp.getTime(), lifespan, new InputStreamProviderResultSetBlob(rs, data));
             }
 
             if(rs.next()) {
@@ -208,7 +234,7 @@ public class CacheCoreH2
         }
     }
 
-    public void _write(String service, String queryString, InputStream in)
+    private void _write(String service, String queryString, InputStream in)
             throws SQLException
     {
         String md5 = StringUtils.md5Hash(createHashRoot(service, queryString));

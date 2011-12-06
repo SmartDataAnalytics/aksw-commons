@@ -9,10 +9,12 @@ import org.aksw.commons.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Clob;
 import java.sql.SQLException;
+import java.sql.SQLOutput;
 
 
 /**
@@ -82,6 +84,20 @@ public class CacheResourceCacheEntry
 
     public Model _asModel(Model result) throws SQLException {
         InputStream in = cacheEntry.getInputStreamProvider().open();
+
+        /*
+        ByteArrayInputStream tmp;
+        try {
+            String str = StreamUtils.toStringSafe(in);
+            System.out.println("Content: ");
+            System.out.println(str);
+            tmp = new ByteArrayInputStream(str.getBytes());
+
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        in = tmp;
+        */
 
 	    result.read(in, null, "N-TRIPLES");
         try {
