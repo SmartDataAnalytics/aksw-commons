@@ -58,6 +58,4 @@ public class ColumnsReference
 		return "ColumnsReference [tableName=" + tableName + ", columnNames="
 				+ columnNames + "]";
 	}
-	
-	
 }

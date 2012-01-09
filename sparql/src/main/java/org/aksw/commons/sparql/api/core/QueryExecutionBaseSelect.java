@@ -1,25 +1,15 @@
 package org.aksw.commons.sparql.api.core;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.sdb.core.Generator;
-import com.hp.hpl.jena.sdb.core.Gensym;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
 import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.engine.QueryExecutionBase;
-import com.hp.hpl.jena.sparql.syntax.Element;
-import com.hp.hpl.jena.sparql.syntax.ElementGroup;
-import com.hp.hpl.jena.sparql.syntax.ElementPathBlock;
-import com.hp.hpl.jena.xmloutput.impl.Basic;
+import com.hp.hpl.jena.sparql.syntax.*;
 import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.jena.util.QueryUtils;
+import org.aksw.commons.sparql.api.util.CannedQueryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +20,6 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import com.hp.hpl.jena.sparql.syntax.Template;
 import com.hp.hpl.jena.update.UpdateRequest;
 
 
@@ -39,7 +28,7 @@ class TestQueryExecutionBaseSelect
 {
 
     public TestQueryExecutionBaseSelect(Query query) {
-        super(query);
+        super(query, null);
     }
 
     @Override
@@ -59,6 +48,117 @@ class TestQueryExecutionBaseSelect
     }
 }
 
+
+/**
+ *
+ *
+ * TODO What about Limit and Offset?
+ *
+ */
+class Describer
+    extends PrefetchIterator<Triple> {
+
+    private Iterator<Node> openNodes;
+    private Collection<Var> resultVars;
+
+    //private QueryExe
+    // TODO Keep track of the involved resources so we can close them properly
+
+    private ResultSet rs;
+    private Binding currentBinding = null;
+    private Iterator<Var> currentVar = null;
+    private QueryExecutionFactory<QueryExecutionStreaming> qef;
+
+
+    public Describer(Iterator<Node> openNodes, ResultSet rs, Collection<Var> resultVars, QueryExecutionFactory<QueryExecutionStreaming> qef)
+    {
+        this.openNodes = openNodes;
+        this.resultVars = resultVars;
+        this.rs = rs;
+        this.qef = qef;
+    }
+
+    public static Describer create(List<Node> resultUris, List<String> resultVars, ResultSet rs, QueryExecutionFactory<QueryExecutionStreaming> qef) {
+
+        Set<Var> vars = null;
+        if(rs != null) {
+            if(!rs.hasNext()) {
+                rs = null;
+                resultVars = null;
+            } else {
+                vars = new HashSet<Var>();
+
+                for(String var : resultVars) {
+                    vars.add(Var.alloc(var));
+                }
+            }
+        }
+
+        Iterator<Node> it = (resultUris == null)
+                ? null
+                : resultUris.iterator();
+
+        return new Describer(it, rs, vars, qef);
+    }
+
+
+    public Iterator<Triple> describeNodeStreaming(Node node) {
+        Query query = CannedQueryUtils.constructBySubject(node);
+
+        QueryExecutionStreaming qe = qef.createQueryExecution(query);
+
+        return qe.execConstructStreaming();
+    }
+
+    @Override
+    protected Iterator<Triple> prefetch() throws Exception {
+        Set<Node> batch = new HashSet<Node>();
+
+        int n = 10;
+        while(openNodes != null && openNodes.hasNext() && batch.size() < n) {
+            Node node = openNodes.next();
+            batch.add(node);
+        }
+
+
+        while(batch.size() < n) {
+
+            if(rs == null) {
+                break;
+            }
+
+
+            if(currentVar == null || !currentVar.hasNext()) {
+
+                if(!rs.hasNext()) {
+                    break;
+                }
+
+                currentBinding = rs.nextBinding();
+
+                currentVar = resultVars.iterator();
+            }
+
+            Var var = currentVar.next();
+            Node node = currentBinding.get(var);
+
+            if(node == null || !node.isURI()) {
+                continue;
+            }
+
+            batch.add(node);
+        }
+
+        if(batch.isEmpty()) {
+            return null;
+        }
+
+        Query q = CannedQueryUtils.constructBySubjects(batch);
+        QueryExecutionStreaming qe = qef.createQueryExecution(q);
+
+        return qe.execConstructStreaming();
+    }
+}
 
 
 /**
@@ -86,6 +186,10 @@ public abstract class QueryExecutionBaseSelect
     private Query query;
 
 
+    // Describe queries are sent as multiple individual queries, therefore we require a
+    // reference to a QueryExecutionFactory
+    private QueryExecutionFactory<QueryExecutionStreaming> subFactory;
+
 
     // TODO Move these two utility methods to a utility class
     // Either the whole Sparql API should go to the jena module
@@ -109,9 +213,10 @@ public abstract class QueryExecutionBaseSelect
 
 
 
-    public QueryExecutionBaseSelect(Query query) {
+    public QueryExecutionBaseSelect(Query query, QueryExecutionFactory<QueryExecutionStreaming> subFactory) {
         super(null);
         this.query = query;
+        this.subFactory = subFactory;
     }
 
     //private QueryExecution running = null;
@@ -181,35 +286,45 @@ public abstract class QueryExecutionBaseSelect
         return result;
     }
 
+
+    /**
+     * We use this query execution for retrieving the result set of the
+     * where clause, but we neet the subFactory to describe the individual
+     * resources then.
+     *
+     * @return
+     */
     @Override
     public Iterator<Triple> execDescribeStreaming() {
 
-        Node node = extractDescribeNode(query);
-        Var p = Var.alloc("p");
-        Var o = Var.alloc("o");
-        Triple triple = new Triple(node, p, o);
+        ResultSet rs = null;
+        if ( query.getQueryPattern() != null ) {
+            Query q = new Query();
+            q.setQuerySelectType();
+            q.setResultVars();
+            for(String v : query.getResultVars()) {
+                q.addResultVar(v);
+            }
+            q.setQueryPattern(query.getQueryPattern());
 
-        BasicPattern basicPattern = new BasicPattern();
-        basicPattern.add(triple);
+            rs = this.executeCoreSelect(q);
+        }
 
-        Template template = new Template(basicPattern);
-
-        ElementGroup elementGroup = new ElementGroup();
-        ElementPathBlock pathBlock = new ElementPathBlock();
-        elementGroup.addElement(pathBlock);
-
-        pathBlock.addTriple(triple);
-
-        Query query = new Query();
-        query.setQueryConstructType();
-        query.setConstructTemplate(template);
-        query.setQueryPattern(elementGroup);
-
-        return executeConstructStreaming(query);
+        Describer result = Describer.create(query.getResultURIs(), query.getResultVars(), rs, subFactory);
+        return result;
     }
 
     /**
      * A describe query is translated into a construct query.
+     *
+     *
+     *
+     * Lets see...
+     * Describe ?a ?b ... &lt;x&gt;&lt;y&gt; Where Pattern { ... } becomes ...?
+     *
+     * Construct { ?a ?ap ?ao . ?b ?bp ?bo . } Where Pattern {  } Union {}
+     * Ah, lets just query every resource individually for now
+     *
      *
      * TODO Add support for concise bounded descriptions...
      *
@@ -220,6 +335,7 @@ public abstract class QueryExecutionBaseSelect
 	public Model execDescribe(Model result) {
         createModel(result, execDescribeStreaming());
         return result;
+
 
         /*
         Generator generator = Gensym.create("xx_generated_var_");
@@ -267,9 +383,10 @@ public abstract class QueryExecutionBaseSelect
         Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
 
         ResultSet rs = executeCoreSelect(selectQuery);
-*/
+
 
 		//throw new RuntimeException("Sorry, DESCRIBE is not implemted yet.");
+		*/
 	}
 
     private Iterator<Triple> executeConstructStreaming(Query query) {

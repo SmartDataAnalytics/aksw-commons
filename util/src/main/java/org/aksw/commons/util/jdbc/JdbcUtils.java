@@ -116,5 +116,40 @@ public class JdbcUtils {
 		return result;
 	}
 
+    public static Map<String, Relation> fetchColumns(Connection conn)
+            throws SQLException
+    {
+        Map<String, Relation> result = new HashMap<String, Relation>();
+
+        DatabaseMetaData meta = conn.getMetaData();
+
+        ResultSet rs = meta.getColumns(conn.getCatalog(), null, null, null);
+
+        Relation current = null;
+
+        while (rs.next()) {
+            //System.out.println(getRow(rs));
+
+            String tableName = rs.getString("TABLE_NAME");
+            String columnName = rs.getString("COLUMN_NAME");
+            String typeName = rs.getString("TYPE_NAME");
+
+            if(current == null || !tableName.equals(current.getName())) {
+                current = new Relation(tableName);
+
+                result.put(tableName, current);
+            }
+            Column column = new Column(columnName, typeName);
+            current.getColumns().put(columnName, column);
+        }
+
+        //st.close();
+        conn.close();
+
+
+        return result;
+    }
+		    
+
 }
 

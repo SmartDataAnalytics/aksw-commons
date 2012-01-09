@@ -17,6 +17,7 @@ import java.util.Comparator;
  * @author raven
  *
  */
+// TODO Rename to something like StringWithIntegerComparator
 public class StringPrettyComparator
 	implements Comparator<String>
 {
@@ -36,8 +37,9 @@ public class StringPrettyComparator
 
 		int i = 0;
 		for(i = 0; i < s.length(); ++i) {
-			if(Character.isDigit(s.charAt(i)) != digitMode)
+			if(Character.isDigit(s.charAt(i)) != digitMode) {
 				break;
+            }
 		}
 		//while(Character.isDigit(s.charAt(i)) == digitMode && (i < s.length() - 1))
 			//++i;
@@ -51,8 +53,9 @@ public class StringPrettyComparator
 
 	boolean isDigitSuffix(String s)
 	{
-		if(s.isEmpty())
+		if(s.isEmpty()) {
 			return false;
+        }
 
 		boolean result = Character.isDigit(s.charAt(s.length() - 1));
 		return result;
