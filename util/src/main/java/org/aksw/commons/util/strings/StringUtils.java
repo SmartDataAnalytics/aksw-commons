@@ -1,12 +1,14 @@
 package org.aksw.commons.util.strings;
 
+import org.aksw.commons.collections.StringTransformer;
+import org.jgrapht.util.PrefetchIterator;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.NavigableMap;
+import java.util.*;
 
 public class StringUtils
 {
@@ -134,20 +136,192 @@ public class StringUtils
      *
      * @return
      */
-    public static String commonPrefix(String sa, String sb)
+    public static String commonPrefix(String sa, String sb, boolean skipLast)
     {
         char[] a = sa.toCharArray();
         char[] b = sb.toCharArray();
         int n = Math.min(a.length, b.length);
-        String result = "";
 
-        for(int i = 0; i < n; i++) {
+        char[] tmp = new char[n];
+
+
+        int i;
+        for(i = 0; i < n; i++) {
             if(a[i] != b[i]) {
+                tmp[i] = '\0';
                 break;
             }
 
-            result += a[i];
+            tmp[i] = a[i];
         }
+
+        if(skipLast) {
+           if(i == 0) {
+               return null;
+           } else {
+               tmp[i - 1] = '\0';
+           }
+        }
+
+
+        return new String(tmp);
+    }
+
+
+
+    public static <T> String longestPrefixLookup(String lookup, NavigableSet<String> prefixes)
+    {
+        return longestPrefixLookup(lookup, true, prefixes);
+    }
+
+    public static <T> String longestPrefixLookup(String lookup, boolean inclusive, NavigableSet<String> prefixes)
+    {
+        String current = lookup;
+        while(true) {
+            NavigableSet<String> candidates = prefixes.headSet(current, true).descendingSet();
+            if(candidates.isEmpty()) {
+                return null;
+            }
+
+            String candidate = candidates.first();
+            if(candidate == null) {
+                return null;
+            }
+
+            if(current.equals(candidate)) {
+            	if(inclusive) {
+            		return candidate;
+            	} else {
+            		if(current.equals(lookup)) {
+            			current = StringUtils.commonPrefix(current, candidate, true);
+                        if(current == null) {
+                            return null;
+                        }
+            		} else {
+            			return candidate;
+            		}
+            	}
+            } else {
+            	current = StringUtils.commonPrefix(current, candidate, false);
+            }
+        }
+    }
+
+
+    public static <T> Map.Entry<String, T> longestPrefixLookup(String lookup, NavigableMap<String, T> prefixMap)
+    {
+        return longestPrefixLookup(lookup, true, prefixMap);
+    }
+
+
+    public static <T> Map<String, T> getAllPrefixes(String lookup, boolean inclusive, NavigableMap<String, T> prefixMap) {
+        Map<String, T> result = new HashMap<String, T>();
+
+        Map.Entry<String, T> entry = longestPrefixLookup(lookup, inclusive, prefixMap);
+        if(entry != null) {
+            result.put(entry.getKey(), entry.getValue());
+
+            String current = entry.getKey();
+            while((entry = longestPrefixLookup(entry.getKey(), false, prefixMap)) != null) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return result;
+    }
+
+    public static <T> NavigableSet<String> getAllPrefixes(String lookup, boolean inclusive, NavigableSet<String> prefixMap) {
+        NavigableSet<String> result = new TreeSet<String>();
+
+        String entry = longestPrefixLookup(lookup, inclusive, prefixMap);
+        if(entry != null) {
+            result.add(entry);
+
+            while((entry = longestPrefixLookup(entry, false, prefixMap)) != null) {
+                result.add(entry);
+            }
+        }
+
+        return result;
+    }
+
+
+    public static <T> Map<String, T> getAllPrefixes(String lookup, boolean inclusive, SortedMap<String, T> prefixMap) {
+        Map<String, T> result = new HashMap<String, T>();
+
+        Map.Entry<String, T> entry = longestPrefixLookup(lookup, inclusive, prefixMap);
+        if(entry != null) {
+            result.put(entry.getKey(), entry.getValue());
+
+            String current = entry.getKey();
+            while((entry = longestPrefixLookup(entry.getKey(), false, prefixMap)) != null) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return result;
+    }
+
+
+
+    public static <T> Map<String, T> getAllPrefixedEntries(String prefix, boolean inclusive, SortedMap<String, T> prefixMap) {
+        Map<String, T> result = new HashMap<String, T>();
+
+        SortedMap<String, T> candidates = prefixMap.tailMap(prefix);
+
+        boolean isFirst = true;
+        for(Map.Entry<String, T> entry : candidates.entrySet()) {
+
+            // Skip the entry if non-exclusive
+            if(isFirst && !inclusive) {
+                if(entry.getKey().equals(prefix)) {
+                    isFirst = false;
+                    continue;
+                }
+            }
+
+            if(entry.getKey() != null && entry.getKey().startsWith(prefix) ) {
+                result.put(entry.getKey(), entry.getValue());
+            } else {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    public static <T> Map<String, T> getAllPrefixedEntries(String prefix, boolean inclusive, NavigableMap<String, T> prefixMap) {
+        Map<String, T> result = new HashMap<String, T>();
+
+
+        NavigableMap<String, T> candidates = prefixMap.tailMap(prefix, inclusive);
+        for(Map.Entry<String, T> entry : candidates.entrySet()) {
+            if(entry.getKey() != null && entry.getKey().startsWith(prefix) ) {
+                result.put(entry.getKey(), entry.getValue());
+            } else {
+                break;
+            }
+        }
+
+        /*
+        if(candidates.isEmpty()) {
+            return null;
+        }
+
+        Map.Entry<String, V> candidate = candidates.lastEntry();
+        return candidate.getKey().startsWith(prefix) ? candidate : null;
+
+
+
+        Map.Entry<String, T> entry = shortestMatchLookup(prefix, inclusive, prefixMap);
+        if(entry != null) {
+            result.put(entry.getKey(), entry.getValue());
+
+            String current = entry.getKey();
+            while((entry = shortestMatchLookup(entry.getKey(), false, prefixMap)) != null) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }*/
 
         return result;
     }
@@ -160,10 +334,11 @@ public class StringUtils
      * @param prefixMap
      * @return
      */
-    public static <T> Map.Entry<String, T> longestPrefixLookup(String lookup, NavigableMap<String, T> prefixMap)
+    public static <T> Map.Entry<String, T> longestPrefixLookup(String lookup, boolean inclusive, NavigableMap<String, T> prefixMap)
     {
+        String current = lookup;
         while(true) {
-            NavigableMap<String, T> candidates = prefixMap.headMap(lookup, true).descendingMap();
+            NavigableMap<String, T> candidates = prefixMap.headMap(current, true).descendingMap();
             Map.Entry<String, T> candidate = candidates.firstEntry();
 
             if(candidate == null) {
@@ -172,13 +347,79 @@ public class StringUtils
 
             String key = candidate.getKey();
 
-            if(key == lookup || lookup.equals(key)) {
-                return candidate;
+            if(current.equals(key)) {
+            	if(inclusive) {
+            		return candidate;
+            	} else {
+            		if(current.equals(lookup)) {
+            			current = StringUtils.commonPrefix(current, key, true);
+                        if(current == null) {
+                            return null;
+                        }
+            		} else {
+            			return candidate;
+            		}
+            	}
+            } else {
+            	current = StringUtils.commonPrefix(current, key, false);
             }
-
-            lookup = StringUtils.commonPrefix(lookup, key);
         }
     }
+
+    public static <T> Map.Entry<String, T> longestPrefixLookup(String lookup, boolean inclusive, SortedMap<String, T> prefixMap)
+    {
+        String current = lookup;
+        while(true) {
+            SortedMap<String, T> candidates = prefixMap.headMap(current);
+            if(candidates.isEmpty()) {
+                return null;
+            }
+
+            Map.Entry<String, T> candidate = candidates.entrySet().iterator().next();
+            String key = candidate.getKey();
+
+            if(current.equals(key)) {
+            	if(inclusive) {
+            		return candidate;
+            	} else {
+            		if(current.equals(lookup)) {
+            			current = StringUtils.commonPrefix(current, key, true);
+                        if(current == null) {
+                            return null;
+                        }
+            		} else {
+            			return candidate;
+            		}
+            	}
+            } else {
+            	current = StringUtils.commonPrefix(current, key, false);
+            }
+        }
+    }
+
+
+
+    public static <V> Map.Entry<String, V> shortestMatchLookup(String prefix, boolean inclusive, NavigableMap<String, V> items) {
+        NavigableMap<String, V> candidates = items.tailMap(prefix, inclusive).descendingMap();
+        if(candidates.isEmpty()) {
+            return null;
+        }
+
+        Map.Entry<String, V> candidate = candidates.lastEntry();
+        return candidate.getKey().startsWith(prefix) ? candidate : null;
+    }
+
+
+    public static String shortestMatchLookup(String prefix, boolean inclusive, NavigableSet<String> items) {
+        NavigableSet<String> candidates = items.tailSet(prefix, inclusive).descendingSet();
+        if(candidates.isEmpty()) {
+            return null;
+        }
+
+        String candidate = candidates.last();
+        return candidate.startsWith(prefix) ? candidate : null;
+    }
+
 
     public static <T> Map.Entry<String, T> getMatchBySuffix(String str, Map<String, T> map)
     {
@@ -226,6 +467,7 @@ public class StringUtils
         return null;
     }
 
+
     /*
     public static void main(String[] args) {
         NavigableMap<String, String> m = new TreeMap<String, String>();
@@ -243,8 +485,8 @@ public class StringUtils
         System.out.println(longestPrefixLookup("ma", m));
         System.out.println(longestPrefixLookup("m", m));
         System.out.println(longestPrefixLookup("", m));
-    }
-    */
+    }*/
+
 
     /**
      * calculate md5 hash of the string
