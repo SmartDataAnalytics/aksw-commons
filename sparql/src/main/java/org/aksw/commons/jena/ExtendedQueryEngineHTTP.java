@@ -6,9 +6,9 @@ import com.hp.hpl.jena.sparql.engine.http.HttpParams;
 import com.hp.hpl.jena.sparql.engine.http.HttpQuery;
 import com.hp.hpl.jena.sparql.engine.http.Params;
 import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
+import com.hp.hpl.jena.sparql.graph.GraphFactory;
 import com.hp.hpl.jena.sparql.resultset.XMLInput;
 import com.hp.hpl.jena.sparql.util.Context;
-import com.hp.hpl.jena.sparql.util.graph.GraphFactory;
 import com.hp.hpl.jena.util.FileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +87,7 @@ class DisconnectorThread
  *
  * Jena now provides one on its own
  */
+
 @Deprecated
 public class ExtendedQueryEngineHTTP
         implements QueryExecution {
@@ -276,6 +277,15 @@ public class ExtendedQueryEngineHTTP
 
     public Context getContext() {
         return context;
+    }
+
+    /**
+     * The query associated with a query execution.
+     * May be null (QueryExecution may have been created by other means)
+     */
+    @Override
+    public Query getQuery() {
+        return null;
     }
 
     private HttpQuery makeHttpQuery() {

@@ -53,6 +53,10 @@ split_size=$(stat -c%s "$rapper_target")
 echo "Size = $split_size"
 
 
+createGraphStmt="EXEC=Sparql Create Silent Graph <$virt_graphName>"
+echo $virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$createGraphStmt"
+$virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$createGraphStmt"
+
 
 if [ $split_size -gt 5000000 ]; then
 	echo "File is large."

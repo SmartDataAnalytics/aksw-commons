@@ -10,7 +10,7 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.sparql.util.graph.GraphFactory;
+import com.hp.hpl.jena.sparql.graph.GraphFactory;
 
 public class TripleUtils
 {

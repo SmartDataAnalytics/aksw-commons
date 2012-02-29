@@ -1,6 +1,5 @@
 package org.aksw.commons.util;
 
-import com.ctc.wstx.util.StringUtil;
 import org.aksw.commons.util.strings.StringUtils;
 
 import java.io.BufferedReader;

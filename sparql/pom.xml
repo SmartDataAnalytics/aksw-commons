@@ -48,6 +48,10 @@
                     <artifactId>slf4j-log4j12</artifactId>
                     <groupId>org.slf4j</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -71,6 +75,18 @@
             <groupId>org.aksw.commons</groupId>
             <artifactId>util</artifactId>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+        </dependency>
+
+<!--
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>sdb</artifactId>
@@ -92,6 +108,7 @@
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
+-->
         <dependency>
             <groupId>velocity</groupId>
             <artifactId>velocity</artifactId>
