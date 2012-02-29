@@ -1,9 +1,6 @@
 package org.aksw.commons.sparql.api.core;
 
-import com.hp.hpl.jena.query.Dataset;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.sparql.engine.QueryExecutionBase;
 import com.hp.hpl.jena.sparql.util.Context;
@@ -43,6 +40,15 @@ public class QueryExecutionAdapter
     @Override
     public Context getContext() {
         throw new NotImplementedException();
+    }
+
+    /**
+     * The query associated with a query execution.
+     * May be null (QueryExecution may have been created by other means)
+     */
+    @Override
+    public Query getQuery() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

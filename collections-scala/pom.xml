@@ -119,15 +119,28 @@
     </build>
 
     <dependencies>
+
+        <!--
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>jena</artifactId>
         </dependency>
-        <!--JENA ARQ is in central - we use the latest-->
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>arq</artifactId>
         </dependency>
+        -->
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>com.owldl</groupId>
             <artifactId>pellet</artifactId>

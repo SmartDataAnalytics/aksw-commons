@@ -190,6 +190,15 @@ public class QueryExecutionCompare
     }
 
     /**
+     * The query associated with a query execution.
+     * May be null (QueryExecution may have been created by other means)
+     */
+    @Override
+    public Query getQuery() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    /**
      * Execute a SELECT query
      */
     @Override

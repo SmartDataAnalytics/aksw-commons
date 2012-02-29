@@ -102,7 +102,18 @@
             <artifactId>collections</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--JENA ARQ is in central - we use the latest-->
+
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+        </dependency>
+
+        <!--
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>arq</artifactId>
@@ -111,6 +122,7 @@
             <groupId>com.hp.hpl.jena</groupId>
             <artifactId>jena</artifactId>
         </dependency>
+        -->
 
         <!-- Vendor specific Jena implementations/extensions -->
         <!-- This should be a transitive dependency of virt_jena -->

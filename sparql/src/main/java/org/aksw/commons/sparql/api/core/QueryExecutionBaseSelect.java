@@ -7,6 +7,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.syntax.*;
+import org.aksw.commons.collections.IClosable;
 import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.jena.util.QueryUtils;
 import org.aksw.commons.sparql.api.util.CannedQueryUtils;
@@ -171,7 +172,8 @@ class Describer
  * com.hp.hpl.jena.sparql.engine.QueryExecutionBase, which is a
  * class with a similar purpose but not as reusable as this one
  * (This class reduces all operations to a single executeCoreSelect call)
- * 
+ *
+ * NOTE: executeCoreSelect will close this query execution once the ResultSet is consumed.
  *
  * @author raven
  *
@@ -234,7 +236,21 @@ public abstract class QueryExecutionBaseSelect
             throw new RuntimeException("Failed to obtain a QueryExecution for query: " + query);
         }
 
-        return decoratee.execSelect();
+        //return decoratee.execSelect();
+
+        ResultSet tmp = decoratee.execSelect();
+        final QueryExecution self = this;
+        ResultSetClosing result = new ResultSetClosing(tmp, new IClosable() {
+            @Override
+            public void close() {
+                decoratee.close();
+                self.close();
+            }
+        });
+
+        return result;
+
+        
     }
 
 	@Override
