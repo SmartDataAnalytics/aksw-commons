@@ -30,7 +30,7 @@ public class ClassUtils {
         m.setAccessible(true);
 
 		try {
-            logger.trace("Invoking " + m + " on " + o);
+            //logger.trace("Invoking " + m + " on " + o);
 			return m.invoke(o, args);
 		} catch (Exception e) {
 			//throw new RuntimeException("Invocation failed", e);
@@ -88,6 +88,17 @@ public class ClassUtils {
 
 		return result;
 	}
+
+    public static List<Class<?>> getTypeSignatureList(Object[] args)
+    {
+        List<Class<?>> result = new ArrayList<Class<?>>(args.length);
+        for(int i = 0; i < args.length; ++i) {
+            Object arg = args[i];
+            result.add(arg == null ? null : arg.getClass());
+        }
+
+        return result;
+    }
 
     public static Class<?>[] getTypeSignature(Object[] args)
     {

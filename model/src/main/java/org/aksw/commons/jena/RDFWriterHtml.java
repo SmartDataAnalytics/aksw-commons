@@ -15,7 +15,7 @@ import java.util.*;
  *         Date: 10/21/11
  *         Time: 2:53 PM
  */
-public class HtmlJenaWriter
+public class RDFWriterHtml
 	implements RDFWriter
 {
 	String nodeToString(RDFNode node, NavigableMap<String, String> nsToPrefix, String attributes)
