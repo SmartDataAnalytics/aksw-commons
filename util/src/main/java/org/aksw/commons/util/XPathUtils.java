@@ -1,6 +1,7 @@
 package org.aksw.commons.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -14,7 +15,7 @@ import javax.xml.xpath.*;
  */
 public class XPathUtils
 {
-	private static Logger logger	= Logger.getLogger(XPathUtils.class);
+	private static Logger logger	= LoggerFactory.getLogger(XPathUtils.class);
 	private static XPath xPath	= null;
 
 	private static XPath getXPath()

@@ -4,12 +4,13 @@ import com.clarkparsia.modularity.PelletIncremantalReasonerFactory;
 import com.jamonapi.Monitor;
 import com.jamonapi.MonitorFactory;
 import org.aksw.commons.util.Time;
-import org.apache.log4j.Logger;
 import org.mindswap.pellet.PelletOptions;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.util.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.List;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class MaterializeModel {
-    private static final Logger logger = Logger.getLogger(MaterializeModel.class);
+    private static final Logger logger = LoggerFactory.getLogger(MaterializeModel.class);
 
     public static PelletOptions.MonitorType monitorType = PelletOptions.MonitorType.NONE;
 
@@ -32,7 +33,7 @@ public class MaterializeModel {
 
         PelletOptions.USE_CLASSIFICATION_MONITOR = monitorType;
 
-        logger.info(ontology.getAxiomCount());
+        logger.info("" + ontology.getAxiomCount());
         Monitor m = MonitorFactory.getTimeMonitor(MaterializeModel.class.getSimpleName() + ".convertToInferredModel").start();
 
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
@@ -53,7 +54,7 @@ public class MaterializeModel {
         man.applyChanges(changes);
 
         logger.info("Inference finished " + Time.neededMs(m.stop().getLastValue()));
-        logger.info(ontology.getAxiomCount());
+        logger.info("" + ontology.getAxiomCount());
         return ontology;
     }
 

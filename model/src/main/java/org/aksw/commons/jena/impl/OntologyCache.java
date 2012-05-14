@@ -4,7 +4,8 @@ import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import org.aksw.commons.jena.OntologyLoader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -22,7 +23,7 @@ import java.nio.channels.ReadableByteChannel;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class OntologyCache extends SimpleLoader implements OntologyLoader {
-    private static final Logger log = Logger.getLogger(OntologyCache.class);
+    private static final Logger log = LoggerFactory.getLogger(OntologyCache.class);
     final private String cacheDir;
 
 

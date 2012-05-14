@@ -15,20 +15,16 @@
     </parent>
 
     <dependencies>
-        <dependency>
-            <groupId>org.aksw.commons</groupId>
-            <artifactId>collections</artifactId>
-        </dependency>
 
 
-        <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-arq</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-core</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.jena</groupId>-->
+            <!--<artifactId>jena-arq</artifactId>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.jena</groupId>-->
+            <!--<artifactId>jena-core</artifactId>-->
+        <!--</dependency>-->
         <!--
         <dependency>
             <groupId>com.hp.hpl.jena</groupId>
@@ -40,91 +36,78 @@
         </dependency>
 -->
         
-        <dependency>
-            <groupId>com.owldl</groupId>
-            <artifactId>pellet</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.owlapi</groupId>
-            <artifactId>owlapi</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.owldl</groupId>-->
+            <!--<artifactId>pellet</artifactId>-->
+        <!--</dependency>-->
+
+
+        <!-- OWL-API -->
+        <!--<dependency>-->
+            <!--<groupId>net.sourceforge.owlapi</groupId>-->
+            <!--<artifactId>owlapi</artifactId>-->
+        <!--</dependency>-->
 
 
         <!-- Vendor specific Jena implementations/extensions -->
         <!-- This should be a transitive dependency of virt_jena -->
-        <dependency>
-             <groupId>com.openlink.virtuoso</groupId>
-             <artifactId>virtjdbc3</artifactId>
-             <version>6.1.2</version>
-        </dependency>
+        <!--<dependency>-->
+             <!--<groupId>com.openlink.virtuoso</groupId>-->
+             <!--<artifactId>virtjdbc3</artifactId>-->
+             <!--<version>6.1.2</version>-->
+        <!--</dependency>-->
 
-        <dependency>
-             <groupId>com.openlink.virtuoso</groupId>
-             <artifactId>virt_jena</artifactId>
-             <version>6.1.2</version>
-        </dependency>
+        <!--<dependency>-->
+             <!--<groupId>com.openlink.virtuoso</groupId>-->
+             <!--<artifactId>virt_jena</artifactId>-->
+             <!--<version>6.1.2</version>-->
+        <!--</dependency>-->
 
 
         <!-- Collection APIs -->
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>r07</version>
+            <groupId>org.aksw.commons</groupId>
+            <artifactId>collections</artifactId>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.google.guava</groupId>-->
+            <!--<artifactId>guava</artifactId>-->
+            <!--<version>r07</version>-->
+        <!--</dependency>-->
 
+        <!--<dependency>-->
+            <!--<groupId>net.sourceforge.collections</groupId>-->
+            <!--<artifactId>collections-generic</artifactId>-->
+        <!--</dependency>-->
+
+
+        <!-- Testing -->
         <dependency>
-            <groupId>net.sourceforge.collections</groupId>
-            <artifactId>collections-generic</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.thoughtworks.xstream</groupId>
-            <artifactId>xstream</artifactId>
-        </dependency>
 
+        <!-- Url validation -->
         <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
             <version>1.3.1</version>
         </dependency>
 
+        <!-- Monitoring -->
+        <!--<dependency>-->
+            <!--<groupId>com.jamonapi</groupId>-->
+            <!--<artifactId>jamon</artifactId>-->
+        <!--</dependency>-->
+
+
+        <!-- Xml (de)serialization -->
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+        </dependency>
+
     </dependencies>
-    <build>
-    	<pluginManagement>
-    		<plugins>
-    			<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-    			<plugin>
-    				<groupId>org.eclipse.m2e</groupId>
-    				<artifactId>lifecycle-mapping</artifactId>
-    				<version>1.0.0</version>
-    				<configuration>
-    					<lifecycleMappingMetadata>
-    						<pluginExecutions>
-    							<pluginExecution>
-    								<pluginExecutionFilter>
-    									<groupId>
-    										org.scala-tools
-    									</groupId>
-    									<artifactId>
-    										maven-scala-plugin
-    									</artifactId>
-    									<versionRange>
-    										[2.15.2,)
-    									</versionRange>
-    									<goals>
-    										<goal>compile</goal>
-    										<goal>testCompile</goal>
-    									</goals>
-    								</pluginExecutionFilter>
-    								<action>
-    									<ignore></ignore>
-    								</action>
-    							</pluginExecution>
-    						</pluginExecutions>
-    					</lifecycleMappingMetadata>
-    				</configuration>
-    			</plugin>
-    		</plugins>
-    	</pluginManagement>
-    </build>
+
 </project>

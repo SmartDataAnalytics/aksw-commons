@@ -3,13 +3,14 @@ package org.aksw.commons.owlapi;
 import com.jamonapi.Monitor;
 import com.jamonapi.MonitorFactory;
 import org.aksw.commons.util.Time;
-import org.apache.log4j.Logger;
 import org.coode.owlapi.manchesterowlsyntax.ManchesterOWLSyntaxOntologyFormat;
 import org.coode.owlapi.turtle.TurtleOntologyFormat;
 import org.semanticweb.owlapi.io.RDFXMLOntologyFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyFormat;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.Map;
  *  Time:  21.09.2010 09:03:30
  */
 public class StringConverter {
-    private static final Logger logger = Logger.getLogger(StringConverter.class);
+    private static final Logger logger = LoggerFactory.getLogger(StringConverter.class);
 
     final private OWLOntology ontology;
 

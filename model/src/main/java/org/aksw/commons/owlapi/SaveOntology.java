@@ -3,13 +3,14 @@ package org.aksw.commons.owlapi;
 import com.jamonapi.Monitor;
 import com.jamonapi.MonitorFactory;
 import org.aksw.commons.util.Time;
-import org.apache.log4j.Logger;
 import org.coode.owlapi.turtle.TurtleOntologyFormat;
 import org.semanticweb.owlapi.io.RDFXMLOntologyFormat;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyFormat;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -18,7 +19,7 @@ import java.io.File;
  * Time:  21.09.2010 09:05:42
  */
 public class SaveOntology {
-    private static final Logger logger = Logger.getLogger(SaveOntology.class);
+    private static final Logger logger = LoggerFactory.getLogger(SaveOntology.class);
 
 
     public static void saveOntologyAsRDFXML(OWLOntology ontology, String toFile) {

@@ -4,7 +4,8 @@ import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import org.aksw.commons.jena.OntologyLoader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,7 +14,7 @@ import java.util.Set;
  * @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann
  */
 public class SimpleLoader implements OntologyLoader {
-    private static final Logger log = Logger.getLogger(SimpleLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleLoader.class);
 
     @Override
     public OntModel loadOntology(String ontologyUri) {

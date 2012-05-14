@@ -1,6 +1,8 @@
 package org.aksw.commons.util;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,7 +18,7 @@ import java.util.Scanner;
  * User: Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class ExtendedFile {
-      private static final Logger logger = Logger.getLogger(ExtendedFile.class);
+      private static final Logger logger = LoggerFactory.getLogger(ExtendedFile.class);
 
     public boolean trim = true;
     final private File file;

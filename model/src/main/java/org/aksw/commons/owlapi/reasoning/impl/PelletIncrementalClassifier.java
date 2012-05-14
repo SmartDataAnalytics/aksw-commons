@@ -2,9 +2,10 @@ package org.aksw.commons.owlapi.reasoning.impl;
 
 import com.clarkparsia.modularity.IncrementalClassifier;
 import com.clarkparsia.modularity.PelletIncremantalReasonerFactory;
-import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.Set;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class PelletIncrementalClassifier implements org.aksw.commons.owlapi.reasoning.IncrementalClassifier {
-    private static final Logger logger = Logger.getLogger(PelletIncrementalClassifier.class);
+    private static final Logger logger = LoggerFactory.getLogger(PelletIncrementalClassifier.class);
 
     private OWLDataFactory factory;
     private OWLOntologyManager manager;

@@ -1,6 +1,8 @@
 package org.aksw.commons.util;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
@@ -11,7 +13,7 @@ import java.util.Scanner;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class URLHelper {
-    private static final Logger logger = Logger.getLogger(ExtendedFile.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExtendedFile.class);
 
     public static String readContentLogException(URL url) {
         try {

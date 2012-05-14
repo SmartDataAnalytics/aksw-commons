@@ -62,9 +62,23 @@
             <artifactId>owlapi</artifactId>
         </dependency>
 
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+
+        <!-- Performance Monitoring -->
+        <dependency>
+            <groupId>com.jamonapi</groupId>
+            <artifactId>jamon</artifactId>
+        </dependency>
+
 
         <!-- Vendor specific Jena implementations/extensions -->
         <!-- This should be a transitive dependency of virt_jena -->
+<!--
         <dependency>
             <groupId>com.openlink.virtuoso</groupId>
             <artifactId>virtjdbc3</artifactId>
@@ -76,23 +90,32 @@
             <artifactId>virt_jena</artifactId>
             <version>6.1.2</version>
         </dependency>
+-->
 
 
         <!-- Collection APIs -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>r07</version>
-        </dependency>
-
         <dependency>
             <groupId>net.sourceforge.collections</groupId>
             <artifactId>collections-generic</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.thoughtworks.xstream</groupId>
-            <artifactId>xstream</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+
+        <!--
+                <dependency>
+                    <groupId>com.thoughtworks.xstream</groupId>
+                    <artifactId>xstream</artifactId>
+                </dependency>
+        -->
+
+        <!-- Unit Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
 
     </dependencies>

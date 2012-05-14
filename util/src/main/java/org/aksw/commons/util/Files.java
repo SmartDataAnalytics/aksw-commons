@@ -1,6 +1,8 @@
 package org.aksw.commons.util;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,7 +14,7 @@ import java.util.Scanner;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class Files {
-     private static final Logger logger = Logger.getLogger(Files.class);
+     private static final Logger logger = LoggerFactory.getLogger(Files.class);
 
 
     /**

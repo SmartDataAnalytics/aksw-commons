@@ -80,42 +80,44 @@
                 </configuration>
             </plugin>
         </plugins>
-        <pluginManagement>
-        	<plugins>
-        		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-        		<plugin>
-        			<groupId>org.eclipse.m2e</groupId>
-        			<artifactId>lifecycle-mapping</artifactId>
-        			<version>1.0.0</version>
-        			<configuration>
-        				<lifecycleMappingMetadata>
-        					<pluginExecutions>
-        						<pluginExecution>
-        							<pluginExecutionFilter>
-        								<groupId>
-        									org.scala-tools
-        								</groupId>
-        								<artifactId>
-        									maven-scala-plugin
-        								</artifactId>
-        								<versionRange>
-        									[2.15.2,)
-        								</versionRange>
-        								<goals>
-        									<goal>compile</goal>
-        									<goal>testCompile</goal>
-        								</goals>
-        							</pluginExecutionFilter>
-        							<action>
-        								<ignore></ignore>
-        							</action>
-        						</pluginExecution>
-        					</pluginExecutions>
-        				</lifecycleMappingMetadata>
-        			</configuration>
-        		</plugin>
-        	</plugins>
-        </pluginManagement>
+
+
+        <!--<pluginManagement>-->
+        	<!--<plugins>-->
+        		<!--&lt;!&ndash;This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.&ndash;&gt;-->
+        		<!--<plugin>-->
+        			<!--<groupId>org.eclipse.m2e</groupId>-->
+        			<!--<artifactId>lifecycle-mapping</artifactId>-->
+        			<!--<version>1.0.0</version>-->
+        			<!--<configuration>-->
+        				<!--<lifecycleMappingMetadata>-->
+        					<!--<pluginExecutions>-->
+        						<!--<pluginExecution>-->
+        							<!--<pluginExecutionFilter>-->
+        								<!--<groupId>-->
+        									<!--org.scala-tools-->
+        								<!--</groupId>-->
+        								<!--<artifactId>-->
+        									<!--maven-scala-plugin-->
+        								<!--</artifactId>-->
+        								<!--<versionRange>-->
+        									<!--[2.15.2,)-->
+        								<!--</versionRange>-->
+        								<!--<goals>-->
+        									<!--<goal>compile</goal>-->
+        									<!--<goal>testCompile</goal>-->
+        								<!--</goals>-->
+        							<!--</pluginExecutionFilter>-->
+        							<!--<action>-->
+        								<!--<ignore></ignore>-->
+        							<!--</action>-->
+        						<!--</pluginExecution>-->
+        					<!--</pluginExecutions>-->
+        				<!--</lifecycleMappingMetadata>-->
+        			<!--</configuration>-->
+        		<!--</plugin>-->
+        	<!--</plugins>-->
+        <!--</pluginManagement>-->
     </build>
 
     <dependencies>
@@ -131,6 +133,7 @@
         </dependency>
         -->
 
+<!--
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-core</artifactId>
@@ -139,8 +142,10 @@
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
         </dependency>
+-->
 
 
+<!--
         <dependency>
             <groupId>com.owldl</groupId>
             <artifactId>pellet</artifactId>
@@ -149,10 +154,12 @@
             <groupId>net.sourceforge.owlapi</groupId>
             <artifactId>owlapi</artifactId>
         </dependency>
+-->
 
 
         <!-- Vendor specific Jena implementations/extensions -->
         <!-- This should be a transitive dependency of virt_jena -->
+<!--
         <dependency>
              <groupId>com.openlink.virtuoso</groupId>
              <artifactId>virtjdbc3</artifactId>
@@ -163,22 +170,29 @@
              <artifactId>virt_jena</artifactId>
         </dependency>
 
+-->
 
         <!-- Collection APIs -->
+<!--
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+-->
 
+<!--
         <dependency>
             <groupId>net.sourceforge.collections</groupId>
             <artifactId>collections-generic</artifactId>
         </dependency>
+-->
 
+<!--
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
         </dependency>
+-->
 
     </dependencies>
 </project>

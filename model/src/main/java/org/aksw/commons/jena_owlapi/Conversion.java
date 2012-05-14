@@ -4,10 +4,8 @@ import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import org.aksw.commons.jena.Constants;
 import org.aksw.commons.jena.StringConverter;
-import org.apache.log4j.Logger;
 import org.coode.owlapi.rdf.model.RDFGraph;
 import org.coode.owlapi.rdf.model.RDFLiteralNode;
 import org.coode.owlapi.rdf.model.RDFNode;
@@ -16,21 +14,21 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.util.Collections;
 import java.util.Set;
 
 /**
  * Converts between Jena and OWLApi models
  */
 public class Conversion {
-	private static final Logger logger = Logger.getLogger(Conversion.class);
+	private static final Logger logger = LoggerFactory.getLogger(Conversion.class);
 
 	public static OWLOntology JenaModel2OWLAPIOntology(Model m){
         String rdfxml = new StringConverter(m).toStringAsRDFXML();
