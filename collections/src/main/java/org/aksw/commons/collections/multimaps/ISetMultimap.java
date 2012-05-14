@@ -2,8 +2,8 @@ package org.aksw.commons.collections.multimaps;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public interface ISetMultimap<K, V>
 {

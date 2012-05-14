@@ -1,11 +1,12 @@
 package org.aksw.commons.collections.random;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /** @author Konrad Höffner */
 public class RandomUtilsTest

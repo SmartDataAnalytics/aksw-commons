@@ -1,6 +1,5 @@
 package org.aksw.commons.jena;
 
-import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.vocabulary.RDFS;
 import org.aksw.commons.collections.MultiMaps;

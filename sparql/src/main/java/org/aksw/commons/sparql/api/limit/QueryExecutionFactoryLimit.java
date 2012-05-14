@@ -4,7 +4,6 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
 
 /**

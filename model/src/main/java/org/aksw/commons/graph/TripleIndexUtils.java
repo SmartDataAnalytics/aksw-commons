@@ -1,20 +1,11 @@
 package org.aksw.commons.graph;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.rdf.model.Resource;
 import org.aksw.commons.collections.CacheSet;
 import org.apache.commons.collections15.map.LRUMap;
 
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.rdf.model.Resource;
+import java.util.*;
 
 public class TripleIndexUtils
 {

@@ -1,18 +1,12 @@
 package org.aksw.commons.graph;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.aksw.commons.collections.FlatMapView;
-
 import com.google.common.base.Joiner;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Resource;
+import org.aksw.commons.collections.FlatMapView;
+
+import java.util.*;
 
 public class DefaultFilterCompiler
 		implements IFilterCompiler

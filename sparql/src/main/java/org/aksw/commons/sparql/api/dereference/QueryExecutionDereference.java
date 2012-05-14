@@ -6,11 +6,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionAdapter;
 import org.aksw.commons.sparql.api.core.QueryExecutionBaseSelect;
-import org.deri.any23.Any23;
-import org.deri.any23.extractor.ExtractionException;
-import org.deri.any23.http.HTTPClient;
-import org.deri.any23.source.DocumentSource;
-import org.deri.any23.source.HTTPDocumentSource;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -59,7 +54,7 @@ public class QueryExecutionDereference
 
 
     public Model _execDescribe(Model model)
-            throws IOException, URISyntaxException, ExtractionException {
+            throws IOException, URISyntaxException {
 
         Node node = QueryExecutionBaseSelect.extractDescribeNode(query);
 

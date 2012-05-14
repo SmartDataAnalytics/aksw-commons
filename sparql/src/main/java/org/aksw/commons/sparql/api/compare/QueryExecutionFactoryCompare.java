@@ -5,11 +5,6 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryQuery;
-import org.aksw.commons.sparql.api.delay.core.QueryExecutionDelay;
-import org.aksw.commons.sparql.api.delay.extra.Delayer;
-import org.aksw.commons.sparql.api.delay.extra.DelayerDefault;
 
 /**
  * A query execution factory, which generates query executions

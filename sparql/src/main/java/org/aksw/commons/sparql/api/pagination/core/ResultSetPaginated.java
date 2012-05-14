@@ -1,19 +1,18 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
 
-import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorCloseable;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
 import org.aksw.commons.collections.PrefetchIterator;
-import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.pagination.extra.PaginationState;
 import org.openjena.atlas.lib.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
 
 /*
 class ConstructPaginated

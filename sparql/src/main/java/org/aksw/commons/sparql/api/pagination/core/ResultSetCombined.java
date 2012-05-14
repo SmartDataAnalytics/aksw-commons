@@ -1,16 +1,5 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.sparql.engine.QueryIterator;
-import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import org.openjena.atlas.iterator.Iter;
-
-import java.util.Iterator;
-import java.util.List;
-
-
 /**
  * Not used
  *

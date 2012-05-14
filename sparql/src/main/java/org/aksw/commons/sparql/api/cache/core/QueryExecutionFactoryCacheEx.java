@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.api.cache.core;
 
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
-import org.aksw.commons.sparql.api.cache.extra.Cache;
 import org.aksw.commons.sparql.api.cache.extra.CacheEx;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;

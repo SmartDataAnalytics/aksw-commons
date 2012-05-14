@@ -1,13 +1,14 @@
 package org.aksw.commons.jena.util;
 
-import static org.junit.Assert.assertTrue;
+import org.aksw.commons.sparql.SPARQLEndpoints;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import org.aksw.commons.sparql.SPARQLEndpoints;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 public class CachedCommonPropertiesTest
 {
@@ -22,7 +23,7 @@ public class CachedCommonPropertiesTest
 			String where = "?s a dbpedia-owl:Settlement";
 			Map<String,Integer> properties = ccp.getCommonProperties(where);
 			ccp.save();
-			assertTrue(properties.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")==50);
+			Assert.assertTrue(properties.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") == 50);
 		}
 	}
 }

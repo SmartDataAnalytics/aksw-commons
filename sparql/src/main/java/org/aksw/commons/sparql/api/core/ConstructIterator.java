@@ -5,7 +5,6 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Template;
-import org.aksw.commons.collections.CacheSet;
 import org.aksw.commons.collections.PrefetchIterator;
 
 import java.util.*;

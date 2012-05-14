@@ -33,16 +33,17 @@ package org.aksw.commons.reader;
 import com.hp.hpl.jena.datatypes.TypeMapper;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFErrorHandler;
 import com.hp.hpl.jena.rdf.model.impl.RDFDefaultErrorHandler;
+import com.hp.hpl.jena.shared.JenaException;
+import com.hp.hpl.jena.shared.SyntaxError;
 import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.hp.hpl.jena.rdf.model.*;
-import com.hp.hpl.jena.shared.*;
-
 import java.io.*;
-import java.util.*;
+import java.util.Hashtable;
 
 
 

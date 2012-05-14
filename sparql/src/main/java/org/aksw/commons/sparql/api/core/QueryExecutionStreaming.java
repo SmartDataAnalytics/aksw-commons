@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.api.core;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.rdf.model.Statement;
 
 import java.util.Iterator;
 

@@ -4,7 +4,6 @@ import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import org.aksw.commons.sparql.api.cache.extra.Cache;
 import org.aksw.commons.sparql.api.cache.extra.CacheEx;
 import org.aksw.commons.sparql.api.cache.extra.CacheResource;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;

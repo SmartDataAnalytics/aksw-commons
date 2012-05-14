@@ -6,8 +6,6 @@ import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
 import org.aksw.commons.sparql.api.core.Time;
-import org.aksw.commons.sparql.api.delay.extra.Delayer;
-import org.aksw.commons.sparql.api.delay.extra.DelayerDefault;
 
 import java.util.concurrent.TimeUnit;
 

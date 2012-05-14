@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.core.decorator
 
 import java.lang.String
 import java.net.URLEncoder
-import com.hp.hpl.jena.query._
 import java.io._
 import java.security.MessageDigest
 import org.slf4j.LoggerFactory

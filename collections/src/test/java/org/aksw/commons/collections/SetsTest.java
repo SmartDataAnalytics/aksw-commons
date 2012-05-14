@@ -1,9 +1,10 @@
 package org.aksw.commons.collections;
 
-import static org.junit.Assert.assertTrue;
-import static org.aksw.commons.collections.Sets.*;
-import static org.aksw.commons.collections.CollectionUtils.*;
 import org.junit.Test;
+
+import static org.aksw.commons.collections.CollectionUtils.asSet;
+import static org.aksw.commons.collections.Sets.*;
+import static org.junit.Assert.assertTrue;
 
 public class SetsTest
 {

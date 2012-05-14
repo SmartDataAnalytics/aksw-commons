@@ -1,12 +1,5 @@
 package org.aksw.commons.sparql.api.model;
 
-import com.hp.hpl.jena.query.*;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.sparql.engine.QueryEngineFactory;
-import com.hp.hpl.jena.sparql.engine.QueryExecutionBase;
-import com.hp.hpl.jena.sparql.util.Context;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
-
 /**
  * @author Claus Stadler
  *         <p/>

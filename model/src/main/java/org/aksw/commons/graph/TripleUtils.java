@@ -1,9 +1,6 @@
 package org.aksw.commons.graph;
 
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
@@ -11,6 +8,9 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.sparql.graph.GraphFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class TripleUtils
 {
