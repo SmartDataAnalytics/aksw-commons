@@ -1,10 +1,10 @@
 package org.aksw.commons.graph;
 
-import java.util.AbstractCollection;
-import java.util.Iterator;
-
 import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Triple;
+
+import java.util.AbstractCollection;
+import java.util.Iterator;
 
 
 /**

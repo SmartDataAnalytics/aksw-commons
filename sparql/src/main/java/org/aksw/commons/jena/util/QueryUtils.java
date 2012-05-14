@@ -1,16 +1,15 @@
 package org.aksw.commons.jena.util;
 
 
-import java.util.HashSet;
-import java.util.Set;
-
-
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.sparql.core.Quad;
 import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Element;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class QueryUtils {
 

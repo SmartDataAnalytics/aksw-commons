@@ -1,6 +1,6 @@
 package org.aksw.commons.jena;
 
-import com.hp.hpl.jena.ontology.OntModel;import java.lang.String;
+import com.hp.hpl.jena.ontology.OntModel;
 
 /**
  * @author Sebastian Hellmann - http://bis.informatik.uni-leipzig.de/SebastianHellmann

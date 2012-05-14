@@ -3,12 +3,7 @@ package org.aksw.commons.collections;
 
 import com.google.common.collect.Sets;
 
-import java.lang.Iterable;
 import java.util.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by Claus Stadler

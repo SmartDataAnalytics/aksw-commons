@@ -1,14 +1,12 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
-import com.hp.hpl.jena.util.iterator.ClosableIterator;
-import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.sparql.api.cache.core.QueryString;
 import org.aksw.commons.util.strings.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.GregorianCalendar;

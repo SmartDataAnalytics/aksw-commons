@@ -3,7 +3,6 @@ package org.aksw.commons.sparql.api.dereference;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
-import org.deri.any23.Any23;
 
 /**
  * @author Claus Stadler

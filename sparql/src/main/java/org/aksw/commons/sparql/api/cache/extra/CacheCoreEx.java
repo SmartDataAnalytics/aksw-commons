@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.api.cache.extra;
 
 
 import java.io.InputStream;
-import java.util.Iterator;
 
 /**
  * An interface similar to CacheCore, except that an additional service argument is supported.

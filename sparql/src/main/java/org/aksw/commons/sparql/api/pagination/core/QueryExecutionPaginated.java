@@ -1,24 +1,23 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
-import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.engine.QueryIterator;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorBase;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorCloseable;
-import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
 import com.hp.hpl.jena.sparql.serializer.SerializationContext;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.pagination.extra.PaginationState;
 import org.openjena.atlas.io.IndentedWriter;
-import org.openjena.atlas.lib.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.transform.Result;
 import java.util.Iterator;
 import java.util.List;
 

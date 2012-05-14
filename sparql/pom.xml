@@ -12,67 +12,7 @@
         <version>0.4-SNAPSHOT</version>
     </parent>
 
-    <repositories>
-        <!-- Specific repository for Any23 dependencies without a dedicated repository. -->
-        <repository>
-            <id>any23-repository-external</id>
-            <url>http://any23.googlecode.com/svn/repo-ext</url>
-        </repository>
-        <!-- The Any23 modules repository. -->
-        <repository>
-            <id>any23-repository</id>
-            <url>http://any23.googlecode.com/svn/repo</url>
-        </repository>
-    </repositories>
-
     <dependencies>
-        <dependency>
-            <groupId>org.deri.any23</groupId>
-            <artifactId>any23-core</artifactId>
-            <version>0.5.0</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>slf4j-jdk14</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>log4j</artifactId>
-                    <groupId>log4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>jcl-over-slf4j</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>net.sf.oval</groupId>
-            <artifactId>oval</artifactId>
-            <version>1.31</version>
-        </dependency>
-
-        <!-- AspectJ - What do we need that for? -->
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjrt</artifactId>
-            <version>1.6.11</version>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>org.aksw.commons</groupId>
-            <artifactId>sparql-scala</artifactId>
-        </dependency>
-        -->
-
 
         <!-- Jena -->
         <dependency>
@@ -113,11 +53,6 @@
                     <scope>compile</scope>
                 </dependency>
         -->
-        <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <version>1.5</version>
-        </dependency>
 
         <!-- Database - used for SPARQL caching, Runtime dep, as the DB is started automatically on connection -->
         <dependency>
@@ -127,15 +62,15 @@
         </dependency>
 
         <!-- Collections -->
-        <dependency>
-            <groupId>org.aksw.commons</groupId>
-            <artifactId>collections</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.aksw.commons</groupId>-->
+            <!--<artifactId>collections</artifactId>-->
+        <!--</dependency>-->
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.google.guava</groupId>-->
+            <!--<artifactId>guava</artifactId>-->
+        <!--</dependency>-->
 
 
         <!-- Utils -->
@@ -172,17 +107,10 @@
         </dependency>
 
     </dependencies>
+
+    <!--
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.0.2</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>aspectj-maven-plugin</artifactId>
@@ -200,6 +128,7 @@
                 </executions>
             </plugin>
         </plugins>
+        -->
         <!--<pluginManagement>-->
             <!--<plugins>-->
                 <!--&lt;!&ndash;This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.&ndash;&gt;-->
@@ -244,5 +173,5 @@
                 <!--</plugin>-->
             <!--</plugins>-->
         <!--</pluginManagement>-->
-    </build>
+    <!--</build>-->
 </project>

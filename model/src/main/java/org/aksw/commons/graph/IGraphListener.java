@@ -1,9 +1,8 @@
 package org.aksw.commons.graph;
 
-import java.util.Collection;
-
-import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Triple;
+
+import java.util.Collection;
 
 public interface IGraphListener
 {

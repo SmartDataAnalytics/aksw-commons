@@ -1,7 +1,6 @@
 package org.aksw.commons.sparql.api.dereference;
 
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Resource;
 import org.aksw.commons.collections.IClosable;
 
 /**

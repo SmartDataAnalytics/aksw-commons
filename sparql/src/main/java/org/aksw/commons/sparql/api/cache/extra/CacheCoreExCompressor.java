@@ -3,7 +3,6 @@ package org.aksw.commons.sparql.api.cache.extra;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import java.io.*;
-import java.util.Iterator;
 
 /**
  * @author Claus Stadler

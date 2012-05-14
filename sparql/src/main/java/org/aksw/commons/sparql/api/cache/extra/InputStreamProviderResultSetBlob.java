@@ -2,7 +2,6 @@ package org.aksw.commons.sparql.api.cache.extra;
 
 import java.io.InputStream;
 import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.SQLException;
 
 /**

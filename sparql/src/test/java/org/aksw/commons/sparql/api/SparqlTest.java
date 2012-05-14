@@ -1,11 +1,8 @@
 package org.aksw.commons.sparql.api;
 
-import static junit.framework.Assert.*;
-
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.sparql.util.ResultSetUtils;
 import com.hp.hpl.jena.vocabulary.RDF;
 import org.aksw.commons.sparql.api.cache.core.QueryExecutionFactoryCache;
 import org.aksw.commons.sparql.api.cache.extra.Cache;
@@ -20,10 +17,12 @@ import org.aksw.commons.sparql.api.pagination.core.QueryExecutionFactoryPaginate
 import org.apache.log4j.PropertyConfigurator;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import sun.reflect.generics.tree.VoidDescriptor;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * @author Claus Stadler

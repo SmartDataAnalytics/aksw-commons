@@ -1,7 +1,6 @@
 package org.aksw.commons.util.numbers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

@@ -2,10 +2,8 @@ package org.aksw.commons.sparql.api.core;
 
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.sparql.engine.QueryExecutionBase;
 import com.hp.hpl.jena.sparql.util.Context;
 import com.hp.hpl.jena.util.FileManager;
-import org.apache.commons.lang.NotImplementedException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,22 +22,22 @@ public class QueryExecutionAdapter
 
     @Override
     public void setFileManager(FileManager fm) {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public void setInitialBinding(QuerySolution binding) {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Dataset getDataset() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Context getContext() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     /**
@@ -53,32 +51,32 @@ public class QueryExecutionAdapter
 
     @Override
     public ResultSet execSelect() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Model execConstruct() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Model execConstruct(Model model) {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Model execDescribe() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public Model execDescribe(Model model) {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override
     public boolean execAsk() {
-        throw new NotImplementedException();
+        throw new RuntimeException("Not Implemented.");
     }
 
     @Override

@@ -1,9 +1,6 @@
 package org.aksw.commons.sparql.api.qe;
 
 
-import com.hp.hpl.jena.query.QueryExecution;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackString;
-
 /**
  * @author Claus Stadler
  *         <p/>

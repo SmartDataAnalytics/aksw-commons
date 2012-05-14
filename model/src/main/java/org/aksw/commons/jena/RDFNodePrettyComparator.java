@@ -6,11 +6,12 @@ package org.aksw.commons.jena;
  *         Date: 10/21/11
  *         Time: 2:42 PM
  */
-import java.util.Comparator;
 
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import org.aksw.commons.util.strings.StringPrettyComparator;
+
+import java.util.Comparator;
 
 
 /**

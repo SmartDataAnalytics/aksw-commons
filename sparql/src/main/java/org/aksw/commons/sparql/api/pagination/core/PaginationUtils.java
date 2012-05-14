@@ -3,7 +3,6 @@ package org.aksw.commons.sparql.api.pagination.core;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.sparql.util.ResultSetUtils;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.util.CannedQueryUtils;
 

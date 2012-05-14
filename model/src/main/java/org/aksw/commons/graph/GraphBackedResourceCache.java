@@ -1,34 +1,17 @@
 package org.aksw.commons.graph;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
 import com.google.common.base.Joiner;
-import org.aksw.commons.collections.CacheSet;
-import org.aksw.commons.collections.CollectionUtils;
-import org.aksw.commons.collections.diff.ModelDiff;
-import org.aksw.commons.collections.random.RandomUtils;
-import org.aksw.commons.util.strings.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.ResourceFactory;
+import org.aksw.commons.collections.CacheSet;
+import org.aksw.commons.collections.CollectionUtils;
+import org.aksw.commons.collections.diff.ModelDiff;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 
 /**

@@ -8,9 +8,11 @@ package org.aksw.commons.collections;
  */
 
 import com.google.common.collect.Iterables;
-import com.hp.hpl.jena.graph.query.BufferPipe;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 
 

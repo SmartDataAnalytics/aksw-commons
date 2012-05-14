@@ -1,10 +1,10 @@
 package org.aksw.commons.graph;
 
+import com.hp.hpl.jena.graph.Triple;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import com.hp.hpl.jena.graph.Triple;
 
 public interface IGraph
 {

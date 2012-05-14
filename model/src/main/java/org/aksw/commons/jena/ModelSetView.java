@@ -1,11 +1,10 @@
 package org.aksw.commons.jena;
 
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.Set;
-
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Statement;
+
+import java.util.AbstractSet;
+import java.util.Iterator;
 
 public class ModelSetView
 	extends AbstractSet<Statement>

@@ -1,8 +1,6 @@
 package org.aksw.commons.util.reflect;
 
 
-import org.aksw.commons.util.strings.StringUtils;
-
 import java.util.Arrays;
 
 /**
