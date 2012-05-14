@@ -46,6 +46,19 @@
 
     <build>
         <plugins>
+            <!-- That's a sledge hammer solution - but at least it works ... -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <arguments>-P!source-artifacts</arguments>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <goals>-Dmaven.test.skip=true deploy</goals>
+                </configuration>
+            </plugin>
+
+
             <!--Maven Compiler $Plugin-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -101,18 +114,6 @@
                 </execution>
               </executions>
             </plugin>
-
-            <!-- That's a sledge hammer solution - maybe this is better: http://stackoverflow.com/questions/4713374/maven-release-plugin-deployment-of-sources-jar-and-javadoc-jar -->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-release-plugin</artifactId>-->
-                <!--<version>2.3</version>-->
-                <!--&lt;!&ndash;<configuration>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<arguments>-P!source-artifacts</arguments>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<useReleaseProfile>false</useReleaseProfile>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<goals>-Dmaven.test.skip=true deploy</goals>&ndash;&gt;-->
-                <!--&lt;!&ndash;</configuration>&ndash;&gt;-->
-            <!--</plugin>-->
 
 
             <!--&lt;!&ndash; Scala Plugin &ndash;&gt;-->
