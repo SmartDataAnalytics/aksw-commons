@@ -2,8 +2,6 @@ package org.aksw.commons.util.reflect;
 
 
 import org.apache.commons.collections15.map.LRUMap;
-import sun.reflect.generics.tree.TypeSignature;
-import sun.security.util.Cache;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

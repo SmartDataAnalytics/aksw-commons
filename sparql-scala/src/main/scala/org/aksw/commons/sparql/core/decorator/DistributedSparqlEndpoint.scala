@@ -1,7 +1,6 @@
 package org.aksw.commons.sparql.core.decorator
 
 import org.aksw.commons.sparql.core.SparqlEndpoint
-import org.apache.commons.lang.NotImplementedException
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.graph.Triple
 
@@ -14,10 +13,10 @@ import com.hp.hpl.jena.graph.Triple
 class DistributedSparqlEndpoint(override val id : String, tripleHash : (Triple=>Int), endpointMap : (Int=>SparqlEndpoint))
   extends SparqlEndpoint
 {
-  def executeSelect(query : String) = { throw new NotImplementedException() }
-	def executeAsk(query : String) = { throw new NotImplementedException() }
-	def executeConstruct(query : String) = { throw new NotImplementedException() }
-  def executeConstruct(query : String, model: Model) = { throw new NotImplementedException() }
+  def executeSelect(query : String) = { throw new RuntimeException("Not implemented.") }
+	def executeAsk(query : String) = { throw new RuntimeException("Not implemented.") }
+	def executeConstruct(query : String) = { throw new RuntimeException("Not implemented.") }
+  def executeConstruct(query : String, model: Model) = { throw new RuntimeException("Not implemented.") }
 
 	def defaultGraphNames() = Set()
 
@@ -32,7 +31,7 @@ class DistributedSparqlEndpoint(override val id : String, tripleHash : (Triple=>
     })
   }
 
-  override def remove(triples: Iterable[Triple], graphName: String): Unit = { throw new NotImplementedException(); }
+  override def remove(triples: Iterable[Triple], graphName: String): Unit = { throw new RuntimeException("Not implemented.");(); }
   */
 
   //override def id() = id

@@ -1,7 +1,6 @@
 package org.aksw.commons.sparql.api.qe;
 
 
-import com.clarkparsia.pellet.sparqldl.engine.QueryEngine;
 import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackString;
 

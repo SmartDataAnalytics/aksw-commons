@@ -7,13 +7,14 @@ import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class Construct {
-    private static final Logger logger = Logger.getLogger(Construct.class);
+    private static final Logger logger = LoggerFactory.getLogger(Construct.class);
 
 
     /**

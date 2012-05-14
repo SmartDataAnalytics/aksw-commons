@@ -15,6 +15,31 @@
     </parent>
 
     <dependencies>
-      
+        <!-- Intra-project dependencies - Dependency to OWL api stuff -->
+        <!--<dependency>-->
+            <!--<groupId>org.aksw.commons</groupId>-->
+            <!--<artifactId>model</artifactId>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
+
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Performance Monitoring -->
+        <dependency>
+            <groupId>com.jamonapi</groupId>
+            <artifactId>jamon</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

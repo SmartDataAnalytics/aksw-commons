@@ -7,7 +7,8 @@ import com.jamonapi.Monitor;
 import com.jamonapi.MonitorFactory;
 import org.aksw.commons.util.ExtendedFile;
 import org.aksw.commons.util.Time;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 
@@ -25,7 +26,7 @@ import java.io.*;
 
 @Deprecated
 public class StringConverter {
-    private static final Logger logger = Logger.getLogger(StringConverter.class);
+    private static final Logger logger = LoggerFactory.getLogger(StringConverter.class);
 
     final private Model model;
     /**

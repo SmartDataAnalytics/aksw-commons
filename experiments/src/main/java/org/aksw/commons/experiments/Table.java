@@ -1,7 +1,9 @@
 package org.aksw.commons.experiments;
 
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,7 +16,7 @@ import java.util.TreeSet;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class Table implements Serializable {
-    private static final Logger logger = Logger.getLogger(Table.class);
+    private static final Logger logger = LoggerFactory.getLogger(Table.class);
 
     private SortedSet<String> experimentNames = new TreeSet<String>();
     private SortedSet<String> labels = new TreeSet<String>();

@@ -1,8 +1,5 @@
 package org.aksw.commons.util.strings;
 
-import org.aksw.commons.collections.StringTransformer;
-import org.jgrapht.util.PrefetchIterator;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;

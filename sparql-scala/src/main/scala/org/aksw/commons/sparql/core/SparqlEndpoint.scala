@@ -6,7 +6,6 @@ import com.hp.hpl.jena.graph.Triple
 import com.hp.hpl.jena.query.ResultSet
 
 import scalaj.collection.Imports._
-import org.apache.commons.lang.NotImplementedException
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,13 +50,13 @@ trait SparqlEndpoint {
     stringBuffer.append("))").toString
   }
 
-  //def insert(triples: Iterable[Triple], graphName: String): Unit = { throw new NotImplementedException(); }
+  //def insert(triples: Iterable[Triple], graphName: String): Unit = { throw new RuntimeException("Not implemented."); }
 
-  //def remove(triples: Iterable[Triple], graphName: String): Unit = { throw new NotImplementedException(); }
+  //def remove(triples: Iterable[Triple], graphName: String): Unit = { throw new RuntimeException("Not implemented."); }
 
-  def insert(model: Model, graphName: String): Unit = { throw new NotImplementedException(); }
+  def insert(model: Model, graphName: String): Unit = { throw new RuntimeException("Not implemented."); }
 
-  def remove(model: Model, graphName: String): Unit = { throw new NotImplementedException(); }
+  def remove(model: Model, graphName: String): Unit = { throw new RuntimeException("Not implemented."); }
 
 
   /**

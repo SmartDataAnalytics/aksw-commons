@@ -2,7 +2,8 @@ package org.aksw.commons.jena;
 
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.rdf.model.Statement;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
  * @author Sebastian Hellmann <hellmann@informatik.uni-leipzig.de>
  */
 public class ModelTransformator {
-    private static final Logger logger = Logger.getLogger(ModelTransformator.class);
+    private static final Logger logger = LoggerFactory.getLogger(ModelTransformator.class);
 
      public static void separateLiterals(OntModel original, OntModel literals, OntModel rest) {
         List<Statement> statements = original.listStatements().toList();
