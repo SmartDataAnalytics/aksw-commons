@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.aksw.commons</groupId>
     <artifactId>commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.2</version>
     <name>AKSW Commons parent</name>
 
     <scm>
@@ -27,13 +26,19 @@
     </properties>
 
     <modules>
-        <module>util</module>
-        <module>collections-scala</module>
         <module>collections</module>
-        <module>sparql-scala</module>
+ 
+        <module>util</module>
         <module>sparql</module>
-        <module>experiments</module>
         <module>model</module>
+
+	<module>experiments</module>
+
+<!--
+        <module>collections-scala</module>
+        <module>sparql-scala</module>
+-->
+
     </modules>
 
     <build>
@@ -144,6 +149,42 @@
     <dependencyManagement>
         <dependencies>
 
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>collections</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>sparql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>collections-scala</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aksw.commons</groupId>
+                <artifactId>sparql-scala</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>velocity</groupId>
@@ -164,41 +205,6 @@
                 <version>1.0</version>
             </dependency>
 
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>collections-scala</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>util</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>collections</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>sparql-scala</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>sparql</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>model</artifactId>
-                <version>${project.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>com.h2database</groupId>
