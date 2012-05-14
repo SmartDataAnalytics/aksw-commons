@@ -45,6 +45,7 @@
     <build>
         <plugins>
 
+            <!-- That's a sledge hammer solution - maybe this is better: http://stackoverflow.com/questions/4713374/maven-release-plugin-deployment-of-sources-jar-and-javadoc-jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
