@@ -12,6 +12,9 @@ fi
 
 sudo apt-get install autoconf automake libtool flex bison gperf gawk m4 make openssl libssl-dev libreadline-dev
 
+#For centos (and the likes)
+#sudo yum install autoconf automake flex bison gperf gawk m4 make readline-devel openssl-devel 
+
 wget "http://downloads.sourceforge.net/project/virtuoso/virtuoso/$version/virtuoso-opensource-$version.tar.gz"
 
 tar -zxvf "virtuoso-opensource-$version.tar.gz"
