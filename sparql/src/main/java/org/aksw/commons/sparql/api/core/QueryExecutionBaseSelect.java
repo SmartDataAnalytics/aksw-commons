@@ -240,7 +240,7 @@ public abstract class QueryExecutionBaseSelect
 
         ResultSet tmp = decoratee.execSelect();
         final QueryExecution self = this;
-        ResultSetClosing result = new ResultSetClosing(tmp, new IClosable() {
+        ResultSetClosable result = new ResultSetClosable(tmp, new IClosable() {
             @Override
             public void close() {
                 decoratee.close();

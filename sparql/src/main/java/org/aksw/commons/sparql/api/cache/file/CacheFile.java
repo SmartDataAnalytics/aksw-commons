@@ -5,7 +5,8 @@ import com.hp.hpl.jena.query.ResultSetFactory;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import org.aksw.commons.collections.IClosable;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.core.ResultSetClosing;
+import org.aksw.commons.sparql.api.core.ResultSetClosable;
+import org.aksw.commons.sparql.api.core.ResultSetClose;
 import org.aksw.commons.util.strings.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,7 @@ public class CacheFile
         }
         InputStream in = new FileInputStream(file);
         IClosable closable = new ClosableInputStream(in);
-        return new ResultSetClosing(ResultSetFactory.fromXML(in), closable);
+        return new ResultSetClosable(ResultSetFactory.fromXML(in), closable);
     }
 
     private File getCacheFile(String id, String state, String queryString) {
@@ -162,14 +163,14 @@ public class CacheFile
     logger.trace("Cache file: " + file.getAbsolutePath)
 
     cacheLookup(file) match {
-      case Some(in) => return new ResultSetClosing(ResultSetFactory.fromXML(in), in);
+      case Some(in) => return new ResultSetClose(ResultSetFactory.fromXML(in), in);
       case None => {
         val rs = decoratee.executeSelect(query)
 
         cacheResultSetXml(rs, file);
 
         val in = new FileInputStream(file);
-        return new ResultSetClosing(ResultSetFactory.fromXML(in), in);
+        return new ResultSetClose(ResultSetFactory.fromXML(in), in);
       }
     }
   }
