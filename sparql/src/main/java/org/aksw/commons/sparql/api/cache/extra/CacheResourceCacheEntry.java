@@ -3,7 +3,8 @@ package org.aksw.commons.sparql.api.cache.extra;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFactory;
 import com.hp.hpl.jena.rdf.model.Model;
-import org.aksw.commons.sparql.api.core.ResultSetClosing;
+import org.aksw.commons.sparql.api.core.ResultSetClosable;
+import org.aksw.commons.sparql.api.core.ResultSetClose;
 import org.aksw.commons.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ public class CacheResourceCacheEntry
             throws SQLException
     {
         InputStream in = cacheEntry.getInputStreamProvider().open();
-        return new ResultSetClosing(ResultSetFactory.fromXML(in), new ClosableCacheSql(this, in));
+        return new ResultSetClosable(ResultSetFactory.fromXML(in), new ClosableCacheSql(this, in));
     }
 
     @Override
