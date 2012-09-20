@@ -1,6 +1,8 @@
 package org.aksw.commons.util.jdbc;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ColumnsReference
@@ -8,9 +10,10 @@ public class ColumnsReference
 	private String tableName;
 	private List<String> columnNames = new ArrayList<String>();
 
-	public ColumnsReference(String tableName)
+	public ColumnsReference(String tableName, String ... columnNames)
 	{
 		this.tableName = tableName;
+        this.columnNames.addAll(Arrays.asList(columnNames));
 	}
 	
 	public String getTableName() {

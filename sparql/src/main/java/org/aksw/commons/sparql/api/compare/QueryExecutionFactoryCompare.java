@@ -5,6 +5,7 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
+import org.apache.commons.collections.functors.FalsePredicate;
 
 /**
  * A query execution factory, which generates query executions
@@ -22,15 +23,32 @@ public class QueryExecutionFactoryCompare
     private QueryExecutionFactory a;
     private QueryExecutionFactory b;
 
+    // Whether to remove limit and offset from queries
+    private boolean removeSlices = false;
+
     public QueryExecutionFactoryCompare(QueryExecutionFactory a, QueryExecutionFactory b) {
+        this(a, b, false);
+    }
+
+    public QueryExecutionFactoryCompare(QueryExecutionFactory a, QueryExecutionFactory b, boolean removesSlices) {
         this.a = a;
         this.b = b;
+        this.removeSlices = removesSlices;
     }
 
     @Override
     public QueryExecution createQueryExecution(Query query) {
-        boolean isOrdered = !query.getOrderBy().isEmpty();
-        return new QueryExecutionCompare(a.createQueryExecution(query), b.createQueryExecution(query), false);
+
+        if(removeSlices) {
+            query = (Query)query.clone();
+
+
+            query.setLimit(Query.NOLIMIT);
+            query.setOffset(0);
+        }
+
+        //boolean isOrdered = !query.getOrderBy().isEmpty();
+        return new QueryExecutionCompare(query, a.createQueryExecution(query), b.createQueryExecution(query), false);
     }
 
     /*

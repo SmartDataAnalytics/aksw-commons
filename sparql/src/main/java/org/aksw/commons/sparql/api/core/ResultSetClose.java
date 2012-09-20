@@ -24,17 +24,37 @@ public class ResultSetClose
     private static final Logger logger = LoggerFactory.getLogger(ResultSetClose.class);
 
     private boolean isClosed = false;
+    private boolean closeOnException = true;
 
-    public ResultSetClose(ResultSet decoratee) {
+
+    public ResultSetClose(ResultSet decoratee, boolean skipCheckClose) {
         super(decoratee);
-        checkClose();
+
+        if(!skipCheckClose) {
+            checkClose();
+        }
     }
 
-    public ResultSetClose(ResultSet decoratee, boolean isClosed) {
+
+    public ResultSetClose(ResultSet decoratee, boolean isClosed, boolean skipCheckClose) {
         super(decoratee);
         this.isClosed = isClosed;
-        checkClose();
+
+        if(!skipCheckClose) {
+            checkClose();
+        }
     }
+
+    public ResultSetClose(ResultSet decoratee, boolean isClosed, boolean closeOnException, boolean skipCheckClose) {
+        super(decoratee);
+        this.isClosed = isClosed;
+        this.closeOnException = closeOnException;
+
+        if(!skipCheckClose) {
+            checkClose();
+        }
+    }
+
 
     /*
     public ResultSetClose(ResultSet decoratee, IClosable closable) {
@@ -87,7 +107,9 @@ public class ResultSetClose
             checkClose();
             return result;
         } catch(Exception e) {
-            close();
+            if(closeOnException) {
+                close();
+            }
             throw new RuntimeException(e);
         }
     }
@@ -99,7 +121,9 @@ public class ResultSetClose
             checkClose();
             return result;
         } catch(Exception e) {
-            close();
+            if(closeOnException) {
+                close();
+            }
             throw new RuntimeException(e);
         }
     }
