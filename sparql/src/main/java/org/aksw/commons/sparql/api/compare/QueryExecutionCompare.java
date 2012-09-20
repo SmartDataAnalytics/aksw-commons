@@ -6,13 +6,26 @@ import com.google.common.collect.Multisets;
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.sparql.core.QuerySolutionBase;
+import com.hp.hpl.jena.sparql.resultset.ResultSetCompare;
 import com.hp.hpl.jena.sparql.util.Context;
+import com.hp.hpl.jena.sparql.util.ResultSetUtils;
+import com.hp.hpl.jena.sparql.util.VarUtils;
 import com.hp.hpl.jena.util.FileManager;
 import org.aksw.commons.collections.diff.Diff;
 import org.aksw.commons.collections.diff.ListDiff;
 import org.aksw.commons.collections.diff.ModelDiff;
+import org.aksw.commons.util.strings.StringUtils;
+import org.apache.commons.validator.Var;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 
 /**
  * @author Claus Stadler
@@ -23,10 +36,18 @@ import java.util.concurrent.TimeUnit;
 public class QueryExecutionCompare
     implements QueryExecution
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(QueryExecutionCompare.class);
+
+
     public static Multiset<QuerySolution> toMultiset(ResultSet rs) {
         Multiset<QuerySolution> result = HashMultiset.create();
         while(rs.hasNext()) {
-            result.add(rs.next());
+            QuerySolution original = rs.next();
+
+            QuerySolution wrapped = new QuerySolutionWithEquals(original);
+
+            result.add(wrapped);
         }
 
         return result;
@@ -123,6 +144,8 @@ public class QueryExecutionCompare
     private QueryExecution a;
     private QueryExecution b;
 
+    private Query query = null;
+
     private ListDiff<QuerySolution> resultSetDiff = null; // The diff after the query execution
     private ModelDiff modelDiff = null;
     private Diff<Boolean> askDiff = null;
@@ -140,7 +163,8 @@ public class QueryExecutionCompare
         }
     }
 
-    public QueryExecutionCompare(QueryExecution a, QueryExecution b, boolean isOrdered) {
+    public QueryExecutionCompare(Query query, QueryExecution a, QueryExecution b, boolean isOrdered) {
+        this.query = query;
         this.a = a;
         this.b = b;
         this.isOrdered = isOrdered;
@@ -195,7 +219,7 @@ public class QueryExecutionCompare
      */
     @Override
     public Query getQuery() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return query;
     }
 
     /**
@@ -220,8 +244,42 @@ public class QueryExecutionCompare
 
         x.reset();
 
+        logResultSet();
+
         return x;
     }
+
+    public void log(long added, long removed) {
+        String msg = added + "\t" + removed + "\t" + StringUtils.urlEncode("" + query);
+
+        if(added == 0 && removed == 0) {
+            logger.info("[ OK ] " + msg);
+        } else {
+            logger.warn("[FAIL] " + msg);
+        }
+    }
+
+    public void logResultSet() {
+        log(resultSetDiff.getAdded().size(), resultSetDiff.getRemoved().size());
+    }
+
+    public void logModel() {
+        log(modelDiff.getAdded().size(), modelDiff.getRemoved().size());
+    }
+
+    public void logAsk() {
+        boolean  added = askDiff.getAdded();
+        boolean  removed = askDiff.getRemoved();
+
+        String msg = added + "\t" + removed + "\t" + StringUtils.urlEncode("" + query);
+
+        if(added == removed) {
+            logger.trace("[ OK ] " + msg);
+        } else {
+            logger.warn("[FAIL] " + msg);
+        }
+    }
+
 
     /**
      * Execute a CONSTRUCT query
@@ -250,6 +308,8 @@ public class QueryExecutionCompare
         }
 
         modelDiff = compareModel(x, y);
+
+        logModel();
 
         return x;
     }
@@ -282,6 +342,8 @@ public class QueryExecutionCompare
 
         modelDiff = compareModel(x, y);
 
+        logModel();
+
         return x;
     }
 
@@ -303,6 +365,8 @@ public class QueryExecutionCompare
         }
 
         askDiff = new Diff<Boolean>(x, y, null);
+
+        logAsk();
 
         return x;
     }

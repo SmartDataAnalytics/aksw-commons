@@ -56,4 +56,8 @@ public class ConstructIterator
 
         return null;
     }
+
+    @Override
+    public void close() {
+    }
 }

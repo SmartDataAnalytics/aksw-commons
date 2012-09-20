@@ -267,6 +267,7 @@ public abstract class QueryExecutionBaseSelect
 
 		long rowCount = 0;
 		while(rs.hasNext()) {
+            rs.next();
 			++rowCount;
 		}
 

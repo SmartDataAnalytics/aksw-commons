@@ -64,6 +64,12 @@
         <!--</dependency>-->
 
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-ext</artifactId>
+        </dependency>
+
+
         <!-- Collection APIs -->
         <dependency>
             <groupId>org.aksw.commons</groupId>

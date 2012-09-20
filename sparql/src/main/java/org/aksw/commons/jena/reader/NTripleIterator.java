@@ -1,4 +1,4 @@
-package org.aksw.commons.reader;
+package org.aksw.commons.jena.reader;
 
 /*
  *  (c) Copyright 2001, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Hewlett-Packard Development Company, LP
@@ -72,7 +72,7 @@ public class NTripleIterator
     private int errCount = 0;
     private static final int sbLength = 200;
 
-    private RDFErrorHandler errorHandler = new RDFDefaultErrorHandler();
+    private RDFErrorHandler errorHandler;
 
     /**
      * Already with ": " at end for error messages.
@@ -82,12 +82,15 @@ public class NTripleIterator
     NTripleIterator() {
     }
 
-    public NTripleIterator(InputStream in, String base) {
-        this(new InputStreamReader(in), base);
-
+    public NTripleIterator(InputStream in, String base, RDFErrorHandler errorHandler) {
+        this(new InputStreamReader(in), base, errorHandler);
     }
 
-    public NTripleIterator(Reader reader, String base) {
+    public NTripleIterator(Reader reader, String base, RDFErrorHandler errorHandler) {
+        this.errorHandler = (errorHandler == null) ?
+            new RDFDefaultErrorHandler() :
+            errorHandler;
+
         if (!(reader instanceof BufferedReader)) {
             reader = new BufferedReader(reader);
         }
@@ -100,6 +103,8 @@ public class NTripleIterator
             throw new SyntaxError( "unknown" );
         }
     }
+
+
 
     /*
     public void read(Model model, InputStream in, String base)

@@ -15,11 +15,14 @@ public class ResultSetClosable
     private IClosable closable;
 
     public ResultSetClosable(ResultSet decoratee, IClosable closable) {
-        super(decoratee);
+        super(decoratee, true);
+        if(closable == null) {
+            throw new NullPointerException();
+        }
         this.closable = closable;
-        checkClose();
-    }
 
+        super.checkClose();
+    }
 
     @Override
     public void close() {

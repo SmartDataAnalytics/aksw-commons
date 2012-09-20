@@ -65,7 +65,13 @@ public class IniUtils {
 					String key = m.group(1);
 					String value = m.group(2);
 
-					value = StringUtils.strip(value, "\"").trim();
+                    value = value.trim();
+
+                    if(value.startsWith("\"")) {
+					    value = StringUtils.strip(value, "\"").trim();
+                    } else if(value.startsWith("'")) {
+                        value = StringUtils.strip(value, "'").trim();
+                    }
 
 					out.put(key, value);
 				}

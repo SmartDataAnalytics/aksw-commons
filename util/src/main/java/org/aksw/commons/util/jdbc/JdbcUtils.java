@@ -72,25 +72,26 @@ public class JdbcUtils {
 		
 		PrimaryKey current = null;
 		
-		
-		while (rs.next()) {
-			//System.out.println(getRow(rs));
 
-			String tableName = rs.getString("TABLE_NAME");
-			String columnName = rs.getString("COLUMN_NAME");
-			String pkName = rs.getString("PK_NAME");
-						
-			if(current == null || !tableName.equals(current.getSource().getTableName())) {
-				current = new PrimaryKey(pkName, new ColumnsReference(tableName));
-				
-				result.put(tableName, current);
-			}
-			current.getSource().getColumnNames().add(columnName);
-		}
+        try {
+            while (rs.next()) {
+                //System.out.println(getRow(rs));
 
-		//st.close();
-		conn.close();
-		
+                String tableName = rs.getString("TABLE_NAME");
+                String columnName = rs.getString("COLUMN_NAME");
+                String pkName = rs.getString("PK_NAME");
+
+                if(current == null || !tableName.equals(current.getSource().getTableName())) {
+                    current = new PrimaryKey(pkName, new ColumnsReference(tableName));
+
+                    result.put(tableName, current);
+                }
+                current.getSource().getColumnNames().add(columnName);
+            }
+        } finally {
+            rs.close();
+        }
+
 		return result;
 	}
 
@@ -109,9 +110,13 @@ public class JdbcUtils {
 		ResultSet rs = conn.getMetaData().getTables(conn.getCatalog(), null, null, types);
 
 		Set<String> result = new TreeSet<String>();
-		while (rs.next()) {
-			result.add(rs.getString("TABLE_NAME"));
-		}
+        try {
+            while (rs.next()) {
+                result.add(rs.getString("TABLE_NAME"));
+            }
+        } finally {
+            rs.close();
+        }
 		
 		return result;
 	}
@@ -127,24 +132,26 @@ public class JdbcUtils {
 
         Relation current = null;
 
-        while (rs.next()) {
-            //System.out.println(getRow(rs));
+        try {
+            while (rs.next()) {
+                //System.out.println(getRow(rs));
 
-            String tableName = rs.getString("TABLE_NAME");
-            String columnName = rs.getString("COLUMN_NAME");
-            String typeName = rs.getString("TYPE_NAME");
+                String tableName = rs.getString("TABLE_NAME");
+                String columnName = rs.getString("COLUMN_NAME");
+                String typeName = rs.getString("TYPE_NAME");
 
-            if(current == null || !tableName.equals(current.getName())) {
-                current = new Relation(tableName);
+                if(current == null || !tableName.equals(current.getName())) {
+                    current = new Relation(tableName);
 
-                result.put(tableName, current);
+                    result.put(tableName, current);
+                }
+                Column column = new Column(columnName, typeName);
+                current.getColumns().put(columnName, column);
             }
-            Column column = new Column(columnName, typeName);
-            current.getColumns().put(columnName, column);
+        } finally {
+            rs.close();
         }
 
-        //st.close();
-        conn.close();
 
 
         return result;
