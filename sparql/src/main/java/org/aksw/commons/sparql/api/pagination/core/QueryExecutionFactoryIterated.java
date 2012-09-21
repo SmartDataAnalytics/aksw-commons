@@ -6,6 +6,10 @@ import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
 import org.aksw.commons.sparql.api.http.QueryExecutionFactoryHttp;
 import org.aksw.commons.sparql.api.pagination.extra.PaginationQueryIterator;
+import org.apache.commons.collections15.Transformer;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @author Claus Stadler
@@ -13,37 +17,26 @@ import org.aksw.commons.sparql.api.pagination.extra.PaginationQueryIterator;
  *         Date: 7/26/11
  *         Time: 11:41 PM
  */
-public class QueryExecutionFactoryPaginated
+public class QueryExecutionFactoryIterated
     extends QueryExecutionFactoryBackQuery
 {
-    public static final long DEFAULT_PAGE_SIZE = 1000;
-
     private QueryExecutionFactory decoratee;
-    private long pageSize;
+    private QueryTransformer queryTransformer;
+    private boolean breakOnEmptyResult;
 
-    public QueryExecutionFactoryPaginated(QueryExecutionFactory decoratee) {
-        this(decoratee, PaginationUtils.adjustPageSize(decoratee, DEFAULT_PAGE_SIZE));
-    }
-
-    public QueryExecutionFactoryPaginated(QueryExecutionFactory decoratee, long pageSize) {
-        // Executes an ?s ?p ?o query with limit set to pageSize to
-        // reduce it if necessary
-        this.pageSize = PaginationUtils.adjustPageSize(decoratee, pageSize);
+    public QueryExecutionFactoryIterated(QueryExecutionFactory decoratee, QueryTransformer queryTransformer, boolean breakOnEmptyResult) {
         this.decoratee = decoratee;
+        this.queryTransformer = queryTransformer;
+        this.breakOnEmptyResult = breakOnEmptyResult;
     }
 
     @Override
     public QueryExecution createQueryExecution(Query query) {
-        PaginationQueryIterator queryIterator = new PaginationQueryIterator(query, pageSize);
+        Iterator<Query> queryIterator = queryTransformer.transform(query);
         
-        return new QueryExecutionIterated(decoratee, queryIterator);
+        return new QueryExecutionIterated(decoratee, queryIterator, breakOnEmptyResult);
     }
 
-    /*
-    @Override
-    public QueryExecution createQueryExecution(String queryString) {
-        return decoratee.createQueryExecution(queryString);
-    }*/
 
     @Override
     public String getId() {
@@ -53,10 +46,6 @@ public class QueryExecutionFactoryPaginated
     @Override
     public String getState() {
         return decoratee.getState();
-    }
-
-    public long getPageSize() {
-        return pageSize;
     }
 
     public static void main(String[] args) {

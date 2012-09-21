@@ -3,23 +3,23 @@ package org.aksw.commons.sparql.api.pagination.core;
 
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
 import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.pagination.extra.PaginationState;
 import org.openjena.atlas.lib.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
 
 /*
 class ConstructPaginated
 	extends PrefetchIterator<Statement>
 {
 	private Sparqler sparqler;
-	private PaginationState state;
+	private PaginationQueryIterator state;
 
 	public ConstructPaginated(Sparqler sparqler, String queryString, long pageSize) {
 		this(sparqler, QueryFactory.create(queryString), pageSize);
@@ -27,7 +27,7 @@ class ConstructPaginated
 	
 	public ConstructPaginated(Sparqler sparqler, Query query, long pageSize) {
 		this.sparqler = sparqler;
-		this.state = new PaginationState(query, pageSize);
+		this.state = new PaginationQueryIterator(query, pageSize);
 	}
 
 	@Override
@@ -50,20 +50,24 @@ public class ResultSetPaginated
     private static Logger logger = LoggerFactory.getLogger(ResultSetPaginated.class);
 
 	private QueryExecutionFactory service;
-	private QueryExecutionPaginated execution;
+	private QueryExecutionIterated execution;
 
-    private PaginationState state;
+    private Iterator<Query> queryIterator;
+    private boolean stopOnEmptyResult = true;
 
     private ResultSet currentResultSet = null;
 
-	public ResultSetPaginated(QueryExecutionPaginated execution,QueryExecutionFactory service, String queryString, long pageSize) {
-		this(execution, service, QueryFactory.create(queryString), pageSize);
+    /*
+	public ResultSetPaginated(QueryExecutionIterated execution,QueryExecutionFactory service, Iterator<Query> queryIterator) {
+		this(execution, service, QueryFactory.create(queryString),);
 	}
+	*/
 
-	public ResultSetPaginated(QueryExecutionPaginated execution, QueryExecutionFactory service, Query query, long pageSize) {
+	public ResultSetPaginated(QueryExecutionIterated execution, QueryExecutionFactory service, Iterator<Query> queryIterator, boolean stopOnEmptyResult) {
 		this.execution = execution;
         this.service = service;
-		this.state = new PaginationState(query, pageSize);
+		//this.state = new PaginationQueryIterator(query, pageSize);
+        this.queryIterator = queryIterator;
 	}
 
     public ResultSet getCurrentResultSet() {
@@ -72,25 +76,35 @@ public class ResultSetPaginated
 
 	@Override
 	protected QueryIteratorResultSet prefetch() throws Exception {
-		Query query = state.next();
-		if(query == null) {
-			return null;
-		}
+        while(queryIterator.hasNext()) {
 
-        QueryExecution qe = service.createQueryExecution(query);
+            Query query = queryIterator.next();
+            if(query == null) {
+                throw new RuntimeException("Null query encountered in iterator");
+                //return null;
+            }
 
-        if(execution != null) {
-            execution._setDecoratee(qe);
+            QueryExecution qe = service.createQueryExecution(query);
+
+            if(execution != null) {
+                execution._setDecoratee(qe);
+            }
+
+            //QueryIteratorCloseable
+            logger.trace("Executing: " + query);
+            currentResultSet = qe.execSelect();
+            if(!currentResultSet.hasNext()) {
+                if(stopOnEmptyResult) {
+                    return null;
+                } else {
+                    continue;
+                }
+            }
+
+            return new QueryIteratorResultSet(currentResultSet);
         }
 
-        //QueryIteratorCloseable
-        logger.trace("Executing: " + query);
-		currentResultSet = qe.execSelect();
-        if(!currentResultSet.hasNext()) {
-            return null;
-        }
-
-        return new QueryIteratorResultSet(currentResultSet);
+        return null;
 	}
 
     @Override

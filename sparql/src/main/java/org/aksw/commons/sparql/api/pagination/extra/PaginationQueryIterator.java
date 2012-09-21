@@ -8,6 +8,9 @@ package org.aksw.commons.sparql.api.pagination.extra;
  */
 
 import com.hp.hpl.jena.query.Query;
+import org.aksw.commons.collections.SinglePrefetchIterator;
+
+import java.util.Iterator;
 
 /**
  *
@@ -15,7 +18,8 @@ import com.hp.hpl.jena.query.Query;
  * @author raven
  *
  */
-public class PaginationState
+public class PaginationQueryIterator
+    extends SinglePrefetchIterator<Query>
 {
 	private long nextOffset;
 	private Long nextRemaining;
@@ -30,7 +34,7 @@ public class PaginationState
 	 * @param query
 	 * @param pageSize
 	 */
-	public PaginationState(Query query, long pageSize)
+	public PaginationQueryIterator(Query query, long pageSize)
 	{
 		this.query = query;
 		this.pageSize = pageSize;
@@ -47,8 +51,7 @@ public class PaginationState
 	 * @return
 	 * @throws Exception
 	 */
-	public Query next()
-			throws Exception
+	public Query prefetch()
 	{
 		if(nextOffset == 0) {
 			query.setOffset(Query.NOLIMIT);
@@ -65,7 +68,7 @@ public class PaginationState
 			nextRemaining -= limit;
 
 			if(limit == 0) {
-				return null;
+				return finish();
 			}
 
 			query.setLimit(limit);

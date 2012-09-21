@@ -11,15 +11,16 @@ import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorBase;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorCloseable;
 import com.hp.hpl.jena.sparql.serializer.SerializationContext;
+import org.aksw.commons.sparql.api.core.QueryExecutionAdapter;
 import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.pagination.extra.PaginationState;
 import org.openjena.atlas.io.IndentedWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.List;
+
 
 
 /**
@@ -34,15 +35,20 @@ import java.util.List;
  *         Date: 7/26/11
  *         Time: 7:59 PM
  */
-public class QueryExecutionPaginated
+public class QueryExecutionIterated
         extends QueryExecutionDecorator
 {
-    private static final Logger logger = LoggerFactory.getLogger(QueryExecutionPaginated.class);
+    private static final Logger logger = LoggerFactory.getLogger(QueryExecutionIterated.class);
 
 
     private QueryExecutionFactory factory;
-    private Query query;
-    private long pageSize;
+    private Iterator<Query> queryIterator;
+    //private Query query;
+    //private long pageSize;
+
+    // If false, the whole query iterator will be consumed
+    // (query iterators may be endless)
+    private boolean stopOnEmptyResult = true;
 
     private QueryExecution current;
 
@@ -51,17 +57,23 @@ public class QueryExecutionPaginated
         super.setDecoratee(decoratee);
     }
 
-    public QueryExecutionPaginated(QueryExecutionFactory factory, Query query, long pageSize) {
+    public QueryExecutionIterated(QueryExecutionFactory factory, Iterator<Query> queryIterator) {
         super(null);
-        this.query = query;
+        this.queryIterator = queryIterator;
         this.factory = factory;
-        this.pageSize = pageSize;
+    }
+
+    public QueryExecutionIterated(QueryExecutionFactory factory, Iterator<Query> queryIterator, boolean stopOnEmptyResult) {
+        super(null);
+        this.queryIterator = queryIterator;
+        this.factory = factory;
+        this.stopOnEmptyResult = stopOnEmptyResult;
     }
 
 
     @Override
     public ResultSet execSelect() {
-        ResultSetPaginated it = new ResultSetPaginated(this, factory, query, pageSize);
+        ResultSetPaginated it = new ResultSetPaginated(this, factory, queryIterator, stopOnEmptyResult);
         // Note: This line forces the iterator to initialize the result set...
         it.hasNext();
         
@@ -84,20 +96,22 @@ public class QueryExecutionPaginated
 
     @Override
     public Model execConstruct(Model result) {
-        PaginationState state = new PaginationState(query, pageSize);
+        //PaginationQueryIterator state = new PaginationQueryIterator(query, pageSize);
 
         Query query;
         try {
-            while((query = state.next()) != null) {
+            while(queryIterator.hasNext()) {
+                query = queryIterator.next();
                 current = factory.createQueryExecution(query);
 
                 logger.trace("Executing query: " + query);
                 Model tmp = current.execConstruct();
-                if(tmp.isEmpty()) {
+                if(tmp.isEmpty() && stopOnEmptyResult) {
                     break;
                 }
 
                 result.add(tmp);
+                //System.out.println("Added | Size result = " + result.size() + ", tmp = " + tmp.size());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -105,7 +119,15 @@ public class QueryExecutionPaginated
 
         return result;
     }
+
+    @Override
+    public void close() {
+        if(current != null) {
+            current.close();
+        }
+    }
 }
+
 
 class MyQueryIteratorWrapper
     extends QueryIteratorBase
