@@ -34,7 +34,7 @@ public class QuadUtils
 
 
 
-	public static Quad copySubstitute(Quad quad, Map<Node, Node> map)
+	public static Quad copySubstitute(Quad quad, Map<? extends Node, ? extends Node> map)
 	{
 		return new Quad(
 				MapUtils.getOrElse(map, quad.getGraph(), quad.getGraph()),
@@ -92,7 +92,7 @@ public class QuadUtils
 		map.ge
 	}*/
 
-	public static QuadPattern copySubstitute(QuadPattern quadPattern, Map<Node, Node> map)
+	public static QuadPattern copySubstitute(QuadPattern quadPattern, Map<? extends Node, ? extends Node> map)
 	{
 		QuadPattern result = new QuadPattern();
 		for(Quad quad : quadPattern) {

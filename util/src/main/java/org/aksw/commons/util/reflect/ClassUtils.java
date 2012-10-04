@@ -47,10 +47,11 @@ public class ClassUtils {
 	public static Integer getDistance(Class<?> given, Class<?> there)
 	{
 		int result;
-		if(there.isInterface())
+		if(there.isInterface()) {
 			result = _getDistanceInterface(given, there, 0);
-		else
+        } else {
 			result = _getDistanceClass(given, there);
+        }
 
 		return result == Integer.MAX_VALUE ? null : result;
 	}
@@ -59,8 +60,9 @@ public class ClassUtils {
 	{
 		int distance = 0;
 		do {
-			if(given == there)
+			if(given == there) {
 				return distance;
+            }
 
 			distance += 1;
 			given = given.getSuperclass();
@@ -73,18 +75,21 @@ public class ClassUtils {
 
 	private static int _getDistanceInterface(Class<?> given, Class<?> there, int depth)
 	{
-		if(given == there)
+		if(given == there) {
 			return depth;
+        }
 
 		++depth;
 
 		int result = Integer.MAX_VALUE;
-		for(Class<?> item : given.getInterfaces())
+		for(Class<?> item : given.getInterfaces()) {
 			result = Math.min(result, _getDistanceInterface(item, there, depth));
+        }
 
 		Class<?> superClass = given.getSuperclass();
-		if(superClass != null)
+		if(superClass != null) {
 			result = Math.min(result, _getDistanceInterface(superClass, there, depth));
+        }
 
 		return result;
 	}
@@ -117,8 +122,16 @@ public class ClassUtils {
 
         Integer[] result = new Integer[n];
         for(int i = 0; i < n; ++i) {
-            Integer d = getDistance(a[i], b[i]);
-            result[i] = d;
+            Class<?> given = a[i];
+
+
+            // Don't try to abbreviate with (given == null) ? 0 : getDistance(given, b[i]);
+            // It will break because getDistance may return null
+            if(given == null) {
+                result[i] = 0;
+            } else {
+                result[i] = getDistance(given, b[i]);
+            }
         }
 
         return  result;
@@ -194,7 +207,7 @@ public class ClassUtils {
      * @param clazz
      * @return
      */
-    public static List<Method> getAllNonOverriddenlMethods(Class<?> clazz)
+    public static List<Method> getAllNonOverriddenMethods(Class<?> clazz)
     {
         List<Method> result = new ArrayList<Method>();
 

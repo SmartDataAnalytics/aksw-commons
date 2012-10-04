@@ -104,7 +104,7 @@ public class MultiMethod
     public static <T> Map<Method, Integer[]> findMethodCandidates(Class<T> clazz, String name, Class<?> ...typeSignature)
     {
     	Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
-		for(Method m : ClassUtils.getAllNonOverriddenlMethods(clazz)) {
+		for(Method m : ClassUtils.getAllNonOverriddenMethods(clazz)) {
 			if(!m.getName().equals(name)) {
 				continue;
 			}
@@ -218,7 +218,7 @@ public class MultiMethod
         Class<?>[] typeSignature = args; //ClassUtils.getTypeSignature(args);
 
         Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
-        for(Method m : ClassUtils.getAllNonOverriddenlMethods(clazz)) {
+        for(Method m : ClassUtils.getAllNonOverriddenMethods(clazz)) {
 
             if(m.getParameterTypes().length < args.length && !m.isVarArgs()) {
                 continue;
