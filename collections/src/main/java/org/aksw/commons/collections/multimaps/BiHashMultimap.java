@@ -125,4 +125,21 @@ public class BiHashMultimap<K, V>
 		forward.clear();
 		backward.clear();
 	}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BiHashMultimap that = (BiHashMultimap) o;
+
+        if (forward != null ? !forward.equals(that.forward) : that.forward != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return forward != null ? forward.hashCode() : 0;
+    }
 }
