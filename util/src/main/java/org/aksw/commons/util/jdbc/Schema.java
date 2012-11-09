@@ -18,33 +18,52 @@ public class Schema {
 	private Map<String, PrimaryKey> primaryKeys;
 	private Multimap<String, ForeignKey> foreignKeys;
 
-	public static Schema create(Connection conn)
-			throws SQLException
-	{
-		Map<String, Relation> relations = JdbcUtils.fetchColumns(conn);
-		Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(conn);
-		Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(conn);
 
-		Schema result = new Schema(relations, primaryKeys, foreignKeys);
-		return result;
-	}
-
-	public Schema(Map<String, Relation> relations, Map<String, PrimaryKey> primaryKeys, Multimap<String, ForeignKey> foreignKeys) {
+ 	public Schema(Map<String, Relation> relations, Map<String, PrimaryKey> primaryKeys, Multimap<String, ForeignKey> foreignKeys) {
 		this.relations = relations;
 		this.primaryKeys = primaryKeys;
 		this.foreignKeys = foreignKeys;
 	}
 
+
+    /**
+     *
+     * @return A Map from relation names to relation objects
+     */
 	public Map<String, Relation> getRelations() {
 		return relations;
 	}
 
+
+    /**
+     *
+     * @return A Map from relation names to their primary key. No entry for relations without a primary key.
+     */
 	public Map<String, PrimaryKey> getPrimaryKeys() {
 		return primaryKeys;
 	}
 
+
+    /**
+     *
+     * @return A Multimap from relation names to their sets of foreign keys. Empty set if there are none.
+     */
 	public Multimap<String, ForeignKey> getForeignKeys() {
 		return foreignKeys;
 	}
+
+    
+    public static Schema create(Connection conn)
+            throws SQLException
+    {
+        Map<String, Relation> relations = JdbcUtils.fetchColumns(conn);
+        Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(conn);
+        Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(conn);
+
+        Schema result = new Schema(relations, primaryKeys, foreignKeys);
+        return result;
+    }
+
 }
+
 
