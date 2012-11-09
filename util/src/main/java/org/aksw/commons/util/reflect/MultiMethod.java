@@ -101,43 +101,50 @@ public class MultiMethod
 		return (X)ClassUtils.forceInvoke(o, m, args);
 	}
 
-    public static <T> Map<Method, Integer[]> findMethodCandidates(Class<T> clazz, String name, Class<?> ...typeSignature)
+    public static <T> Map<Method, Integer[]> findMethodCandidates(Collection<Method> candidates, Class<?> ...typeSignature)
     {
-    	Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
-		for(Method m : ClassUtils.getAllNonOverriddenMethods(clazz)) {
-			if(!m.getName().equals(name)) {
-				continue;
-			}
+        Map<Method, Integer[]> bestMatches = new HashMap<Method, Integer[]>();
+        for(Method m : candidates) {
+
+            Integer[] d = ClassUtils.getDistance(typeSignature, m.getParameterTypes());
+            if(d == null || Arrays.asList(d).contains(null)) {
+                continue;
+            }
 
 
-			Integer[] d = ClassUtils.getDistance(typeSignature, m.getParameterTypes());
-			if(d == null || Arrays.asList(d).contains(null)) {
-				continue;
-			}
+            // All matches that are worse than current candidate are removed
+            // The candidate is only added, if it is not worse than any of the
+            // other candidates
+            boolean canBeAdded = true;
+            for(Iterator<Entry<Method, Integer[]>> it = bestMatches.entrySet().iterator(); it.hasNext();) {
+                Entry<Method, Integer[]> entry = it.next();
 
+                int rel = ClassUtils.getRelation(d, entry.getValue());
 
-			// All matches that are worse than current candidate are removed
-			// The candidate is only added, if it is not worse than any of the
-			// other candidates
-			boolean canBeAdded = true;
-			for(Iterator<Entry<Method, Integer[]>> it = bestMatches.entrySet().iterator(); it.hasNext();) {
-				Entry<Method, Integer[]> entry = it.next();
+                if(rel == -1) {
+                    it.remove();
+                } else if(rel > 0) {
+                    canBeAdded = false;
+                }
+            }
 
-				int rel = ClassUtils.getRelation(d, entry.getValue());
-
-				if(rel == -1) {
-					it.remove();
-				} else if(rel > 0) {
-					canBeAdded = false;
-				}
-			}
-
-			if(canBeAdded) {
-				bestMatches.put(m, d);
-			}
-		}
+            if(canBeAdded) {
+                bestMatches.put(m, d);
+            }
+        }
 
         return bestMatches;
+
+    }
+
+
+    public static <T> Map<Method, Integer[]> findMethodCandidates(Class<T> clazz, String name, Class<?> ...typeSignature)
+    {
+        Collection<Method> methods = ClassUtils.getAllNonOverriddenMethods(clazz, name);
+
+        Map<Method, Integer[]> result = findMethodCandidates(methods, typeSignature);
+
+        return result;
     }
 
     /**

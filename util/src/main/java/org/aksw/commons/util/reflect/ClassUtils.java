@@ -1,5 +1,6 @@
 package org.aksw.commons.util.reflect;
 
+import com.sun.org.apache.xalan.internal.xsltc.util.IntegerArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -161,6 +162,18 @@ public class ClassUtils {
         return  result;
     }
 
+
+    /*
+    public static Integer getRelation(Integer a, Integer b) {
+        if(a == null || b == null) {
+            return null;
+        }
+
+        Integer result = a - b;
+        return result;
+    }
+    */
+
     /**
      *
      *
@@ -209,11 +222,28 @@ public class ClassUtils {
      */
     public static List<Method> getAllNonOverriddenMethods(Class<?> clazz)
     {
+        List<Method> result = getAllNonOverriddenMethods(clazz, null);
+        return result;
+    }
+
+    /**
+     *
+     *
+     * @param clazz
+     * @param name Convenience filter by name
+     * @return
+     */
+    public static List<Method> getAllNonOverriddenMethods(Class<?> clazz, String name)
+    {
         List<Method> result = new ArrayList<Method>();
 
         Set<MethodSignature> signatures = new HashSet<MethodSignature>();
         while(clazz != null) {
             for(Method method : clazz.getDeclaredMethods()) {
+
+                if(name != null && !method.getName().equals(name)) {
+                    continue;
+                }
 
                 MethodSignature signature = new MethodSignature(method);
 
