@@ -24,25 +24,32 @@ public class JdbcUtils {
 		ResultSet rs = meta.getExportedKeys(conn.getCatalog(), null, null);
 
         try {
-            ForeignKey current = null;
+            Map<String, ForeignKey> fkNameMap = new HashMap<String, ForeignKey>();
             while (rs.next()) {
 
-                String pkTableName = rs.getString("PKTABLE_NAME");
-                String pkColumnName = rs.getString("PKCOLUMN_NAME");
                 String fkName = rs.getString("FK_NAME");
                 String fkTableName = rs.getString("FKTABLE_NAME");
                 String fkColumnName = rs.getString("FKCOLUMN_NAME");
                 //int fkSequence = rs.getInt("KEY_SEQ");
 
+                String pkTableName = rs.getString("PKTABLE_NAME");
+                String pkColumnName = rs.getString("PKCOLUMN_NAME");
 
-                if(current == null || !fkTableName.equals(current.getSource().getTableName())) {
-                    current = new ForeignKey(fkName, new ColumnsReference(pkTableName), new ColumnsReference(fkTableName));
+                ForeignKey current = fkNameMap.get(fkName);
+                if(current == null) {
+                    current = new ForeignKey(fkName, new ColumnsReference(fkTableName), new ColumnsReference(pkTableName));
 
-                    result.put(fkTableName, current);
+                    fkNameMap.put(fkName, current);
                 }
-                current.getSource().getColumnNames().add(pkColumnName);
-                current.getTarget().getColumnNames().add(fkColumnName);
+
+                current.getSource().getColumnNames().add(fkColumnName);
+                current.getTarget().getColumnNames().add(pkColumnName);
             }
+
+            for(ForeignKey fk : fkNameMap.values()) {
+                result.put(fk.getSource().getTableName(), fk);
+            }
+
         } finally {
             rs.close();
         }
