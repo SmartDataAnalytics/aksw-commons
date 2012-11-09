@@ -18,64 +18,48 @@ public class JdbcUtils {
 	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn)
 			throws SQLException
 	{
-		//Map<String, ForeignKey> result = new HashMap<String, ForeignKey>();
 		HashMultimap<String, ForeignKey> result = HashMultimap.create();
-		
-		
+
 		DatabaseMetaData meta = conn.getMetaData();
-
 		ResultSet rs = meta.getExportedKeys(conn.getCatalog(), null, null);
-		
-	
-		//System.out.println(getColumnNames(rs));
-		
-		ForeignKey current = null;
-		
-		
-		while (rs.next()) {
-			//System.out.println(getRow(rs));
 
-			String pkTableName = rs.getString("PKTABLE_NAME");
-			String pkColumnName = rs.getString("PKCOLUMN_NAME");
-			String fkName = rs.getString("FK_NAME");
-			String fkTableName = rs.getString("FKTABLE_NAME");
-			String fkColumnName = rs.getString("FKCOLUMN_NAME");
-			//int fkSequence = rs.getInt("KEY_SEQ");
-			
-			
-			if(current == null || !fkTableName.equals(current.getSource().getTableName())) {
-				current = new ForeignKey(fkName, new ColumnsReference(fkTableName), new ColumnsReference(pkTableName));
-				
-				result.put(fkTableName, current);
-			}
-			current.getSource().getColumnNames().add(pkColumnName);
-			current.getTarget().getColumnNames().add(fkColumnName);
-		}
+        try {
+            ForeignKey current = null;
+            while (rs.next()) {
 
-		//st.close();
-		conn.close();
-		
+                String pkTableName = rs.getString("PKTABLE_NAME");
+                String pkColumnName = rs.getString("PKCOLUMN_NAME");
+                String fkName = rs.getString("FK_NAME");
+                String fkTableName = rs.getString("FKTABLE_NAME");
+                String fkColumnName = rs.getString("FKCOLUMN_NAME");
+                //int fkSequence = rs.getInt("KEY_SEQ");
+
+
+                if(current == null || !fkTableName.equals(current.getSource().getTableName())) {
+                    current = new ForeignKey(fkName, new ColumnsReference(fkTableName), new ColumnsReference(pkTableName));
+
+                    result.put(fkTableName, current);
+                }
+                current.getSource().getColumnNames().add(pkColumnName);
+                current.getTarget().getColumnNames().add(fkColumnName);
+            }
+        } finally {
+            rs.close();
+        }
+
 		return result;
 	}
 
+
 	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn) throws SQLException {
-		//Map<String, ForeignKey> result = new HashMap<String, ForeignKey>();
 		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
 		
-		
 		DatabaseMetaData meta = conn.getMetaData();
-
 		ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
-		
-	
-		//System.out.println(getColumnNames(rs));
-		
-		PrimaryKey current = null;
-		
 
         try {
+            PrimaryKey current = null;
             while (rs.next()) {
-                //System.out.println(getRow(rs));
 
                 String tableName = rs.getString("TABLE_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
@@ -87,6 +71,7 @@ public class JdbcUtils {
                     result.put(tableName, current);
                 }
                 current.getSource().getColumnNames().add(columnName);
+
             }
         } finally {
             rs.close();
@@ -121,20 +106,18 @@ public class JdbcUtils {
 		return result;
 	}
 
+
     public static Map<String, Relation> fetchColumns(Connection conn)
             throws SQLException
     {
         Map<String, Relation> result = new HashMap<String, Relation>();
 
         DatabaseMetaData meta = conn.getMetaData();
-
         ResultSet rs = meta.getColumns(conn.getCatalog(), null, null, null);
 
-        Relation current = null;
-
         try {
+            Relation current = null;
             while (rs.next()) {
-                //System.out.println(getRow(rs));
 
                 String tableName = rs.getString("TABLE_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
@@ -147,16 +130,13 @@ public class JdbcUtils {
                 }
                 Column column = new Column(columnName, typeName);
                 current.getColumns().put(columnName, column);
+
             }
         } finally {
             rs.close();
         }
 
-
-
         return result;
     }
-		    
-
 }
 
