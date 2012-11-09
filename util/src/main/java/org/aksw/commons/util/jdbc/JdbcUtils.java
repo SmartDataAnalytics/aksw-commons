@@ -36,7 +36,7 @@ public class JdbcUtils {
 
 
                 if(current == null || !fkTableName.equals(current.getSource().getTableName())) {
-                    current = new ForeignKey(fkName, new ColumnsReference(fkTableName), new ColumnsReference(pkTableName));
+                    current = new ForeignKey(fkName, new ColumnsReference(pkTableName), new ColumnsReference(fkTableName));
 
                     result.put(fkTableName, current);
                 }
