@@ -56,6 +56,6 @@ public class ForeignKey
 
 	@Override
 	public String toString() {
-		return "CONSTRAINT " + this.getName() + " FOREIGN KEY " + source.getTableName() + "(" + Joiner.on(", ").join(source.getColumnNames()) + ") REFERENCES " + target.getTableName() + "(" + Joiner.on(",").join(target.getColumnNames()) + ")";
+		return "CONSTRAINT " + this.getName() + " FOREIGN KEY " + source.getTableName() + "(" + Joiner.on(", ").join(source.getColumnNames()) + ") REFERENCES " + target.getTableName() + "(" + Joiner.on(", ").join(target.getColumnNames()) + ")";
 	}
 }
