@@ -1,13 +1,13 @@
 package org.aksw.commons.collections.multimaps;
 
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 
 public class BiHashMultimap<K, V>
 	implements IBiSetMultimap<K, V>
@@ -77,6 +77,7 @@ public class BiHashMultimap<K, V>
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Set<V> get(Object key)
 	{
@@ -101,6 +102,13 @@ public class BiHashMultimap<K, V>
 		return forward.entries();
 	}
 
+	@Override
+	public void putAll(K key, Collection<V> values) {
+		for(V value : values) {
+			put(key, value);
+		}
+	}
+	
 	@Override
 	public void putAll(ISetMultimap<K, V> other)
 	{
@@ -131,7 +139,7 @@ public class BiHashMultimap<K, V>
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        BiHashMultimap that = (BiHashMultimap) o;
+        BiHashMultimap<?, ?> that = (BiHashMultimap<?, ?>) o;
 
         if (forward != null ? !forward.equals(that.forward) : that.forward != null) return false;
 
@@ -142,4 +150,14 @@ public class BiHashMultimap<K, V>
     public int hashCode() {
         return forward != null ? forward.hashCode() : 0;
     }
+
+	@Override
+	public Set<K> keySet() {
+		return forward.keySet();
+	}
+
+	@Override
+	public Collection<K> keys() {
+		return forward.keys();
+	}
 }
