@@ -10,12 +10,16 @@ public interface ISetMultimap<K, V>
 	Map<K, Collection<V>> asMap();
 	
 	boolean put(K key, V value);
+
+	void putAll(K key, Collection<V> values);
 	void putAll(ISetMultimap<K, V> other);
 	
 	Set<V> removeAll(Object key);
 	
 	Set<V> get(Object key);
 	
+	Set<K> keySet();
+	Collection<K> keys();
 	Set<Entry<K, V>> entries();
 
     boolean containsEntry(Object key, Object value);
