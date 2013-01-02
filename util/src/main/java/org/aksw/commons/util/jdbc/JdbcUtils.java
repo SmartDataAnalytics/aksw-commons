@@ -62,7 +62,8 @@ public class JdbcUtils {
 		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
 		
 		DatabaseMetaData meta = conn.getMetaData();
-		ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
+		//ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
+		ResultSet rs = meta.getPrimaryKeys(null, null, null);
 
         try {
             PrimaryKey current = null;
