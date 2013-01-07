@@ -55,7 +55,9 @@ public class QueryExecutionFactoryLimit<T extends QueryExecution>
 
     @Override
     public T createQueryExecution(String queryString) {
-        return createQueryExecution(QueryFactory.create(queryString));
+    	Query query = QueryFactory.create(queryString);
+        T result = createQueryExecution(query);
+        return result;
     }
 
 }

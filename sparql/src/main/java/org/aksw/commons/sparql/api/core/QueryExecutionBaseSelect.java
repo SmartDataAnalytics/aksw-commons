@@ -432,6 +432,13 @@ public abstract class QueryExecutionBaseSelect
 		return executeConstruct(this.query, result);
 	}
 
+	@Override
+	public Model execConstruct() {
+		Model result = ModelFactory.createDefaultModel();
+		execConstruct(result);
+		return result;
+	}
+	
     @Override
     public Iterator<Triple> execConstructStreaming() {
         return executeConstructStreaming(this.query);
