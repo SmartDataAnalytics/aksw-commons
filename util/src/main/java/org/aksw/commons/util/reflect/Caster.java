@@ -23,6 +23,10 @@ public class Caster {
     }*/
 
 
+//	public static NodeValue tryCast(Object value, String targetType) {
+//		
+//	}
+	
 
     public static Object tryCast(Object value, Class<?> targetClass)
     {

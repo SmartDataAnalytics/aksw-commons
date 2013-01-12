@@ -1,16 +1,17 @@
 package org.aksw.commons.util.jdbc;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 
 public class JdbcUtils {
@@ -18,10 +19,31 @@ public class JdbcUtils {
 	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn)
 			throws SQLException
 	{
+		Set<String> tableNames = fetchRelationNames(conn);
+		Multimap<String, ForeignKey> result = fetchForeignKeys(conn, tableNames);
+		
+		return result;
+	}
+	
+	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn, Collection<String> tableNames) throws SQLException {
+		Multimap<String, ForeignKey> result = HashMultimap.create();
+
+		for(String tableName : tableNames) {
+			Multimap<String, ForeignKey> part = fetchForeignKeys(conn, tableName);
+			result.putAll(part);
+		}
+		
+		return result;
+	}
+
+	
+	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn, String tableName)
+			throws SQLException
+	{
 		HashMultimap<String, ForeignKey> result = HashMultimap.create();
 
 		DatabaseMetaData meta = conn.getMetaData();
-		ResultSet rs = meta.getExportedKeys(conn.getCatalog(), null, null);
+		ResultSet rs = meta.getExportedKeys(conn.getCatalog(), null, tableName);
 
         try {
             Map<String, ForeignKey> fkNameMap = new HashMap<String, ForeignKey>();
@@ -57,19 +79,40 @@ public class JdbcUtils {
 		return result;
 	}
 
+	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn)
+			throws SQLException
+	{
+		Set<String> tableNames = fetchRelationNames(conn);
+		Map<String, PrimaryKey> result = fetchPrimaryKeys(conn, tableNames);
+		
+		return result;
+	}
 
-	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn) throws SQLException {
+	
+	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn, Collection<String> tableNames) throws SQLException {
+		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
+
+		for(String tableName : tableNames) {
+			Map<String, PrimaryKey> part = fetchPrimaryKeys(conn, tableName);
+			result.putAll(part);
+		}
+		
+		return result;
+	}
+	
+
+	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn, String tableName) throws SQLException {
 		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
 		
 		DatabaseMetaData meta = conn.getMetaData();
-		//ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
-		ResultSet rs = meta.getPrimaryKeys(null, null, null);
+		ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, tableName);
 
+		
         try {
             PrimaryKey current = null;
             while (rs.next()) {
 
-                String tableName = rs.getString("TABLE_NAME");
+                //String tableName = rs.getString("TABLE_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
                 String pkName = rs.getString("PK_NAME");
 
