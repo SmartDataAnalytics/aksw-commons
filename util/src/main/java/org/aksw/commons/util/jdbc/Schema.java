@@ -57,8 +57,8 @@ public class Schema {
             throws SQLException
     {
         Map<String, Relation> relations = JdbcUtils.fetchColumns(conn);
-        Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(conn);
-        Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(conn);
+        Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(conn, relations.keySet());
+        Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(conn, relations.keySet());
 
         Schema result = new Schema(relations, primaryKeys, foreignKeys);
         return result;
