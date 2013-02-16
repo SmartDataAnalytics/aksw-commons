@@ -1,7 +1,6 @@
 package org.aksw.commons.sparql.api.core;
 
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
 
 /**
  * @author Claus Stadler
@@ -9,11 +8,11 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Date: 7/23/11
  *         Time: 9:44 PM
  */
-public abstract class QueryExecutionFactoryBackString<T extends QueryExecution>
-    implements QueryExecutionFactory<T>
+public abstract class QueryExecutionFactoryBackString
+    implements QueryExecutionFactory
 {
     @Override
-    public T createQueryExecution(Query query) {
+    public QueryExecutionStreaming createQueryExecution(Query query) {
         return createQueryExecution(query.toString());
     }
 }

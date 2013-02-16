@@ -1,10 +1,14 @@
 package org.aksw.commons.sparql.api.delay.core;
 
-import com.hp.hpl.jena.query.QueryExecution;
+import java.util.Iterator;
+
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreamingDecorator;
+import org.aksw.commons.sparql.api.delay.extra.Delayer;
+
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
-import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
-import org.aksw.commons.sparql.api.delay.extra.Delayer;
 
 /**
  * @author Claus Stadler
@@ -13,12 +17,12 @@ import org.aksw.commons.sparql.api.delay.extra.Delayer;
  *         Time: 10:57 AM
  */
 public class QueryExecutionDelay
-    extends QueryExecutionDecorator
+    extends QueryExecutionStreamingDecorator
 
 {
     private Delayer delayer;
 
-    public QueryExecutionDelay(QueryExecution decoratee, Delayer delayer) {
+    public QueryExecutionDelay(QueryExecutionStreaming decoratee, Delayer delayer) {
         super(decoratee);
         this.delayer = delayer;
     }
@@ -58,4 +62,17 @@ public class QueryExecutionDelay
          delayer.doDelay();
          return super.execAsk();
      }
+     
+     @Override
+     public Iterator<Triple> execConstructStreaming() {
+         delayer.doDelay();
+         return super.execConstructStreaming();
+     }
+
+     @Override
+     public Iterator<Triple> execDescribeStreaming() {
+         delayer.doDelay();
+         return super.execConstructStreaming();
+     }
+     
 }

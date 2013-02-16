@@ -1,5 +1,18 @@
 package org.aksw.commons.sparql.api.core;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.aksw.commons.collections.IClosable;
+import org.aksw.commons.collections.PrefetchIterator;
+import org.aksw.commons.jena.util.QueryUtils;
+import org.aksw.commons.sparql.api.util.CannedQueryUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
@@ -11,17 +24,8 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.sparql.core.Var;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import com.hp.hpl.jena.sparql.syntax.Element;
 import com.hp.hpl.jena.sparql.syntax.Template;
 import com.hp.hpl.jena.update.UpdateRequest;
-import org.aksw.commons.collections.IClosable;
-import org.aksw.commons.collections.PrefetchIterator;
-import org.aksw.commons.jena.util.QueryUtils;
-import org.aksw.commons.sparql.api.util.CannedQueryUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 
 class TestQueryExecutionBaseSelect
@@ -33,7 +37,7 @@ class TestQueryExecutionBaseSelect
     }
 
     @Override
-    protected QueryExecution executeCoreSelectX(Query query) {
+    protected QueryExecutionStreaming executeCoreSelectX(Query query) {
         System.out.println("Got a query string: " + query);
         return null;
     }
@@ -68,10 +72,10 @@ class Describer
     private ResultSet rs;
     private Binding currentBinding = null;
     private Iterator<Var> currentVar = null;
-    private QueryExecutionFactory<QueryExecutionStreaming> qef;
+    private QueryExecutionFactory qef;
 
 
-    public Describer(Iterator<Node> openNodes, ResultSet rs, Collection<Var> resultVars, QueryExecutionFactory<QueryExecutionStreaming> qef)
+    public Describer(Iterator<Node> openNodes, ResultSet rs, Collection<Var> resultVars, QueryExecutionFactory qef)
     {
         this.openNodes = openNodes;
         this.resultVars = resultVars;
@@ -79,7 +83,7 @@ class Describer
         this.qef = qef;
     }
 
-    public static Describer create(List<Node> resultUris, List<String> resultVars, ResultSet rs, QueryExecutionFactory<QueryExecutionStreaming> qef) {
+    public static Describer create(List<Node> resultUris, List<String> resultVars, ResultSet rs, QueryExecutionFactory qef) {
 
         Set<Var> vars = null;
         if(rs != null) {
@@ -190,7 +194,7 @@ public abstract class QueryExecutionBaseSelect
 
     // Describe queries are sent as multiple individual queries, therefore we require a
     // reference to a QueryExecutionFactory
-    private QueryExecutionFactory<QueryExecutionStreaming> subFactory;
+    private QueryExecutionFactory subFactory;
 
 
     // TODO Move these two utility methods to a utility class
@@ -215,7 +219,7 @@ public abstract class QueryExecutionBaseSelect
 
 
 
-    public QueryExecutionBaseSelect(Query query, QueryExecutionFactory<QueryExecutionStreaming> subFactory) {
+    public QueryExecutionBaseSelect(Query query, QueryExecutionFactory subFactory) {
         super(null);
         this.query = query;
         this.subFactory = subFactory;
@@ -223,7 +227,7 @@ public abstract class QueryExecutionBaseSelect
 
     //private QueryExecution running = null;
 
-	abstract protected QueryExecution executeCoreSelectX(Query query);
+	abstract protected QueryExecutionStreaming executeCoreSelectX(Query query);
 	
     protected ResultSet executeCoreSelect(Query query) {
         if(this.decoratee != null) {
@@ -293,7 +297,7 @@ public abstract class QueryExecutionBaseSelect
 
         // TODO Right now we only support describe with a single constant.
 
-        Element queryPattern = query.getQueryPattern();
+        //Element queryPattern = query.getQueryPattern();
         if(query.getQueryPattern() != null || !query.getResultVars().isEmpty() || query.getResultURIs().size() > 1) {
             throw new RuntimeException("Sorry, DESCRIBE is only implemented for a single resource argument");
         }

@@ -1,14 +1,16 @@
 package org.aksw.commons.sparql.api.http;
 
-import com.google.common.base.Joiner;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackString;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackString;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreamingWrapper;
+
+import com.google.common.base.Joiner;
+import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
 
 /**
  * @author Claus Stadler
@@ -48,10 +50,12 @@ public class QueryExecutionFactoryHttp
     }
 
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
+    public QueryExecutionStreaming createQueryExecution(String queryString) {
         QueryEngineHTTP engine = new QueryEngineHTTP(service, queryString);
         engine.setDefaultGraphURIs(defaultGraphs);
 
-        return engine;
+        QueryExecutionStreaming result = QueryExecutionStreamingWrapper.wrap(engine);
+        
+        return result;
     }
 }

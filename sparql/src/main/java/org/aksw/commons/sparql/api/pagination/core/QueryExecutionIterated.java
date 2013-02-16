@@ -1,5 +1,15 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
+import java.util.Iterator;
+import java.util.List;
+
+import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreamingDecorator;
+import org.openjena.atlas.io.IndentedWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.ResultSet;
@@ -11,15 +21,6 @@ import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorBase;
 import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorCloseable;
 import com.hp.hpl.jena.sparql.serializer.SerializationContext;
-import org.aksw.commons.sparql.api.core.QueryExecutionAdapter;
-import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.openjena.atlas.io.IndentedWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
-import java.util.List;
 
 
 
@@ -36,7 +37,7 @@ import java.util.List;
  *         Time: 7:59 PM
  */
 public class QueryExecutionIterated
-        extends QueryExecutionDecorator
+        extends QueryExecutionStreamingDecorator
 {
     private static final Logger logger = LoggerFactory.getLogger(QueryExecutionIterated.class);
 
@@ -53,7 +54,7 @@ public class QueryExecutionIterated
     private QueryExecution current;
 
 
-    synchronized void _setDecoratee(QueryExecution decoratee) {
+    synchronized void _setDecoratee(QueryExecutionStreaming decoratee) {
         super.setDecoratee(decoratee);
     }
 

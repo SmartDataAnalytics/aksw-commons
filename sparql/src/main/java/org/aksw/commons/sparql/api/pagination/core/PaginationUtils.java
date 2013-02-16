@@ -1,10 +1,11 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
+import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
+import org.aksw.commons.sparql.api.util.CannedQueryUtils;
+
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.ResultSet;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.util.CannedQueryUtils;
 
 
 
@@ -15,7 +16,7 @@ import org.aksw.commons.sparql.api.util.CannedQueryUtils;
  *         Time: 12:36 AM
  */
 public class PaginationUtils {
-    public static long adjustPageSize(QueryExecutionFactory<?> factory, long requestedPageSize) {
+    public static long adjustPageSize(QueryExecutionFactory factory, long requestedPageSize) {
         Query query = CannedQueryUtils.spoTemplate();
         query.setLimit(requestedPageSize);
 

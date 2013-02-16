@@ -1,10 +1,12 @@
 package org.aksw.commons.sparql.api.limit;
 
+import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
+import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryFactory;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
 
 /**
  * A query execution that sets a limit on all queries
@@ -14,22 +16,22 @@ import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
  *         Date: 11/19/11
  *         Time: 11:33 PM
  */
-public class QueryExecutionFactoryLimit<T extends QueryExecution>
-    extends QueryExecutionFactoryDecorator<T>
+public class QueryExecutionFactoryLimit
+    extends QueryExecutionFactoryDecorator
 {
     private Long limit;
     private boolean doCloneQuery = false;
 
-    public static <U extends QueryExecution> QueryExecutionFactoryLimit<U> decorate(QueryExecutionFactory<U> decoratee, boolean doCloneQuery, Long limit) {
-        return new QueryExecutionFactoryLimit<U>(decoratee, doCloneQuery, limit);
+    public static <U extends QueryExecution> QueryExecutionFactoryLimit decorate(QueryExecutionFactory decoratee, boolean doCloneQuery, Long limit) {
+        return new QueryExecutionFactoryLimit(decoratee, doCloneQuery, limit);
     }
 
-    public QueryExecutionFactoryLimit(QueryExecutionFactory<? extends T> decoratee, boolean doCloneQuery, Long limit) {
+    public QueryExecutionFactoryLimit(QueryExecutionFactory decoratee, boolean doCloneQuery, Long limit) {
         super(decoratee);
         this.limit = limit;
     }
 
-    public T createQueryExecution(Query query) {
+    public QueryExecutionStreaming createQueryExecution(Query query) {
         if(limit != null) {
             if(query.getLimit() == Query.NOLIMIT) {
                 if(doCloneQuery) {
@@ -54,9 +56,9 @@ public class QueryExecutionFactoryLimit<T extends QueryExecution>
     }
 
     @Override
-    public T createQueryExecution(String queryString) {
+    public QueryExecutionStreaming createQueryExecution(String queryString) {
     	Query query = QueryFactory.create(queryString);
-        T result = createQueryExecution(query);
+    	QueryExecutionStreaming result = createQueryExecution(query);
         return result;
     }
 

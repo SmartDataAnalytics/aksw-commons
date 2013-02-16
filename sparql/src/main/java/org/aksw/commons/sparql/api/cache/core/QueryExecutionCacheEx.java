@@ -1,16 +1,17 @@
 package org.aksw.commons.sparql.api.cache.core;
 
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
+import java.io.IOException;
+
 import org.aksw.commons.sparql.api.cache.extra.CacheEx;
 import org.aksw.commons.sparql.api.cache.extra.CacheResource;
-import org.aksw.commons.sparql.api.core.QueryExecutionDecorator;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreamingDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 // TODO Replace with Factory1<Model>
 interface ModelProvider
@@ -25,7 +26,7 @@ interface ModelProvider
  *         Time: 4:11 PM
  */
 public class QueryExecutionCacheEx
-    extends QueryExecutionDecorator
+    extends QueryExecutionStreamingDecorator
 {
     private static final Logger logger = LoggerFactory.getLogger(QueryExecutionCacheEx.class);
 
@@ -34,7 +35,7 @@ public class QueryExecutionCacheEx
     private String service;
     private String queryString;
 
-    public QueryExecutionCacheEx(QueryExecution decoratee, String service, String queryString, CacheEx cache) {
+    public QueryExecutionCacheEx(QueryExecutionStreaming decoratee, String service, String queryString, CacheEx cache) {
         super(decoratee);
 
         this.service = service;

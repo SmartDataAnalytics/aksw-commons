@@ -95,7 +95,7 @@ public class NTripleIterator
             reader = new BufferedReader(reader);
         }
 
-        this.model = model;
+        //this.model = model;
         this.base = base == null ? "" : (base + ": ");
         in = new IStream(reader);
 

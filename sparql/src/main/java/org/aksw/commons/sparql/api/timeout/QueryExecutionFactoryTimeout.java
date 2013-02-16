@@ -1,13 +1,15 @@
 package org.aksw.commons.sparql.api.timeout;
 
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
+import java.util.concurrent.TimeUnit;
+
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
 import org.aksw.commons.sparql.api.core.Time;
 
-import java.util.concurrent.TimeUnit;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
 
 /**
  * A query execution factory, which sets a given timeout
@@ -20,31 +22,31 @@ import java.util.concurrent.TimeUnit;
  *         Date: 7/26/11
  *         Time: 10:27 AM
  */
-public class QueryExecutionFactoryTimeout<T extends QueryExecution>
-        extends QueryExecutionFactoryDecorator<T> {
+public class QueryExecutionFactoryTimeout
+        extends QueryExecutionFactoryDecorator {
 
     private Time maxExecutionTime = null;
     private Time maxRetrievalTime = null;
 
-    public static <U extends QueryExecution> QueryExecutionFactoryTimeout<U> decorate(QueryExecutionFactory<U> decoratee, long timeout) {
-        return new QueryExecutionFactoryTimeout<U>(decoratee, timeout);
+    public static QueryExecutionFactoryTimeout decorate(QueryExecutionFactory decoratee, long timeout) {
+        return new QueryExecutionFactoryTimeout(decoratee, timeout);
     }
 
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee) {
         super(decoratee);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout) {
         this(decoratee, timeout, TimeUnit.MILLISECONDS);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout, TimeUnit timeUnit) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout, TimeUnit timeUnit) {
         super(decoratee);
         this.maxExecutionTime = new Time(timeout, timeUnit);
     }
 
-    public QueryExecutionFactoryTimeout(QueryExecutionFactory<? extends T> decoratee, long timeout1, long timeout2) {
+    public QueryExecutionFactoryTimeout(QueryExecutionFactory decoratee, long timeout1, long timeout2) {
         this(decoratee, timeout1, TimeUnit.MILLISECONDS, timeout2, TimeUnit.MILLISECONDS);
     }
 
@@ -68,8 +70,8 @@ public class QueryExecutionFactoryTimeout<T extends QueryExecution>
     }
 
     @Override
-    public T createQueryExecution(Query query) {
-        T result = super.createQueryExecution(query);
+    public QueryExecutionStreaming createQueryExecution(Query query) {
+        QueryExecutionStreaming result = super.createQueryExecution(query);
 
         configureWithTimeout(result);
 
@@ -77,8 +79,8 @@ public class QueryExecutionFactoryTimeout<T extends QueryExecution>
     }
 
     @Override
-    public T createQueryExecution(String queryString) {
-        T result = super.createQueryExecution(queryString);
+    public QueryExecutionStreaming createQueryExecution(String queryString) {
+        QueryExecutionStreaming result = super.createQueryExecution(queryString);
 
         configureWithTimeout(result);
 

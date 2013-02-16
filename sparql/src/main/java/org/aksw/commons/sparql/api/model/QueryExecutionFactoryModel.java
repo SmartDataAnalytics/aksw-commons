@@ -1,11 +1,14 @@
 package org.aksw.commons.sparql.api.model;
 
+import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreamingWrapper;
+
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
 
 /**
  * @author Claus Stadler
@@ -43,7 +46,9 @@ public class QueryExecutionFactoryModel
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
-        return QueryExecutionFactory.create(query, model);
+    public QueryExecutionStreaming createQueryExecution(Query query) {
+    	QueryExecution tmp = QueryExecutionFactory.create(query, model);
+    	QueryExecutionStreaming result = QueryExecutionStreamingWrapper.wrap(tmp);
+    	return result;
     }
 }

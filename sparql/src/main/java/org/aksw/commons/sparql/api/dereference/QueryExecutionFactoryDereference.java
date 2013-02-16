@@ -1,8 +1,9 @@
 package org.aksw.commons.sparql.api.dereference;
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
+
+import com.hp.hpl.jena.query.Query;
 
 /**
  * @author Claus Stadler
@@ -11,7 +12,7 @@ import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
  *         Time: 12:42 AM
  */
 public class QueryExecutionFactoryDereference
-    extends QueryExecutionFactoryBackQuery<QueryExecution>
+    extends QueryExecutionFactoryBackQuery
 {
     public static final String DEFAULT_ID = "http://aksw.org/ontology/WebOfData";
 
@@ -43,7 +44,7 @@ public class QueryExecutionFactoryDereference
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
+    public QueryExecutionStreaming createQueryExecution(Query query) {
         return new QueryExecutionDereference(query, dereferencer);
     }
 }
