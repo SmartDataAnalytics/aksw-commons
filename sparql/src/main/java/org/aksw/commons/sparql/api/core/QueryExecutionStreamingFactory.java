@@ -1,7 +1,6 @@
 package org.aksw.commons.sparql.api.core;
 
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
 
 /**
  * @author Claus Stadler
@@ -10,7 +9,7 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Time: 1:41 PM
  */
 public class QueryExecutionStreamingFactory
-        extends  QueryExecutionFactoryBackQuery<QueryExecution>
+        extends  QueryExecutionFactoryBackQuery
 {
     protected QueryExecutionFactory decoratee;
 
@@ -30,9 +29,7 @@ public class QueryExecutionStreamingFactory
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
-        QueryExecution tmp = decoratee.createQueryExecution(query);
-        QueryExecution result = new QueryExecutionAdapterStreaming(tmp);
-        return result;
+    public QueryExecutionStreaming createQueryExecution(Query query) {
+        return decoratee.createQueryExecution(query);
     }
 }

@@ -13,36 +13,49 @@ import com.hp.hpl.jena.sparql.util.Context;
 import com.hp.hpl.jena.util.FileManager;
 
 /**
- * 
- *
  * @author Claus Stadler
  *         <p/>
- *         Date: 11/29/11
- *         Time: 12:01 AM
+ *         Date: 7/26/11
+ *         Time: 10:28 AM
  */
-public class QueryExecutionAdapter
+public class QueryExecutionStreamingDecorator
     implements QueryExecutionStreaming
 {
-    protected QueryExecutionTimeoutHelper timeoutHelper = new QueryExecutionTimeoutHelper(this);
+    protected QueryExecutionStreaming decoratee;
+
+    protected QueryExecutionStreaming getDecoratee()
+    {
+        return decoratee;
+    }
+
+    protected void setDecoratee(QueryExecutionStreaming decoratee)
+    {
+        this.decoratee = decoratee;
+    }
+
+    public QueryExecutionStreamingDecorator(QueryExecutionStreaming decoratee)
+    {
+        this.decoratee = decoratee;
+    }
 
     @Override
     public void setFileManager(FileManager fm) {
-        throw new RuntimeException("Not Implemented.");
+        decoratee.setFileManager(fm);
     }
 
     @Override
     public void setInitialBinding(QuerySolution binding) {
-        throw new RuntimeException("Not Implemented.");
+        decoratee.setInitialBinding(binding);
     }
 
     @Override
     public Dataset getDataset() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.getDataset();
     }
 
     @Override
     public Context getContext() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.getContext();
     }
 
     /**
@@ -51,74 +64,76 @@ public class QueryExecutionAdapter
      */
     @Override
     public Query getQuery() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return decoratee.getQuery();
     }
 
     @Override
     public ResultSet execSelect() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execSelect();
     }
 
     @Override
     public Model execConstruct() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execConstruct();
     }
 
     @Override
     public Model execConstruct(Model model) {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execConstruct(model);
     }
 
     @Override
     public Model execDescribe() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execDescribe();
     }
 
     @Override
     public Model execDescribe(Model model) {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execDescribe(model);
     }
 
     @Override
     public boolean execAsk() {
-        throw new RuntimeException("Not Implemented.");
+        return decoratee.execAsk();
     }
 
     @Override
     public void abort() {
+        decoratee.abort();
     }
 
     @Override
     public void close() {
+        decoratee.close();;
     }
 
     @Override
     public void setTimeout(long timeout, TimeUnit timeoutUnits) {
-        timeoutHelper.setTimeout(timeout, timeoutUnits);
+        decoratee.setTimeout(timeout, timeoutUnits);
     }
 
     @Override
     public void setTimeout(long timeout) {
-        timeoutHelper.setTimeout(timeout);
+        decoratee.setTimeout(timeout);
     }
 
     @Override
     public void setTimeout(long timeout1, TimeUnit timeUnit1, long timeout2, TimeUnit timeUnit2) {
-        timeoutHelper.setTimeout(timeout1, timeUnit1, timeout2, timeUnit2);
+        decoratee.setTimeout(timeout1, timeUnit1, timeout2, timeUnit2);
     }
 
     @Override
     public void setTimeout(long timeout1, long timeout2) {
-        timeoutHelper.setTimeout(timeout1, timeout2);
+        decoratee.setTimeout(timeout1, timeout2);
     }
 
 	@Override
 	public Iterator<Triple> execConstructStreaming() {
-        throw new RuntimeException("Not Implemented.");
+		return decoratee.execConstructStreaming();
 	}
 
 	@Override
 	public Iterator<Triple> execDescribeStreaming() {
-        throw new RuntimeException("Not Implemented.");
+		return decoratee.execDescribeStreaming();
 	}
 }

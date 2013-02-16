@@ -1,12 +1,13 @@
 package org.aksw.commons.sparql.api.delay.core;
 
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryDecorator;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
 import org.aksw.commons.sparql.api.delay.extra.Delayer;
 import org.aksw.commons.sparql.api.delay.extra.DelayerDefault;
+
+import com.hp.hpl.jena.query.Query;
 
 /**
  * A query execution factory, which generates query executions
@@ -37,12 +38,12 @@ public class QueryExecutionFactoryDelay
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
+    public QueryExecutionStreaming createQueryExecution(Query query) {
         return new QueryExecutionDelay(super.createQueryExecution(query), delayer);
     }
 
     @Override
-    public QueryExecution createQueryExecution(String queryString) {
+    public QueryExecutionStreaming createQueryExecution(String queryString) {
         return new QueryExecutionDelay(super.createQueryExecution(queryString), delayer);
     }
 }

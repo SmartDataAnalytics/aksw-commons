@@ -173,13 +173,22 @@ public class JdbcUtils {
                 String tableName = rs.getString("TABLE_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
                 String typeName = rs.getString("TYPE_NAME");
+                String rawIsNullable = rs.getString("IS_NULLABLE");
 
+                Boolean isNullable = null;
+                if("YES".equalsIgnoreCase(rawIsNullable)) {
+                	isNullable = true;
+                } else if("NO".equalsIgnoreCase(rawIsNullable)) {
+                	isNullable = false;
+                }
+                
+                
                 if(current == null || !tableName.equals(current.getName())) {
                     current = new Relation(tableName);
 
                     result.put(tableName, current);
                 }
-                Column column = new Column(columnName, typeName);
+                Column column = new Column(columnName, typeName, isNullable);
                 current.getColumns().put(columnName, column);
 
             }

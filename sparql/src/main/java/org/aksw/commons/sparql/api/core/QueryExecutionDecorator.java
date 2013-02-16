@@ -1,11 +1,15 @@
 package org.aksw.commons.sparql.api.core;
 
-import com.hp.hpl.jena.query.*;
+import java.util.concurrent.TimeUnit;
+
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.sparql.util.Context;
 import com.hp.hpl.jena.util.FileManager;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Claus Stadler
@@ -18,6 +22,10 @@ public class QueryExecutionDecorator
 {
     protected QueryExecution decoratee;
 
+    public QueryExecutionDecorator(QueryExecution decoratee) {
+    	this.decoratee = decoratee;
+    }
+    
     protected QueryExecution getDecoratee()
     {
         return decoratee;
@@ -28,7 +36,7 @@ public class QueryExecutionDecorator
         this.decoratee = decoratee;
     }
 
-    public QueryExecutionDecorator(QueryExecution decoratee)
+    public QueryExecutionDecorator(QueryExecutionStreaming decoratee)
     {
         this.decoratee = decoratee;
     }

@@ -1,15 +1,13 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
+import java.util.Iterator;
+
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactoryBackQuery;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
 import org.aksw.commons.sparql.api.http.QueryExecutionFactoryHttp;
-import org.aksw.commons.sparql.api.pagination.extra.PaginationQueryIterator;
-import org.apache.commons.collections15.Transformer;
 
-import java.util.Collection;
-import java.util.Iterator;
+import com.hp.hpl.jena.query.Query;
 
 /**
  * @author Claus Stadler
@@ -31,7 +29,7 @@ public class QueryExecutionFactoryIterated
     }
 
     @Override
-    public QueryExecution createQueryExecution(Query query) {
+    public QueryExecutionStreaming createQueryExecution(Query query) {
         Iterator<Query> queryIterator = queryTransformer.transform(query);
         
         return new QueryExecutionIterated(decoratee, queryIterator, breakOnEmptyResult);
@@ -49,7 +47,7 @@ public class QueryExecutionFactoryIterated
     }
 
     public static void main(String[] args) {
-        QueryExecutionFactory<?> factory = new QueryExecutionFactoryHttp("http://linkedgeodata.org/sparql", "http://linkedgeodata.org");
+        QueryExecutionFactory factory = new QueryExecutionFactoryHttp("http://linkedgeodata.org/sparql", "http://linkedgeodata.org");
         QueryExecutionFactoryPaginated fp = new QueryExecutionFactoryPaginated(factory, 10000);
 
         System.out.println(fp.getPageSize());

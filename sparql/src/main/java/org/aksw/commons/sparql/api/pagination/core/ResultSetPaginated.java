@@ -1,18 +1,19 @@
 package org.aksw.commons.sparql.api.pagination.core;
 
 
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
+import java.util.Iterator;
+
 import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.sparql.api.core.QueryExecutionFactory;
+import org.aksw.commons.sparql.api.core.QueryExecutionStreaming;
 import org.openjena.atlas.lib.Closeable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.sparql.engine.binding.Binding;
+import com.hp.hpl.jena.sparql.engine.iterator.QueryIteratorResultSet;
 
 /*
 class ConstructPaginated
@@ -84,7 +85,7 @@ public class ResultSetPaginated
                 //return null;
             }
 
-            QueryExecution qe = service.createQueryExecution(query);
+            QueryExecutionStreaming qe = service.createQueryExecution(query);
 
             if(execution != null) {
                 execution._setDecoratee(qe);

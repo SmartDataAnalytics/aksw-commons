@@ -1,6 +1,5 @@
 package org.aksw.commons.sparql.api.core;
 
-import com.hp.hpl.jena.query.QueryExecution;
 
 /**
  * @author Claus Stadler
@@ -8,8 +7,8 @@ import com.hp.hpl.jena.query.QueryExecution;
  *         Date: 7/26/11
  *         Time: 10:54 AM
  */
-public interface QueryExecutionFactory<T extends QueryExecution>
-    extends QueryExecutionFactoryString<T>, QueryExecutionFactoryQuery<T>
+public interface QueryExecutionFactory
+    extends QueryExecutionFactoryString, QueryExecutionFactoryQuery
 {
     String getId();
     String getState();
