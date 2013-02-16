@@ -74,6 +74,7 @@ class Describer
     private Iterator<Var> currentVar = null;
     private QueryExecutionFactory qef;
 
+    private QueryExecutionStreaming currentQe = null;
 
     public Describer(Iterator<Node> openNodes, ResultSet rs, Collection<Var> resultVars, QueryExecutionFactory qef)
     {
@@ -159,9 +160,17 @@ class Describer
         }
 
         Query q = CannedQueryUtils.constructBySubjects(batch);
-        QueryExecutionStreaming qe = qef.createQueryExecution(q);
+        currentQe = qef.createQueryExecution(q);
 
-        return qe.execConstructStreaming();
+        Iterator<Triple> result = currentQe.execConstructStreaming();
+        return result;
+    }
+    
+    @Override
+    public void close() {
+    	if(currentQe != null) {
+    		currentQe.close();
+    	}
     }
 }
 
@@ -229,7 +238,7 @@ public abstract class QueryExecutionBaseSelect
 
 	abstract protected QueryExecutionStreaming executeCoreSelectX(Query query);
 	
-    protected ResultSet executeCoreSelect(Query query) {
+    protected ResultSetClosable executeCoreSelect(Query query) {
         if(this.decoratee != null) {
             throw new RuntimeException("A query is already running");
         }
@@ -418,8 +427,9 @@ public abstract class QueryExecutionBaseSelect
 
         //Query selectQuery = QueryUtils.elementToQuery(query.getQueryPattern());
         query.setQueryResultStar(true);
-        ResultSet rs = executeCoreSelect(query);
+        ResultSetClosable rs = executeCoreSelect(query);
 
+        
         // insertPrefixesInto(result) ;
         Template template = query.getConstructTemplate();
 

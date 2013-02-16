@@ -1,13 +1,17 @@
 package org.aksw.commons.sparql.api.core;
 
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.ResultSet;
-import com.hp.hpl.jena.sparql.engine.binding.Binding;
-import com.hp.hpl.jena.sparql.syntax.Template;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 import org.aksw.commons.collections.PrefetchIterator;
 
-import java.util.*;
+import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.sparql.engine.binding.Binding;
+import com.hp.hpl.jena.sparql.syntax.Template;
 
 /**
  * @author Claus Stadler
@@ -19,9 +23,9 @@ public class ConstructIterator
     extends PrefetchIterator<Triple>
 {
     private Template template;
-    private ResultSet rs;
+    private ResultSetClosable rs;
 
-    public ConstructIterator(Template template, ResultSet rs)
+    public ConstructIterator(Template template, ResultSetClosable rs)
     {
         this.template = template;
         this.rs = rs;
@@ -59,5 +63,6 @@ public class ConstructIterator
 
     @Override
     public void close() {
+    	rs.close();
     }
 }
