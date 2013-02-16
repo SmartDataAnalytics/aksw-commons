@@ -14,6 +14,11 @@ public class ResultSetClosable
 {
     private IClosable closable;
 
+    public ResultSetClosable(ResultSet decoratee) {
+        super(decoratee, true);
+        this.closable = null;
+    }
+
     public ResultSetClosable(ResultSet decoratee, IClosable closable) {
         super(decoratee, true);
         if(closable == null) {
@@ -26,6 +31,8 @@ public class ResultSetClosable
 
     @Override
     public void close() {
-        closable.close();
+    	if(closable != null) {
+    		closable.close();
+    	}
     }
 }
