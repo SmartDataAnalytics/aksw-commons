@@ -5,16 +5,17 @@
 # Usage: sourceFile graphName port userName passWord
 # e.g. <cmd> myfile.n3.bzip2 http://mygraph.org 1115 dba dba
 
-
-virt_isql="$(dirname $0)/isql"
-
+#parameters
 unzip_source=$1
-
 virt_graphName=$2
 virt_port=$3
 virt_userName=$4
 virt_passWord=$5
 
+#script variables
+size_of_splits=50000
+virt_isql="$(dirname $0)/isql"
+#virt_isql="isql-vt"
 unzip_extension=${unzip_source##*.}
 unzip_target=${unzip_source%.*}
 
@@ -48,35 +49,36 @@ if [ $rapper_extension != "nt" ]; then
 fi
 
 #echo "Unzip target= $unzip_target"
-split_size=$(stat -c%s "$rapper_target")
+triple_count=$(stat -c%s "$rapper_target")
 
-echo "Size = $split_size"
-
-
-createGraphStmt="EXEC=Sparql Create Silent Graph <$virt_graphName>"
-echo $virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$createGraphStmt"
-$virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$createGraphStmt"
+echo "Size = $triple_count"
 
 
-if [ $split_size -gt 5000000 ]; then
-	echo "File is large."
 
+if [ $triple_count -gt 5000000 ]; then
+	echo "File is large, i.e. over 5 million triples ($triple_count)"
 	# Phase 3: Split
+	load_progress=0
 	split_source=$rapper_target
 	split_dir=`mktemp -d`
-        echo "Performing split on file $split_source"
-
-	split -a 10 -l 50000 $split_source "${split_dir}/file"
+    echo "Performing split on file $split_source into $split_dir"
+	split -a 10 -l  $size_of_splits $split_source "${split_dir}/file"
 
 	# Phase 4: Load
-	echo "creating load statement"
+	
 	for file in `ls $split_dir`
 	do
 		load_target="$split_dir/$file"
-       		load_query="EXEC=TTLP_MT(file_to_string_output('$load_target'), '', '$virt_graphName', 255);"
-	        $virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$load_query"
+       	load_query="EXEC=TTLP_MT(file_to_string_output('$load_target'), '', '$virt_graphName', 255);"
+       	echo "loading $split_dir/$file into $virt_graphName"
+	    $virt_isql "$virt_port" "$virt_userName" "$virt_passWord" "$load_query"
+	    load_progress=$(($load_progress+$size_of_splits))
+        percentage=$( echo "$load_progress * 100 / $triple_count" | bc -l )
+        echo $percentage"% done"
 #		echo "$virt_isql" "$virt_port" "$virt_userName" "$virt_passWord" "$load_query"
 	done;
+	# clean up split tmp dir
+	rm -r $split_dir
 	echo "done"
 else
 	echo "File is small. Loading directly."
