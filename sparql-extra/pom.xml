@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.aksw.commons</groupId>
+    <artifactId>sparql-extra</artifactId>
+    <packaging>jar</packaging>
+    <name>AKSW Commons SPARQL-Extra</name>
+    <url>http://maven.apache.org</url>
+
+    <parent>
+        <artifactId>commons-parent</artifactId>
+        <groupId>org.aksw.commons</groupId>
+        <version>0.5-SNAPSHOT</version>
+    </parent>
+
+
+    <repositories>
+        <!-- Specific repository for Any23 dependencies without a dedicated repository. -->
+        <repository>
+            <id>any23-repository-external</id>
+            <url>http://any23.googlecode.com/svn/repo-ext</url>
+        </repository>
+        <!-- The Any23 modules repository. -->
+        <repository>
+            <id>any23-repository</id>
+            <url>http://any23.googlecode.com/svn/repo</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- Jena -->
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+        </dependency>
+
+        <!-- AspectJ - What do we need that for? -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>1.6.11</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sf.oval</groupId>
+            <artifactId>oval</artifactId>
+            <version>1.31</version>
+        </dependency>
+
+
+        <!-- Used for SparqlTemplate. However, Jena's Sparql classes should be used instead. -->
+        <dependency>
+            <groupId>velocity</groupId>
+            <artifactId>velocity</artifactId>
+            <version>1.5</version>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Unit Testing -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aksw.commons</groupId>
+            <artifactId>sparql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- The any23 dereferencer implementation is currently part of the LinkQA framework -->
+        <!-- But it might make sense to add it here. -->
+        <!--<dependency>-->
+        <!--<groupId>org.deri.any23</groupId>-->
+        <!--<artifactId>any23-core</artifactId>-->
+        <!--<version>0.5.0</version>-->
+        <!--<exclusions>-->
+        <!--<exclusion>-->
+        <!--<artifactId>slf4j-api</artifactId>-->
+        <!--<groupId>org.slf4j</groupId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+        <!--<artifactId>slf4j-jdk14</artifactId>-->
+        <!--<groupId>org.slf4j</groupId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+        <!--<artifactId>log4j</artifactId>-->
+        <!--<groupId>log4j</groupId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+        <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--<groupId>org.slf4j</groupId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+        <!--<artifactId>jcl-over-slf4j</artifactId>-->
+        <!--<groupId>org.slf4j</groupId>-->
+        <!--</exclusion>-->
+        <!--</exclusions>-->
+        <!--</dependency>-->
+    </dependencies>
+
+    <build>
+        <plugins>
+<!--             <plugin> -->
+<!--                 <groupId>org.codehaus.mojo</groupId> -->
+<!--                 <artifactId>aspectj-maven-plugin</artifactId> -->
+<!--                 <version>1.4</version> -->
+<!--                 <configuration> -->
+<!--                     <complianceLevel>1.6</complianceLevel> -->
+<!--                 </configuration> -->
+<!--                 <executions> -->
+<!--                     <execution> -->
+<!--                         <goals> -->
+<!--                             <goal>compile</goal> -->
+<!--                             <goal>test-compile</goal> -->
+<!--                         </goals> -->
+<!--                     </execution> -->
+<!--                 </executions> -->
+<!--             </plugin> -->
+        </plugins>
+    </build>
+    
+</project>
