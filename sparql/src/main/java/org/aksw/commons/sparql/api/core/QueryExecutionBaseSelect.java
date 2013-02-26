@@ -1,15 +1,10 @@
 package org.aksw.commons.sparql.api.core;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import org.aksw.commons.collections.IClosable;
-import org.aksw.commons.collections.PrefetchIterator;
+import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.jena.util.QueryUtils;
-import org.aksw.commons.sparql.api.util.CannedQueryUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,11 +17,29 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Template;
 import com.hp.hpl.jena.update.UpdateRequest;
 
+
+class IteratorWrapperClose<T>
+	extends SinglePrefetchIterator<T>
+{
+	private Iterator<T> it;
+	
+	public IteratorWrapperClose(Iterator<T> it) {
+		this.it = it;
+	}
+
+	@Override
+	protected T prefetch() throws Exception {
+		if(!it.hasNext()) {
+			return finish();
+		} else {
+			T result = it.next();
+			return result;
+		}
+	}
+}
 
 class TestQueryExecutionBaseSelect
     extends QueryExecutionBaseSelect
@@ -50,127 +63,6 @@ class TestQueryExecutionBaseSelect
 
         x.execDescribe();
 
-    }
-}
-
-
-/**
- *
- *
- * TODO What about Limit and Offset?
- *
- */
-class Describer
-    extends PrefetchIterator<Triple> {
-
-    private Iterator<Node> openNodes;
-    private Collection<Var> resultVars;
-
-    //private QueryExe
-    // TODO Keep track of the involved resources so we can close them properly
-
-    private ResultSet rs;
-    private Binding currentBinding = null;
-    private Iterator<Var> currentVar = null;
-    private QueryExecutionFactory qef;
-
-    private QueryExecutionStreaming currentQe = null;
-
-    public Describer(Iterator<Node> openNodes, ResultSet rs, Collection<Var> resultVars, QueryExecutionFactory qef)
-    {
-        this.openNodes = openNodes;
-        this.resultVars = resultVars;
-        this.rs = rs;
-        this.qef = qef;
-    }
-
-    public static Describer create(List<Node> resultUris, List<String> resultVars, ResultSet rs, QueryExecutionFactory qef) {
-
-        Set<Var> vars = null;
-        if(rs != null) {
-            if(!rs.hasNext()) {
-                rs = null;
-                resultVars = null;
-            } else {
-                vars = new HashSet<Var>();
-
-                for(String var : resultVars) {
-                    vars.add(Var.alloc(var));
-                }
-            }
-        }
-
-        Iterator<Node> it = (resultUris == null)
-                ? null
-                : resultUris.iterator();
-
-        return new Describer(it, rs, vars, qef);
-    }
-
-
-    public Iterator<Triple> describeNodeStreaming(Node node) {
-        Query query = CannedQueryUtils.constructBySubject(node);
-
-        QueryExecutionStreaming qe = qef.createQueryExecution(query);
-
-        return qe.execConstructStreaming();
-    }
-
-    @Override
-    protected Iterator<Triple> prefetch() throws Exception {
-        Set<Node> batch = new HashSet<Node>();
-
-        int n = 10;
-        while(openNodes != null && openNodes.hasNext() && batch.size() < n) {
-            Node node = openNodes.next();
-            batch.add(node);
-        }
-
-
-        while(batch.size() < n) {
-
-            if(rs == null) {
-                break;
-            }
-
-
-            if(currentVar == null || !currentVar.hasNext()) {
-
-                if(!rs.hasNext()) {
-                    break;
-                }
-
-                currentBinding = rs.nextBinding();
-
-                currentVar = resultVars.iterator();
-            }
-
-            Var var = currentVar.next();
-            Node node = currentBinding.get(var);
-
-            if(node == null || !node.isURI()) {
-                continue;
-            }
-
-            batch.add(node);
-        }
-
-        if(batch.isEmpty()) {
-            return null;
-        }
-
-        Query q = CannedQueryUtils.constructBySubjects(batch);
-        currentQe = qef.createQueryExecution(q);
-
-        Iterator<Triple> result = currentQe.execConstructStreaming();
-        return result;
-    }
-    
-    @Override
-    public void close() {
-    	if(currentQe != null) {
-    		currentQe.close();
-    	}
     }
 }
 
@@ -256,7 +148,6 @@ public abstract class QueryExecutionBaseSelect
         ResultSetClosable result = new ResultSetClosable(tmp, new IClosable() {
             @Override
             public void close() {
-                decoratee.close();
                 self.close();
             }
         });
@@ -265,6 +156,12 @@ public abstract class QueryExecutionBaseSelect
 
         
     }
+
+// Note: The super class already closes the decoratee
+//    @Override
+//    public void close() {
+//        decoratee.close();    	
+//    }
 
 	@Override
 	public boolean execAsk() {
@@ -294,7 +191,8 @@ public abstract class QueryExecutionBaseSelect
 
     @Override
     public Model execDescribe() {
-        return execDescribe(ModelFactory.createDefaultModel());
+    	Model model = ModelFactory.createDefaultModel();
+        return execDescribe(model);
     }
 
 
@@ -327,7 +225,8 @@ public abstract class QueryExecutionBaseSelect
     @Override
     public Iterator<Triple> execDescribeStreaming() {
 
-        ResultSet rs = null;
+    	
+        ResultSetClosable rs = null;
         if ( query.getQueryPattern() != null ) {
             Query q = new Query();
             q.setQuerySelectType();
@@ -340,7 +239,20 @@ public abstract class QueryExecutionBaseSelect
             rs = this.executeCoreSelect(q);
         }
 
-        Describer result = Describer.create(query.getResultURIs(), query.getResultVars(), rs, subFactory);
+    	// Note: We need to close the connection when we are done
+
+        Describer tmp = Describer.create(query.getResultURIs(), query.getResultVars(), rs, subFactory);
+
+        
+        final QueryExecutionStreaming self = this;
+        
+        Iterator<Triple> result = new IteratorWrapperClose<Triple>(tmp) {
+        	@Override
+        	public void close() {
+        		self.close();
+        	}
+        };
+        
         return result;
     }
 
@@ -433,7 +345,8 @@ public abstract class QueryExecutionBaseSelect
         // insertPrefixesInto(result) ;
         Template template = query.getConstructTemplate();
 
-        return new ConstructIterator(template, rs);
+        Iterator<Triple> result = new ConstructIterator(template, rs);
+        return result;
     }
 
     private Model executeConstruct(Query query, Model result) {

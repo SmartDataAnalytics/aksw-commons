@@ -1,6 +1,7 @@
 package org.aksw.commons.sparql.api.core;
 
 
+import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
 
 /**
@@ -14,6 +15,8 @@ public abstract class QueryExecutionFactoryBackQuery
 {
     @Override
     public QueryExecutionStreaming createQueryExecution(String queryString) {
-        return createQueryExecution(QueryFactory.create(queryString));
+    	Query query = QueryFactory.create(queryString);
+    	QueryExecutionStreaming result = createQueryExecution(query);
+    	return result;
     }
 }

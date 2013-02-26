@@ -10,6 +10,7 @@ import org.aksw.commons.collections.PrefetchIterator;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.sparql.engine.binding.Binding;
 import com.hp.hpl.jena.sparql.syntax.Template;
 
@@ -23,9 +24,9 @@ public class ConstructIterator
     extends PrefetchIterator<Triple>
 {
     private Template template;
-    private ResultSetClosable rs;
+    private ResultSet rs;
 
-    public ConstructIterator(Template template, ResultSetClosable rs)
+    public ConstructIterator(Template template, ResultSet rs)
     {
         this.template = template;
         this.rs = rs;
@@ -63,6 +64,7 @@ public class ConstructIterator
 
     @Override
     public void close() {
-    	rs.close();
+    	super.close();
+    	//rs.close();
     }
 }

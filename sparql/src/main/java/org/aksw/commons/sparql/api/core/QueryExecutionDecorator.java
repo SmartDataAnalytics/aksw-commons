@@ -107,7 +107,9 @@ public class QueryExecutionDecorator
 
     @Override
     public void close() {
-        decoratee.close();;
+    	if(decoratee != null) {
+    		decoratee.close();
+    	}
     }
 
     @Override
