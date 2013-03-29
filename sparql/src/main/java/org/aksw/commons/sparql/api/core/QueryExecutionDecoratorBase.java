@@ -1,28 +1,16 @@
 package org.aksw.commons.sparql.api.core;
 
-import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
-import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.sparql.util.Context;
+import com.hp.hpl.jena.util.FileManager;
 
-
-public class QueryExecutionStreamingDecorator
-	extends QueryExecutionDecoratorBase<QueryExecutionStreaming>
-	implements QueryExecutionStreaming
-{
-	public QueryExecutionStreamingDecorator(QueryExecutionStreaming decoratee) {
-		super(decoratee);
-	}
-
-	@Override
-	public Iterator<Triple> execConstructStreaming() {
-		return decoratee.execConstructStreaming();
-	}
-	
-	@Override
-	public Iterator<Triple> execDescribeStreaming() {
-		return decoratee.execDescribeStreaming();
-	}
-}
 
 /**
  * @author Claus Stadler
@@ -30,23 +18,29 @@ public class QueryExecutionStreamingDecorator
  *         Date: 7/26/11
  *         Time: 10:28 AM
  */
-/*
-public class QueryExecutionStreamingDecorator
-    implements QueryExecutionStreaming
+public class QueryExecutionDecoratorBase<T extends QueryExecution>
+    implements QueryExecution
 {
-    protected QueryExecutionStreaming decoratee;
+    protected T decoratee;
 
-    protected QueryExecutionStreaming getDecoratee()
+    public QueryExecutionDecoratorBase(T decoratee) {
+    	//this.decoratee = new QueryExecutionStreamingWrapper(decoratee);
+    	this.setDecoratee(decoratee);
+    }
+
+    /*
+    public QueryExecutionDecoratorBase(QueryExecutionStreaming decoratee)
+    {
+    	this.setDecoratee(decoratee);
+        //this.decoratee = decoratee;
+    }*/
+    
+    protected QueryExecution getDecoratee()
     {
         return decoratee;
     }
 
-    protected void setDecoratee(QueryExecutionStreaming decoratee)
-    {
-        this.decoratee = decoratee;
-    }
-
-    public QueryExecutionStreamingDecorator(QueryExecutionStreaming decoratee)
+    protected void setDecoratee(T decoratee)
     {
         this.decoratee = decoratee;
     }
@@ -74,7 +68,7 @@ public class QueryExecutionStreamingDecorator
     /**
      * The query associated with a query execution.
      * May be null (QueryExecution may have been created by other means)
-     * /
+     */
     @Override
     public Query getQuery() {
         return decoratee.getQuery();
@@ -117,7 +111,9 @@ public class QueryExecutionStreamingDecorator
 
     @Override
     public void close() {
-        decoratee.close();;
+    	if(decoratee != null) {
+    		decoratee.close();
+    	}
     }
 
     @Override
@@ -139,15 +135,4 @@ public class QueryExecutionStreamingDecorator
     public void setTimeout(long timeout1, long timeout2) {
         decoratee.setTimeout(timeout1, timeout2);
     }
-
-	@Override
-	public Iterator<Triple> execConstructStreaming() {
-		return decoratee.execConstructStreaming();
-	}
-
-	@Override
-	public Iterator<Triple> execDescribeStreaming() {
-		return decoratee.execDescribeStreaming();
-	}
 }
-*/

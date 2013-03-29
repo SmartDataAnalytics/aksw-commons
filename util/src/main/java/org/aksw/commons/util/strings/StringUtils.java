@@ -9,6 +9,27 @@ import java.util.*;
 
 public class StringUtils
 {
+	public static <T> String itemPerLine(T[] array) {
+		return itemPerLine(Arrays.asList(array));
+	}
+
+	public static <T> String itemPerLine(Iterable<T> iterable) {
+		String result = "";
+		Iterator<T> it = iterable.iterator();
+		int i = 0;
+		while(it.hasNext()) {
+			T item = it.next();
+			result += "[" + (++i) + "] " + item;
+			
+			if(it.hasNext()) {
+				result += "\n";
+			}
+		}
+		
+		return result;
+	}
+	
+	
     /**
      * Removes prefixes that are also suffixes from a given string
      * e.g. strip('Hi', ') -> Hi
