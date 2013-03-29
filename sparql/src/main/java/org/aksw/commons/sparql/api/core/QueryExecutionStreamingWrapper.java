@@ -11,8 +11,11 @@ public class QueryExecutionStreamingWrapper
 	extends QueryExecutionDecorator
 	implements QueryExecutionStreaming
 {
+	//private QueryExecution decoratee;
+	
 	public QueryExecutionStreamingWrapper(QueryExecution decoratee) {
 		super(decoratee);
+		//this.decoratee = decoratee;
 	}
 	
     public static Iterator<Triple> createTripleIterator(Model model) {
