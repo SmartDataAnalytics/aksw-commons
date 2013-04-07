@@ -3,3 +3,7 @@
 .iml$
 .ipr$
 .iws$
+.prefs$
+.project
+.classpath
+.log
