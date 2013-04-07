@@ -4,6 +4,8 @@
 .ipr$
 .iws$
 .prefs$
+.releaseBackup$
 .project
 .classpath
 .log
+release.properties
