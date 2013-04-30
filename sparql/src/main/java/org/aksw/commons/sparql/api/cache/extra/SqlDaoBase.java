@@ -1,9 +1,6 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
 
-import org.aksw.commons.sparql.api.cache.core.QueryString;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +9,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.aksw.commons.sparql.api.cache.core.QueryString;
+import org.aksw.commons.util.jdbc.SqlUtils;
+import org.slf4j.LoggerFactory;
 
 
 public class SqlDaoBase

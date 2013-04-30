@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
 
+import org.aksw.commons.util.jdbc.SqlUtils;
+
 /**
  * @author Claus Stadler
  *         <p/>

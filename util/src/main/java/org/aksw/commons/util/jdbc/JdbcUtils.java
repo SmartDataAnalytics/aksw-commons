@@ -161,11 +161,18 @@ public class JdbcUtils {
     public static Map<String, Relation> fetchColumns(Connection conn)
             throws SQLException
     {
+    	return fetchColumns(conn, null);
+    }
+    
+    public static Map<String, Relation> fetchColumns(Connection conn, String schemaPattern)
+    		throws SQLException
+    {
         Map<String, Relation> result = new HashMap<String, Relation>();
 
         DatabaseMetaData meta = conn.getMetaData();
-        ResultSet rs = meta.getColumns(conn.getCatalog(), null, null, null);
+        ResultSet rs = meta.getColumns(conn.getCatalog(), schemaPattern, null, null);
 
+        
         try {
             Relation current = null;
             while (rs.next()) {
@@ -174,7 +181,8 @@ public class JdbcUtils {
                 String columnName = rs.getString("COLUMN_NAME");
                 String typeName = rs.getString("TYPE_NAME");
                 String rawIsNullable = rs.getString("IS_NULLABLE");
-
+                int ordinalPosition = rs.getInt("ORDINAL_POSITION");
+                
                 Boolean isNullable = null;
                 if("YES".equalsIgnoreCase(rawIsNullable)) {
                 	isNullable = true;
@@ -188,7 +196,7 @@ public class JdbcUtils {
 
                     result.put(tableName, current);
                 }
-                Column column = new Column(columnName, typeName, isNullable);
+                Column column = new Column(ordinalPosition, columnName, typeName, isNullable);
                 current.getColumns().put(columnName, column);
 
             }
