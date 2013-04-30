@@ -384,6 +384,16 @@
                 </exclusions>
             </dependency>
 
+
+			<!-- Used for SQL-Escapting (StringEscapeUtils) -->
+			<dependency>
+				<groupId>commons-lang</groupId>
+				<artifactId>commons-lang</artifactId>
+				<version>2.4</version>
+				<type>jar</type>
+				<scope>compile</scope>
+			</dependency>
+
             <!--
             <dependency>
                 <groupId>com.hp.hpl.jena</groupId>

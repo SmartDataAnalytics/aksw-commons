@@ -10,17 +10,23 @@ public class Column
 {
 	private String name;
 	private String type;
+	private int ordinalPosition;
 	private Boolean isNullable; // null: unknown
 
-	public Column(String name, String type) {
-		this(name, type, null);
+	public Column(int ordinalPosition, String name, String type) {
+		this(ordinalPosition, name, type, null);
 	}
 
-	public Column(String name, String type, Boolean isNullable) {
+	public Column(int ordinalPosition, String name, String type, Boolean isNullable) {
 		super();
+		this.ordinalPosition = ordinalPosition;
 		this.name = name;
 		this.type = type;
 		this.isNullable = isNullable;
+	}
+
+	public int getOrdinalPosition() {
+		return ordinalPosition;
 	}
 
 	public String getName() {

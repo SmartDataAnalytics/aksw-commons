@@ -1,16 +1,22 @@
 package org.aksw.commons.sparql.api.cache.extra;
 
+import java.io.InputStream;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+
 import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.sparql.api.cache.core.QueryString;
 import org.aksw.commons.util.strings.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.sql.*;
-import java.util.Arrays;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
 
 
 /**
