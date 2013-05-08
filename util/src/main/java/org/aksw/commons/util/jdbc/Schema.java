@@ -2,10 +2,10 @@ package org.aksw.commons.util.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 /**
@@ -82,7 +82,14 @@ public class Schema {
         Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(meta, catalog);
         Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(meta, catalog);
 
-        Multimap<String, Index> indexes = JdbcUtils.fetchIndexes(meta, catalog);
+        
+        Multimap<String, Index> indexes = HashMultimap.create();
+        for(String tableName : relations.keySet()) {
+        	Multimap<String, Index> tmp = JdbcUtils.fetchIndexes(meta, catalog, null, tableName, true);
+        	indexes.putAll(tmp);
+        }
+        
+         
         
         Schema result = new Schema(relations, primaryKeys, foreignKeys, indexes);
         return result;

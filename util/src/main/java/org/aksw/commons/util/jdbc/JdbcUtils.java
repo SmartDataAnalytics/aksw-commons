@@ -209,28 +209,30 @@ public class JdbcUtils {
     }
     
 
-	public static Multimap<String, Index> fetchIndexes(Connection conn)
-			throws SQLException
-	{
-		DatabaseMetaData meta = conn.getMetaData();
-		String catalog = conn.getCatalog();
-		
-		Multimap<String, Index> result = fetchIndexes(meta, catalog);
-		
-		return result;
-	}
-
-    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog) throws SQLException {
-		Multimap<String, Index> result = fetchIndexes(meta, catalog, null, null, null);
-		
-		return result;    	
-    }
+//	public static Multimap<String, Index> fetchIndexes(Connection conn)
+//			throws SQLException
+//	{
+//		DatabaseMetaData meta = conn.getMetaData();
+//		String catalog = conn.getCatalog();
+//		
+//		Multimap<String, Index> result = fetchIndexes(meta, catalog);
+//		
+//		return result;
+//	}
+//
+//    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog, String schemaName, String tableName) throws SQLException {
+//		Multimap<String, Index> result = fetchIndexes(meta, catalog, null, tableName, null);
+//		
+//		return result;    	
+//    }
     
-    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog, String schemaName, String tableName, Boolean unique) throws SQLException {
+	// FIXME Index argument ignores non-unique indexes
+    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog, String schemaName, String tableName, boolean unique) throws SQLException {
 
     	Multimap<String, Index> result = ArrayListMultimap.create();// new HashMap<String, Index>();
     	
-    	ResultSet rs = meta.getIndexInfo(catalog, schemaName, tableName, unique, true);
+
+    	ResultSet rs = meta.getIndexInfo(catalog, schemaName, tableName, unique, false);
     	//Index current = null;
 
     	Index current = null;
