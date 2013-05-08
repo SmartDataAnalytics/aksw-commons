@@ -14,6 +14,8 @@ public class Index
 	
 	public Index(String name, ColumnsReference columns, boolean isUnique) {
 		super(name);
+		this.columns = columns;
+		this.isUnique = isUnique;
 	}
 
 	public ColumnsReference getColumns() {
