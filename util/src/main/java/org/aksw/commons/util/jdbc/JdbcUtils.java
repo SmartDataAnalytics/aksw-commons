@@ -4,13 +4,15 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 
 
@@ -19,31 +21,20 @@ public class JdbcUtils {
 	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn)
 			throws SQLException
 	{
-		Set<String> tableNames = fetchRelationNames(conn);
-		Multimap<String, ForeignKey> result = fetchForeignKeys(conn, tableNames);
+		DatabaseMetaData meta = conn.getMetaData();
+		String catalog = conn.getCatalog();
+		
+		Multimap<String, ForeignKey> result = fetchForeignKeys(meta, catalog);
 		
 		return result;
 	}
 	
-	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn, Collection<String> tableNames) throws SQLException {
-		Multimap<String, ForeignKey> result = HashMultimap.create();
-
-		for(String tableName : tableNames) {
-			Multimap<String, ForeignKey> part = fetchForeignKeys(conn, tableName);
-			result.putAll(part);
-		}
-		
-		return result;
-	}
-
-	
-	public static Multimap<String, ForeignKey> fetchForeignKeys(Connection conn, String tableName)
+	public static Multimap<String, ForeignKey> fetchForeignKeys(DatabaseMetaData meta, String catalog)
 			throws SQLException
 	{
 		HashMultimap<String, ForeignKey> result = HashMultimap.create();
 
-		DatabaseMetaData meta = conn.getMetaData();
-		ResultSet rs = meta.getExportedKeys(conn.getCatalog(), null, tableName);
+		ResultSet rs = meta.getExportedKeys(catalog, null, null);
 
         try {
             Map<String, ForeignKey> fkNameMap = new HashMap<String, ForeignKey>();
@@ -79,40 +70,31 @@ public class JdbcUtils {
 		return result;
 	}
 
+
+	
 	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn)
 			throws SQLException
 	{
-		Set<String> tableNames = fetchRelationNames(conn);
-		Map<String, PrimaryKey> result = fetchPrimaryKeys(conn, tableNames);
-		
-		return result;
-	}
-
-	
-	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn, Collection<String> tableNames) throws SQLException {
-		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
-
-		for(String tableName : tableNames) {
-			Map<String, PrimaryKey> part = fetchPrimaryKeys(conn, tableName);
-			result.putAll(part);
-		}
-		
-		return result;
-	}
-	
-
-	public static Map<String, PrimaryKey> fetchPrimaryKeys(Connection conn, String tableName) throws SQLException {
-		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
-		
 		DatabaseMetaData meta = conn.getMetaData();
-		ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, tableName);
-
+		String catalog = conn.getCatalog();
 		
+		Map<String, PrimaryKey> result = fetchPrimaryKeys(meta, catalog);
+		
+		return result;
+	}
+	
+	
+	public static Map<String, PrimaryKey> fetchPrimaryKeys(DatabaseMetaData meta, String catalog) throws SQLException {
+		Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
+		
+		//ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
+		ResultSet rs = meta.getPrimaryKeys(catalog, null, null);
+
         try {
             PrimaryKey current = null;
             while (rs.next()) {
 
-                //String tableName = rs.getString("TABLE_NAME");
+                String tableName = rs.getString("TABLE_NAME");
                 String columnName = rs.getString("COLUMN_NAME");
                 String pkName = rs.getString("PK_NAME");
 
@@ -132,6 +114,19 @@ public class JdbcUtils {
 	}
 
 	
+	
+	public static Set<String> fetchRelationNames(Connection conn)
+			throws SQLException
+	{
+		DatabaseMetaData meta = conn.getMetaData();
+		String catalog = conn.getCatalog();
+		
+		Set<String> result = fetchRelationNames(meta, catalog);
+		
+		return result;
+	}
+	
+	
 	/**
 	 * For each table retrieve all columns and their foreign key relations
 	 * 
@@ -141,9 +136,9 @@ public class JdbcUtils {
 	 * @param conn
 	 * @throws SQLException
 	 */
-	public static Set<String> fetchRelationNames(Connection conn) throws SQLException {
+	public static Set<String> fetchRelationNames(DatabaseMetaData meta, String catalog) throws SQLException {
 		String[] types = {"TABLE", "VIEW"};
-		ResultSet rs = conn.getMetaData().getTables(conn.getCatalog(), null, null, types);
+		ResultSet rs = meta.getTables(catalog, null, null, types);
 
 		Set<String> result = new TreeSet<String>();
         try {
@@ -157,30 +152,27 @@ public class JdbcUtils {
 		return result;
 	}
 
+	
+	public static Map<String, Relation> fetchColumns(Connection conn)
+			throws SQLException
+	{
+		DatabaseMetaData meta = conn.getMetaData();
+		String catalog = conn.getCatalog();
+		
+		Map<String, Relation> result = fetchColumns(meta, catalog);
+		
+		return result;
+	}
 
-    public static Map<String, Relation> fetchColumns(Connection conn)
+	
+	
+    public static Map<String, Relation> fetchColumns(DatabaseMetaData meta, String catalog)
             throws SQLException
-    {
-    	return fetchColumns(conn, null);
-    }
-
-    public static Map<String, Relation> fetchColumns(Connection conn, String schemaPattern)
-    		throws SQLException
-    {
-    	Map<String, Relation> result = fetchColumns(conn, schemaPattern, null);
-    	return result;
-    }
-    
-    public static Map<String, Relation> fetchColumns(Connection conn, String schemaPattern, String tablePattern)
-    		throws SQLException
     {
         Map<String, Relation> result = new HashMap<String, Relation>();
 
-        DatabaseMetaData meta = conn.getMetaData();
-        String catalog = conn.getCatalog();
-        ResultSet rs = meta.getColumns(catalog, schemaPattern, tablePattern, null);
+        ResultSet rs = meta.getColumns(catalog, null, null, null);
 
-        
         try {
             Relation current = null;
             while (rs.next()) {
@@ -212,8 +204,60 @@ public class JdbcUtils {
         } finally {
             rs.close();
         }
-
+        
         return result;
     }
+    
+
+	public static Multimap<String, Index> fetchIndexes(Connection conn)
+			throws SQLException
+	{
+		DatabaseMetaData meta = conn.getMetaData();
+		String catalog = conn.getCatalog();
+		
+		Multimap<String, Index> result = fetchIndexes(meta, catalog);
+		
+		return result;
+	}
+
+    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog) throws SQLException {
+		Multimap<String, Index> result = fetchIndexes(meta, catalog, null, null, null);
+		
+		return result;    	
+    }
+    
+    public static Multimap<String, Index> fetchIndexes(DatabaseMetaData meta, String catalog, String schemaName, String tableName, Boolean unique) throws SQLException {
+
+    	Multimap<String, Index> result = ArrayListMultimap.create();// new HashMap<String, Index>();
+    	
+    	ResultSet rs = meta.getIndexInfo(catalog, schemaName, tableName, unique, true);
+    	//Index current = null;
+
+    	Index current = null;
+   
+        while(rs.next()) {
+        	
+            String indexName = rs.getString("INDEX_NAME");
+            String table = rs.getString("TABLE_NAME");
+            //String schema = rs.getString("TABLE_SCHEM");
+            String columnName = rs.getString("COLUMN_NAME");
+            //short ordinalPosition = rs.getShort("ORDINAL_POSITION");
+            boolean isNonUnique = rs.getBoolean("NON_UNIQUE");
+            if(indexName == null) {
+                continue;
+            }
+            
+            if(current == null || !indexName.equals(current.getName())) {
+                current = new Index(tableName, table, !isNonUnique);
+
+                result.put(tableName, current);
+            }
+
+            current.getColumns().getColumnNames().add(columnName);
+        }
+        
+        return result;
+    }
+
 }
 

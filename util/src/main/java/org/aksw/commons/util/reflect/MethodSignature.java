@@ -10,7 +10,7 @@ import java.util.List;
  *         Date: 7/15/11
  *         Time: 5:23 PM
  */
-class MethodSignature
+public class MethodSignature
 {
 	private String name;
 	private Class<?> returnType;
