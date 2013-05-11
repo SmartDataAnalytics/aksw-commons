@@ -1,30 +1,28 @@
 package org.aksw.commons.sparql.api.compare;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Multisets;
-import com.hp.hpl.jena.query.*;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.sparql.core.QuerySolutionBase;
-import com.hp.hpl.jena.sparql.resultset.ResultSetCompare;
-import com.hp.hpl.jena.sparql.util.Context;
-import com.hp.hpl.jena.sparql.util.ResultSetUtils;
-import com.hp.hpl.jena.sparql.util.VarUtils;
-import com.hp.hpl.jena.util.FileManager;
+import java.util.concurrent.TimeUnit;
+
 import org.aksw.commons.collections.diff.Diff;
 import org.aksw.commons.collections.diff.ListDiff;
 import org.aksw.commons.collections.diff.ModelDiff;
 import org.aksw.commons.util.strings.StringUtils;
-import org.apache.commons.validator.Var;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFactory;
+import com.hp.hpl.jena.query.ResultSetRewindable;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.sparql.util.Context;
+import com.hp.hpl.jena.util.FileManager;
 
 
 /**
@@ -244,6 +242,17 @@ public class QueryExecutionCompare
 
         x.reset();
 
+        System.out.println("Query:\n" + query);
+        
+        for(QuerySolution qs : resultSetDiff.getAdded()) {
+        	System.out.println("Excessive: " + qs);
+        }
+        System.out.println("--------------------------");
+        for(QuerySolution qs : resultSetDiff.getRemoved()) {
+        	System.out.println("Missing: " + qs);
+        }
+        
+        
         logResultSet();
 
         return x;
@@ -272,7 +281,8 @@ public class QueryExecutionCompare
         boolean  removed = askDiff.getRemoved();
 
         String msg = added + "\t" + removed + "\t" + StringUtils.urlEncode("" + query);
-
+        msg = "";
+        
         if(added == removed) {
             logger.trace("[ OK ] " + msg);
         } else {

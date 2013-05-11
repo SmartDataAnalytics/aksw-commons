@@ -1,18 +1,23 @@
 package org.aksw.commons.sparql.api.compare;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.sparql.core.QuerySolutionBase;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
+
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.sparql.core.QuerySolutionBase;
 
 /**
  * @author Claus Stadler
  *         <p/>
  *         Date: 9/20/12
  *         Time: 2:30 PM
+ */
+/**
+ * @author raven
+ *
  */
 public class QuerySolutionWithEquals
     extends QuerySolutionBase
@@ -66,4 +71,13 @@ public class QuerySolutionWithEquals
     public int hashCode() {
         return this.map.hashCode();
     }
+
+	@Override
+	public String toString() {
+		TreeMap<String, RDFNode> m = new TreeMap<String, RDFNode>(map);
+		return "" + m;
+	}
+    
+    
+    
 }
