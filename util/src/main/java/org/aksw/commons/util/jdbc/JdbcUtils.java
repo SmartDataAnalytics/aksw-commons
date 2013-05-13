@@ -159,19 +159,37 @@ public class JdbcUtils {
 		DatabaseMetaData meta = conn.getMetaData();
 		String catalog = conn.getCatalog();
 		
-		Map<String, Relation> result = fetchColumns(meta, catalog);
+		Map<String, Relation> result = fetchColumns(meta, catalog, null, null);
 		
 		return result;
 	}
 
+	public static Map<String, Relation> fetchColumns(Connection conn, String schema, String table)
+			throws SQLException
+	{
+		DatabaseMetaData meta = conn.getMetaData();
+		String catalog = conn.getCatalog();
+		
+		Map<String, Relation> result = fetchColumns(meta, catalog, schema, table);
+		
+		return result;
+	}
+
+	public static Map<String, Relation> fetchColumns(DatabaseMetaData meta, String catalog)
+			throws SQLException
+	{
+		Map<String, Relation> result = fetchColumns(meta, catalog, null, null);
+		
+		return result;
+	}
 	
 	
-    public static Map<String, Relation> fetchColumns(DatabaseMetaData meta, String catalog)
+    public static Map<String, Relation> fetchColumns(DatabaseMetaData meta, String catalog, String schema, String table)
             throws SQLException
     {
         Map<String, Relation> result = new HashMap<String, Relation>();
 
-        ResultSet rs = meta.getColumns(catalog, null, null, null);
+        ResultSet rs = meta.getColumns(catalog, schema, table, null);
 
         try {
             Relation current = null;
