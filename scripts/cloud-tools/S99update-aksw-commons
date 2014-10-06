@@ -1,9 +1,0 @@
-#!/bin/bash
-#Update the aksw-commons repo on start up
-
-dir="/opt/aksw-commons"
-
-cd "$dir"
-sudo -u akswadmin hg pull
-sudo -u akswadmin hg merge
-sudo -u akswadmin hg update
