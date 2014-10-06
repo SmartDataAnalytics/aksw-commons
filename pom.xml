@@ -27,15 +27,15 @@
     </properties>
 
     <modules>
-        <module>collections</module>
+        <module>aksw-commons-collections</module>
 
-        <module>util</module>
-        <module>sparql</module>
-        <module>model</module>
+        <module>aksw-commons-util</module>
+        <module>aksw-commons-sparql</module>
+        <module>aksw-commons-model</module>
 
-        <module>sparql-extra</module>
+        <module>aksw-commons-sparql-extra</module>
 
-        <module>experiments</module>
+        <module>aksw-commons-experiments</module>
 
         <!--
                 <module>collections-scala</module>
@@ -215,31 +215,31 @@
 
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>collections</artifactId>
+                <artifactId>aksw-commons-collections</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>util</artifactId>
+                <artifactId>aksw-commons-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>sparql</artifactId>
+                <artifactId>aksw-commons-sparql</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>model</artifactId>
+                <artifactId>aksw-commons-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.aksw.commons</groupId>
-                <artifactId>sparql-extra</artifactId>
+                <artifactId>aksw-commons-sparql-extra</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -411,7 +411,7 @@
             <dependency>
                 <groupId>com.owldl</groupId>
                 <artifactId>pellet</artifactId>
-                <version>2.2.2</version>
+                <version>2.3.0</version>
                 <exclusions>
                     <exclusion>  <!-- declare the exclusion here -->
                         <groupId>org.mortbay.jetty</groupId>
