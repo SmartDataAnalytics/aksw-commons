@@ -35,7 +35,7 @@
 
         <!-- <module>aksw-commons-sparql-extra</module> -->
 
-        <module>aksw-commons-experiments</module>
+        <!-- <module>aksw-commons-experiments</module> -->
 
         <!--
                 <module>collections-scala</module>
@@ -228,6 +228,7 @@
                 <version>${project.version}</version>
             </dependency>
 
+<!--
             <dependency>
                 <groupId>org.aksw.commons</groupId>
                 <artifactId>aksw-commons-model</artifactId>
@@ -239,7 +240,7 @@
                 <artifactId>aksw-commons-sparql-extra</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+-->
             <!--
             <dependency>
                 <groupId>org.aksw.commons</groupId>
