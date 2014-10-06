@@ -8,7 +8,7 @@
     <url>http://maven.apache.org</url>
 
     <parent>
-        <artifactId>commons-parent</artifactId>
+        <artifactId>aksw-commons-parent</artifactId>
         <groupId>org.aksw.commons</groupId>
         <version>0.7.3-SNAPSHOT</version>
     </parent>
@@ -128,5 +128,5 @@
 <!--             </plugin> -->
         </plugins>
     </build>
-    
+
 </project>
