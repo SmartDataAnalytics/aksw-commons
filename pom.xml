@@ -31,7 +31,7 @@
 
         <module>aksw-commons-util</module>
         <module>aksw-commons-sparql</module>
-        <module>aksw-commons-model</module>
+        <!-- <module>aksw-commons-model</module> -->
 
         <module>aksw-commons-sparql-extra</module>
 
