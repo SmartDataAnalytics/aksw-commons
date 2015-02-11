@@ -10,38 +10,22 @@
 
     <scm>
         <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection>
-        <!-- developerConnection></developerConnection -->
-        <!-- url>https://my-project.googlecode.com/svn</url -->
         <tag>HEAD</tag>
     </scm>
 
     <properties>
         <!--  tell the compiler we can use 1.6 -->
-        <compiler.version>1.6</compiler.version>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <scala.version>2.8.0</scala.version>
-        <!--scala.version>2.8.0.Beta1-RC7</scala.version-->
         <junit.version>4.8.1</junit.version>
         <slf4j.version>1.6.0</slf4j.version>
     </properties>
 
     <modules>
         <module>aksw-commons-collections</module>
-
         <module>aksw-commons-util</module>
-        <module>aksw-commons-sparql</module>
-        <!-- <module>aksw-commons-model</module> -->
-
-        <!-- <module>aksw-commons-sparql-extra</module> -->
-
-        <!-- <module>aksw-commons-experiments</module> -->
-
-        <!--
-                <module>collections-scala</module>
-                <module>sparql-scala</module>
-        -->
-
     </modules>
 
     <build>
@@ -99,71 +83,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- explicitly define maven-deploy-plugin after other to force exec order -->
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-deploy-plugin</artifactId>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<id>deploy</id>-->
-            <!--<phase>deploy</phase>-->
-            <!--<goals><goal>deploy</goal></goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--</plugin>-->
-
-            <!--&lt;!&ndash; Scala Plugin &ndash;&gt;-->
-            <!--&lt;!&ndash;-->
-            <!--<plugin>-->
-            <!--<groupId>org.scala-tools</groupId>-->
-            <!--<artifactId>maven-scala-plugin</artifactId>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<goals>-->
-            <!--<goal>compile</goal>-->
-            <!--<goal>testCompile</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-
-            <!--</executions>-->
-            <!--<configuration>-->
-            <!--<jvmArgs>-->
-            <!--<jvmArg>-Xms64m</jvmArg>-->
-            <!--<jvmArg>-Xmx1024m</jvmArg>-->
-            <!--</jvmArgs>-->
-            <!--</configuration>-->
-            <!--</plugin>-->
-            <!--&ndash;&gt;-->
-
-            <!--&lt;!&ndash;JAR the Sources&ndash;&gt;-->
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-source-plugin</artifactId>-->
-            <!--<version>2.1.2</version>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<id>attach-sources</id>-->
-            <!--<phase>verify</phase>-->
-            <!--<goals>-->
-            <!--<goal>jar-no-fork</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--</plugin>-->
-            <!--&lt;!&ndash;JAR the Java docs&ndash;&gt;-->
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-javadoc-plugin</artifactId>-->
-            <!--<version>2.8.1</version>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<id>attach-javadocs</id>-->
-            <!--<goals>-->
-            <!--<goal>jar</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--</plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -174,39 +93,6 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-
-
-        <!--<dependency>-->
-        <!--<groupId>junit</groupId>-->
-        <!--<artifactId>junit</artifactId>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>log4j</groupId>-->
-        <!--<artifactId>log4j</artifactId>-->
-        <!--</dependency>-->
-        <!--
-                <dependency>
-                    <groupId>com.jamonapi</groupId>
-                    <artifactId>jamon</artifactId>
-                </dependency>
-        -->
-        <!--<dependency>-->
-        <!--<groupId>org.slf4j</groupId>-->
-        <!--<artifactId>slf4j-api</artifactId>-->
-        <!--</dependency>-->
-
-        <!--
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <scope>test</scope>
-        </dependency>
-        -->
-
-    </dependencies>
-
 
     <dependencyManagement>
         <dependencies>
@@ -228,62 +114,6 @@
                 <artifactId>aksw-commons-sparql</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-<!--
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>aksw-commons-model</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>aksw-commons-sparql-extra</artifactId>
-                <version>${project.version}</version>
-            </dependency>
--->
-            <!--
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>collections-scala</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aksw.commons</groupId>
-                <artifactId>sparql-scala</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            -->
-
-
-            <dependency>
-                <groupId>velocity</groupId>
-                <artifactId>velocity</artifactId>
-                <version>1.5</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scala-lang</groupId>
-                <artifactId>scala-library</artifactId>
-                <version>${scala.version}</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>org.scalaj</groupId>
-                <artifactId>scalaj-collection_${scala.version}</artifactId>
-                <version>1.0</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>1.3.158</version>
-                <!--<scope>runtime</scope>-->
-            </dependency>
-
 
             <!--Junits-->
             <dependency>
@@ -309,23 +139,6 @@
                 <scope>compile</scope>
             </dependency>
 
-            <!--
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>1.6.0</version>
-                <scope>test</scope>
-            </dependency>
-            -->
-            <!--
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>1.6.0</version>
-                <type>jar</type>
-                <scope>compile</scope>
-            </dependency>
--->
             <!-- Usually we depend on slf4j, but for testing we depend on a concrete implementation -->
             <dependency>
                 <groupId>log4j</groupId>
@@ -333,56 +146,6 @@
                 <version>1.2.16</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>com.jamonapi</groupId>
-                <artifactId>jamon</artifactId>
-                <version>2.7</version>
-            </dependency>
-
-            <dependency>
-                <groupId>net.sourceforge.owlapi</groupId>
-                <artifactId>owlapi</artifactId>
-                <version>3.1.0</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>org.apache.jena</groupId>
-                <artifactId>jena-arq</artifactId>
-                <version>2.9.0-incubating</version>
-                <scope>compile</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.jena</groupId>
-                <artifactId>jena-core</artifactId>
-                <version>2.7.0-incubating</version>
-                <scope>compile</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.jena</groupId>
-                <artifactId>jena-iri</artifactId>
-                <version>0.9.0-incubating</version>
-                <scope>compile</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
 
             <!-- Used for SQL-Escapting (StringEscapeUtils) -->
             <dependency>
@@ -393,32 +156,6 @@
                 <scope>compile</scope>
             </dependency>
 
-            <!--
-            <dependency>
-                <groupId>com.hp.hpl.jena</groupId>
-                <artifactId>jena</artifactId>
-                <version>2.6.4</version>
-            </dependency>
-            <! - -JENA ARQ is in central - we use the latest- - >
-            <dependency>
-                <groupId>com.hp.hpl.jena</groupId>
-                <artifactId>arq</artifactId>
-                <version>2.8.8</version>
-            </dependency>
-            -->
-
-            <dependency>
-                <groupId>com.owldl</groupId>
-                <artifactId>pellet</artifactId>
-                <version>2.3.0</version>
-                <exclusions>
-                    <exclusion>  <!-- declare the exclusion here -->
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>org.mortbay.jetty</artifactId>
-                    </exclusion>
-                </exclusions>
-
-            </dependency>
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
@@ -433,32 +170,11 @@
                 <version>4.01</version>
             </dependency>
 
-            <dependency>
-                <groupId>commons-collections</groupId>
-                <artifactId>commons-collections</artifactId>
-                <version>3.2.1</version>
-            </dependency>
-
-            <!-- Vendor specific Jena implementations/extensions -->
-            <!-- This should be a transitive dependency of virt_jena -->
-            <dependency>
-                <groupId>com.openlink.virtuoso</groupId>
-                <artifactId>virtjdbc3</artifactId>
-                <version>6.1.2</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.openlink.virtuoso</groupId>
-                <artifactId>virt_jena</artifactId>
-                <version>6.1.2</version>
-            </dependency>
-
-
             <!-- Collection APIs -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>r07</version>
+                <version>18.0</version>
             </dependency>
 
             <dependency>
@@ -469,23 +185,6 @@
 
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-
-        <repository>
-            <id>maven.aksw.internal</id>
-            <name>University Leipzig, AKSW Maven2 Repository</name>
-            <url>http://maven.aksw.org/repository/internal</url>
-        </repository>
-
-        <repository>
-            <id>maven.aksw.snapshots</id>
-            <name>University Leipzig, AKSW Maven2 Repository</name>
-            <url>http://maven.aksw.org/repository/snapshots</url>
-        </repository>
-
-    </repositories>
-
 
     <distributionManagement>
         <repository>

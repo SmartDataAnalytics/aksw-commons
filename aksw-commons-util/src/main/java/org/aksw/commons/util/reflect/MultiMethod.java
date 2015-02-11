@@ -62,7 +62,7 @@ class InvocationSignature {
 /*
 class InvocationException
 {
-	Map<Method, int[]
+    Map<Method, int[]
 }
 */
 
@@ -72,34 +72,34 @@ public class MultiMethod
     // 5000 parameter combinations cached - this might be a bit overkill
     private static LRUMap<InvocationSignature, Method> cache = new LRUMap(5000);
 
-	/**
-	 * Invoke the method of an object, that matches the name and arguments best.
-	 *
-	 * TODO Add some caching mechanism
-	 *
-	 * @param <T>
-	 * @param clazz
-	 * @param name
-	 * @param args
-	 * @throws InvocationTargetException
-	 * @throws IllegalAccessException
-	 * @throws IllegalArgumentException
-	 */
-	public static <T, X> X invokeStatic(Class<T> clazz, String name, Object ...args)
-	{
-		Method m = findMethodByArgs(clazz, name, args);
+    /**
+     * Invoke the method of an object, that matches the name and arguments best.
+     *
+     * TODO Add some caching mechanism
+     *
+     * @param <T>
+     * @param clazz
+     * @param name
+     * @param args
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     */
+    public static <T, X> X invokeStatic(Class<T> clazz, String name, Object ...args)
+    {
+        Method m = findMethodByArgs(clazz, name, args);
 
         return (X)ClassUtils.forceInvoke(null, m, args);
-	}
+    }
 
 
 
-	public static <X> X invoke(Object o, String name, Object ...args)
-	{
-		Method m = findInvocationMethod(o.getClass(), name, args);
+    public static <X> X invoke(Object o, String name, Object ...args)
+    {
+        Method m = findInvocationMethod(o.getClass(), name, args);
 
-		return (X)ClassUtils.forceInvoke(o, m, args);
-	}
+        return (X)ClassUtils.forceInvoke(o, m, args);
+    }
 
     public static <T> Map<Method, Integer[]> findMethodCandidates(Collection<Method> candidates, Class<?> ...typeSignature)
     {
@@ -183,13 +183,13 @@ public class MultiMethod
     {
         Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
 
-		if(bestMatches.size() == 0) {
-			throw new NoMethodInvocationException(name, typeSignature);
-		} else if(bestMatches.size() > 1) {
-			throw new MultipleMethodsInvocationException(name, null, bestMatches.keySet());
-		}
+        if(bestMatches.size() == 0) {
+            throw new NoMethodInvocationException(name, typeSignature);
+        } else if(bestMatches.size() > 1) {
+            throw new MultipleMethodsInvocationException(name, null, bestMatches.keySet());
+        }
 
-		return bestMatches.entrySet().iterator().next().getKey();
+        return bestMatches.entrySet().iterator().next().getKey();
     }
 
     @Deprecated // Use findMethodByArgs instead
@@ -199,13 +199,13 @@ public class MultiMethod
     }
 
 
-	public static <T> Method findMethodByArgs(Class<T> clazz, String name, Object ...args)
-	{
-		List<Class<?>> typeSignature = ClassUtils.getTypeSignatureList(args);
+    public static <T> Method findMethodByArgs(Class<T> clazz, String name, Object ...args)
+    {
+        List<Class<?>> typeSignature = ClassUtils.getTypeSignatureList(args);
 
         Method result = findMethodByParamsCached(clazz, name, typeSignature);
         return result;
-	}
+    }
 
 
     /**

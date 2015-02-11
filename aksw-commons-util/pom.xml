@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>aksw-commons-util</artifactId>
@@ -15,47 +16,6 @@
 
     <dependencies>
 
-
-        <!--<dependency> -->
-        <!--<groupId>org.apache.jena</groupId> -->
-        <!--<artifactId>jena-arq</artifactId> -->
-        <!--</dependency> -->
-        <!--<dependency> -->
-        <!--<groupId>org.apache.jena</groupId> -->
-        <!--<artifactId>jena-core</artifactId> -->
-        <!--</dependency> -->
-        <!-- <dependency> <groupId>com.hp.hpl.jena</groupId> <artifactId>jena</artifactId>
-            </dependency> <dependency> <groupId>com.hp.hpl.jena</groupId> <artifactId>arq</artifactId>
-            </dependency> -->
-
-        <!--<dependency> -->
-        <!--<groupId>com.owldl</groupId> -->
-        <!--<artifactId>pellet</artifactId> -->
-        <!--</dependency> -->
-
-
-        <!-- OWL-API -->
-        <!--<dependency> -->
-        <!--<groupId>net.sourceforge.owlapi</groupId> -->
-        <!--<artifactId>owlapi</artifactId> -->
-        <!--</dependency> -->
-
-
-        <!-- Vendor specific Jena implementations/extensions -->
-        <!-- This should be a transitive dependency of virt_jena -->
-        <!--<dependency> -->
-        <!--<groupId>com.openlink.virtuoso</groupId> -->
-        <!--<artifactId>virtjdbc3</artifactId> -->
-        <!--<version>6.1.2</version> -->
-        <!--</dependency> -->
-
-        <!--<dependency> -->
-        <!--<groupId>com.openlink.virtuoso</groupId> -->
-        <!--<artifactId>virt_jena</artifactId> -->
-        <!--<version>6.1.2</version> -->
-        <!--</dependency> -->
-
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-ext</artifactId>
@@ -67,16 +27,16 @@
             <groupId>org.aksw.commons</groupId>
             <artifactId>aksw-commons-collections</artifactId>
         </dependency>
-        <!--<dependency> -->
-        <!--<groupId>com.google.guava</groupId> -->
-        <!--<artifactId>guava</artifactId> -->
-        <!--<version>r07</version> -->
-        <!--</dependency> -->
 
-        <!--<dependency> -->
-        <!--<groupId>net.sourceforge.collections</groupId> -->
-        <!--<artifactId>collections-generic</artifactId> -->
-        <!--</dependency> -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.collections</groupId>
+            <artifactId>collections-generic</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>commons-lang</groupId>
