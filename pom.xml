@@ -5,12 +5,12 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>aksw-commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.5-SNAPSHOT</version>
+    <version>0.7.5</version>
     <name>AKSW Commons parent</name>
 
     <scm>
         <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection>
-        <tag>HEAD</tag>
+        <tag>aksw-commons-parent-0.7.5</tag>
     </scm>
 
     <properties>
