@@ -14,7 +14,7 @@ import java.util.Set;
  */
 /**
  * all.negatives may be null, however all other fields must be given!
- * 
+ *
  * @param <T>
  */
 public class SampleStats<T>

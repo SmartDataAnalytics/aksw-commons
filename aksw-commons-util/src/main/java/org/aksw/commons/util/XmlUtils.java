@@ -36,141 +36,105 @@ import org.xml.sax.SAXException;
 
 public class XmlUtils
 {
-	//private static Logger logger = Logger.getLogger(XmlUtils.class);
-	
-	public static String toString(Node node)
-	{
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    //private static Logger logger = Logger.getLogger(XmlUtils.class);
 
-		try {
-			toText(node, baos);
-		}
-		catch(Exception e) {
-			//logger.error(ExceptionUtil.toString(e));
+    public static String toString(Node node)
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            toText(node, baos);
+        }
+        catch(Exception e) {
+            //logger.error(ExceptionUtil.toString(e));
             throw new RuntimeException(e);
-			//return null;
-		}
+            //return null;
+        }
 
-		return baos.toString();
-	}
-	
-	public static Document createFromString(String text)
-		throws Exception
-	{
-		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse
-			(new InputSource(new StringReader(text)));
-	}
+        return baos.toString();
+    }
 
-	public static void toText(Node node, OutputStream out)
-		throws TransformerFactoryConfigurationError, TransformerException
-	{
-		Transformer transformer = TransformerFactory.newInstance().newTransformer();
-		Source source = new DOMSource(node);
-		Result output = new StreamResult(out);
-		transformer.transform(source, output);
-	}
+    public static Document createFromString(String text)
+        throws Exception
+    {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse
+            (new InputSource(new StringReader(text)));
+    }
 
-	public static Document openFile(File file)
-		throws Exception
-	{
-		InputStream inputStream = new FileInputStream(file);
-		
-		Document result = loadFromStream(inputStream);		
-		inputStream.close();
-		return result;
-	}
-	
-	public static Document openUrl(String location)
-		throws Exception
-	{
-		URL url = new URL(location);
-		//System.out.println(url);
-	
-		URLConnection con = url.openConnection();
-		InputStream responseStream = con.getInputStream();
-		
-		Document result = loadFromStream(responseStream);		
-		responseStream.close();
-		return result;
-	}
-	
-	public static Document loadFromStream(InputStream inputStream)
-		throws Exception
-	{
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		factory.setValidating(false);
-		factory.setNamespaceAware(false);
-	    
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		builder.setEntityResolver(new EntityResolver() {
-	
-	        @Override
-	        public InputSource resolveEntity(String publicId, String systemId)
-	                throws SAXException, IOException {
-	            //System.out.println("Ignoring " + publicId + ", " + systemId);
-	            return new InputSource(new StringReader(""));
-	        }
-	    });
-		
-		//System.out.println(StringUtil.toString(inputStream));
-		
-		Document doc = builder.parse(inputStream);		
-		return doc;
-	}
+    public static void toText(Node node, OutputStream out)
+        throws TransformerFactoryConfigurationError, TransformerException
+    {
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        Source source = new DOMSource(node);
+        Result output = new StreamResult(out);
+        transformer.transform(source, output);
+    }
 
-    public static String getPageModificationDate(Document node)
-	{
-		//ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String strModificationDate = null;
+    public static Document openFile(File file)
+        throws Exception
+    {
+        InputStream inputStream = new FileInputStream(file);
 
-		try {
-                strModificationDate = node.getElementsByTagName("datestamp").item(0).getTextContent();
-//			Transformer transformer = TransformerFactory.newInstance().newTransformer();
-//		Source source = new DOMSource(node);
-//
-//		Result output = new StreamResult(baos);
-//		transformer.transform(source, output);
-            
-            //System.out.println("NODE = " + node.getTextContent());
-            //NodeList l = node.getElementsByTagName("metadata");
-            //Element author = (Element) authors.item(j);
-//            System.out.println("//////////////////////////////////////////////////////////////////");
-//            System.out.println("List = " + node.getElementsByTagName("datestamp").item(0).getTextContent());
-//            DocumentBuilderFactory factory =
-//                        DocumentBuilderFactory.newInstance();
-//            DocumentBuilder builder = factory.newDocumentBuilder();
-//            Document document = builder.parse(new InputSource(new StringReader(baos.toString())));
-//            System.out.println(document.getChildNodes().item(0).getNodeType());
-//            System.out.println("//////////////////////////////////////////////////////////////////");
+        Document result = loadFromStream(inputStream);
+        inputStream.close();
+        return result;
+    }
 
-		}
-		catch(Exception e)
-        {
-            throw new RuntimeException(e);
-			//logger.error(ExceptionUtil.toString(e));
-		}
+    public static Document openUrl(String location)
+        throws Exception
+    {
+        URL url = new URL(location);
+        //System.out.println(url);
 
-		return strModificationDate;
-	}
-	
-    
-	@SuppressWarnings("unchecked")
-	public static <T> T unmarshallXml(Class<T> clazz, InputStream in)
-			throws JAXBException, UnsupportedEncodingException {
-		
-		String className = clazz.getPackage().getName();
-		JAXBContext context = JAXBContext.newInstance(className);	
-		Unmarshaller unmarshaller = context.createUnmarshaller();
+        URLConnection con = url.openConnection();
+        InputStream responseStream = con.getInputStream();
 
-		//Reader reader = new IgnoreIllegalCharactersXmlReader(in);
-	
-		Reader reader = new InputStreamReader(in,"UTF-8");
-		 
-		InputSource is = new InputSource(reader);
-		is.setEncoding("UTF-8");
-		
-		Object result = unmarshaller.unmarshal(is); //file);
-		return (T)result;
-	}
+        Document result = loadFromStream(responseStream);
+        responseStream.close();
+        return result;
+    }
+
+    public static Document loadFromStream(InputStream inputStream)
+        throws Exception
+    {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(false);
+        factory.setNamespaceAware(false);
+
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        builder.setEntityResolver(new EntityResolver() {
+
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId)
+                    throws SAXException, IOException {
+                //System.out.println("Ignoring " + publicId + ", " + systemId);
+                return new InputSource(new StringReader(""));
+            }
+        });
+
+        //System.out.println(StringUtil.toString(inputStream));
+
+        Document doc = builder.parse(inputStream);
+        return doc;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T unmarshallXml(Class<T> clazz, InputStream in)
+            throws JAXBException, UnsupportedEncodingException {
+
+        String className = clazz.getPackage().getName();
+        JAXBContext context = JAXBContext.newInstance(className);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+
+        //Reader reader = new IgnoreIllegalCharactersXmlReader(in);
+
+        Reader reader = new InputStreamReader(in,"UTF-8");
+
+        InputSource is = new InputSource(reader);
+        is.setEncoding("UTF-8");
+
+        Object result = unmarshaller.unmarshal(is); //file);
+        return (T)result;
+    }
 
 }

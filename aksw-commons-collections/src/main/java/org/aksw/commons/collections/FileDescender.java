@@ -14,31 +14,31 @@ import java.util.Collections;
  *         Time: 5:17 PM
  */
 public class FileDescender
-	implements Descender<File>
+    implements Descender<File>
 {
-	private FileFilter filter;
+    private FileFilter filter;
 
-	public FileDescender() {
-		this.filter = new FileFilter() {
-			public boolean accept(File pathname) {
-				return true;
-			}};
-	}
+    public FileDescender() {
+        this.filter = new FileFilter() {
+            public boolean accept(File pathname) {
+                return true;
+            }};
+    }
 
-	public FileDescender(FileFilter filter) {
-		this.filter = filter;
-	}
+    public FileDescender(FileFilter filter) {
+        this.filter = filter;
+    }
 
-	@SuppressWarnings("unchecked")
-	public Collection<File> getDescendCollection(File item) {
+    @SuppressWarnings("unchecked")
+    public Collection<File> getDescendCollection(File item) {
         if(item == null || !item.isDirectory()) {
             return new ArrayList<File>();
         }
 
-		File[] files = filter != null ? item.listFiles(filter) : item.listFiles();
-		Collection<File> tmp = files == null ? Collections.<File>emptyList() : Arrays.asList(files);
+        File[] files = filter != null ? item.listFiles(filter) : item.listFiles();
+        Collection<File> tmp = files == null ? Collections.<File>emptyList() : Arrays.asList(files);
 
         //System.out.println(tmp);
         return new ArrayList<File>(tmp);
-	}
+    }
 }
