@@ -1,6 +1,12 @@
 package org.aksw.commons.collections;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: raven
@@ -13,7 +19,7 @@ public class CollectionUtils {
      * Given an iterable A whose elements are iterables, this method will return the first
      * element of A.
      * If no such element exist, an empty iterable is returned rather than null.
-     * 
+     *
      *
      * @param iterable
      * @param <S>
@@ -47,16 +53,16 @@ public class CollectionUtils {
         return result;
     }
 
-	public static <T> Set<T> asSet(Collection<T> c)
+    public static <T> Set<T> asSet(Collection<T> c)
     {
         return (c instanceof Set) ? (Set<T>)c : new HashSet<T>(c);
     }
- 
-	/** Transforms an array into a Hashset. @author Konrad Höffner */
-	static <T> Set<T> asSet(T[] a)
-	{
-		Set<T> s = new HashSet<T>();
-		for(T e:a) {s.add(e);}
-		return s;
-	}
+
+    /** Transforms an array into a Hashset. @author Konrad Höffner */
+    static <T> Set<T> asSet(T[] a)
+    {
+        Set<T> s = new HashSet<T>();
+        for(T e:a) {s.add(e);}
+        return s;
+    }
 }
