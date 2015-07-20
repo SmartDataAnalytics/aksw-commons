@@ -9,7 +9,8 @@
     <name>AKSW Commons parent</name>
 
     <scm>
-        <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection>
+ <!--       <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection> -->
+        <connection>scm:git:git@github.com:AKSW/aksw-commons.git</connection>
         <tag>HEAD</tag>
     </scm>
 
