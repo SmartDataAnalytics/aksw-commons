@@ -83,4 +83,9 @@ public class Diff<T>
         return "Diff [added=" + added + ", removed=" + removed + ", retained="
                 + retained + "]";
     }
+
+    public static <T> Diff<T> create(T added, T removed) {
+        Diff<T> result = new Diff<T>(added, removed, null);
+        return result;
+    }
 }
