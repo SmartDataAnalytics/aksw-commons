@@ -30,7 +30,6 @@
 
     <build>
         <plugins>
-        <plugins>
             <!-- That's a sledge hammer solution - but at least it works ... -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
