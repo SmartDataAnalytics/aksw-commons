@@ -1,0 +1,19 @@
+*.class
+.classpath
+.project
+.settings
+target
+
+bin
+cache
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+pom.xml.releaseBackup
+release.properties
+
+deptree.txt
+
