@@ -8,17 +8,40 @@
     <version>0.7.8-SNAPSHOT</version>
     <name>AKSW Commons parent</name>
 
+    <issueManagement>
+        <url>https://github.com/AKSW/aksw-commons/issues</url>
+        <system>GitHub</system>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <scm>
- <!--       <connection>scm:hg:https://aksw-commons.googlecode.com/hg/</connection> -->
-        <connection>scm:git:git@github.com:AKSW/aksw-commons.git</connection>
+        <url>https://github.com/AKSW/aksw-commons</url>
+        <connection>scm:git:git://github.com/AKSW/aksw-commons.git</connection>
+        <developerConnection>scm:git:git@github.com:AKSW/aksw-commons.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
+
+    <developers>
+        <developer>
+            <name>Claus Stadler</name>
+            <organization>AKSW</organization>
+            <organizationUrl>http://aksw.org</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <!--  tell the compiler we can use 1.6 -->
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <gpg.keyname>AKSW.GPG</gpg.keyname>
 
         <junit.version>4.8.1</junit.version>
         <slf4j.version>1.6.0</slf4j.version>
@@ -99,6 +122,26 @@
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <keyname>AKSW</keyname>
+                            <passphraseServerId>${gpg.keyname}</passphraseServerId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
