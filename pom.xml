@@ -5,7 +5,7 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>aksw-commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.7.9-SNAPSHOT</version>
+    <version>0.7.9</version>
     <name>AKSW Commons parent</name>
 
     <issueManagement>
@@ -25,7 +25,7 @@
         <url>https://github.com/AKSW/aksw-commons</url>
         <connection>scm:git:git://github.com/AKSW/aksw-commons.git</connection>
         <developerConnection>scm:git:git@github.com:AKSW/aksw-commons.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>aksw-commons-parent-0.7.9</tag>
     </scm>
 
     <developers>
