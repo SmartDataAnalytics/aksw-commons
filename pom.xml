@@ -61,7 +61,6 @@
                 <version>2.5.1</version>
                 <configuration>
                     <arguments>-P!source-artifacts</arguments>
-                    <useReleaseProfile>false</useReleaseProfile>
                     <goals>-Dmaven.test.skip=true deploy</goals>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
