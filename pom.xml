@@ -64,7 +64,7 @@
                 <version>2.5.2</version>
                 <configuration>
                     <!--arguments>-P!source-artifacts</arguments-->
-                    <goals>deploy nexus-staging:release</goals>
+                    <goals>deploy</goals>
                     <useReleaseProfile>false</useReleaseProfile>
                     <releaseProfiles>release</releaseProfiles>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
