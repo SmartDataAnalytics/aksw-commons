@@ -24,7 +24,8 @@ public class StackCartesianProductIterator<T>
 
 	private boolean									hasNext	= true;
 
-	public StackCartesianProductIterator(T[]... collections)
+	@SafeVarargs
+    public StackCartesianProductIterator(T[]... collections)
 	{
 		List<List<T>> tmp = new ArrayList<List<T>>(collections.length);
 

@@ -1,9 +1,9 @@
-package org.aksw.commons.collections;
+package org.aksw.commons.collections.lists;
 
 import java.util.Iterator;
 
 public class LinkedListNodeIterator<T>
-    implements Iterator<T>
+    implements Iterator<LinkedListNode<T>>
 {
     protected LinkedListNode<T> current;
 
@@ -19,8 +19,8 @@ public class LinkedListNodeIterator<T>
     }
 
     @Override
-    public T next() {
-        T result = current.data;
+    public LinkedListNode<T> next() {
+        LinkedListNode<T> result = current;
         current = current.successor;
         return result;
     }

@@ -1,4 +1,4 @@
-package org.aksw.commons.collections;
+package org.aksw.commons.collections.lists;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,30 +18,6 @@ import com.google.common.collect.Iterables;
 public class LinkedListNode<T>
     implements Iterable<T>
 {
-    public static class MetaIterator<T>
-        implements Iterator<LinkedListNode<T>>
-    {
-        protected LinkedListNode<T> current;
-
-        public MetaIterator(LinkedListNode<T> current) {
-            super();
-            this.current = current;
-        }
-
-        @Override
-        public boolean hasNext() {
-            boolean result = !current.isTail();
-            return result;
-        }
-
-        @Override
-        public LinkedListNode<T> next() {
-            LinkedListNode<T> result = current;
-            current = current.successor;
-            return result;
-        }
-    }
-
     public T data;
     public LinkedListNode<T> predecessor;
     public LinkedListNode<T> successor;
@@ -119,19 +95,27 @@ public class LinkedListNode<T>
         return head;
     }
 
+    /**
+     * Iterator over the items in the linked list
+     */
     @Override
     public Iterator<T> iterator() {
         Iterator<T> result = isHead()
-                ? new LinkedListNodeIterator<>(this.successor)
-                : new LinkedListNodeIterator<>(this);
+                ? new LinkedListIterator<>(this.successor)
+                : new LinkedListIterator<>(this);
 
         return result;
     }
 
-    public Iterator<LinkedListNode<T>> metaIterator() {
-        MetaIterator<T> result = isHead()
-                ? new MetaIterator<>(this.successor)
-                : new MetaIterator<>(this);
+    /**
+     * Iterator over the node objects (of which each holds an item) in the list
+     * 
+     * @return
+     */
+    public Iterator<LinkedListNode<T>> nodeIterator() {
+        LinkedListNodeIterator<T> result = isHead()
+                ? new LinkedListNodeIterator<>(this.successor)
+                : new LinkedListNodeIterator<>(this);
 
         return result;
     }
