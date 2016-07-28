@@ -77,7 +77,7 @@ public class LinkedListNode<T>
         return result;
     }
 
-    public static <S> LinkedListNode<S> create(Iterable<S> it) {
+    public static <S> LinkedListNode<S> create(Iterable<? extends S> it) {
         LinkedListNode<S> head = new LinkedListNode<S>();
         head.data = null;
 
