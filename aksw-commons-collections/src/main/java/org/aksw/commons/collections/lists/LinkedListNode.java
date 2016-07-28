@@ -22,17 +22,17 @@ public class LinkedListNode<T>
     public LinkedListNode<T> predecessor;
     public LinkedListNode<T> successor;
 
-    void append(LinkedListNode<T> node) {
+    public void append(LinkedListNode<T> node) {
         successor = node;
         node.predecessor = this;
     }
 
-    void unlink() {
+    public void unlink() {
         predecessor.successor = successor;
         successor.predecessor = predecessor;
     }
 
-    void relink() {
+    public void relink() {
         successor.predecessor = this;
         predecessor.successor = this;
     }
@@ -41,22 +41,22 @@ public class LinkedListNode<T>
 //        boolean result = predecessor == null && successor == null;
 //        return result;
 //    }
-    boolean isHead() {
+    public boolean isHead() {
         boolean result = predecessor == null;
         return result;
     }
 
-    boolean isTail() {
+    public boolean isTail() {
         boolean result = successor == null;
         return result;
     }
 
-    boolean isFirst() {
+    public boolean isFirst() {
         boolean result = predecessor.isHead();
         return result;
     }
 
-    boolean isLast() {
+    public boolean isLast() {
         boolean result = successor.isTail();
         return result;
     }
