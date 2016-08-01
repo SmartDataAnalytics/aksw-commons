@@ -22,6 +22,8 @@ public class LinkedListNode<T>
     public LinkedListNode<T> predecessor;
     public LinkedListNode<T> successor;
 
+    //public LinkedList<T> parent;
+    
     public void append(LinkedListNode<T> node) {
         successor = node;
         node.predecessor = this;

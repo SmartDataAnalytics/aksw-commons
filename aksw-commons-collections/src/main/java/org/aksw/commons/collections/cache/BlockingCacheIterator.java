@@ -27,6 +27,15 @@ public class BlockingCacheIterator<T>
         this.offset = offset;
     }
 
+    public int getOffset() {
+        return offset;        
+    }
+    
+    public Cache<? extends List<? extends T>> getCache() {
+        return cache;
+    }
+    
+    
     @Override
     public T computeNext() {
         List<? extends T> data = cache.getData();
@@ -37,12 +46,13 @@ public class BlockingCacheIterator<T>
                 result = data.get(offset);
                 ++offset;
                 break;
-            } else if(cache.isComplete()) {
+            } else if(cache.isComplete() || cache.isAbanoned()) {
                 result = endOfData();
                 break;
                 //throw new IndexOutOfBoundsException();
-            } else if(cache.isAbanoned()) {
-                throw new RuntimeException("Cache was abandoned");
+//            } else if(cache.isAbanoned()) {
+                //throw new RuntimeException("Cache was abandoned");
+                
             } else {
                 try {
                     synchronized(cache) {
