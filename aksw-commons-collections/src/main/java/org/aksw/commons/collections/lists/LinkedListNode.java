@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 
 
 
@@ -109,6 +110,15 @@ public class LinkedListNode<T>
         return result;
     }
 
+    /**
+     * Remaining size of the list from this node
+     * @return
+     */
+    public int size() {
+        int result = Iterators.size(iterator());
+        return result;
+    }
+    
     /**
      * Iterator over the node objects (of which each holds an item) in the list
      * 
