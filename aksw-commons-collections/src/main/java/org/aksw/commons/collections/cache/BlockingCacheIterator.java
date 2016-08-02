@@ -46,10 +46,11 @@ public class BlockingCacheIterator<T>
                 result = data.get(offset);
                 ++offset;
                 break;
-            } else if(cache.isComplete() || cache.isAbanoned()) {
-                result = endOfData();
-                break;
             } else {
+//            } else if(cache.isComplete() || cache.isAbanoned()) {
+//                result = endOfData();
+//                break;
+//            } else {
                 //throw new IndexOutOfBoundsException();
 //            } else if(cache.isAbanoned()) {
                 //throw new RuntimeException("Cache was abandoned");
