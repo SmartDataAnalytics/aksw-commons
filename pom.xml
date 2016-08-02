@@ -83,7 +83,10 @@
 					<squash>true</squash>
 <!-- 					<releaseBranchVersionSuffix>RC</releaseBranchVersionSuffix> -->
 					<allowSnapshots>true</allowSnapshots>
+<<<<<<< HEAD
 					<pushReleases>true</pushReleases>
+=======
+>>>>>>> master
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
