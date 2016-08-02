@@ -82,6 +82,7 @@
 				    <enableSshAgent>true</enableSshAgent>
 				    <scmCommentPrefix>[RELEASE] </scmCommentPrefix>
 				    <squash>true</squash>
+				    <releaseBranchVersionSuffix>RC</releaseBranchVersionSuffix>
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
