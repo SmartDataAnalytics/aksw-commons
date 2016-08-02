@@ -81,6 +81,7 @@
 				    <autoVersionSubmodules>true</autoVersionSubmodules>
 				    <enableSshAgent>true</enableSshAgent>
 				    <scmCommentPrefix>[RELEASE] </scmCommentPrefix>
+				    <squash>true</squash>
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
