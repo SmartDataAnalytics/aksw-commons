@@ -80,12 +80,14 @@
 				<configuration>
 				    <autoVersionSubmodules>true</autoVersionSubmodules>
 				    <enableSshAgent>true</enableSshAgent>
+				    <scmCommentPrefix>[RELEASE] </scmCommentPrefix>
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
 						<featureBranchPrefix>feature-</featureBranchPrefix>
 						<releaseBranchPrefix>release-</releaseBranchPrefix>
 						<hotfixBranchPrefix>hotfix-</hotfixBranchPrefix>
+						<versionTagPrefix>version-</versionTagPrefix>
 					</flowInitContext>
 				</configuration>
 			</plugin>
