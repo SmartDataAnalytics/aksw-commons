@@ -2,7 +2,6 @@ package org.aksw.commons.collections.multimaps;
 
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -45,9 +44,13 @@ public class BiHashMultimap<K, V>
 	
 	
 	// TODO Must be wrapped
-	public Map<K, Collection<V>> asMap()
-	{
-		return forward.asMap();
+//	public Map<K, Collection<V>> asMap()
+//	{
+//		return forward.asMap();
+//	}
+	
+	public SetMultimap<K, V> asMultimap() {
+	    return forward;
 	}
 	
 	public void remove(K key, V value)
@@ -160,4 +163,9 @@ public class BiHashMultimap<K, V>
 	public Collection<K> keys() {
 		return forward.keys();
 	}
+
+    @Override
+    public boolean isEmpty() {
+        return forward.isEmpty();
+    }
 }

@@ -5,10 +5,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.collect.SetMultimap;
+
 public interface ISetMultimap<K, V>
 {
-	Map<K, Collection<V>> asMap();
-	
+	//Map<K, Collection<V>> asMap();
+    SetMultimap<K, V> asMultimap();
+    	
 	boolean put(K key, V value);
 
 	void putAll(K key, Collection<V> values);
@@ -29,4 +32,9 @@ public interface ISetMultimap<K, V>
     int size();
 
 	void clear();
+	boolean isEmpty();
+	
+    default Map<K, Collection<V>> asMap() {
+        return asMultimap().asMap();
+    }
 }
