@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.aksw.commons</groupId>
 	<artifactId>aksw-commons-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.8.1-SNAPSHOT</version>
+	<version>0.8.0-SNAPSHOT</version>
 	<name>AKSW Commons parent</name>
 	<description>A library of commonly used classes in AKSW applications.</description>
 	<url>https://github.com/AKSW/aksw-commons</url>
@@ -77,12 +78,12 @@
 				<artifactId>jgitflow-maven-plugin</artifactId>
 				<version>1.0-m5.1</version>
 				<configuration>
-				    <autoVersionSubmodules>true</autoVersionSubmodules>
-				    <enableSshAgent>true</enableSshAgent>
-				    <scmCommentPrefix>[RELEASE] </scmCommentPrefix>
-				    <squash>true</squash>
-				    <releaseBranchVersionSuffix>RC</releaseBranchVersionSuffix>
-				    <allowSnapshots>true</allowSnapshots>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<enableSshAgent>true</enableSshAgent>
+					<scmCommentPrefix>[RELEASE] </scmCommentPrefix>
+					<squash>true</squash>
+<!-- 					<releaseBranchVersionSuffix>RC</releaseBranchVersionSuffix> -->
+					<allowSnapshots>true</allowSnapshots>
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
@@ -261,6 +262,13 @@
 	<profiles>
 		<profile>
 			<id>release</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+
 			<build>
 				<plugins>
 					<plugin>
