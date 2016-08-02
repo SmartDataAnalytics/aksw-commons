@@ -83,6 +83,7 @@
 				    <scmCommentPrefix>[RELEASE] </scmCommentPrefix>
 				    <squash>true</squash>
 				    <releaseBranchVersionSuffix>RC</releaseBranchVersionSuffix>
+				    <allowSnapshots>true</allowSnapshots>
 					<flowInitContext>
 						<masterBranchName>master</masterBranchName>
 						<developBranchName>develop</developBranchName>
