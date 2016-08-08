@@ -60,16 +60,18 @@ public class CachingIterator<T>
 
         List<T> cacheData = cache.getData();
 
-        // Check if item at index i is already cached
-        if(offset < cacheData.size()) {
-            result = cacheData.get(offset);
-        } else {
-            result = delegate.next();
-
-            // Inform all possibly waiting client on the cache
-            // that data has been added so that they can commence
-            synchronized(cache) {
+        // Inform all possibly waiting client on the cache
+        // that data has been added so that they can commence
+        synchronized(cache) {
+    
+            // Check if item at index i is already cached
+            if(offset < cacheData.size()) {
+                result = cacheData.get(offset);
+            } else {
+                result = delegate.next();
+    
                 cacheData.add(result);
+
                 cache.notifyAll();
             }
         }

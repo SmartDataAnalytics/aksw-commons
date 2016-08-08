@@ -1,5 +1,9 @@
 package org.aksw.commons.collections.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class StreamUtils {
@@ -24,6 +28,15 @@ public class StreamUtils {
                     })
                 );
         return result;
+    }
+
+    // TODO Add to StreamUtils
+    public static <S, X> Stream<X> stream(BiConsumer<S, Consumer<X>> fn, S baseSolution) {
+        List<X> result = new ArrayList<>();
+        
+        fn.accept(baseSolution, (item) -> result.add(item));
+        
+        return result.stream();        
     }
 
 }
