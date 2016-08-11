@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,64 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class TreeUtils {
+    public static <T> int childIndexOf(TreeOps2<T> ops, T node) {
+        List<T> children = ops.getParentToChildren().apply(node);
+        int result = children.indexOf(node);
+        return result;
+    }
+    
+    //  Replaces a node in the tree - returns a new tree object.
+    public static <T> Tree<T> replace(Tree<T> tree, T node, T replacement) {
+        // TODO Make the equivalence test configurable
+        T newRoot = replaceNode(tree, node, replacement, (a, b) -> a == b);
+        
+        Tree<T> result = tree.createNew(newRoot); //TreeImpl.create(newRoot, tree.getOps());
+        return result;
+    }
+    
+    public static <T> int indexOf(List<T> list, T find, BiPredicate<? super T, ? super T> isEquiv) {
+        Iterator<T> it = list.iterator();
+        int i = 0;
+        boolean found = false;
+        while(it.hasNext()) {
+            T item = it.next();
+            found = isEquiv.test(item, find);
+            if(found) {
+                break;
+            }
+        }
+        
+        int result = found ? i : -1;
+        return result;
+    }
+    
+    public static <T> T replaceNode(Tree<T> tree, T node, T replacement, BiPredicate<? super T, ? super T> isEquiv) {
+        T result;
+
+        if(node == null) {            
+             result = replacement;
+        } else {
+            T parent = tree.getParent(node);
+            List<T> children = new ArrayList<T>(tree.getChildren(parent));
+            int i = indexOf(children, node, isEquiv);
+            //int i = children.indexOf(node);
+            
+
+            children.set(i, replacement);
+            T parentReplacement = tree.copy(parent, children);
+            
+            result = replaceNode(tree, parent, parentReplacement, isEquiv);
+        }
+        
+        return result;
+    }
+    
+    
+    
     public static <T> T substitute(
     		T node,
     		boolean descendIntoSubst,
-    		TreeOps<T> ops,
+    		TreeOps2<T> ops,
     		Function<? super T, ? extends T> transformFn
     		)
     {

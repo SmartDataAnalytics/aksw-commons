@@ -98,6 +98,11 @@ public class TreeReplace<T>
 	public T copy(T node, List<T> children) {
 		throw new UnsupportedOperationException();
 	}
+
+    @Override
+    public Tree<T> createNew(T root) {
+        throw new UnsupportedOperationException();
+    }
     
     
 }

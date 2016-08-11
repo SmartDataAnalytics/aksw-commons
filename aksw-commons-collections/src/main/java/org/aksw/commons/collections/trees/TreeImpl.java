@@ -10,10 +10,20 @@ public class TreeImpl<T>
     implements Tree<T>
 {
     protected T root;
-    protected Function<T, List<T>> parentToChild;
+    protected Function<T, List<T>> parentToChildren;
     protected Function<T, T> childToParent;
     protected BiFunction<T, List<T>, T> copyNode;
 
+    
+    @Override
+    public Tree<T> createNew(T root) {
+        Tree<T> result = create(root, parentToChildren);
+        return result;
+    }
+    
+    
+    // 
+    
 //    public TreeImpl(T root, TreeOps<T> ops) {
 //        super();
 //        this.root = root;
@@ -25,7 +35,7 @@ public class TreeImpl<T>
     public TreeImpl(T root, Function<T, List<T>> parentToChildren, Function<T, T> childToParent, BiFunction<T, List<T>, T> copyNode) {
         super();
         this.root = root;
-        this.parentToChild = parentToChildren;
+        this.parentToChildren = parentToChildren;
         this.childToParent = childToParent;
         this.copyNode = copyNode;
     }
@@ -41,7 +51,7 @@ public class TreeImpl<T>
         // It would also be consistent in the sense that the parent of the root would be null and its child would be the root
         List<T> result = node == null
                 ? (root == null ? Collections.emptyList() : Collections.singletonList(root))
-                : parentToChild.apply(node);
+                : parentToChildren.apply(node);
 
 //        List<T> result = parentToChild.apply(node);
         return result;
@@ -67,7 +77,7 @@ public class TreeImpl<T>
         result = prime * result
                 + ((childToParent == null) ? 0 : childToParent.hashCode());
         result = prime * result
-                + ((parentToChild == null) ? 0 : parentToChild.hashCode());
+                + ((parentToChildren == null) ? 0 : parentToChildren.hashCode());
         result = prime * result + ((root == null) ? 0 : root.hashCode());
         return result;
     }
@@ -86,10 +96,10 @@ public class TreeImpl<T>
                 return false;
         } else if (!childToParent.equals(other.childToParent))
             return false;
-        if (parentToChild == null) {
-            if (other.parentToChild != null)
+        if (parentToChildren == null) {
+            if (other.parentToChildren != null)
                 return false;
-        } else if (!parentToChild.equals(other.parentToChild))
+        } else if (!parentToChildren.equals(other.parentToChildren))
             return false;
         if (root == null) {
             if (other.root != null)
@@ -101,7 +111,7 @@ public class TreeImpl<T>
 
     @Override
     public String toString() {
-        return "TreeImpl [root=" + root + ", parentToChild=" + parentToChild
+        return "TreeImpl [root=" + root + ", parentToChild=" + parentToChildren
                 + ", childToParent=" + childToParent + "]";
     }
 
