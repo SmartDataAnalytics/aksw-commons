@@ -1,11 +1,11 @@
 package org.aksw.commons.collections;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,6 +15,21 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class MapUtils {
+    
+    /**
+     * Set the same value for a given set of keys
+     * 
+     * @param map
+     * @param keys
+     * @param value
+     */
+    public static <K, V> void putForAll(Map<K, V> map, Iterable<K> keys, V value) {
+        for(K key : keys) {
+            map.put(key, value);
+        }
+    }
+
+    
 	/**
 	 * Compatible means that merging the two maps would not result in the same
 	 * key being mapped to distinct values.

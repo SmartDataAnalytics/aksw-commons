@@ -72,7 +72,10 @@ public class Schema {
     public static Schema create(Connection conn)
             throws SQLException
     {
-        Schema result = create(conn, null, null);
+        String catalog = conn.getCatalog();
+        String schema = conn.getSchema();
+        DatabaseMetaData meta = conn.getMetaData();
+        Schema result = create(meta, catalog, schema, null);
         return result;
     }
 
@@ -89,6 +92,11 @@ public class Schema {
     public static Schema create(DatabaseMetaData meta, String catalog, String schema, Iterable<String> tableNames)
             throws SQLException
     {
+        if(tableNames == null) {
+            // Resolve table names for compatibility with some JDBC drivers  
+            tableNames = JdbcUtils.fetchRelationNames(meta, catalog);
+        }
+
         Map<String, Relation> relations = JdbcUtils.fetchColumns(meta, catalog, schema, tableNames);
         Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(meta, catalog, schema, tableNames);
         Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(meta, catalog, schema, tableNames);
