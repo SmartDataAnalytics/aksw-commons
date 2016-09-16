@@ -408,4 +408,18 @@ public class TreeUtils {
 	    return result;
 	}
 
+    public static <X> List<X> getUnaryAncestors(X x, Tree<X> tree, Tree<X> multiaryTree) {
+        List<X> result = new ArrayList<>();
+        
+        X ancestor = multiaryTree.getParent(x);
+        
+        X currentNode = x;
+        while((currentNode = tree.getParent(currentNode)) != null && !currentNode.equals(ancestor)) {
+            result.add(currentNode);
+        }
+    
+        
+        return result;
+    }
+
 }
