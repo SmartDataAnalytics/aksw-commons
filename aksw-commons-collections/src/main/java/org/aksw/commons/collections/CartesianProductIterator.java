@@ -138,7 +138,14 @@ public class CartesianProductIterator<T>
 	@Override
 	public List<T> next()
 	{
-		System.arraycopy(current, copyOffset, result, copyOffset, l - copyOffset);
+//		if(copyOffset == lMinusOne) {
+//			result[lMinusOne] = current[lMinusOne];
+//		} else {
+//			System.arraycopy(current, copyOffset, result, copyOffset, l - copyOffset);
+//		}
+		for(int i = copyOffset; i < l; ++i) {
+			result[i] = current[i];
+		}
 
 		// increment iterators
 		for (copyOffset = lMinusOne; copyOffset >= 0; --copyOffset) {
