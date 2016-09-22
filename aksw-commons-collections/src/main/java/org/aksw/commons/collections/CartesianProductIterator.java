@@ -6,8 +6,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import com.google.common.collect.Iterables;
-
 
 /**
  *
@@ -175,6 +173,6 @@ public class CartesianProductIterator<T>
 	@Override
 	public void remove()
 	{
-		throw new RuntimeException("Operation not supported");
+		throw new UnsupportedOperationException();
 	}
 }
