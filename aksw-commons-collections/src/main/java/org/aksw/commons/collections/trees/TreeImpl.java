@@ -7,23 +7,23 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class TreeImpl<T>
-    implements Tree<T>
+    extends TreeBase<T>
 {
     protected T root;
     protected Function<T, List<T>> parentToChildren;
     protected Function<T, T> childToParent;
     protected BiFunction<T, List<T>, T> copyNode;
 
-    
+
     @Override
     public Tree<T> createNew(T root) {
         Tree<T> result = create(root, parentToChildren);
         return result;
     }
-    
-    
-    // 
-    
+
+
+    //
+
 //    public TreeImpl(T root, TreeOps<T> ops) {
 //        super();
 //        this.root = root;

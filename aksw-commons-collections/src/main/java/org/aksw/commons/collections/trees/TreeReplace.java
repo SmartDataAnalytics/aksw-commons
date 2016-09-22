@@ -8,20 +8,20 @@ import java.util.stream.Collectors;
 /**
  * Tree wrapper with bidirectional replacement of certain nodes with leaf nodes.
  * Useful to replace sub-trees with single nodes.
- * 
- * 
+ *
+ *
  * @author raven
  *
  * @param <T>
  */
 public class TreeReplace<T>
-    implements Tree<T>
+    extends TreeBase<T>
 {
     protected Tree<T> delegate;
     //protected BiMap<T, T> delegateToReplacement;
     protected Map<T, T> delegateToReplacement;
     protected Map<T, T> replacementToDelegate;
-    
+
     public TreeReplace(Tree<T> delegate, Map<T, T> delegateToReplacement, Map<T, T> replacementToDelegate) {
         super();
         this.delegate = delegate;
@@ -39,7 +39,7 @@ public class TreeReplace<T>
     @Override
     public List<T> getChildren(T b) {
     	List<T> result;
-    	
+
     	if(replacementToDelegate.containsKey(b)) {
     		result = Collections.emptyList();
     	} else {
@@ -47,7 +47,7 @@ public class TreeReplace<T>
 	        List<T> bs = delegate.getChildren(b);
 	        result = bs.stream().map(bx -> delegateToReplacement.getOrDefault(bx, bx)).collect(Collectors.toList());
     	}
-    	
+
         return result;
     }
 
@@ -68,7 +68,7 @@ public class TreeReplace<T>
 //    			writeTree(child, writer);
 //    		}
 //    	}
-//    	
+//
 //    	writer.decIndent();
 //    }
 //
@@ -78,8 +78,8 @@ public class TreeReplace<T>
 //			IndentedWriter writer = new IndentedWriter(out);
 //			writer.setPadString("| ");
 //			writeTree(getRoot(), writer);
-//	
-//			writer.flush();	
+//
+//			writer.flush();
 //			String result = out.toString(StandardCharsets.UTF_8.name());
 //			return result;
 //		} catch(Exception e) {
@@ -103,6 +103,6 @@ public class TreeReplace<T>
     public Tree<T> createNew(T root) {
         throw new UnsupportedOperationException();
     }
-    
-    
+
+
 }

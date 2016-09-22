@@ -26,6 +26,23 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 
 public class TreeUtils {
+
+	// TODO We may want to add a sub-tree function, which allows using any of a base-tree's node as the root
+	public static <T> Tree<T> subTree(Tree<T> tree, T newRoot) {
+		Tree<T> result = new SubTree<>(tree, newRoot);
+		return result;
+	}
+
+	public static <T> long nodeCount(Tree<T> tree) {
+		long result = Collections.singleton(tree.getRoot()).stream()
+				.flatMap(x -> tree.getChildren(x).stream())
+				.count();
+
+		return result;
+
+	}
+
+
     public static <T> int childIndexOf(TreeOps2<T> ops, T node) {
         List<T> children = ops.getParentToChildren().apply(node);
         int result = children.indexOf(node);

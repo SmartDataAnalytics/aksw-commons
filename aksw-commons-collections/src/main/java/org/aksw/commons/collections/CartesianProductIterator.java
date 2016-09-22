@@ -1,7 +1,12 @@
 package org.aksw.commons.collections;
 
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import com.google.common.collect.Iterables;
 
 
 /**
@@ -14,71 +19,115 @@ import java.util.*;
 public class CartesianProductIterator<T>
 		implements Iterator<List<T>>
 {
-	private List<? extends Iterable<? extends T>>	collections;
+	/**
+	 * The array of iterables which service as suppliers of iterators
+	 */
+	protected Iterable<? extends T>	iterables[];
 
-	private List<Iterator<? extends T>>				iterators;
+	/**
+	 * The current array of iterators
+	 */
+	protected Iterator<? extends T>				iterators[];
 
-	private List<T>									current;
+	protected T									current[];
 
-	private List<T>									result;
-	private List<T>									resultView;
+	protected T									result[];
+	protected List<T>									resultView;
 
-	private boolean									hasNext	= true;
+	protected boolean									hasNext	= true;
 
-	public CartesianProductIterator(T[]... collections)
+	protected final int l;
+	protected final int lMinusOne;
+	protected int copyOffset;
+
+//	public CartesianProductIterator(T[]... collections)
+//	{
+//
+//		this.collections = (Iterable<? extends T>[])new Object[l];
+//		System.arraycopy(collections, 0, this.collections, 0, l);
+//		//List<List<T>> tmp = new ArrayList<List<T>>(collections.length);
+//
+////		for (T[] item : collections)
+////			tmp.add(Arrays.asList(item));
+////
+////		this.collections = tmp;
+//
+//		init();
+//	}
+
+	@SuppressWarnings("unchecked")
+	public CartesianProductIterator(Collection<? extends Iterable<? extends T>> collections)
 	{
-		List<List<T>> tmp = new ArrayList<List<T>>(collections.length);
+		this((Iterable<? extends T>[])collections.toArray(new Iterable[0]));
+	}
 
-		for (T[] item : collections)
-			tmp.add(Arrays.asList(item));
-
-		this.collections = tmp;
+	@SuppressWarnings("unchecked")
+	public CartesianProductIterator(Iterable<? extends T>... iterables)
+	{
+		this.iterables = iterables;
+		this.l = iterables.length;
+		this.lMinusOne = l - 1;
+		this.iterables = iterables;
 
 		init();
 	}
 
-	public CartesianProductIterator(Iterable<? extends T>... collections)
-	{
-		this.collections = Arrays.asList(collections);
 
-		init();
-	}
-
-	public CartesianProductIterator(List<? extends Iterable<? extends T>> collections)
-	{
-		this.collections = collections;
-
-		init();
-	}
-
+	@SuppressWarnings("unchecked")
 	private void init()
 	{
-		iterators = new ArrayList<Iterator<? extends T>>(collections.size());
-		for (Iterable<? extends T> c : collections)
-			iterators.add(c.iterator());
-
-		current = new ArrayList<T>(collections.size());
-		result = new ArrayList<T>(collections.size());
+		iterators = (Iterator<? extends T>[])new Iterator[l];
+		current = (T[])new Object[l];
+		result = (T[])new Object[l];
 
         // If there are no iterators, we're empty
-        if(iterators.isEmpty()) {
+        if(l == 0) {
             this.hasNext = false;
         }
 
-		for (Iterator<? extends T> it : iterators) {
-			if (!it.hasNext()) {
+        for(int i = 0; i < l; ++i) {
+        	Iterator<? extends T> it = iterables[i].iterator();
+        	iterators[i] = it;
+			if (it.hasNext()) {
+				T value = it.next();
+				current[i] = value;
+			} else {
 				this.hasNext = false;
-				return;
 			}
-
-			T value = it.next();
-			current.add(value);
-			result.add(null);
-			// next.add(value);
 		}
+        copyOffset = 0;
 
-		resultView = Collections.unmodifiableList(result);
+		resultView = Arrays.asList(result); //Collections.unmodifiableList(result);
 	}
+
+//	private void init()
+//	{
+//		iterators = new ArrayList<Iterator<? extends T>>(collections.size());
+//		for (Iterable<? extends T> c : collections)
+//			iterators.add(c.iterator());
+//
+//		current = new ArrayList<T>(collections.size());
+//		result = new ArrayList<T>(collections.size());
+//
+//        // If there are no iterators, we're empty
+//        if(iterators.isEmpty()) {
+//            this.hasNext = false;
+//        }
+//
+//		for (Iterator<? extends T> it : iterators) {
+//			if (!it.hasNext()) {
+//				this.hasNext = false;
+//				return;
+//			}
+//
+//			T value = it.next();
+//			current.add(value);
+//			result.add(null);
+//			// next.add(value);
+//		}
+//
+//		resultView = Collections.unmodifiableList(result);
+//	}
 
 	@Override
 	public boolean hasNext()
@@ -89,36 +138,27 @@ public class CartesianProductIterator<T>
 	@Override
 	public List<T> next()
 	{
-		if (!hasNext)
-			return null;
-
-		for (int i = 0; i < current.size(); ++i)
-			result.set(i, current.get(i));
-		// swap current and next
-		// List<T> tmp = current;
-		// current = next;
-		// next = tmp;
-
-		// List<T> viewTmp = currentView;
-		// currentView = nextView;
-		// nextView = tmp;
+		System.arraycopy(current, copyOffset, result, copyOffset, l - copyOffset);
 
 		// increment iterators
-		for (int i = iterators.size() - 1; i >= 0; --i) {
-			Iterator<? extends T> it = iterators.get(i);
-
+		for (copyOffset = lMinusOne; copyOffset >= 0; --copyOffset) {
+			//Iterator<? extends T> it = iterators.get(i);
+			Iterator<? extends T> it = iterators[copyOffset];
+			// System.out.println("it @ " + copyOffset + " has next? " + it.hasNext());
 			// if the iterator overflows => redo the loop and increment the
 			// next iterator - otherwise break.
-			if (!it.hasNext()) {
-				if (i == 0)
-					hasNext = false;
-
-				it = collections.get(i).iterator();
-				iterators.set(i, it);
-				current.set(i, it.next());
-			} else {
-				current.set(i, it.next());
+			if (it.hasNext()) {
+				T value = it.next();
+				current[copyOffset] = value;
 				break;
+			} else {
+				if (copyOffset == 0) {
+					hasNext = false;
+				}
+
+				it = iterables[copyOffset].iterator();
+				iterators[copyOffset] = it;
+				current[copyOffset] = it.next();
 			}
 		}
 
