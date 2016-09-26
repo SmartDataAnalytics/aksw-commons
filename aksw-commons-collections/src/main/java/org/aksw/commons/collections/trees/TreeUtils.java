@@ -42,6 +42,28 @@ public class TreeUtils {
 
 	}
 
+	public static <T> long depth(Tree<T> tree) {
+		T root = tree.getRoot();
+		long result = depth(tree, root);
+		return result;
+
+	}
+
+	public static <T> long depth(Tree<T> tree, T node) {
+		long result;
+		if(node == null) {
+			result = 0;
+		} else {
+			List<T> children = tree.getChildren(node);
+			result = 1l + children.stream()
+					.mapToLong(child -> depth(tree, child))
+					.max()
+					.orElse(0l);
+		}
+
+		return result;
+	}
+
 
     public static <T> int childIndexOf(TreeOps2<T> ops, T node) {
         List<T> children = ops.getParentToChildren().apply(node);
