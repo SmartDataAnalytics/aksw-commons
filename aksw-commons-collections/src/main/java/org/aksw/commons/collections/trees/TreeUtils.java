@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,6 +15,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -24,8 +24,56 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 public class TreeUtils {
+
+//	Predicate<T> p = x -> !(x instanceof OpService);
+	/**
+	 * Given a predicate, return the minimum set of nodes, for which all nodes in their subtree satisfy the predicate.
+	 * The algo starts with the set X of leaf nodes satisfying the predicate, and moves upwards.
+	 * If all children of a parent satisfy the predicate, the children are removed from X and the parent is added instead.
+	 *
+	 * Note: Uses IdentityHashSet
+	 *
+	 * @param tree
+	 * @param predicate
+	 * @return
+	 */
+	public static <T> Set<T> propagateBottomUpLabel(Tree<T> tree, Predicate<T> predicate) {
+		Collection<T> leafs = TreeUtils.getLeafs(tree);
+
+		Set<T> result = leafs.stream()
+				.filter(predicate)
+				.collect(Collectors.toCollection(Sets::newIdentityHashSet));
+
+		for(;;) {
+			//List<Op> parents = levels.get(i);
+			Set<T> parents = result.stream()
+					.map(tree::getParent)
+					.filter(x -> x != null)
+					.collect(Collectors.toCollection(Sets::newIdentityHashSet));
+
+			boolean anyMatch = false;
+			for(T parent : parents) {
+				List<T> children = tree.getChildren(parent);
+				boolean allChildrenTagged = children.stream().allMatch(result::contains);
+
+				if(allChildrenTagged) {
+					anyMatch = true;
+					result.removeAll(children);
+					result.add(parent);
+				}
+			}
+
+			if(!anyMatch) {
+				break;
+			}
+		}
+
+		return result;
+	}
+
 
 	// TODO We may want to add a sub-tree function, which allows using any of a base-tree's node as the root
 	public static <T> Tree<T> subTree(Tree<T> tree, T newRoot) {
@@ -178,6 +226,22 @@ public class TreeUtils {
         return current;
     }
 
+    public static <T> Stream<T> inOrderSearch(T node, Function<T, ? extends Iterable<T>> parentToChildren) {
+        Stream<T> result = Stream.of(node);
+
+        Iterable<T> children = parentToChildren.apply(node);
+        Stream<T> childStream = StreamSupport.stream(children.spliterator(), false);
+
+        result = Stream.concat(
+                result,
+                childStream.flatMap(c -> inOrderSearch(
+                        c,
+                        parentToChildren
+                )));
+
+        return result;
+
+    }
 
     /**
      * In-order-search starting from the given node and descending into the tree.
@@ -221,17 +285,21 @@ public class TreeUtils {
 
     /**
      * Returns the set of nodes in each level of the tree
+     * The set containing the root will be the first item in the list
+     *
      *
      * @param tree
      * @return
      */
-    public static <T> List<Set<T>> nodesPerLevel(Tree<T> tree) {
-        List<Set<T>> result = new ArrayList<>();
+    public static <T> List<List<T>> nodesPerLevel(Tree<T> tree) {
+        List<List<T>> result = new ArrayList<>();
 
-        Set<T> current = Collections.singleton(tree.getRoot());
+        //Set<T> current = Collections.singleton(tree.getRoot());
+        List<T> current = Collections.singletonList(tree.getRoot());
         while(!current.isEmpty()) {
             result.add(current);
-            Set<T> next = new LinkedHashSet<>();
+            //Set<T> next = new LinkedHashSet<>();
+            List<T> next = new ArrayList<>();
             for(T node : current) {
                 List<T>children = tree.getChildren(node);
                 next.addAll(children);
@@ -244,9 +312,14 @@ public class TreeUtils {
     }
 
     public static <T> List<T> getLeafs(Tree<T> tree) {
-        List<T> result = new ArrayList<T>();
-        T root = tree.getRoot();
-        getLeafs(result, tree, root);
+    	T root = tree.getRoot();
+    	List<T> result = inOrderSearch(root, tree::getChildren)
+    		.filter(node -> node == null ? true : tree.getChildren(node).isEmpty())
+    		.collect(Collectors.toList());
+
+//        List<T> result = new ArrayList<T>();
+//        T root = tree.getRoot();
+//        getLeafs(result, tree, root);
         return result;
     }
 

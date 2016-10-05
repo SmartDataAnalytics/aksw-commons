@@ -1,6 +1,7 @@
 package org.aksw.commons.collections.cache;
 
 import java.util.List;
+import java.util.concurrent.BlockingDeque;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ public class BlockingCacheIterator<T>
     extends AbstractIterator<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(BlockingCacheIterator.class);
-    
+
     protected Cache<? extends List<? extends T>> cache;
     protected int offset;
 
@@ -47,6 +48,8 @@ public class BlockingCacheIterator<T>
 
         T result;
         for(;;) {
+
+        	// TODO Get rid of needless synchronization for each item
             synchronized(cache) {
                 if(offset < data.size()) {
                     result = data.get(offset);
