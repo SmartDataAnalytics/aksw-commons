@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.aksw.commons.collections.multimaps.MultimapUtils;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
@@ -301,7 +303,7 @@ public class TreeUtils {
             //Set<T> next = new LinkedHashSet<>();
             List<T> next = new ArrayList<>();
             for(T node : current) {
-                List<T>children = tree.getChildren(node);
+                List<T> children = tree.getChildren(node);
                 next.addAll(children);
             }
 
@@ -409,7 +411,7 @@ public class TreeUtils {
     }
 
 	public static <T> Tree<T> removeUnaryNodes(Tree<T> tree) {
-	    ListMultimap<T, T> parentToChildren = ArrayListMultimap.create();
+	    ListMultimap<T, T> parentToChildren = MultimapUtils.newIdentityListMultimap(); //ArrayListMultimap.create();
 	    T newRoot = removeUnaryNodes(tree, tree.getRoot(), parentToChildren);
 
 	    Tree<T> result = newRoot == null

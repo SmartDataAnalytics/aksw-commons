@@ -1,6 +1,7 @@
 package org.aksw.commons.collections;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,6 +33,8 @@ public class CartesianProductIterator<T>
 	protected T									result[];
 	protected List<T>									resultView;
 
+	protected boolean							inPlace = false;
+
 	protected boolean									hasNext	= true;
 
 	protected final int l;
@@ -53,16 +56,26 @@ public class CartesianProductIterator<T>
 //		init();
 //	}
 
-	@SuppressWarnings("unchecked")
 	public CartesianProductIterator(Collection<? extends Iterable<? extends T>> collections)
 	{
-		this((Iterable<? extends T>[])collections.toArray(new Iterable[0]));
+		this(false, collections);
 	}
 
 	@SuppressWarnings("unchecked")
-	public CartesianProductIterator(Iterable<? extends T>... iterables)
+	public CartesianProductIterator(boolean inPlace, Collection<? extends Iterable<? extends T>> collections)
 	{
-		this.iterables = iterables;
+		this(inPlace, (Iterable<? extends T>[])collections.toArray(new Iterable[0]));
+	}
+
+	@SuppressWarnings("unchecked")
+	public CartesianProductIterator(Iterable<? extends T>... iterables) {
+		this(false, iterables);
+	}
+
+	@SuppressWarnings("unchecked")
+	public CartesianProductIterator(boolean inPlace, Iterable<? extends T>... iterables)
+	{
+		this.inPlace = inPlace;
 		this.l = iterables.length;
 		this.lMinusOne = l - 1;
 		this.iterables = iterables;
@@ -167,7 +180,8 @@ public class CartesianProductIterator<T>
 			}
 		}
 
-		return resultView;
+		List<T> result = inPlace ? resultView : new ArrayList<>(resultView);
+		return result;
 	}
 
 	@Override
