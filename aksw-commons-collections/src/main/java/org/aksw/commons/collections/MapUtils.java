@@ -15,10 +15,16 @@ import com.google.common.collect.Multimap;
  * To change this template use File | Settings | File Templates.
  */
 public class MapUtils {
-    
+
+	public static void removeAll(Map<?, ?> map, Iterable<?> items) {
+		for(Object o : items) {
+			map.remove(o);
+		}
+	}
+
     /**
      * Set the same value for a given set of keys
-     * 
+     *
      * @param map
      * @param keys
      * @param value
@@ -29,7 +35,7 @@ public class MapUtils {
         }
     }
 
-    
+
 	/**
 	 * Compatible means that merging the two maps would not result in the same
 	 * key being mapped to distinct values.
@@ -210,10 +216,10 @@ public class MapUtils {
     //
     //        return result;
     //    }
-    
+
         public static <K, V> Map<K, V> mergeCompatible(Iterable<Map<K, V>> maps) {
             Map<K, V> result = new HashMap<K, V>();
-    
+
             for(Map<K, V> map : maps) {
                 if(isPartiallyCompatible(map, result)) {
                     result.putAll(map);
@@ -222,7 +228,7 @@ public class MapUtils {
                     break;
                 }
             }
-    
+
             return result;
         }
 
