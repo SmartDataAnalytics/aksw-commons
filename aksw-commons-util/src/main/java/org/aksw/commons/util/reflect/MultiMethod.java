@@ -183,7 +183,7 @@ public class MultiMethod
     {
         Map<Method, Integer[]> bestMatches = findMethodCandidates(clazz, name, typeSignature);
 
-        if(bestMatches.size() == 0) {
+        if(bestMatches.isEmpty()) {
             throw new NoMethodInvocationException(name, typeSignature);
         } else if(bestMatches.size() > 1) {
             throw new MultipleMethodsInvocationException(name, null, bestMatches.keySet());
