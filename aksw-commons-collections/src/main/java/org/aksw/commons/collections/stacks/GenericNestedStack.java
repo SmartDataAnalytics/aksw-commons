@@ -20,7 +20,7 @@ public class GenericNestedStack<T, P extends GenericNestedStack<T, P>>
         this.parent = parent;
         this.value = value;
 
-        size = parent == null ? 1 : parent.size;
+        size = parent == null ? 1 : parent.size + 1;
     }
 
     public P getParent() {

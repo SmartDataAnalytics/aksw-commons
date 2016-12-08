@@ -63,8 +63,14 @@ public class JdbcUtils {
             throws SQLException
     {
         Multimap<String, ForeignKey> result = HashMultimap.create();
-
-        ResultSet rs = meta.getExportedKeys(catalog, schema, table);
+        
+        ResultSet rs;
+        try {
+            rs = meta.getExportedKeys(catalog, schema, table);
+        } catch(Exception e) {
+            logger.warn("getExportedKeys threw an exception - assuming absence of foreign keys", e);
+            return result;
+        }
 
         try {
             Map<String, ForeignKey> fkNameMap = new HashMap<String, ForeignKey>();
@@ -139,7 +145,10 @@ public class JdbcUtils {
         Map<String, PrimaryKey> result = new HashMap<String, PrimaryKey>();
 
         //ResultSet rs = meta.getPrimaryKeys(conn.getCatalog(), null, null);
-        ResultSet rs = meta.getPrimaryKeys(catalog, null, null);
+        if(table == null) {
+            table = "%";
+        }
+        ResultSet rs = meta.getPrimaryKeys(catalog, schema, table);
 
         try {
             PrimaryKey current = null;

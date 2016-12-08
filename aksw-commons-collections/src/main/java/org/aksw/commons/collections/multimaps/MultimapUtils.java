@@ -1,8 +1,21 @@
 package org.aksw.commons.collections.multimaps;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.aksw.commons.collections.MultiMaps;
 
-import java.util.Set;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
 
 /**
  * Created by IntelliJ IDEA.
@@ -12,6 +25,22 @@ import java.util.Set;
  * To change this template use File | Settings | File Templates.
  */
 public class MultimapUtils {
+	public static <K, V> SetMultimap<K, V> newIdentitySetMultimap() {
+	    return Multimaps.newSetMultimap(Maps.newIdentityHashMap(), Sets::newIdentityHashSet);
+	}
+
+	public static <K, V> ListMultimap<K, V> newIdentityListMultimap() {
+	    return Multimaps.newListMultimap(Maps.newIdentityHashMap(), ArrayList::new);
+	}
+
+    public static <K, V> Set<V> getAll(Multimap<K, V> multiMap, Collection<K> keys) {
+    	Set<V> result = keys.stream()
+    			.flatMap(k -> multiMap.get(k).stream())
+    			.collect(Collectors.toSet());
+    	return result;
+    }
+
+
 	/**
 	 * A transitive get in both directions
 	 *
@@ -23,5 +52,33 @@ public class MultimapUtils {
 		result.addAll(MultiMaps.transitiveGet(map.getInverse().asMap(), key));
 
 		return result;
-	}    
+	}
+
+    /**
+     * Helper function to convert a multimap into a map.
+     * Each key may only have at most one corresponding value,
+     * otherwise an exception will be thrown.
+     *
+     * @param mm
+     * @return
+     */
+    public static <K, V> Map<K, V> toMap(Map<K, ? extends Collection<V>> mm) {
+        // Convert the multimap to an ordinate map
+        Map<K, V> result = new HashMap<K, V>();
+        for(Entry<K, ? extends Collection<V>> entry : mm.entrySet()) {
+            K k = entry.getKey();
+            Collection<V> vs = entry.getValue();
+
+            if(!vs.isEmpty()) {
+                if(vs.size() > 1) {
+                    throw new RuntimeException("Ambigous mapping for " + k + ": " + vs);
+                }
+
+                V v = vs.iterator().next();
+                result.put(k, v);
+            }
+        }
+
+        return result;
+    }
 }

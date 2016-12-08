@@ -75,7 +75,7 @@ public class MultiMaps
 
     /**
      * Creates a new map that is the reverse of the source
-     * 
+     *
      * @param source
      * @param <K>
      * @param <V>
@@ -146,6 +146,15 @@ public class MultiMaps
                 : values;
     }
 
+    public static <T> Set<T> transitiveGetAll(Map<T, ? extends Collection<T>> map, Iterable<?> keys) {
+    	Set<T> result = new HashSet<>();
+    	for(Object key : keys) {
+    		Set<T> tmp = transitiveGet(map, key);
+    		result.addAll(tmp);
+    	}
+    	return result;
+    }
+
 
     public static <T> Set<T> transitiveGet(Map<T, ? extends Collection<T>> map, Object key)
     {
@@ -156,8 +165,9 @@ public class MultiMaps
         do {
             for(T a : open) {
                 for(T b : safeGetC(map, a)) {
-                    if(result.contains(b))
+                    if(result.contains(b)) {
                         continue;
+                    }
 
                     next.add(b);
                 }

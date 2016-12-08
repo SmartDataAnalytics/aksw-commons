@@ -1,6 +1,10 @@
 package org.aksw.commons.collections.cache;
 
 import java.util.List;
+import java.util.concurrent.BlockingDeque;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.AbstractIterator;
 
@@ -14,6 +18,8 @@ import com.google.common.collect.AbstractIterator;
 public class BlockingCacheIterator<T>
     extends AbstractIterator<T>
 {
+    private static final Logger logger = LoggerFactory.getLogger(BlockingCacheIterator.class);
+
     protected Cache<? extends List<? extends T>> cache;
     protected int offset;
 
@@ -42,28 +48,32 @@ public class BlockingCacheIterator<T>
 
         T result;
         for(;;) {
-            if(offset < data.size()) {
-                result = data.get(offset);
-                ++offset;
-                break;
-            } else if(cache.isComplete() || cache.isAbanoned()) {
-                result = endOfData();
-                break;
-            } else {
-                //throw new IndexOutOfBoundsException();
-//            } else if(cache.isAbanoned()) {
-                //throw new RuntimeException("Cache was abandoned");
-                try {
-                    synchronized(cache) {
-                        // Re-check whether the cache has been completed
-                        if(cache.isComplete() || cache.isAbanoned()) {
-                            result = endOfData();
-                            break;
-                        } else {
+
+        	// TODO Get rid of needless synchronization for each item
+            synchronized(cache) {
+                if(offset < data.size()) {
+                    result = data.get(offset);
+                    ++offset;
+                    break;
+                } else {
+    //            } else if(cache.isComplete() || cache.isAbanoned()) {
+    //                result = endOfData();
+    //                break;
+    //            } else {
+                    //throw new IndexOutOfBoundsException();
+    //            } else if(cache.isAbanoned()) {
+                    //throw new RuntimeException("Cache was abandoned");
+                            // Re-check whether the cache has been completed
+                    if(cache.isComplete() || cache.isAbanoned()) {
+                        result = endOfData();
+                        break;
+                    } else {
+                        try {
                             cache.wait();
+                        } catch (InterruptedException e) {
+                            logger.warn("Exception", e);
                         }
                     }
-                } catch (InterruptedException e) {
                 }
             }
         }

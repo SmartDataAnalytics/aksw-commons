@@ -14,16 +14,23 @@ import java.util.*;
 public class CartesianProduct<T>
     extends AbstractCollection<List<T>>
 {
-    private List<? extends Iterable<? extends T>>	collections;
+    protected List<? extends Iterable<? extends T>>	collections;
+    protected boolean inPlace;
 
 	public CartesianProduct(List<? extends Iterable<? extends T>> collections)
 	{
+		this(false, collections);
+	}
+
+	public CartesianProduct(boolean inPlace, List<? extends Iterable<? extends T>> collections)
+	{
+		this.inPlace = inPlace;
 		this.collections = collections;
 	}
 
     public static <T> CartesianProduct<T> create(List<? extends Iterable<? extends T>> collections)
     {
-        return new CartesianProduct<T>(collections);
+        return new CartesianProduct<T>(false, collections);
     }
 
     public static <T> CartesianProduct<T> create(Iterable<? extends Iterable<? extends T>> iterables)
@@ -33,7 +40,7 @@ public class CartesianProduct<T>
             tmp.add(item);
         }
 
-        return new CartesianProduct<T>(tmp);
+        return new CartesianProduct<T>(false, tmp);
     }
 
 
@@ -44,12 +51,12 @@ public class CartesianProduct<T>
         for (T[] item : collections)
             tmp.add(Arrays.asList(item));
 
-        return  new CartesianProduct<T>(tmp);
+        return  new CartesianProduct<T>(false, tmp);
     }
 
     public static <T> CartesianProduct<T> create(Iterable<? extends T>... collections)
     {
-        return new CartesianProduct<T>(Arrays.asList(collections));
+        return new CartesianProduct<T>(false, Arrays.asList(collections));
     }
 
 
@@ -57,7 +64,7 @@ public class CartesianProduct<T>
 
     @Override
     public Iterator<List<T>> iterator() {
-        return new CartesianProductIterator<T>(collections);
+        return new CartesianProductIterator<T>(inPlace, collections);
     }
 
     @Override

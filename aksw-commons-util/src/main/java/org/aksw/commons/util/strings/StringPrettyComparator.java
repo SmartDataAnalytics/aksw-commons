@@ -19,100 +19,123 @@ import java.util.Comparator;
  */
 // TODO Rename to something like StringWithIntegerComparator
 public class StringPrettyComparator
-	implements Comparator<String>
+    implements Comparator<String>
 {
-	boolean isDigitPrefix(String s)
-	{
-		if(s.isEmpty())
-			return false;
+    public static boolean isDigitPrefix(String s)
+    {
+        if(s.isEmpty())
+            return false;
 
-		boolean result = Character.isDigit(s.charAt(0));
-		return result;
-	}
+        boolean result = Character.isDigit(s.charAt(0));
+        return result;
+    }
 
-	String getPrefix(String s, boolean digitMode)
-	{
-		if(s.isEmpty())
-			return "";
+    public static String getPrefix(String s, boolean digitMode)
+    {
+        if(s.isEmpty())
+            return "";
 
-		int i = 0;
-		for(i = 0; i < s.length(); ++i) {
-			if(Character.isDigit(s.charAt(i)) != digitMode) {
-				break;
+        int i;
+        for(i = 0; i < s.length(); ++i) {
+            if(Character.isDigit(s.charAt(i)) != digitMode) {
+                break;
             }
-		}
-		//while(Character.isDigit(s.charAt(i)) == digitMode && (i < s.length() - 1))
-			//++i;
+        }
+        //while(Character.isDigit(s.charAt(i)) == digitMode && (i < s.length() - 1))
+            //++i;
 
-		String part = s.substring(0, i);
+        String part = s.substring(0, i);
 
-		return part;
-	}
+        return part;
+    }
 
 
 
-	boolean isDigitSuffix(String s)
-	{
-		if(s.isEmpty()) {
-			return false;
+    public static boolean isDigitSuffix(String s)
+    {
+        if(s.isEmpty()) {
+            return false;
         }
 
-		boolean result = Character.isDigit(s.charAt(s.length() - 1));
-		return result;
-	}
+        boolean result = Character.isDigit(s.charAt(s.length() - 1));
+        return result;
+    }
 
-	String getSuffix(String s, boolean digitMode)
-	{
-		if(s.isEmpty())
-			return "";
+    public static String getSuffix(String s, boolean digitMode)
+    {
+        if(s.isEmpty())
+            return "";
 
-		int i = s.length() - 1;
+        int i = s.length() - 1;
 
-		for(; Character.isDigit(s.charAt(i)) == digitMode && i > 0; --i);
+        for(; Character.isDigit(s.charAt(i)) == digitMode && i > 0; --i);
 
-		String part = s.substring(i);
+        String part = s.substring(i);
 
-		return part;
-	}
-
-	@Override
-	public int compare(String a, String b)
-	{
-		while(true) {
-			if(a.isEmpty() && b.isEmpty())
-				return 0;
-
-			// Sort empty strings before non-empty ones
-			int da = a.isEmpty() ? -1 : 0;
-			int db = b.isEmpty() ? 1 : 0;
-
-			int d = db + da;
-			if(d != 0)
-				return d;
+        return part;
+    }
 
 
-			// Sort values before strings
-			da = isDigitPrefix(a) ? -1 : 0;
-			db = isDigitPrefix(b) ? 1 : 0;
+    public static void main(String[] args) {
+        System.out.println(doCompare("yay10a", "yay2a"));
+        System.out.println(doCompare("yay10a", "yay20b"));
+        System.out.println(doCompare("yay10a", "yay10a"));
+        System.out.println(doCompare("yay10a", "yay10"));
+        System.out.println(doCompare("yay10", "yay10a"));
+    }
 
-			d = db + da;
-			if(d != 0)
-				return d;
+    public static int doCompare(String a, String b) {
+        int d;
 
-			String sa = getPrefix(a, da != 0);
-			String sb = getPrefix(b, db != 0);
+        while(true) {
+            if(a.isEmpty() && b.isEmpty()) {
+                d = 0;
+                break;
+            }
 
-			d = (da != 0)
-				? ((Long)Long.parseLong(sa)).compareTo(Long.parseLong(sb))
-				: sa.compareTo(sb);
+            // Sort empty strings before non-empty ones
+            int da = a.isEmpty() ? -1 : 0;
+            int db = b.isEmpty() ? 1 : 0;
 
-			if(d != 0)
-				return d;
+            d = db + da;
+            if(d != 0) {
+                break;
+            }
 
-			a = a.substring(sa.length());
-			b = b.substring(sb.length());
-			//a = a.substring(0, a.length() - sa.length());
-			//b = b.substring(0, b.length() - sb.length());
-		}
-	}
+
+            // Sort values before strings
+            da = isDigitPrefix(a) ? -1 : 0;
+            db = isDigitPrefix(b) ? 1 : 0;
+
+            d = db + da;
+            if(d != 0) {
+                break;
+            }
+
+            String sa = getPrefix(a, da != 0);
+            String sb = getPrefix(b, db != 0);
+
+            d = (da != 0)
+                ? ((Long)Long.parseLong(sa)).compareTo(Long.parseLong(sb))
+                : sa.compareTo(sb);
+
+            if(d != 0) {
+                break;
+            }
+
+            a = a.substring(sa.length());
+            b = b.substring(sb.length());
+            //a = a.substring(0, a.length() - sa.length());
+            //b = b.substring(0, b.length() - sb.length());
+        }
+
+        return d;
+    }
+
+    @Override
+    public int compare(String a, String b)
+    {
+        int result = doCompare(a, b);
+        return result;
+    }
 }
