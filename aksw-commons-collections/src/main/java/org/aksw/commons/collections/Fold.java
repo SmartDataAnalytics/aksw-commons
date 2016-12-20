@@ -1,51 +1,72 @@
 package org.aksw.commons.collections;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.codepoetics.protonpack.StreamUtils;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 public class Fold<T> {
-    private Set<T> train;
-    private Set<T> validate;
+    private List<T> train;
+    private List<T> validate;
 
-    public Fold(Set<T> train, Set<T> validate) {
+    public Fold(List<T> train, List<T> validate) {
         super();
         this.train = train;
         this.validate = validate;
     }
 
-    public Set<T> getTrain() {
+    public List<T> getTrain() {
         return train;
     }
 
-    public Set<T> getValidate() {
+    public List<T> getValidate() {
         return validate;
     }
 
-    public static <T> List<Fold<T>> createFolds(Collection<T> items, int n) {
-    	int size = items.size() / n;
 
-    	// TODO Avoid copy if items is already a list
-    	List<Set<T>> parts = Lists.partition(new ArrayList<T>(items), size).stream()
-    			.map(p -> new LinkedHashSet<T>(p))
-    			.collect(Collectors.toList());
+    public static <T> List<T> concatExclude(List<T> partitions, int j) {
+    	List<T> result = new ListLazy<>((i) -> partitions.get(i >= j ? i + 1 : i), Math.max(partitions.size() - 1, 0));
+    	return result;
+    }
 
-    	// TODO Switch to a lazy list implementation
-    	List<Fold<T>> result = IntStream.range(0, parts.size()).boxed()
-    			.map(i -> new Fold<>(createFold(i, parts), parts.get(i)))
-    			.collect(Collectors.toList());
+    public static <T> List<Fold<T>> createFolds(List<T> items, int n) {
+    	List<List<T>> partitions = Lists.distribute(items, n);
+
+
+    	List<Fold<T>> result = new ListLazy<>(
+    			(i) -> new Fold<T>(new ListConcat<T>(concatExclude(partitions, i)), partitions.get(i)),
+    			n);
 
     	return result;
     }
+
+    public static <T> List<Fold<T>> createFolds(List<T> pos, List<T> neg, int n) {
+    	List<List<T>> posParts = Lists.distribute(pos, n);
+
+    	System.out.println(posParts);
+
+    	List<List<T>> negParts = Lists.distribute(neg, n);
+    	System.out.println(negParts);
+
+
+    	List<Fold<T>> result = new ListLazy<>(
+    			(i) -> new Fold<T>(
+    					new ListConcat<T>(Arrays.asList(
+    							posParts.get(i),
+    							negParts.get(i)
+    					)),
+						new ListConcat<T>(Arrays.asList(
+								new ListConcat<T>(concatExclude(posParts, i)),
+								new ListConcat<T>(concatExclude(negParts, i))
+						))),
+    			n);
+
+    	return result;
+    }
+
 
     public static <T> Set<T> createFold(int i, List<Set<T>> parts) {
     	Set<T> result = StreamUtils.zipWithIndex(parts.stream())
