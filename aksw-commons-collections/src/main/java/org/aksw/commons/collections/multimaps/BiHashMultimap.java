@@ -14,20 +14,29 @@ public class BiHashMultimap<K, V>
 	private BiHashMultimap<V, K> inverse;
 
 	private SetMultimap<K, V> forward;
-	private SetMultimap<V, K> backward;	
-	
+	private SetMultimap<V, K> backward;
+
 	public BiHashMultimap()
 	{
 		this.forward = HashMultimap.create();
 		this.backward = HashMultimap.create();
-		
+
+		inverse = new BiHashMultimap<V, K>(this);
+		inverse.inverse = this;
+	}
+
+	public BiHashMultimap(SetMultimap<K, V> forward, SetMultimap<V, K> backward)
+	{
+		this.forward = forward;
+		this.backward = backward;
+
 		inverse = new BiHashMultimap<V, K>(this);
 		inverse.inverse = this;
 	}
 
 	/**
 	 * Constructor for reverse map
-	 * 
+	 *
 	 * @param original
 	 */
 	protected BiHashMultimap(BiHashMultimap<V, K> original)
@@ -36,23 +45,23 @@ public class BiHashMultimap<K, V>
 		this.forward = original.backward;
 		this.backward = original.forward;
 	}
-	
+
 	public BiHashMultimap<V, K> getInverse()
 	{
 		return inverse;
 	}
-	
-	
+
+
 	// TODO Must be wrapped
 //	public Map<K, Collection<V>> asMap()
 //	{
 //		return forward.asMap();
 //	}
-	
+
 	public SetMultimap<K, V> asMultimap() {
 	    return forward;
 	}
-	
+
 	public void remove(K key, V value)
 	{
 		forward.remove(key, value);
@@ -64,10 +73,10 @@ public class BiHashMultimap<K, V>
 	{
 		boolean result = forward.put(key, value);
 		backward.put(value, key);
-		
+
 		return result;
 	}
-	
+
 
 	@Override
 	public Set<V> removeAll(Object key)
@@ -75,7 +84,7 @@ public class BiHashMultimap<K, V>
 		for(V value : forward.get((K)key)) {
 			backward.remove(value, key);
 		}
-		
+
 		return forward.removeAll(key);
 	}
 
@@ -111,7 +120,7 @@ public class BiHashMultimap<K, V>
 			put(key, value);
 		}
 	}
-	
+
 	@Override
 	public void putAll(ISetMultimap<K, V> other)
 	{
