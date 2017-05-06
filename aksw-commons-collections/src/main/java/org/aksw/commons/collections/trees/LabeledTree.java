@@ -76,6 +76,20 @@ public class LabeledTree<K, X extends LabeledNode<K>>
     public K getParent(K node) {
         return childToParent.get(node);
     }
+
+    public X deleteNode(K node) {
+        X result = keyToNode.get(node);
+
+        // Call destroy before unlinking the node
+        if(result != null) {
+            result.destroy();
+        }
+
+        keyToNode.remove(node);
+        childToParent.remove(node);
+
+        return result;
+    }
 //
 //    public static <K, T> LabeledTree<K, T> create(T root, Function<T, Collection<T>> getChildren, Supplier<K> keySupplier) {
 //

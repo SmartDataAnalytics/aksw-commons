@@ -1,9 +1,11 @@
 package org.aksw.commons.collections.trees;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map.Entry;
+
+import org.aksw.commons.collections.reversible.ReversibleMap;
 
 
 /**
@@ -44,38 +46,65 @@ public class LabeledNodeImpl<K, X extends LabeledNode<K>, Y extends LabeledTree<
 
     @Override
     public Collection<X> getChildren() {
-        Collection<K> childKeys = tree.getChildren(id);
+        ReversibleMap<K, K> hierarchy = tree.childToParent;
 
-        // Return a view
-        Collection<X> result = new AbstractCollection<X>() {
+        Collection<K> childKeys = hierarchy.reverse().get(id);
 
+        return new AbstractCollection<X>() {
             @Override
             public Iterator<X> iterator() {
-                Iterator<K> base = childKeys.iterator();
-                //return childKeys.stream().map(tree::getNode).iterator();
+                Iterator<K> base = new ArrayList<>(childKeys).iterator();
                 return new Iterator<X>() {
                     @Override
                     public boolean hasNext() { return base.hasNext(); }
                     @Override
                     public X next() { return tree.getNode(base.next()); }
-                    @Override
-                    public void remove() { base.remove(); }
                 };
             }
-
             @Override
             public int size() {
                 return childKeys.size();
             }
         };
+
+        // Return a view which supports removals
+        // Some hack to try removing both parent-child and child-parent relations
+//        Collection<X> result = new AbstractCollection<X>() {
+//
+//            @Override
+//            public Iterator<X> iterator() {
+//                Iterator<K> base = childKeys.iterator();
+//                //return childKeys.stream().map(tree::getNode).iterator();
+//                return new SinglePrefetchIterator<X>() {
+//                    K lastSeen = null;
+//                    @Override
+//                    public void remove() {
+//                        base.remove();
+//                        hierarchy.remove(lastSeen, id);
+//                    }
+//                    @Override
+//                    protected X prefetch() throws Exception {
+//                        if(!base.hasNext()) return this.finish();
+//                        lastSeen = base.next();
+//                        X r = tree.getNode(lastSeen);
+//                        return r;
+//                    }
+//                };
+//            }
+//
+//            @Override
+//            public int size() {
+//                return childKeys.size();
+//            }
+//        };
 //
 //        List<LabeledNode<K, T>> result = new ArrayList<>(childKeys.size());
 //        for(K childKey : childKeys) {
 //            LabeledNode<K, T> childNode = tree.getNode(childKey);
 //            result.add(childNode);
 //        }
-
-        return result;
+//
+//        return result;
     }
 
     @Override
@@ -87,6 +116,18 @@ public class LabeledNodeImpl<K, X extends LabeledNode<K>, Y extends LabeledTree<
     public K getKey() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "Node[" + id + (!tree.keyToNode.containsKey(id) ? " detached": "") + "], parent: " + tree.childToParent.get(id) + " children: " + tree.childToParent.reverse().get(id);
+    }
+
+    @Override
+    public void destroy() {
+        // Nothing to do by default
+    }
+
+
 
 //    @Override
 //    public T getValue() {

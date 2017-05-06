@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ForwardingSet;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 
