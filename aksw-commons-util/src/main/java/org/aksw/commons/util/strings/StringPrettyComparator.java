@@ -8,6 +8,7 @@ package org.aksw.commons.util.strings;
  */
 
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Identifies sub-strings that correspond to integers and compares those parts
@@ -18,8 +19,8 @@ import java.util.Comparator;
  *
  */
 // TODO Rename to something like StringWithIntegerComparator
-public class StringPrettyComparator
-    implements Comparator<String>
+public class StringPrettyComparator//<T>
+    implements Comparator<Object>
 {
     public static boolean isDigitPrefix(String s)
     {
@@ -84,8 +85,11 @@ public class StringPrettyComparator
         System.out.println(doCompare("yay10", "yay10a"));
     }
 
-    public static int doCompare(String a, String b) {
+    public static int doCompare(Object _a, Object _b) {
         int d;
+
+        String a = Objects.toString(_a);
+        String b = Objects.toString(_b);
 
         while(true) {
             if(a.isEmpty() && b.isEmpty()) {
@@ -133,7 +137,7 @@ public class StringPrettyComparator
     }
 
     @Override
-    public int compare(String a, String b)
+    public int compare(Object a, Object b)
     {
         int result = doCompare(a, b);
         return result;
