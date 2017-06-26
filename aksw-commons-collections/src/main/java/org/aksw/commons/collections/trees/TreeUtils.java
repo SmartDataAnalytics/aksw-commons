@@ -22,7 +22,6 @@ import java.util.stream.StreamSupport;
 
 import org.aksw.commons.collections.multimaps.MultimapUtils;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
@@ -31,88 +30,88 @@ import com.google.common.collect.Sets;
 public class TreeUtils {
 
 //	Predicate<T> p = x -> !(x instanceof OpService);
-	/**
-	 * Given a predicate, return the minimum set of nodes, for which all nodes in their subtree satisfy the predicate.
-	 * The algo starts with the set X of leaf nodes satisfying the predicate, and moves upwards.
-	 * If all children of a parent satisfy the predicate, the children are removed from X and the parent is added instead.
-	 *
-	 * Note: Uses IdentityHashSet
-	 *
-	 * @param tree
-	 * @param predicate
-	 * @return
-	 */
-	public static <T> Set<T> propagateBottomUpLabel(Tree<T> tree, Predicate<T> predicate) {
-		Collection<T> leafs = TreeUtils.getLeafs(tree);
+    /**
+     * Given a predicate, return the minimum set of nodes, for which all nodes in their subtree satisfy the predicate.
+     * The algo starts with the set X of leaf nodes satisfying the predicate, and moves upwards.
+     * If all children of a parent satisfy the predicate, the children are removed from X and the parent is added instead.
+     *
+     * Note: Uses IdentityHashSet
+     *
+     * @param tree
+     * @param predicate
+     * @return
+     */
+    public static <T> Set<T> propagateBottomUpLabel(Tree<T> tree, Predicate<T> predicate) {
+        Collection<T> leafs = TreeUtils.getLeafs(tree);
 
-		Set<T> result = leafs.stream()
-				.filter(predicate)
-				.collect(Collectors.toCollection(Sets::newIdentityHashSet));
+        Set<T> result = leafs.stream()
+                .filter(predicate)
+                .collect(Collectors.toCollection(Sets::newIdentityHashSet));
 
-		for(;;) {
-			//List<Op> parents = levels.get(i);
-			Set<T> parents = result.stream()
-					.map(tree::getParent)
-					.filter(x -> x != null)
-					.collect(Collectors.toCollection(Sets::newIdentityHashSet));
+        for(;;) {
+            //List<Op> parents = levels.get(i);
+            Set<T> parents = result.stream()
+                    .map(tree::getParent)
+                    .filter(x -> x != null)
+                    .collect(Collectors.toCollection(Sets::newIdentityHashSet));
 
-			boolean anyMatch = false;
-			for(T parent : parents) {
-				List<T> children = tree.getChildren(parent);
-				boolean allChildrenTagged = children.stream().allMatch(result::contains);
+            boolean anyMatch = false;
+            for(T parent : parents) {
+                Collection<T> children = tree.getChildren(parent);
+                boolean allChildrenTagged = children.stream().allMatch(result::contains);
 
-				if(allChildrenTagged) {
-					anyMatch = true;
-					result.removeAll(children);
-					result.add(parent);
-				}
-			}
+                if(allChildrenTagged) {
+                    anyMatch = true;
+                    result.removeAll(children);
+                    result.add(parent);
+                }
+            }
 
-			if(!anyMatch) {
-				break;
-			}
-		}
+            if(!anyMatch) {
+                break;
+            }
+        }
 
-		return result;
-	}
+        return result;
+    }
 
 
-	// TODO We may want to add a sub-tree function, which allows using any of a base-tree's node as the root
-	public static <T> Tree<T> subTree(Tree<T> tree, T newRoot) {
-		Tree<T> result = new SubTree<>(tree, newRoot);
-		return result;
-	}
+    // TODO We may want to add a sub-tree function, which allows using any of a base-tree's node as the root
+    public static <T> Tree<T> subTree(Tree<T> tree, T newRoot) {
+        Tree<T> result = new SubTree<>(tree, newRoot);
+        return result;
+    }
 
-	public static <T> long nodeCount(Tree<T> tree) {
-		long result = Collections.singleton(tree.getRoot()).stream()
-				.flatMap(x -> tree.getChildren(x).stream())
-				.count();
+    public static <T> long nodeCount(Tree<T> tree) {
+        long result = Collections.singleton(tree.getRoot()).stream()
+                .flatMap(x -> tree.getChildren(x).stream())
+                .count();
 
-		return result;
+        return result;
 
-	}
+    }
 
-	public static <T> long depth(Tree<T> tree) {
-		T root = tree.getRoot();
-		long result = depth(tree, root);
-		return result;
+    public static <T> long depth(Tree<T> tree) {
+        T root = tree.getRoot();
+        long result = depth(tree, root);
+        return result;
 
-	}
+    }
 
-	public static <T> long depth(Tree<T> tree, T node) {
-		long result;
-		if(node == null) {
-			result = 0;
-		} else {
-			List<T> children = tree.getChildren(node);
-			result = 1l + children.stream()
-					.mapToLong(child -> depth(tree, child))
-					.max()
-					.orElse(0l);
-		}
+    public static <T> long depth(Tree<T> tree, T node) {
+        long result;
+        if(node == null) {
+            result = 0;
+        } else {
+            Collection<T> children = tree.getChildren(node);
+            result = 1l + children.stream()
+                    .mapToLong(child -> depth(tree, child))
+                    .max()
+                    .orElse(0l);
+        }
 
-		return result;
-	}
+        return result;
+    }
 
 
     public static <T> int childIndexOf(TreeOps2<T> ops, T node) {
@@ -170,22 +169,22 @@ public class TreeUtils {
 
 
     public static <T> T substitute(
-    		T node,
-    		boolean descendIntoSubst,
-    		TreeOps2<T> ops,
-    		Function<? super T, ? extends T> transformFn
-    		)
+            T node,
+            boolean descendIntoSubst,
+            TreeOps2<T> ops,
+            Function<? super T, ? extends T> transformFn
+            )
     {
-    	T result = substitute(node, descendIntoSubst, ops.getParentToChildren(), transformFn, ops.getReplaceChildren());
-    	return result;
+        T result = substitute(node, descendIntoSubst, ops.getParentToChildren(), transformFn, ops.getReplaceChildren());
+        return result;
     }
 
     public static <T> T substitute(
-    		T node,
-    		boolean descendIntoSubst,
-    		Function<? super T, ? extends Collection<? extends T>> getChildrenFn,
-    		Function<? super T, ? extends T> transformFn,
-    		BiFunction<T, List<T>, T> copyFn)
+            T node,
+            boolean descendIntoSubst,
+            Function<? super T, ? extends Collection<? extends T>> getChildrenFn,
+            Function<? super T, ? extends T> transformFn,
+            BiFunction<T, List<T>, T> copyFn)
     {
         T tmp = transformFn.apply(node);
 
@@ -303,7 +302,7 @@ public class TreeUtils {
             //Set<T> next = new LinkedHashSet<>();
             List<T> next = new ArrayList<>();
             for(T node : current) {
-                List<T> children = tree.getChildren(node);
+                Collection<T> children = tree.getChildren(node);
                 next.addAll(children);
             }
 
@@ -314,10 +313,10 @@ public class TreeUtils {
     }
 
     public static <T> List<T> getLeafs(Tree<T> tree) {
-    	T root = tree.getRoot();
-    	List<T> result = inOrderSearch(root, tree::getChildren)
-    		.filter(node -> node == null ? true : tree.getChildren(node).isEmpty())
-    		.collect(Collectors.toList());
+        T root = tree.getRoot();
+        List<T> result = inOrderSearch(root, tree::getChildren)
+            .filter(node -> node == null ? true : tree.getChildren(node).isEmpty())
+            .collect(Collectors.toList());
 
 //        List<T> result = new ArrayList<T>();
 //        T root = tree.getRoot();
@@ -392,7 +391,7 @@ public class TreeUtils {
      * @return
      */
     public static <T> Tree<T> remapSubTreesToLeafs(Tree<T> tree, Function<? super T, ? extends T> remapFn) {
-    	Map<T, T> fwd = TreeUtils
+        Map<T, T> fwd = TreeUtils
                 .inOrderSearch(
                         tree.getRoot(),
                         tree::getChildren,
@@ -401,126 +400,126 @@ public class TreeUtils {
                 .filter(e -> e.getValue() != null)
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b, IdentityHashMap::new));
 
-    	Map<T, T> bwd = new IdentityHashMap<>();
-    	for(Entry<T, T> e : fwd.entrySet()) {
-    		bwd.put(e.getValue(), e.getKey());
-    	}
+        Map<T, T> bwd = new IdentityHashMap<>();
+        for(Entry<T, T> e : fwd.entrySet()) {
+            bwd.put(e.getValue(), e.getKey());
+        }
 
         Tree<T> result = new TreeReplace<>(tree, fwd, bwd);
         return result;
     }
 
-	public static <T> Tree<T> removeUnaryNodes(Tree<T> tree) {
-	    ListMultimap<T, T> parentToChildren = MultimapUtils.newIdentityListMultimap(); //ArrayListMultimap.create();
-	    T newRoot = removeUnaryNodes(tree, tree.getRoot(), parentToChildren);
+    public static <T> Tree<T> removeUnaryNodes(Tree<T> tree) {
+        ListMultimap<T, T> parentToChildren = MultimapUtils.newIdentityListMultimap(); //ArrayListMultimap.create();
+        T newRoot = removeUnaryNodes(tree, tree.getRoot(), parentToChildren);
 
-	    Tree<T> result = newRoot == null
-	            ? null
-	            : TreeImpl.create(newRoot, (node) -> parentToChildren.get(node));
+        Tree<T> result = newRoot == null
+                ? null
+                : TreeImpl.create(newRoot, (node) -> parentToChildren.get(node));
 
-	    return result;
-	}
+        return result;
+    }
 
-	public static <T> T removeUnaryNodes(Tree<T> tree, T node, ListMultimap<T, T> parentToChildren) {
-	    List<T> children = tree.getChildren(node);
-	    int childCount = children.size();
+    public static <T> T removeUnaryNodes(Tree<T> tree, T node, ListMultimap<T, T> parentToChildren) {
+        Collection<T> children = tree.getChildren(node);
+        int childCount = children.size();
 
-	    T result;
-	    switch(childCount) {
-	    case 0:
-	        result = node;
-	        break;
-	    case 1:
-	        T child = children.get(0);
-	        result = removeUnaryNodes(tree, child, parentToChildren);
-	        break;
-	    default:
-	        result = node;
-	        for(T c : children) {
-	            T newChild = removeUnaryNodes(tree, c, parentToChildren);
-	            parentToChildren.put(node,  newChild);
-	        }
-	        break;
-	    }
+        T result;
+        switch(childCount) {
+        case 0:
+            result = node;
+            break;
+        case 1:
+            T child = children.iterator().next();
+            result = removeUnaryNodes(tree, child, parentToChildren);
+            break;
+        default:
+            result = node;
+            for(T c : children) {
+                T newChild = removeUnaryNodes(tree, c, parentToChildren);
+                parentToChildren.put(node,  newChild);
+            }
+            break;
+        }
 
-	    return result;
-	}
+        return result;
+    }
 
-	// TODO: Another output format: Map<Entry<T, T>, Multimap<T, T>>
-	/**
-	 * Input: A mapping from cache nodes to candidate query nodes represented as a Multimap<T, T>.
-	 * Output: The mapping partitioned by each node's first multiary ancestor.
-	 *
-	 * Output could also be: Multimap<Op, Op> - fmaToNodesCache
-	 *
-	 *
-	 * For every cacheFma, map to the corresponding queryFmas - and for
-	 * each of these mappings yield the candidate node mappings of the children
-	 * Multimap<OpCacheFma, Map<OpQueryFma, Multimap<OpCache, OpQuery>>>
-	 *
-	 * Q: What if cache nodes do not have a fma?
-	 * A: In this case the fma would be null, which means that there can only be a single cache node
-	 * which would be grouped with a null fma.
-	 * In the query, we can then check whether we are pairing a union with another union or null.
-	 *
-	 * We always map from cache to query.
-	 *
-	 * Map<CacheFma, QueryFma>
-	 *
-	 * So the challenge is now again how to represent all the facts and how to perform
-	 * the permutations / combinations...
-	 *
-	 *
-	 *
-	 *
-	 *
-	 * @param cacheTree
-	 * @param tree
-	 * @param cacheToQueryCands
-	 * @return
-	 */
-	public static <T> Map<T, Multimap<T, T>> clusterNodesByFirstMultiaryAncestor(Tree<T> tree, Multimap<T, T> mapping) { //Collection<T> nodes) {
-	    Map<T, Multimap<T, T>> result = new HashMap<>();
+    // TODO: Another output format: Map<Entry<T, T>, Multimap<T, T>>
+    /**
+     * Input: A mapping from cache nodes to candidate query nodes represented as a Multimap<T, T>.
+     * Output: The mapping partitioned by each node's first multiary ancestor.
+     *
+     * Output could also be: Multimap<Op, Op> - fmaToNodesCache
+     *
+     *
+     * For every cacheFma, map to the corresponding queryFmas - and for
+     * each of these mappings yield the candidate node mappings of the children
+     * Multimap<OpCacheFma, Map<OpQueryFma, Multimap<OpCache, OpQuery>>>
+     *
+     * Q: What if cache nodes do not have a fma?
+     * A: In this case the fma would be null, which means that there can only be a single cache node
+     * which would be grouped with a null fma.
+     * In the query, we can then check whether we are pairing a union with another union or null.
+     *
+     * We always map from cache to query.
+     *
+     * Map<CacheFma, QueryFma>
+     *
+     * So the challenge is now again how to represent all the facts and how to perform
+     * the permutations / combinations...
+     *
+     *
+     *
+     *
+     *
+     * @param cacheTree
+     * @param tree
+     * @param cacheToQueryCands
+     * @return
+     */
+    public static <T> Map<T, Multimap<T, T>> clusterNodesByFirstMultiaryAncestor(Tree<T> tree, Multimap<T, T> mapping) { //Collection<T> nodes) {
+        Map<T, Multimap<T, T>> result = new HashMap<>();
 
-	    Set<Entry<T, Collection<T>>> entries = mapping.asMap().entrySet();
-	    for(Entry<T, Collection<T>> entry : entries) {
-	        T node = entry.getKey();
-	        //T multiaryAncestor = firstMultiaryAncestor(tree, cacheNode);
-	        T multiaryAncestor = tree.getParent(node);
-	        Collection<T> queryNodes = entry.getValue();
+        Set<Entry<T, Collection<T>>> entries = mapping.asMap().entrySet();
+        for(Entry<T, Collection<T>> entry : entries) {
+            T node = entry.getKey();
+            //T multiaryAncestor = firstMultiaryAncestor(tree, cacheNode);
+            T multiaryAncestor = tree.getParent(node);
+            Collection<T> queryNodes = entry.getValue();
 
-	        for(T targetNode : queryNodes) {
-	            Multimap<T, T> mm = result.computeIfAbsent(multiaryAncestor, (k) -> HashMultimap.<T, T>create());
-	            mm.put(node, targetNode);
-	        }
-	    }
+            for(T targetNode : queryNodes) {
+                Multimap<T, T> mm = result.computeIfAbsent(multiaryAncestor, (k) -> HashMultimap.<T, T>create());
+                mm.put(node, targetNode);
+            }
+        }
 
-	    return result;
-	}
+        return result;
+    }
 
-	/**
-	 * Return a node's first ancestor having an arity > 1
-	 * null if there is none.
-	 *
-	 * @param tree
-	 * @param node
-	 * @return
-	 */
-	public static <T> T firstMultiaryAncestor(Tree<T> tree, T node) {
-	    T result = null;
-	    T current = node;
-	    while(current != null) {
-	        T parent = tree.getParent(result);
-	        List<T> children = tree.getChildren(parent);
-	        int arity = children.size();
-	        if(arity > 1) {
-	            result = parent;
-	            break;
-	        }
-	        current = parent;
-	    }
-	    return result;
-	}
+    /**
+     * Return a node's first ancestor having an arity > 1
+     * null if there is none.
+     *
+     * @param tree
+     * @param node
+     * @return
+     */
+    public static <T> T firstMultiaryAncestor(Tree<T> tree, T node) {
+        T result = null;
+        T current = node;
+        while(current != null) {
+            T parent = tree.getParent(result);
+            Collection<T> children = tree.getChildren(parent);
+            int arity = children.size();
+            if(arity > 1) {
+                result = parent;
+                break;
+            }
+            current = parent;
+        }
+        return result;
+    }
 
     public static <X> List<X> getUnaryAncestors(X x, Tree<X> tree, Tree<X> multiaryTree) {
         List<X> result = new ArrayList<>();
@@ -536,7 +535,7 @@ public class TreeUtils {
         return result;
     }
 
-	// TODO How to handle root nodes / null values?
+    // TODO How to handle root nodes / null values?
     /**
      * Given a mapping of child nodes, determine which parents may be mapped to each other.
      * For any nodes mapped in 'childMapping', their parents may be mapped as well.
@@ -547,18 +546,18 @@ public class TreeUtils {
      * @param childMapping
      * @return
      */
-	public static <A, B> Multimap<A, B> deriveParentMapping(Tree<A> aTree, Tree<B> bTree, Multimap<A, B> childMapping) {
-	    Multimap<A, B> result = HashMultimap.create();
-	    Set<A> as = childMapping.keySet();
-	    for(A a : as) {
-	        A aParent = aTree.getParent(a);
-	        Collection<B> bs = childMapping.get(a);
-	        Set<B> bParents = getParentsOf(bTree, bs);
+    public static <A, B> Multimap<A, B> deriveParentMapping(Tree<A> aTree, Tree<B> bTree, Multimap<A, B> childMapping) {
+        Multimap<A, B> result = HashMultimap.create();
+        Set<A> as = childMapping.keySet();
+        for(A a : as) {
+            A aParent = aTree.getParent(a);
+            Collection<B> bs = childMapping.get(a);
+            Set<B> bParents = getParentsOf(bTree, bs);
 
-	        result.putAll(aParent, bParents);
-	    }
+            result.putAll(aParent, bParents);
+        }
 
-	    return result;
-	}
+        return result;
+    }
 
 }

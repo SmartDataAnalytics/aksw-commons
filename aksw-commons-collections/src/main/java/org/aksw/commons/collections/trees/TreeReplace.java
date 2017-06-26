@@ -1,5 +1,6 @@
 package org.aksw.commons.collections.trees;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +39,15 @@ public class TreeReplace<T>
 
     @Override
     public List<T> getChildren(T b) {
-    	List<T> result;
+        List<T> result;
 
-    	if(replacementToDelegate.containsKey(b)) {
-    		result = Collections.emptyList();
-    	} else {
-	        //T a = delegateToReplacement.inverse().getOrDefault(b, b);
-	        List<T> bs = delegate.getChildren(b);
-	        result = bs.stream().map(bx -> delegateToReplacement.getOrDefault(bx, bx)).collect(Collectors.toList());
-    	}
+        if(replacementToDelegate.containsKey(b)) {
+            result = Collections.emptyList();
+        } else {
+            //T a = delegateToReplacement.inverse().getOrDefault(b, b);
+            Collection<T> bs = delegate.getChildren(b);
+            result = bs.stream().map(bx -> delegateToReplacement.getOrDefault(bx, bx)).collect(Collectors.toList());
+        }
 
         return result;
     }
@@ -87,17 +88,17 @@ public class TreeReplace<T>
 //		}
 //	}
 
-	@Override
-	public String toString() {
+    @Override
+    public String toString() {
 //		String result = effectiveString();
 //		return result;
-		return "TreeReplace [delegate=" + delegate + ", delegateToReplacement=" + delegateToReplacement + "]";
-	}
+        return "TreeReplace [delegate=" + delegate + ", delegateToReplacement=" + delegateToReplacement + "]";
+    }
 
-	@Override
-	public T copy(T node, List<T> children) {
-		throw new UnsupportedOperationException();
-	}
+    @Override
+    public T copy(T node, List<T> children) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public Tree<T> createNew(T root) {

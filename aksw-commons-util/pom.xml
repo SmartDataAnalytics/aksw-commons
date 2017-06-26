@@ -10,7 +10,7 @@
     <parent>
         <artifactId>aksw-commons-parent</artifactId>
         <groupId>org.aksw.commons</groupId>
-        <version>0.8.1</version>
+        <version>0.8.2</version>
     </parent>
 
     <dependencies>
@@ -35,6 +35,11 @@
         <dependency>
             <groupId>net.sourceforge.collections</groupId>
             <artifactId>collections-generic</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
 
         <dependency>

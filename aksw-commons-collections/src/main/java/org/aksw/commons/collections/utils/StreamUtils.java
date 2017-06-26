@@ -8,7 +8,47 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.google.common.collect.AbstractIterator;
+
 public class StreamUtils {
+
+    public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, long batchSize) {
+
+        Iterator<T> baseIt = stream.iterator();
+
+        Iterator<List<T>> it = new AbstractIterator<List<T>>() {
+            @Override
+            protected List<T> computeNext() {
+                List<T> items = new ArrayList<>((int)batchSize);
+                for(int i = 0; baseIt.hasNext() && i < batchSize; ++i) {
+                    T item = baseIt.next();
+                    items.add(item);
+                }
+
+                List<T> r = items.isEmpty()
+                        ? endOfData()
+                        : items;
+
+                return r;
+            }
+        };
+
+        Iterable<List<T>> tmp = () -> it;
+        Stream<List<T>> result = StreamUtils.stream(tmp);
+        result.onClose(() -> stream.close());
+        return result;
+    }
+
+    public static <T> Stream<T> stream(Iterator<T> it) {
+        Iterable<T> i = () -> it;
+        return stream(i);
+    }
+
+    public static <T> Stream<T> stream(Iterable<T> i) {
+        Stream<T> result = StreamSupport.stream(i.spliterator(), false);
+        return result;
+    }
+
 
     /**
      * Creates a new stream which upon reaching its end performs and action.
@@ -41,9 +81,4 @@ public class StreamUtils {
         return result.stream();
     }
 
-    public static <T> Stream<T> stream(Iterator<T> iterator) {
-    	Iterable<T> i = () -> iterator;
-    	Stream<T> result = StreamSupport.stream(i.spliterator(), false);
-    	return result;
-    }
 }

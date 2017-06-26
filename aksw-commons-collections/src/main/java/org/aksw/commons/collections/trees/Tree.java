@@ -1,10 +1,17 @@
 package org.aksw.commons.collections.trees;
 
+import java.util.Collection;
 import java.util.List;
 
+/**
+ * Maybe a tree is an IndirectTree<K, K>, so that each node represents itself?
+ * @author raven
+ *
+ * @param <T>
+ */
 public interface Tree<T> {
     T getRoot();
-    List<T> getChildren(T node);
+    Collection<T> getChildren(T node);
     T getParent(T node);
 
     /**
