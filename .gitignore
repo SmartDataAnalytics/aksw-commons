@@ -4,6 +4,8 @@
 .settings
 target
 
+pom.xml.versionsBackup
+
 bin
 #cache
 
