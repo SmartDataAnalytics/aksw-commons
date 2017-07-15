@@ -17,15 +17,15 @@ import java.util.List;
 public class CachingIterator<T>
     implements Iterator<T>
 {
-    protected Cache<? extends List<T>> cache;
+    protected Cache<T> cache;
     protected Iterator<T> delegate;
     protected int offset;
 
-    public CachingIterator(Cache<? extends List<T>> cache, Iterator<T> delegate) {
+    public CachingIterator(Cache<T> cache, Iterator<T> delegate) {
         this(cache, delegate, 0);
     }
 
-    public CachingIterator(Cache<? extends List<T>> cache, Iterator<T> delegate, int offset) {
+    public CachingIterator(Cache<T> cache, Iterator<T> delegate, int offset) {
         super();
         this.cache = cache;
         this.delegate = delegate;
@@ -41,13 +41,13 @@ public class CachingIterator<T>
         int cacheSize = cache.getData().size();
         if(offset < cacheSize) { // logical or: assuming offset == cache.size()
             result = true;
-        } else if(cache.isComplete()) {
+        } else if(cache.isComplete() || cache.isAbandoned()) {
             result = false;
         } else {
             result = delegate.hasNext();
 
             if(!result) {
-                cache.setComplete(true);
+                cache.setComplete();//true);
             }
         }
 
@@ -62,19 +62,21 @@ public class CachingIterator<T>
 
         // Inform all possibly waiting client on the cache
         // that data has been added so that they can commence
-        synchronized(cache) {
-    
-            // Check if item at index i is already cached
-            if(offset < cacheData.size()) {
-                result = cacheData.get(offset);
-            } else {
-                result = delegate.next();
-    
-                cacheData.add(result);
+        //synchronized(cache) {
 
-                cache.notifyAll();
-            }
+            // Check if item at index i is already cached
+        if(offset < cacheData.size()) {
+            result = cacheData.get(offset);
+        } else {
+            result = delegate.next();
+
+            // It is important to use cache.add here (instead of cacheDada.add)
+            // because the former is expected to call cache.notifyAll()
+            cache.add(result);
+            //cache.add(result);
+            //cache.notifyAll();
         }
+        //}
 
         ++offset;
         return result;

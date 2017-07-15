@@ -171,33 +171,35 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.7</version>
-                <scope>test</scope>
+<!--                 <scope>test</scope> -->
             </dependency>
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-                <type>jar</type>
-                <scope>compile</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-ext</artifactId>
                 <version>${slf4j.version}</version>
-                <type>jar</type>
-                <scope>compile</scope>
             </dependency>
 
             <!-- Usually we depend on slf4j, but for testing we depend on a concrete
                 implementation -->
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.16</version>
-                <scope>test</scope>
-            </dependency>
+<!--             <dependency> -->
+<!--                 <groupId>log4j</groupId> -->
+<!--                 <artifactId>log4j</artifactId> -->
+<!--                 <version>1.2.16</version> -->
+<!--                 <scope>test</scope> -->
+<!--             </dependency> -->
 
             <!-- Used for SQL-Escapting (StringEscapeUtils) -->
             <dependency>
