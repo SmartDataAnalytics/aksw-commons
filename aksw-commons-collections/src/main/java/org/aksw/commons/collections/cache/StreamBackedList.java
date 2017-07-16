@@ -36,13 +36,17 @@ public class StreamBackedList<T>
             try {
                 Iterator<T> it = stream.iterator();
                 while(it.hasNext() && !Thread.interrupted()) {
+//                    logger.info("About to read an item.");
                     T item = it.next();
+//                    logger.info("Read: " + item);
                     this.add(item);
+//                    logger.info("Added: " + item);
                 }
-                setComplete();
+//                logger.info("Complete");
+                this.setComplete();
             } catch(Exception e) {
                 logger.warn("Unexpected error", e);
-                setAbandoned(true);
+                this.setAbandoned();
             } finally {
                 try {
                     stream.close();
