@@ -1,7 +1,6 @@
 package org.aksw.commons.collections.cache;
 
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * In iterator that adds items to a cache as it proceeds.
@@ -38,7 +37,7 @@ public class CachingIterator<T>
     @Override
     public boolean hasNext() {
         boolean result;
-        int cacheSize = cache.getData().size();
+        int cacheSize = cache.getCurrentSize();
         if(offset < cacheSize) { // logical or: assuming offset == cache.size()
             result = true;
         } else if(cache.isComplete() || cache.isAbandoned()) {
@@ -58,15 +57,15 @@ public class CachingIterator<T>
     public T next() {
         T result;
 
-        List<T> cacheData = cache.getData();
+        //List<T> cacheData = cache.getData();
 
         // Inform all possibly waiting client on the cache
         // that data has been added so that they can commence
         //synchronized(cache) {
 
             // Check if item at index i is already cached
-        if(offset < cacheData.size()) {
-            result = cacheData.get(offset);
+        if(offset < cache.getCurrentSize()) {
+            result = cache.get(offset);
         } else {
             result = delegate.next();
 

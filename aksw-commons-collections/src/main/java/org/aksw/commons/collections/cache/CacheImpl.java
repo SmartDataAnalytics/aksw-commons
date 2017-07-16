@@ -1,6 +1,6 @@
 package org.aksw.commons.collections.cache;
 
-import java.util.AbstractCollection;
+import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,7 +16,8 @@ import java.util.List;
  */
 
 public class CacheImpl<T>
-    extends AbstractCollection<T>
+    //extends AbstractCollection<T>
+    extends AbstractList<T>
     implements Cache<T>
 //    implements CacheX<T>
 {
@@ -59,6 +60,10 @@ public class CacheImpl<T>
 
     @Override
     public synchronized boolean add(T e) {
+        if(isComplete()) {
+            throw new RuntimeException("Cannot add data to completed cache");
+        }
+
         boolean result = data.add(e);
         notifyAll();
         return result;
@@ -66,24 +71,100 @@ public class CacheImpl<T>
 
     @Override
     public Iterator<T> iterator() {
-        Iterator<T> result = new BlockingCacheIterator<>(this);
+        Iterator<T> result = new IndexBasedIterator<>(this);
         return result;
     }
 
+
+    @Override
+    public synchronized int size() {
+        // Wait until the data is complete
+        synchronized(this) {
+            while(!isComplete() && !isAbandoned()) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+
+        if(isAbandoned()) {
+            throw new RuntimeException("Collection was abandoned");
+        }
+
+        // Implicit isComplete() here
+        int result = data.size();
+        return result;
+    }
 
     /**
      * Size returns the current number of items in the cache
      */
     @Override
-    public synchronized int size() {
+    public synchronized int getCurrentSize() {
         int result = data.size();
         return result;
     }
+
 
     @Override
     public void setComplete() {
         setComplete(true);
     }
+
+    @Override
+    public void setAbandoned() {
+        setAbandoned(true);
+    }
+
+    /**
+     * A call to get blocks until the cache is complete
+     */
+    @Override
+    public T get(int index) {
+
+        // Wait until the cache is abandoned, or more data to becomes available or the cache is complete
+        int maxIndex;
+        synchronized(this) {
+            while(index >= (maxIndex = getCurrentSize()) && !isComplete() && !isAbandoned()) {
+                try {
+                    wait();
+                } catch(InterruptedException e) {
+                    //break;
+                }
+            }
+        }
+
+        T result;
+        if(index <= maxIndex) {
+            result = data.get(index);
+        } else {
+            throw new IndexOutOfBoundsException(index + " >= " + maxIndex);
+        }
+
+        return result;
+
+        // Create an iterator up to the size of the data
+//        priorIt = offset == maxIndex || cache.isAbandoned()
+//                ? null
+//                : new IndexBasedIterator<>(data, offset, maxIndex);
+//
+//        if(priorIt == null) {
+//            logger.debug("cache iteration complete");
+//        } else {
+//            logger.debug("cache iteration from [" + priorIt.getOffset() + "," + priorIt.getMaxIndex() + ")");
+//        }
+//
+//        return priorIt;
+    }
+
+    @Override
+    public synchronized void close() throws Exception {
+        if(!isComplete()) {
+            setAbandoned();
+        }
+    }
+
 
 
 //    public int size() {

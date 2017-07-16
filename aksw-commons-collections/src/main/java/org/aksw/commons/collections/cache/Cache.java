@@ -1,14 +1,15 @@
 package org.aksw.commons.collections.cache;
 
-import java.util.Collection;
 import java.util.List;
 
 public interface Cache<T>
-    extends Collection<T>
+    extends List<T>, AutoCloseable
 {
-    List<T> getData();
+    int getCurrentSize();
+    //List<T> getData();
     boolean isAbandoned();
     boolean isComplete();
 
+    void setAbandoned();
     void setComplete();
 }

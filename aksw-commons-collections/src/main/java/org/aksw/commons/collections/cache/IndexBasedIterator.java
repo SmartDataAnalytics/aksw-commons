@@ -9,22 +9,31 @@ public class IndexBasedIterator<T>
     protected List<T> list;
     protected int offset;
 
-    protected int maxIndex;
-
-    public IndexBasedIterator(List<T> list, int maxIndex) {
-        this(list, 0, maxIndex);
+    public IndexBasedIterator(List<T> list) {
+        this(list, 0);
     }
 
-    public IndexBasedIterator(List<T> list, int offset, int maxIndex) {
+    public IndexBasedIterator(List<T> list, int offset) {
         super();
         this.list = list;
         this.offset = offset;
-        this.maxIndex = maxIndex;
     }
 
+    /**
+     * Simply try to access an element by index.
+     * This way, a lazy loading list can block the call to .get() until it knows whether there is sufficient data.
+     */
     @Override
     public boolean hasNext() {
-        boolean result = offset < maxIndex;
+        boolean result;
+        try {
+            list.get(offset);
+            ++offset;
+            result = true;
+        } catch(IndexOutOfBoundsException e) {
+            result = false;
+        }
+
         return result;
     }
 
@@ -38,12 +47,8 @@ public class IndexBasedIterator<T>
         return offset;
     }
 
-    public int getMaxIndex() {
-        return maxIndex;
-    }
-
     @Override
     public String toString() {
-        return "IndexBasedIterator [list=" + list + ", offset=" + offset + ", maxIndex=" + maxIndex + "]";
+        return "IndexBasedIterator [list=" + list + ", offset=" + offset + "]";
     }
 }

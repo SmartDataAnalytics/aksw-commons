@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 
@@ -49,8 +50,8 @@ public class TestBlockingCacheIterator {
         throw new ConcurrentModificationException();
     }
 
-    @Test
-    public void test() {
+    //@Test
+    public void testOld() {
         //List<String> testData = Arrays.asList("john", "doe", "alice", "bob");
         List<String> testData = IntStream.range(0, 1000).mapToObj(i -> "item-" + i).collect(Collectors.toList());
         Cache<String> cache = new CacheImpl<>(new ArrayList<>());
@@ -76,6 +77,24 @@ public class TestBlockingCacheIterator {
             String item = it.next();
             System.out.println("Client: " + item);
         }
+
+    }
+
+
+    @Test
+    public void test() throws Exception {
+        Stream<String> testDataStream = IntStream
+                .range(0, 1000)
+                .mapToObj(i -> "item-" + i)
+                .peek(i -> System.out.println("Driver: " + i));
+
+        try(Cache<String> cache = new StreamBackedList<>(testDataStream)) {
+            for(String item : cache) {
+                System.out.println("Client: " + item);
+            }
+        }
+
+        System.out.println("Done.");
 
     }
 
