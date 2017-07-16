@@ -28,7 +28,6 @@ public class IndexBasedIterator<T>
         boolean result;
         try {
             list.get(offset);
-            ++offset;
             result = true;
         } catch(IndexOutOfBoundsException e) {
             result = false;
@@ -39,7 +38,8 @@ public class IndexBasedIterator<T>
 
     @Override
     public T next() {
-        T result = list.get(offset++);
+        T result = list.get(offset);
+        ++offset;
         return result;
     }
 
