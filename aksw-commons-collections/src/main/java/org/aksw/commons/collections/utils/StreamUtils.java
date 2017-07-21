@@ -12,6 +12,14 @@ import com.google.common.collect.AbstractIterator;
 
 public class StreamUtils {
 
+    /**
+     * Note we could implement another version where each batch's List is lazy loaded from the stream -
+     * but this would probably require complete consumption of each batch in order
+     *
+     * @param stream
+     * @param batchSize
+     * @return
+     */
     public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, long batchSize) {
 
         Iterator<T> baseIt = stream.iterator();
