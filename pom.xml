@@ -6,7 +6,7 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>aksw-commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.8.2</version>
+    <version>0.8.3</version>
     <name>AKSW Commons parent</name>
     <description>A library of commonly used classes in AKSW applications.</description>
     <url>https://github.com/AKSW/aksw-commons</url>
@@ -171,33 +171,35 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.7</version>
-                <scope>test</scope>
+<!--                 <scope>test</scope> -->
             </dependency>
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-                <type>jar</type>
-                <scope>compile</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-ext</artifactId>
                 <version>${slf4j.version}</version>
-                <type>jar</type>
-                <scope>compile</scope>
             </dependency>
 
             <!-- Usually we depend on slf4j, but for testing we depend on a concrete
                 implementation -->
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.16</version>
-                <scope>test</scope>
-            </dependency>
+<!--             <dependency> -->
+<!--                 <groupId>log4j</groupId> -->
+<!--                 <artifactId>log4j</artifactId> -->
+<!--                 <version>1.2.16</version> -->
+<!--                 <scope>test</scope> -->
+<!--             </dependency> -->
 
             <!-- Used for SQL-Escapting (StringEscapeUtils) -->
             <dependency>
@@ -230,7 +232,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>19.0</version>
+                <version>22.0</version>
             </dependency>
 
             <dependency>

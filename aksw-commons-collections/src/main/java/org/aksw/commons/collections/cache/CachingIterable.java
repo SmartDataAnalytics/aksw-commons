@@ -2,7 +2,6 @@ package org.aksw.commons.collections.cache;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import com.google.common.collect.Iterables;
 
@@ -17,15 +16,15 @@ public class CachingIterable<T>
     implements Iterable<T>
 {
     protected Iterator<T> delegate;
-    protected Cache<? extends List<T>> cache; // = new Cache<T, C>();
+    protected Cache<T> cache; // = new Cache<T, C>();
 
     public CachingIterable(Iterator<T> delegate) {
         super();
         this.delegate = delegate;
-        this.cache = new Cache<>(new ArrayList<>());
+        this.cache = new CacheImpl<>(new ArrayList<>());
     }
 
-    public CachingIterable(Iterator<T> delegate, Cache<? extends List<T>> cache) {
+    public CachingIterable(Iterator<T> delegate, Cache<T> cache) {
         super();
         this.delegate = delegate;
         this.cache = cache;

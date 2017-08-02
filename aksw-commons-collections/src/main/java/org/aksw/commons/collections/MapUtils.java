@@ -19,6 +19,16 @@ import com.google.common.collect.Sets;
  */
 public class MapUtils {
 
+    public static <T> int addWithIntegerAutoIncrement(Map<T, Integer> map, T key) {
+        int result = map.computeIfAbsent(key, (k) -> map.size());
+        return result;
+    }
+
+    public static <T> long addWithLongAutoIncrement(Map<T, Long> map, T key) {
+        long result = map.computeIfAbsent(key, (k) -> (long)map.size());
+        return result;
+    }
+
     public static void removeAll(Map<?, ?> map, Iterable<?> items) {
         for(Object o : items) {
             map.remove(o);
