@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.Streams;
 
 public class StreamUtils {
 
@@ -20,14 +21,14 @@ public class StreamUtils {
      * @param batchSize
      * @return
      */
-    public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, long batchSize) {
+    public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, int batchSize) {
 
         Iterator<T> baseIt = stream.iterator();
 
         Iterator<List<T>> it = new AbstractIterator<List<T>>() {
             @Override
             protected List<T> computeNext() {
-                List<T> items = new ArrayList<>((int)batchSize);
+                List<T> items = new ArrayList<>(batchSize);
                 for(int i = 0; baseIt.hasNext() && i < batchSize; ++i) {
                     T item = baseIt.next();
                     items.add(item);
@@ -42,20 +43,20 @@ public class StreamUtils {
         };
 
         Iterable<List<T>> tmp = () -> it;
-        Stream<List<T>> result = StreamUtils.stream(tmp);
+        Stream<List<T>> result = Streams.stream(tmp);
         result.onClose(() -> stream.close());
         return result;
     }
 
-    public static <T> Stream<T> stream(Iterator<T> it) {
-        Iterable<T> i = () -> it;
-        return stream(i);
-    }
-
-    public static <T> Stream<T> stream(Iterable<T> i) {
-        Stream<T> result = StreamSupport.stream(i.spliterator(), false);
-        return result;
-    }
+//    public static <T> Stream<T> stream(Iterator<T> it) {
+//        Iterable<T> i = () -> it;
+//        return stream(i);
+//    }
+//
+//    public static <T> Stream<T> stream(Iterable<T> i) {
+//        Stream<T> result = StreamSupport.stream(i.spliterator(), false);
+//        return result;
+//    }
 
 
     /**
