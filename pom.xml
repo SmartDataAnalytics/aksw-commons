@@ -6,7 +6,7 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>aksw-commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.8.4-SNAPSHOT</version>
+    <version>0.8.4</version>
     <name>AKSW Commons parent</name>
     <description>A library of commonly used classes in AKSW applications.</description>
     <url>https://github.com/AKSW/aksw-commons</url>
