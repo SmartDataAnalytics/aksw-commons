@@ -10,7 +10,7 @@
     <parent>
         <artifactId>aksw-commons-parent</artifactId>
         <groupId>org.aksw.commons</groupId>
-        <version>0.8.5-SNAPSHOT</version>
+        <version>0.8.6-SNAPSHOT</version>
     </parent>
 
     <dependencies>

@@ -6,7 +6,7 @@
     <groupId>org.aksw.commons</groupId>
     <artifactId>aksw-commons-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.8.5-SNAPSHOT</version>
+    <version>0.8.6-SNAPSHOT</version>
     <name>AKSW Commons parent</name>
     <description>A library of commonly used classes in AKSW applications.</description>
     <url>https://github.com/AKSW/aksw-commons</url>
@@ -59,18 +59,18 @@
     <build>
         <plugins>
             <!-- That's a sledge hammer solution - but at least it works ... -->
-            <!-- <plugin> -->
-            <!-- <groupId>org.apache.maven.plugins</groupId> -->
-            <!-- <artifactId>maven-release-plugin</artifactId> -->
-            <!-- <version>2.5.2</version> -->
-            <!-- <configuration> -->
-            <!-- arguments>-P!source-artifacts</arguments -->
-            <!-- <goals>deploy</goals> -->
-            <!-- <useReleaseProfile>false</useReleaseProfile> -->
-            <!-- <releaseProfiles>release</releaseProfiles> -->
-            <!-- <autoVersionSubmodules>true</autoVersionSubmodules> -->
-            <!-- </configuration> -->
-            <!-- </plugin> -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <arguments>-P!source-artifacts</arguments>
+                    <goals>deploy</goals>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
 
             <!-- For jgitflow doc see: https://bitbucket.org/atlassian/jgit-flow/wiki/goals.wiki -->
 
@@ -171,7 +171,7 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.7</version>
-<!--                 <scope>test</scope> -->
+                <!-- <scope>test</scope> -->
             </dependency>
 
             <dependency>
@@ -194,12 +194,12 @@
 
             <!-- Usually we depend on slf4j, but for testing we depend on a concrete
                 implementation -->
-<!--             <dependency> -->
-<!--                 <groupId>log4j</groupId> -->
-<!--                 <artifactId>log4j</artifactId> -->
-<!--                 <version>1.2.16</version> -->
-<!--                 <scope>test</scope> -->
-<!--             </dependency> -->
+            <!-- <dependency> -->
+            <!-- <groupId>log4j</groupId> -->
+            <!-- <artifactId>log4j</artifactId> -->
+            <!-- <version>1.2.16</version> -->
+            <!-- <scope>test</scope> -->
+            <!-- </dependency> -->
 
             <!-- Used for SQL-Escapting (StringEscapeUtils) -->
             <dependency>
@@ -340,5 +340,19 @@
             <url>http://maven.aksw.org/archiva/repository/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>maven.aksw.snapshots</id>
+            <name>AKSW Snapshot Repository</name>
+            <url>http://maven.aksw.org/archiva/repository/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
 </project>
