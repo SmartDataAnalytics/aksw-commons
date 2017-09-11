@@ -357,15 +357,21 @@ public class TreeUtils {
         return result;
     }
 
-    public static <T> List<T> getLeafs(Tree<T> tree) {
+
+    public static <T> Stream<T> leafStream(Tree<T> tree) {
         T root = tree.getRoot();
-        List<T> result = inOrderSearch(root, tree::getChildren)
-            .filter(node -> node == null ? true : tree.getChildren(node).isEmpty())
-            .collect(Collectors.toList());
+        Stream<T> result = inOrderSearch(root, tree::getChildren)
+            .filter(node -> node == null ? true : tree.getChildren(node).isEmpty());
 
 //        List<T> result = new ArrayList<T>();
 //        T root = tree.getRoot();
 //        getLeafs(result, tree, root);
+        return result;
+    }
+
+    public static <T> List<T> getLeafs(Tree<T> tree) {
+        List<T> result = leafStream(tree).collect(Collectors.toList());
+
         return result;
     }
 
