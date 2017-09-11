@@ -25,9 +25,16 @@ import org.aksw.commons.collections.multimaps.MultimapUtils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 public class TreeUtils {
+
+
+    public static <T> Multimap<T, T> groupByParent(Tree<T> tree, Collection<T> nodes, Multimap<T, T> result) {
+        MultimapUtils.groupBy(nodes, tree::getParent, result);
+        return result;
+    }
 
 //	Predicate<T> p = x -> !(x instanceof OpService);
     /**
@@ -279,6 +286,44 @@ public class TreeUtils {
                             parentToChildren,
                             nodeToValue,
                             doDescend)));
+        }
+
+        return result;
+    }
+
+
+
+    /**
+     * For each level, yield the inner nodes
+     *
+     * The root node will always be part of the list, even if it does not have children
+     */
+    public static <T> List<List<T>> innerNodesPerLevel(Tree<T> tree) {
+        List<List<T>> result = new ArrayList<>();
+
+        //Set<T> current = Collections.singleton(tree.getRoot());
+        T root = tree.getRoot();
+        List<T> current = Collections.singletonList(root);
+        while(!current.isEmpty()) {
+            List<T> next = new ArrayList<>();//current.size());
+
+            //            result.add(current);
+            //Set<T> next = new LinkedHashSet<>();
+            //List<T> next = new ArrayList<>(current.size());
+            for(T node : current) {
+                Collection<T> children = tree.getChildren(node);
+                if(!children.isEmpty() || node == root) {
+                    next.add(node);
+                }
+
+                //next.addAll(children);
+            }
+
+            if(!next.isEmpty()) {
+                result.add(next);
+            }
+
+            current = next;
         }
 
         return result;

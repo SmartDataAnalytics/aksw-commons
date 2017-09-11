@@ -1,5 +1,9 @@
 package org.aksw.commons.collections.trees;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Data structure that pairs a tree with one of its nodes.
  * Useful to keep references to specific nodes in a tree while still allowing traversal.
@@ -26,6 +30,20 @@ public class TreeNodeImpl<T>
 
     public T getNode() {
         return node;
+    }
+
+    @Override
+    public TreeNode<T> getParent() {
+        T tmp = tree.getParent(node);
+        TreeNode<T> result = new TreeNodeImpl<>(tree, tmp);
+        return result;
+    }
+
+    @Override
+    public Collection<TreeNode<T>> getChildren() {
+        Collection<T> tmp = tree.getChildren(node);
+        List<TreeNode<T>> result = tmp.stream().map(child -> new TreeNodeImpl<>(tree, child)).collect(Collectors.toList());
+        return result;
     }
 
     @Override
