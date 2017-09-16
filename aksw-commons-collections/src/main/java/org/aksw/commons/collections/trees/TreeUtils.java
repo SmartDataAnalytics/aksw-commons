@@ -548,6 +548,16 @@ public class TreeUtils {
         return result;
     }
 
+
+    public static <T> T getFirstMultiaryAncestor(Tree<T> tree, T node) {
+        T result = node;
+        do {
+            result = tree.getParent(result);
+        } while(result != null && tree.getChildren(result).size() == 1);
+
+        return result;
+    }
+
     /**
      * Return a node's first ancestor having an arity > 1
      * null if there is none.
