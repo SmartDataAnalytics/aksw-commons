@@ -3,8 +3,6 @@ package org.aksw.commons.collections.trees;
 import java.util.Collection;
 import java.util.List;
 
-import com.google.common.base.Equivalence;
-
 /**
  * Maybe a tree is an IndirectTree<K, K>, so that each node represents itself?
  * @author raven
