@@ -8,10 +8,10 @@
     <version>0.8.7-SNAPSHOT</version>
     <name>AKSW Commons parent</name>
     <description>A library of commonly used classes in AKSW applications.</description>
-    <url>https://github.com/AKSW/aksw-commons</url>
+    <url>https://github.com/SmartDataAnalytics/aksw-commons</url>
 
     <issueManagement>
-        <url>https://github.com/AKSW/aksw-commons/issues</url>
+        <url>https://github.com/SmartDataAnalytics/aksw-commons/issues</url>
         <system>GitHub</system>
     </issueManagement>
 
@@ -24,9 +24,9 @@
     </licenses>
 
     <scm>
-        <url>https://github.com/AKSW/aksw-commons</url>
-        <connection>scm:git:git://github.com/AKSW/aksw-commons.git</connection>
-        <developerConnection>scm:git:git@github.com:AKSW/aksw-commons.git</developerConnection>
+        <url>https://github.com/SmartDataAnalytics/aksw-commons</url>
+        <connection>scm:git:git://github.com/SmartDataAnalytics/aksw-commons.git</connection>
+        <developerConnection>scm:git:git@github.com:SmartDataAnalytics/aksw-commons.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
