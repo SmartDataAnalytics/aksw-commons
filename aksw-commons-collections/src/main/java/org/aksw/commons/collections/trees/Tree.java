@@ -14,6 +14,8 @@ public interface Tree<T> {
     Collection<T> getChildren(T node);
     T getParent(T node);
 
+    //Equivalence<T> getEquivalence();
+
     /**
      * Copies a given node thereby setting the provided children as its children.
      *

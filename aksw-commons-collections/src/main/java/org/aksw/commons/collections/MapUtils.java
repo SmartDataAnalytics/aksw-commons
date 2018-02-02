@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -62,13 +63,13 @@ public class MapUtils {
      * @param b
      * @return
      */
-    public static <K, V> boolean isCompatible(Map<K, V> a, Map<K, V> b) {
-        Set<K> commonKeys = Sets.intersection(a.keySet(), b.keySet());
+    public static <K, V> boolean isCompatible(Map<? extends K, ? extends V> a, Map<? extends K, ? extends V> b) {
+        Set<? extends K> commonKeys = Sets.intersection(a.keySet(), b.keySet());
         boolean result = isCompatible(commonKeys, a, b);
         return result;
     }
 
-    public static <K, V> boolean isCompatible(Set<K> keysToTest, Map<K, V> a, Map<K, V> b) {
+    public static <K, V> boolean isCompatible(Set<? extends K> keysToTest, Map<? extends K, ? extends V> a, Map<? extends K, ? extends V> b) {
         boolean result = true;
         for(K key : keysToTest) {
             V av = a.get(key);
@@ -235,11 +236,11 @@ public class MapUtils {
     //        return result;
     //    }
 
-        public static <K, V> Map<K, V> mergeCompatible(Iterable<Map<K, V>> maps) {
-            Map<K, V> result = new HashMap<K, V>();
+        public static <K, V, R extends Map<K, V>> R mergeCompatible(Iterable<? extends Map<? extends K, ? extends V>> maps, Supplier<R> resultSupplier) {
+            R result = resultSupplier.get();
 
-            for(Map<K, V> map : maps) {
-                if(isPartiallyCompatible(map, result)) {
+            for(Map<? extends K, ? extends V> map : maps) {
+                if(isCompatible(map, result)) {
                     result.putAll(map);
                 } else {
                     result = null;
@@ -250,8 +251,14 @@ public class MapUtils {
             return result;
         }
 
-    public static <K, V> Map<K, V> mergeCompatible(Map<K, V> a, Map<K, V> b) {
-        Map<K, V> result = mergeCompatible(Arrays.asList(a, b));
+//    public static <K, V, R extends Map<K, V>> R mergeCompatible(Map<K, V> a, Map<K, V> b, Supplier<R> resultSupplier) {
+//        R result = mergeCompatible(Arrays.asList(a, b), resultSupplier);
+//        return result;
+//    }
+
+    public static <K, V, R extends Map<K, V>> R mergeCompatible(Map<? extends K, ? extends V> a, Map<? extends K, ? extends V> b, Supplier<R> resultSupplier) {
+        R result = mergeCompatible(Arrays.asList(a, b), resultSupplier);
         return result;
     }
+
 }
