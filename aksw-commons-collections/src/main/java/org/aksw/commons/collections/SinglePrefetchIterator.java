@@ -28,6 +28,8 @@ public abstract class SinglePrefetchIterator<T>
 
 	private boolean advance     = true;
 
+	private boolean wasNextCalled = false;
+	
 	protected abstract T prefetch()
 		throws Exception;
 
@@ -57,6 +59,7 @@ public abstract class SinglePrefetchIterator<T>
 	@Override
 	public boolean hasNext()
 	{
+		wasNextCalled = false;
 		if(advance) {
 			_prefetch();
 			advance = false;
@@ -68,6 +71,8 @@ public abstract class SinglePrefetchIterator<T>
 	@Override
 	public T next()
 	{
+		wasNextCalled = true;
+		
 		if(finished) {
 			throw new IndexOutOfBoundsException();
 		}
@@ -90,8 +95,16 @@ public abstract class SinglePrefetchIterator<T>
 	}
 
 	@Override
-	public void remove()
+	public final void remove()
 	{
+		if(!wasNextCalled) {
+			throw new RuntimeException("remove must not be called after .hasNext() - invoke .next() first");
+		}
+
+		doRemove();
+	}
+	
+	protected void doRemove() {
 		throw new UnsupportedOperationException("Not supported.");
 	}
 }
