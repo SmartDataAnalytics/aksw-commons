@@ -10,6 +10,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -29,6 +30,27 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 public class TreeUtils {
+
+    public static <T> T findAncestor(T node, Function<? super T, ? extends T> getParent, java.util.function.Predicate<T> predicate) {
+        Objects.requireNonNull(node);
+    	
+    	T current = node;
+        do {
+        	boolean isMatch = predicate.test(current);
+        	if(isMatch) {	        		
+        		break;
+        	}
+        	
+            current = getParent.apply(current);
+        } while(current != null);
+
+        return current;
+    }
+    
+	public static <T> T findRoot(T start, Function<? super T, ? extends T> getParent) {
+		T result = findAncestor(start, getParent, x -> getParent.apply(x) == null);
+		return result;
+	}
 
 
     public static <T> Multimap<T, T> groupByParent(Tree<T> tree, Collection<T> nodes, Multimap<T, T> result) {
