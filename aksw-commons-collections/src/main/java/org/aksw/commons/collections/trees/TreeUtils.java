@@ -25,10 +25,37 @@ import org.aksw.commons.collections.multimaps.MultimapUtils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 public class TreeUtils {
+
+    public static <T> T getRoot(T item, Function<? super T, ? extends T> predecessor) {
+    	T result = findSuccessor(item, predecessor, (n, pred) -> pred == null);
+    	return result;
+    }
+    
+    /**
+     * 
+     * 
+     * @param item
+     * @param successor
+     * @param predicate Receives the current item and its successor
+     * @return
+     */
+    public static <T> T findSuccessor(T item, Function<? super T, ? extends T> successor, BiPredicate<? super T, ? super T> predicate) {
+        T result = item;
+        while(true) {
+        	T parentItem = successor.apply(result);
+        	boolean test = predicate.test(result, parentItem) || (result == null && parentItem == null);
+        	if(test) {
+        		break;
+        	}
+            result = parentItem;
+        }
+
+        return result;
+    }
+
 
 
     public static <T> Multimap<T, T> groupByParent(Tree<T> tree, Collection<T> nodes, Multimap<T, T> result) {
@@ -222,6 +249,8 @@ public class TreeUtils {
      * @param tree
      * @param node
      * @param predicate
+     *
+     * TODO Make use of find successor()
      *
      * @return
      */
