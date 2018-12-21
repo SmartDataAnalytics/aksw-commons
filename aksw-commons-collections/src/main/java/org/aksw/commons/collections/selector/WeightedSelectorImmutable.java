@@ -12,7 +12,8 @@ import com.google.common.base.Functions;
 import com.google.common.collect.Maps;
 
 /**
- * Immutable selector over a collection of (item, weight[double]) pairs.
+ * Immutable selector over an immutable collection of (item, weight) pairs.
+ * Weights are internally treated as doubles, however, any subclass of Number may be used in the pair itself.
  * Access complexity is O(Log(n))
  * 
  * 
@@ -25,29 +26,29 @@ import com.google.common.collect.Maps;
 public class WeightedSelectorImmutable<T>
 	implements WeightedSelector<T>
 {
-	protected NavigableMap<Double, Entry<T, Double>> offsetToEntry;
+	protected NavigableMap<Double, Entry<T, ? extends Number>> offsetToEntry;
 	protected double nextOffset;
 
 	public WeightedSelectorImmutable<T> clone() {
 		return this;
 	}
 	
-	public WeightedSelectorImmutable(NavigableMap<Double, Entry<T, Double>> offsetToEntry, double nextOffset) {
+	public WeightedSelectorImmutable(NavigableMap<Double, Entry<T, ? extends Number>> offsetToEntry, double nextOffset) {
 		super();
 		this.nextOffset = nextOffset;
 		this.offsetToEntry = offsetToEntry;
 	}
 
 	@Override
-	public Entry<T, Double> sampleEntry(Double t) {
+	public Entry<T, ? extends Number> sampleEntry(Number t) {
 		double d = Objects.requireNonNull(t).doubleValue();
 		if(d < 0.0 || d > 1.0) {
 			throw new IllegalArgumentException("Argument must be in the interval [0, 1]");
 		}
 		
-		double key = t * nextOffset;
+		double key = d * nextOffset;
 		
-		Entry<T, Double> result = offsetToEntry == null || offsetToEntry.isEmpty() ? null : offsetToEntry.floorEntry(key).getValue();
+		Entry<T, ? extends Number> result = offsetToEntry == null || offsetToEntry.isEmpty() ? null : offsetToEntry.floorEntry(key).getValue();
 		
 		return result;
 	}
@@ -65,14 +66,14 @@ public class WeightedSelectorImmutable<T>
 	}
 
 	public static <X, T> WeightedSelectorImmutable<T> create(Iterable<X> items, Function<? super X, ? extends T> getEntity, Function<? super X, ? extends Number> getWeight) {
-		NavigableMap<Double, Entry<T, Double>> offsetToEntry = new TreeMap<>();
+		NavigableMap<Double, Entry<T, ? extends Number>> offsetToEntry = new TreeMap<>();
 		
 		double nextOffset = 0.0;		
 		for(X item : items) {
 			T entity = getEntity.apply(item);
 			double itemWeight = getWeight.apply(item).doubleValue();
 
-			Entry<T, Double> e = Maps.immutableEntry(entity, itemWeight);
+			Entry<T, ? extends Number> e = Maps.immutableEntry(entity, itemWeight);
 			if(itemWeight < 0) {
 				throw new RuntimeException("Item weights must be >= 0, encountered: " + e);
 			}
@@ -87,7 +88,7 @@ public class WeightedSelectorImmutable<T>
 	}
 
 	@Override
-	public Collection<Entry<T, Double>> entries() {
+	public Collection<Entry<T, ? extends Number>> entries() {
 		return offsetToEntry.values();
 	}
 }

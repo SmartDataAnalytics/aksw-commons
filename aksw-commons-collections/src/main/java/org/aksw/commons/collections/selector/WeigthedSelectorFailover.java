@@ -30,14 +30,14 @@ public class WeigthedSelectorFailover<T>
 	}
 
 	@Override
-	public Entry<T, Double> sampleEntry(Double t) {
+	public Entry<T, ? extends Number> sampleEntry(Number t) {
 		WeightedSelector<T> delegate = primary.isEmpty() ? failover : primary;
 		return delegate.sampleEntry(t);
 	}
 
 	@Override
-	public Collection<Entry<T, Double>> entries() {
-		List<Entry<T, Double>> result = new ArrayList<>();
+	public Collection<Entry<T, ? extends Number>> entries() {
+		List<Entry<T, ? extends Number>> result = new ArrayList<>();
 		result.addAll(primary.entries());
 		result.addAll(failover.entries());
 		return result;
