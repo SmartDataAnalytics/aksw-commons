@@ -77,6 +77,10 @@ public abstract class WeightedSelectorMutableBase<T>
 	}
 	
 	public void put(Entry<T, ? extends Number> e) {
+		if(e.getValue().doubleValue() < 0) {
+			throw new IllegalArgumentException("Negative weights are not supported; got: " + e);
+		}
+
 		entries.add(e);
 		nextOffset += eps(e.getValue().doubleValue());
 	}
@@ -87,7 +91,7 @@ public abstract class WeightedSelectorMutableBase<T>
 		}
 	}
 	
-	public boolean remove(Entry<T, Double> e) {
+	public boolean remove(Object e) {
 		boolean result = entries.removeIf(item -> Objects.equals(item, e));
 		return result;
 	}
