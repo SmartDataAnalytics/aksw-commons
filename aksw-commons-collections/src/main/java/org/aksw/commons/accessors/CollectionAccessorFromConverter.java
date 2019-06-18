@@ -20,7 +20,7 @@ public class CollectionAccessorFromConverter<T, B>
 	@Override
 	public Collection<T> get() {
 		Collection<B> tmp = delegate.get();
-		CollectionFromConverter<T, B> result = new CollectionFromConverter<>(tmp, converter);
+		CollectionFromConverter<T, B, ?> result = new CollectionFromConverter<>(tmp, converter);
 		return result;
 		
 	}	
