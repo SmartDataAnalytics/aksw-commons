@@ -1,6 +1,5 @@
 package org.aksw.commons.util.reflect;
 
-import com.sun.org.apache.xalan.internal.xsltc.util.IntegerArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
