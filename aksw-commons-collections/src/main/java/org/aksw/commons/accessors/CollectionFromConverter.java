@@ -104,7 +104,7 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 				return finish();
 			}
 			@Override
-			public void doRemove() { baseIt.remove(); }
+			public void doRemove(F item) { baseIt.remove(); }
 		};
 	}
 	

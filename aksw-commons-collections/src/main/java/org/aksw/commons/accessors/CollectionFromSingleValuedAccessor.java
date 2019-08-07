@@ -43,7 +43,7 @@ public class CollectionFromSingleValuedAccessor<T>
 			}
 			
 			@Override
-			protected void doRemove() {
+			protected void doRemove(T item) {
 				accessor.set(null);
 			}
 		};		

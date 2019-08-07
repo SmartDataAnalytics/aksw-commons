@@ -77,8 +77,9 @@ public abstract class SinglePrefetchIterator<T>
 			throw new IndexOutOfBoundsException();
 		}
 
-		if(advance)
+		if(advance) {
 			_prefetch();
+		}
 
 		advance = true;
 		return current;
@@ -101,10 +102,14 @@ public abstract class SinglePrefetchIterator<T>
 			throw new RuntimeException("remove must not be called after .hasNext() - invoke .next() first");
 		}
 
-		doRemove();
+		doRemove(current);
 	}
 	
-	protected void doRemove() {
+//	public T getCurrent() {
+//		return current;
+//	}
+	
+	protected void doRemove(T item) {
 		throw new UnsupportedOperationException("Not supported.");
 	}
 }
