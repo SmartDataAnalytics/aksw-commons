@@ -1,13 +1,15 @@
 package org.aksw.commons.util.reflect;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Claus Stadler
@@ -258,5 +260,26 @@ public class ClassUtils {
 
         return result;
     }
+
+	public static Set<Class<?>> getMostSpecificSubclasses(Class<?> given, Collection<Class<?>> classes) {
+	    // Filter the set by all classes that are a subclass of the given one
+	    Set<Class<?>> tmp = classes.stream()
+	        .filter(given::isAssignableFrom)
+	        .collect(Collectors.toSet());
+	
+	    Set<Class<?>> result = getNonSubsumedClasses(tmp);
+	    return result;
+	}
+
+	public static Set<Class<?>> getNonSubsumedClasses(Collection<Class<?>> classes) {
+	    // Retain all classes which are not a super class of any other
+	    Set<Class<?>> result = classes.stream()
+	        .filter(c -> classes.stream()
+	                .filter(d -> !c.equals(d)) // Do not compare classes to itself
+	                .noneMatch(c::isAssignableFrom))
+	        .collect(Collectors.toSet());
+	
+	    return result;
+	}
 
 }
