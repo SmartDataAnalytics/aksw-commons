@@ -5,22 +5,22 @@ import java.util.Collection;
 import com.google.common.base.Converter;
 import com.google.common.collect.Range;
 
-public class CollectionAccessorFromConverter<T, B>
-	implements CollectionAccessor<T>
+public class CollectionAccessorFromConverter<B, F>
+	implements CollectionAccessor<F>
 {
 	protected final CollectionAccessor<B> delegate;
-	protected final Converter<T, B> converter;
+	protected final Converter<B, F> converter;
 	
-	public CollectionAccessorFromConverter(CollectionAccessor<B> delegate, Converter<T, B> converter) {
+	public CollectionAccessorFromConverter(CollectionAccessor<B> delegate, Converter<B, F> converter) {
 		super();
 		this.delegate = delegate;
 		this.converter = converter;
 	}
 
 	@Override
-	public Collection<T> get() {
+	public Collection<F> get() {
 		Collection<B> tmp = delegate.get();
-		CollectionFromConverter<T, B, ?> result = new CollectionFromConverter<>(tmp, converter);
+		CollectionFromConverter<F, B, ?> result = new CollectionFromConverter<>(tmp, converter);
 		return result;
 		
 	}	

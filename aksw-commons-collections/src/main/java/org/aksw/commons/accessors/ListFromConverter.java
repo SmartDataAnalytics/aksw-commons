@@ -16,7 +16,7 @@ public class ListFromConverter<F, B>
 		extends IteratorFromConverter<T, U, ListIterator<U>>
 		implements ListIterator<T>
 	{		
-		public ListIteratorFromConverter(ListIterator<U> core, Converter<T, U> converter) {
+		public ListIteratorFromConverter(ListIterator<U> core, Converter<U, T> converter) {
 			super(core, converter);
 		}
 
@@ -29,7 +29,7 @@ public class ListFromConverter<F, B>
 		@Override
 		public T next() {
 			U raw = core.next();
-			T result = converter.reverse().convert(raw);
+			T result = converter.convert(raw);
 			return result;
 		}
 
@@ -42,7 +42,7 @@ public class ListFromConverter<F, B>
 		@Override
 		public T previous() {
 			U raw = core.previous();
-			T result = converter.reverse().convert(raw);
+			T result = converter.convert(raw);
 			return result;
 		}
 
@@ -65,26 +65,26 @@ public class ListFromConverter<F, B>
 
 		@Override
 		public void set(T e) {
-			U item = converter.convert(e);
+			U item = converter.reverse().convert(e);
 			core.set(item);
 		}
 
 		@Override
 		public void add(T e) {
-			U item = converter.convert(e);
+			U item = converter.reverse().convert(e);
 			core.add(item);
 		}
 	};
 	
 	
 	
-	public ListFromConverter(List<B> backend, Converter<F, B> converter) {
+	public ListFromConverter(List<B> backend, Converter<B, F> converter) {
 		super(backend, converter);
 	}
 
 	@Override
 	public boolean addAll(int index, Collection<? extends F> c) {
-		Collection<B> transformed = c.stream().map(converter::convert).collect(Collectors.toList());
+		Collection<B> transformed = c.stream().map(item -> converter.reverse().convert(item)).collect(Collectors.toList());
 		boolean result = backend.addAll(index, transformed);
 		return result;
 	}
@@ -92,13 +92,13 @@ public class ListFromConverter<F, B>
 	@Override
 	public F get(int index) {
 		B raw = backend.get(index);
-		F result = converter.reverse().convert(raw);
+		F result = converter.convert(raw);
 		return result;
 	}
 
 	@Override
 	public F set(int index, F element) {
-		B raw = converter.convert(element);
+		B raw = converter.reverse().convert(element);
 		backend.set(index, raw);
 		return element;
 	}
@@ -111,7 +111,7 @@ public class ListFromConverter<F, B>
 	@Override
 	public F remove(int index) {
 		B raw = backend.remove(index);
-		F result = converter.reverse().convert(raw);
+		F result = converter.convert(raw);
 		return result;		
 	}
 
@@ -121,7 +121,7 @@ public class ListFromConverter<F, B>
 		int result;
 		try {
 			F front = (F)o;
-			B raw = converter.convert(front);
+			B raw = converter.reverse().convert(front);
 			result = backend.indexOf(raw);
 			
 		} catch(ClassCastException e) {
@@ -138,7 +138,7 @@ public class ListFromConverter<F, B>
 		int result;
 		try {
 			F front = (F)o;
-			B raw = converter.convert(front);
+			B raw = converter.reverse().convert(front);
 			result = backend.lastIndexOf(raw);
 			
 		} catch(ClassCastException e) {
