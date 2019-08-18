@@ -271,6 +271,7 @@ public class ClassUtils {
 	    return result;
 	}
 
+	
 	public static Set<Class<?>> getNonSubsumedClasses(Collection<Class<?>> classes) {
 	    // Retain all classes which are not a super class of any other
 	    Set<Class<?>> result = classes.stream()

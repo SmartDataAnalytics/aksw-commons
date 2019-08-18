@@ -81,8 +81,9 @@ public class SetFromCollection<T>
 	@Override
 	public boolean remove(Object o) {
 		boolean result = false;
-		while((result = result || backend.remove(o))) {
+		while(backend.remove(o)) {
 			/* wait for all elements to have been removed*/
+			result = true;
 		}
 		return result;
 	}
