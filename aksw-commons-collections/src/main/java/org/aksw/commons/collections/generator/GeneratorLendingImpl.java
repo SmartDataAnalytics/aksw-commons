@@ -79,4 +79,8 @@ public class GeneratorLendingImpl<T>
 		return new GeneratorLendingImpl<>(GeneratorFromFunction.createInt(initialNext), TreeSet::new);
 	}
 	
+	public static GeneratorLending<String> createPrefixedInt(String prefix, int offset) {
+		return new GeneratorLendingFromConverter<>(createInt(offset), Converters.prefixIntToStr(prefix));
+	}
+	
 }

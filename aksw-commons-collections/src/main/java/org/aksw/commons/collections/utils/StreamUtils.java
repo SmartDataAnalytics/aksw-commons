@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;

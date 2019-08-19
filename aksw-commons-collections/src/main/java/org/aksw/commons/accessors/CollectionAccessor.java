@@ -12,9 +12,9 @@ import com.google.common.collect.Range;
  * 
  * @author raven May 2, 2018
  *
- * @param <T>
+ * @param <B>
  */
-public interface CollectionAccessor<T>
+public interface CollectionAccessor<B>
 //	extends SingleValuedAccessor<Collection<T>>
 {
 	/**
@@ -25,10 +25,10 @@ public interface CollectionAccessor<T>
 	 * @return
 	 */
 	Range<Long> getMultiplicity();
-	Collection<T> get();
+	Collection<B> get();
 	
-	default <U> CollectionAccessor<U> convert(Converter<U, T> converter) {
-		return new CollectionAccessorFromConverter<U, T>(this, converter);
+	default <F> CollectionAccessor<F> convert(Converter<B, F> converter) {
+		return new CollectionAccessorFromConverter<>(this, converter);
 	}
 
 }

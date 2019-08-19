@@ -41,5 +41,4 @@ public class GeneratorFromFunction<T>
 	public static GeneratorFromFunction<Integer> createInt(int initialNext) {
 		return create(initialNext - 1, Math::incrementExact);
 	}
-
 }

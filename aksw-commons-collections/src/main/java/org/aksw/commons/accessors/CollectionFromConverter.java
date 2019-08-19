@@ -15,9 +15,9 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 		implements Iterator<T>
 	{
 		protected I core;
-		protected Converter<T, U> converter;
+		protected Converter<U, T> converter;
 
-		public IteratorFromConverter(I core, Converter<T, U> converter) {
+		public IteratorFromConverter(I core, Converter<U, T> converter) {
 			super();
 			this.core = core;
 			this.converter = converter;
@@ -26,7 +26,7 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 		@Override
 		public T next() {
 			U raw = core.next();
-			T result = converter.reverse().convert(raw);
+			T result = converter.convert(raw);
 			return result;
 		}
 
@@ -44,9 +44,9 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 	
 	
 	protected C backend;
-	protected Converter<F, B> converter;
+	protected Converter<B, F> converter;
 	
-	public CollectionFromConverter(C backend, Converter<F, B> converter) {
+	public CollectionFromConverter(C backend, Converter<B, F> converter) {
 //		Objects.requireNonNull(backend);
 //		Objects.requireNonNull(converter);
 		
@@ -56,7 +56,7 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 
 	@Override
 	public boolean add(F value) {
-		B item = converter.convert(value);
+		B item = converter.reverse().convert(value);
 		boolean result = backend.add(item);
 		
 		return result;
@@ -64,12 +64,12 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 	
 	@Override
 	public boolean contains(Object o) {
-		boolean result = false;
+		boolean result;
 		try {
-			B item = converter.convert((F)o);
+			B item = converter.reverse().convert((F)o);
 			result = backend.contains(item);
 		} catch(ClassCastException e) {
-			
+			result = false;
 		}
 		
 		return result;
@@ -78,12 +78,12 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 	
 	@Override
 	public boolean remove(Object o) {
-		boolean result = false;
+		boolean result;
 		try {
-			B item = converter.convert((F)o);
+			B item = converter.reverse().convert((F)o);
 			result = backend.remove(item);
 		} catch(ClassCastException e) {
-			
+			result = false;
 		}
 		
 		return result;
@@ -98,13 +98,19 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
 			protected F prefetch() throws Exception {
 				while(baseIt.hasNext()) {
 					B b = baseIt.next();
-					F f = converter.reverse().convert(b);
+					F f;
+					try {
+						f = converter.convert(b);
+					} catch(Exception e) {
+						/* Ignore items that fail to convert */
+						continue;
+					}
 					return f;
 				}
 				return finish();
 			}
 			@Override
-			public void doRemove() { baseIt.remove(); }
+			public void doRemove(F item) { baseIt.remove(); }
 		};
 	}
 	
