@@ -9,6 +9,79 @@ import java.util.*;
 
 public class StringUtils
 {
+	/**
+	 * Return the number of end-of-line characters at the current position - if any.
+	 * For non-eol positions the result is 0
+	 * 
+	 * @param str
+	 * @param charPos
+	 * @return
+	 */
+	public static int getEolCharCount(String str, int charPos) {
+		int result = 0;
+		boolean newLineEncountered = false;
+		for(int i = charPos; i < str.length(); ++i) {
+			char c = str.charAt(i);
+    		if(c == '\n') {
+    			if(newLineEncountered) {
+    				break;
+    			} else {
+        			++result;
+    				newLineEncountered = true;
+    			}
+    		} else if(c == '\r') {
+    			++result;
+    		} else {
+    			break;
+    		}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Convert line and column index to the char position
+	 * line and column indexes are 1-based.
+	 * Using 0 for either argument yields -1
+	 * 
+	 * @param str
+	 * @param line
+	 * @param col the column
+	 * @return the char pos or -1 if there was none w.r.t. line and col
+	 */
+    public static int findCharPos(String str, int line, int col) {
+    	int result = -1;
+
+    	if(col > 0 && line > 0) {
+        	int charPos = 0;
+        	int x = 0;
+        	int y = 1;
+        	for(charPos = 0; charPos < str.length(); ++charPos) {
+        		char c = str.charAt(charPos);
+        		//int eolCharCount = getEolCharCount(str, charPos);
+        		++x;
+
+        		if(y == line && x == col) {
+        			result = charPos;
+//        			if(eolCharCount > 0) {
+//        				--result;
+//        			}
+        			break;
+        		}
+
+        		if(c == '\n') {
+        			++y;
+        			x = 0;
+        		} else if(c == '\r') {
+        			x = 0;
+        		}        		
+        	}    		
+    	}
+    	
+    	return result;
+    }
+
+	
 	public static <T> String itemPerLine(T[] array) {
 		return itemPerLine(Arrays.asList(array));
 	}
