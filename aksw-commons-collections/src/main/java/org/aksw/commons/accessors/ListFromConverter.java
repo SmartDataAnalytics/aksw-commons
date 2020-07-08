@@ -12,26 +12,26 @@ public class ListFromConverter<F, B>
     extends CollectionFromConverter<F, B, List<B>>
     implements List<F>
 {
-    public static class ListIteratorFromConverter<T, U>
+    public static class ListIteratorFromConverter<T, U, I extends ListIterator<U>>
         extends IteratorFromConverter<T, U, ListIterator<U>>
         implements ListIterator<T>
     {
-        public ListIteratorFromConverter(ListIterator<U> core, Converter<U, T> converter) {
+        public ListIteratorFromConverter(I core, Converter<U, T> converter) {
             super(core, converter);
         }
 
-        @Override
-        public boolean hasNext() {
-            boolean result = core.hasNext();
-            return result;
-        }
-
-        @Override
-        public T next() {
-            U raw = core.next();
-            T result = converter.convert(raw);
-            return result;
-        }
+//        @Override
+//        public boolean hasNext() {
+//            boolean result = core.hasNext();
+//            return result;
+//        }
+//
+//        @Override
+//        public T next() {
+//            U raw = core.next();
+//            T result = converter.convert(raw);
+//            return result;
+//        }
 
         @Override
         public boolean hasPrevious() {
@@ -153,7 +153,7 @@ public class ListFromConverter<F, B>
     public ListIterator<F> listIterator() {
         ListIterator<B> core = backend.listIterator();
 
-        ListIterator<F> result = new ListIteratorFromConverter<F, B>(core, converter);
+        ListIterator<F> result = new ListIteratorFromConverter<>(core, converter);
         return result;
     }
 
@@ -161,7 +161,7 @@ public class ListFromConverter<F, B>
     public ListIterator<F> listIterator(int index) {
         ListIterator<B> core = backend.listIterator();
 
-        ListIterator<F> result = new ListIteratorFromConverter<F, B>(core, converter);
+        ListIterator<F> result = new ListIteratorFromConverter<>(core, converter);
         return result;
     }
 

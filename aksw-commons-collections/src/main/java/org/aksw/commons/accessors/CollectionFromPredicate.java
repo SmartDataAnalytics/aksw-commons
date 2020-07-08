@@ -13,13 +13,13 @@ public class CollectionFromPredicate<T, C extends Collection<T>>
     extends AbstractCollection<T>
 {
     // FilteredIterator
-    public static class FilteredIterator<T>
+    public static class IteratorFromPredicate<T, I extends Iterator<T>>
         extends SinglePrefetchIterator<T>
     {
-        protected Iterator<T> baseIt;
+        protected I baseIt;
         protected Predicate<? super T> predicate;
 
-        public FilteredIterator(Iterator<T> baseIt, Predicate<? super T> predicate) {
+        public IteratorFromPredicate(I baseIt, Predicate<? super T> predicate) {
             super();
             this.baseIt = baseIt;
             this.predicate = predicate;
@@ -90,7 +90,7 @@ public class CollectionFromPredicate<T, C extends Collection<T>>
     public Iterator<T> iterator() {
         Iterator<T> baseIt = backend.iterator();
 
-        return new FilteredIterator<>(baseIt, predicate);
+        return new IteratorFromPredicate<>(baseIt, predicate);
     }
 
     @Override
