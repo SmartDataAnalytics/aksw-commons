@@ -54,7 +54,7 @@ public class FilteringCollection<T, C extends Collection<T>>
     public Iterator<T> iterator() {
         Iterator<T> baseIt = backend.iterator();
 
-        return new FilteredIterator<>(baseIt, predicate);
+        return new FilteringIterator<>(baseIt, predicate);
     }
 
     @Override

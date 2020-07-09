@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
-public class FilteredListIterator<T, I extends ListIterator<T>>
+public class FilteringListIterator<T, I extends ListIterator<T>>
     implements ListIterator<T>
 {
     protected I core;
@@ -18,7 +18,7 @@ public class FilteredListIterator<T, I extends ListIterator<T>>
         this.wasPreviousOrNextCalled = flag;
     }
 
-    public FilteredListIterator(I core, Predicate<? super T> predicate, int currentIndex) {
+    public FilteringListIterator(I core, Predicate<? super T> predicate, int currentIndex) {
         super();
         this.core = core;
         this.predicate = predicate;

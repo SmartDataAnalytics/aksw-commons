@@ -24,7 +24,7 @@ public class FilteringList<T, C extends List<T>>
     @Override
     public ListIterator<T> listIterator(int index) {
         ListIterator<T> core = backend.listIterator();
-        FilteredListIterator<T, ListIterator<T>> result = new FilteredListIterator<T, ListIterator<T>>(core, predicate, index - 1);
+        FilteringListIterator<T, ListIterator<T>> result = new FilteringListIterator<T, ListIterator<T>>(core, predicate, index - 1);
 
         // The highest possible value for reachedIndex should be .size()
         int reachedIndex = ListIteratorUtils.repeatNext(result, index);
@@ -84,7 +84,7 @@ public class FilteringList<T, C extends List<T>>
      * @return
      */
     public static <F, B, C extends Collection<B>> Collection<F> createSafe(Collection<B> backend, Converter<B, F> converter) {
-        Collection<B> safeBackend = CollectionOps.filteringCollection(backend, converter);
+        Collection<B> safeBackend = MutableCollectionViews.filteringCollection(backend, converter);
         Collection<F> result = new ConvertingCollection<>(safeBackend, converter);
         return result;
     }

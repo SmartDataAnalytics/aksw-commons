@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 
 import com.google.common.base.Converter;
 
-public class CollectionOps {
+public class MutableCollectionViews {
 
     /**
      * Return a live-view of the given collection with conflicting elements filtered out.

@@ -80,7 +80,7 @@ public class ConvertingCollection<F, B, C extends Collection<B>>
      * @return
      */
     public static <F, B, C extends Collection<B>> Collection<F> createSafe(Collection<B> backend, Converter<B, F> converter) {
-        Collection<B> safeBackend = CollectionOps.filteringCollection(backend, converter);
+        Collection<B> safeBackend = MutableCollectionViews.filteringCollection(backend, converter);
         Collection<F> result = new ConvertingCollection<>(safeBackend, converter);
         return result;
     }
