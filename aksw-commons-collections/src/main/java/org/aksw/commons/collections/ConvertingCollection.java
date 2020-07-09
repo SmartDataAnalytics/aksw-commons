@@ -1,4 +1,4 @@
-package org.aksw.commons.accessors;
+package org.aksw.commons.collections;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
@@ -6,44 +6,13 @@ import java.util.Iterator;
 
 import com.google.common.base.Converter;
 
-public class CollectionFromConverter<F, B, C extends Collection<B>>
+public class ConvertingCollection<F, B, C extends Collection<B>>
     extends AbstractCollection<F>
 {
-    public static class IteratorFromConverter<T, U, I extends Iterator<U>>
-        implements Iterator<T>
-    {
-        protected I core;
-        protected Converter<U, T> converter;
-
-        public IteratorFromConverter(I core, Converter<U, T> converter) {
-            super();
-            this.core = core;
-            this.converter = converter;
-        }
-
-        @Override
-        public T next() {
-            U raw = core.next();
-            T result = converter.convert(raw);
-            return result;
-        }
-
-        @Override
-        public boolean hasNext() {
-            boolean result = core.hasNext();
-            return result;
-        }
-
-        @Override
-        public void remove() {
-            core.remove();
-        }
-    }
-
     protected C backend;
     protected Converter<B, F> converter;
 
-    public CollectionFromConverter(C backend, Converter<B, F> converter) {
+    public ConvertingCollection(C backend, Converter<B, F> converter) {
 //		Objects.requireNonNull(backend);
 //		Objects.requireNonNull(converter);
 
@@ -90,7 +59,7 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
     public Iterator<F> iterator() {
         Iterator<B> baseIt = backend.iterator();
 
-        Iterator<F> result = new IteratorFromConverter<>(baseIt, converter);
+        Iterator<F> result = new ConvertingIterator<>(baseIt, converter);
         return result;
     }
 
@@ -100,8 +69,8 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
     }
 
     /**
-     * Wraps the backend with a guava Collection2.filteredCollection that filters out
-     * items for whith the converter raises an exception
+     * Wraps the backend with a guava filteredCollection that filters out
+     * items for which the converter raises an exception
      *
      * @param <F>
      * @param <B>
@@ -111,8 +80,8 @@ public class CollectionFromConverter<F, B, C extends Collection<B>>
      * @return
      */
     public static <F, B, C extends Collection<B>> Collection<F> createSafe(Collection<B> backend, Converter<B, F> converter) {
-        Collection<B> safeBackend = ConverterUtils.safeCollection(backend, converter);
-        Collection<F> result = new CollectionFromConverter<>(safeBackend, converter);
+        Collection<B> safeBackend = CollectionOps.filteringCollection(backend, converter);
+        Collection<F> result = new ConvertingCollection<>(safeBackend, converter);
         return result;
     }
 }

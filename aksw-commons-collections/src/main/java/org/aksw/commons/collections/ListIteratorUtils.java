@@ -1,4 +1,4 @@
-package org.aksw.commons.accessors;
+package org.aksw.commons.collections;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ListIterator;
@@ -37,7 +37,7 @@ public class ListIteratorUtils {
 
         // If no successor is found reset to the start position
         if(distance == 0) {
-            previous(listIterator, tmp);
+            repeatPrevious(listIterator, tmp);
         }
 
         return new SimpleEntry<>(distance, resultItem);
@@ -64,7 +64,7 @@ public class ListIteratorUtils {
 
         // If no successor is found reset to the start position
         if(distance == 0) {
-            previous(listIterator, tmp);
+            repeatPrevious(listIterator, tmp);
         }
 
         return new SimpleEntry<>(distance, resultItem);
@@ -78,7 +78,7 @@ public class ListIteratorUtils {
      * @param n
      * @return
      */
-    public static int previous(ListIterator<?> listIterator, int n) {
+    public static int repeatPrevious(ListIterator<?> listIterator, int n) {
         int result;
         for(result = 0; result < n; ++result) {
             if(!listIterator.hasPrevious()) {
@@ -93,7 +93,7 @@ public class ListIteratorUtils {
         return result;
     }
 
-    public static int next(ListIterator<?> listIterator, int n) {
+    public static int repeatNext(ListIterator<?> listIterator, int n) {
         int result;
         for(result = 0; result < n; ++result) {
             if(!listIterator.hasNext()) {
