@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.aksw.commons.collections.sets.SetFromCollection;
+
 import com.google.common.base.Converter;
 
 public class MutableCollectionViews {
@@ -53,12 +55,24 @@ public class MutableCollectionViews {
     }
 
     public static <T, U> Set<U> convertingSet(Set<T> backend, Converter<T, U> converter, boolean isInjective) {
-        Set<U> result = new ConvertingSet<U, T, Set<T>>(backend, converter);
+        Set<U> result = isInjective
+                ? new ConvertingSet<U, T, Set<T>>(backend, converter)
+                : wrapAsSet(convertingCollection(backend, converter));
+
         return result;
     }
 
     public static <T, U> List<U> convertingList(List<T> backend, Converter<T, U> converter) {
         List<U> result = new ConvertingList<U, T, List<T>>(backend, converter);
+        return result;
+    }
+
+
+    public static <T> Set<T> wrapAsSet(Collection<T> collection) {
+        Set<T> result = collection instanceof Set
+            ? (Set<T>)collection
+            : new SetFromCollection<>(collection);
+
         return result;
     }
 }
