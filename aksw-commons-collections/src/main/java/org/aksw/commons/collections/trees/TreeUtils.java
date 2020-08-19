@@ -31,13 +31,13 @@ import com.google.common.collect.Sets;
 public class TreeUtils {
 
     public static <T> T getRoot(T item, Function<? super T, ? extends T> predecessor) {
-    	T result = findSuccessor(item, predecessor, (n, pred) -> pred == null);
-    	return result;
+        T result = findSuccessor(item, predecessor, (n, pred) -> pred == null);
+        return result;
     }
-    
+
     /**
-     * 
-     * 
+     *
+     *
      * @param item
      * @param successor
      * @param predicate Receives the current item and its successor
@@ -46,11 +46,11 @@ public class TreeUtils {
     public static <T> T findSuccessor(T item, Function<? super T, ? extends T> successor, BiPredicate<? super T, ? super T> predicate) {
         T result = item;
         while(true) {
-        	T parentItem = successor.apply(result);
-        	boolean test = predicate.test(result, parentItem) || (result == null && parentItem == null);
-        	if(test) {
-        		break;
-        	}
+            T parentItem = successor.apply(result);
+            boolean test = predicate.test(result, parentItem) || (result == null && parentItem == null);
+            if(test) {
+                break;
+            }
             result = parentItem;
         }
 
@@ -59,24 +59,24 @@ public class TreeUtils {
 
     public static <T> T findAncestor(T node, Function<? super T, ? extends T> getParent, java.util.function.Predicate<T> predicate) {
         Objects.requireNonNull(node);
-    	
-    	T current = node;
+
+        T current = node;
         do {
-        	boolean isMatch = predicate.test(current);
-        	if(isMatch) {	        		
-        		break;
-        	}
-        	
+            boolean isMatch = predicate.test(current);
+            if(isMatch) {
+                break;
+            }
+
             current = getParent.apply(current);
         } while(current != null);
 
         return current;
     }
-    
-	public static <T> T findRoot(T start, Function<? super T, ? extends T> getParent) {
-		T result = findAncestor(start, getParent, x -> getParent.apply(x) == null);
-		return result;
-	}
+
+    public static <T> T findRoot(T start, Function<? super T, ? extends T> getParent) {
+        T result = findAncestor(start, getParent, x -> getParent.apply(x) == null);
+        return result;
+    }
 
 
     public static <T> Multimap<T, T> groupByParent(Tree<T> tree, Collection<T> nodes, Multimap<T, T> result) {

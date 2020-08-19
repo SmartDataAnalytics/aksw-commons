@@ -2,6 +2,8 @@ package org.aksw.commons.accessors;
 
 import java.util.Collection;
 
+import org.aksw.commons.collections.ConvertingCollection;
+
 import com.google.common.base.Converter;
 import com.google.common.collect.Range;
 
@@ -20,7 +22,7 @@ public class CollectionAccessorFromConverter<B, F>
 	@Override
 	public Collection<F> get() {
 		Collection<B> tmp = delegate.get();
-		CollectionFromConverter<F, B, ?> result = new CollectionFromConverter<>(tmp, converter);
+		ConvertingCollection<F, B, ?> result = new ConvertingCollection<>(tmp, converter);
 		return result;
 		
 	}	

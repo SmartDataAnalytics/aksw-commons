@@ -25,9 +25,7 @@ public interface Tree<T> {
      */
     T copy(T node, List<T> children);
 
-    //TreeOps<T> getOps();
-
-    //boolean contains(Object node);
+    // Maybe: getTreeFactory().createNew(root)
     Tree<T> createNew(T root);
 
     long nodeCount();
