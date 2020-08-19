@@ -1,6 +1,7 @@
 package org.aksw.commons.collections;
 
 
+import java.io.Closeable;
 import java.util.Iterator;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Iterator;
  * Time: 5:39:36 PM
  */
 public abstract class PrefetchIterator<T>
-    implements Iterator<T>
+    implements Iterator<T>, Closeable
 {
     //private static Logger logger = Logger.getLogger(PrefetchIterator.class);
     private Iterator<T>	current		= null;
@@ -63,6 +64,7 @@ public abstract class PrefetchIterator<T>
         return getCurrent().next();
     }
 
+    @Override
     public void close() {
 
     }

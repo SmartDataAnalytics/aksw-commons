@@ -1,9 +1,10 @@
 package org.aksw.commons.collections;
 
+import java.io.Closeable;
+import java.util.Iterator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
 
 /**
  * An abstract base class for iterating over containers of unknown size. This
@@ -20,96 +21,97 @@ import java.util.Iterator;
  * @param <T>
  */
 public abstract class SinglePrefetchIterator<T>
-	implements Iterator<T>
+    implements Iterator<T>, Closeable
 {
-	private static Logger logger = LoggerFactory.getLogger(SinglePrefetchIterator.class);
-	private T	    current		= null;
-	private boolean finished	= false;
+    private static Logger logger = LoggerFactory.getLogger(SinglePrefetchIterator.class);
+    private T	    current		= null;
+    private boolean finished	= false;
 
-	private boolean advance     = true;
+    private boolean advance     = true;
 
-	private boolean wasNextCalled = false;
-	
-	protected abstract T prefetch()
-		throws Exception;
+    private boolean wasNextCalled = false;
 
-	protected SinglePrefetchIterator()
-	{
-	}
+    protected abstract T prefetch()
+        throws Exception;
 
-	protected T finish()
-	{
-		this.finished = true;
+    protected SinglePrefetchIterator()
+    {
+    }
 
-		close();
-		return null;
-	}
+    protected T finish()
+    {
+        this.finished = true;
 
-	private void _prefetch()
-	{
-		try {
-			current = prefetch();
-		}
-		catch(Exception e) {
-			current = null;
-			logger.error("Error prefetching data", e);
-		}
-	}
+        close();
+        return null;
+    }
 
-	@Override
-	public boolean hasNext()
-	{
-		wasNextCalled = false;
-		if(advance) {
-			_prefetch();
-			advance = false;
-		}
+    private void _prefetch()
+    {
+        try {
+            current = prefetch();
+        }
+        catch(Exception e) {
+            current = null;
+            logger.error("Error prefetching data", e);
+        }
+    }
 
-		return finished == false;
-	}
+    @Override
+    public boolean hasNext()
+    {
+        wasNextCalled = false;
+        if(advance) {
+            _prefetch();
+            advance = false;
+        }
 
-	@Override
-	public T next()
-	{
-		wasNextCalled = true;
-		
-		if(finished) {
-			throw new IndexOutOfBoundsException();
-		}
+        return finished == false;
+    }
 
-		if(advance) {
-			_prefetch();
-		}
+    @Override
+    public T next()
+    {
+        wasNextCalled = true;
 
-		advance = true;
-		return current;
-	}
+        if(finished) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        if(advance) {
+            _prefetch();
+        }
+
+        advance = true;
+        return current;
+    }
 
 
-	/**
-	 * An iterator must always free all resources once done with iteration.
-	 * However, if iteration is aborted, this method should be called.
-	 *
-	 */
-	public void close()
-	{
-	}
+    /**
+     * An iterator must always free all resources once done with iteration.
+     * However, if iteration is aborted, this method should be called.
+     *
+     */
+    @Override
+    public void close()
+    {
+    }
 
-	@Override
-	public final void remove()
-	{
-		if(!wasNextCalled) {
-			throw new RuntimeException("remove must not be called after .hasNext() - invoke .next() first");
-		}
+    @Override
+    public final void remove()
+    {
+        if(!wasNextCalled) {
+            throw new RuntimeException("remove must not be called after .hasNext() - invoke .next() first");
+        }
 
-		doRemove(current);
-	}
-	
+        doRemove(current);
+    }
+
 //	public T getCurrent() {
 //		return current;
 //	}
-	
-	protected void doRemove(T item) {
-		throw new UnsupportedOperationException("Not supported.");
-	}
+
+    protected void doRemove(T item) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 }
