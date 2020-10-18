@@ -1,5 +1,6 @@
 package org.aksw.commons.util.reflect;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,76 +26,100 @@ public class ClassUtils {
         return forceInvoke(null, m, args);
     }
 
+    public static <T> T forceGet(Object o, String declaredFieldName) {
+        return forceGet(o, o.getClass(), declaredFieldName);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T forceGet(Object o, Class<?> clazz, String declaredFieldName) {
+        T result;
+        Field field;
+        try {
+
+            field = clazz.getDeclaredField(declaredFieldName);
+            boolean isAccessible = field.isAccessible();
+            field.setAccessible(true);
+
+            Object tmp = field.get(o);
+            result = (T)tmp;
+            field.setAccessible(isAccessible);
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+        return result;
+    }
+
     public static Object forceInvoke(Object o, Method m, Object[] args)
     {
         // FIXME Not multithreading safe
         boolean isAccessible = m.isAccessible();
         m.setAccessible(true);
 
-		try {
+        try {
             //logger.trace("Invoking " + m + " on " + o);
-			return m.invoke(o, args);
-		} catch (Exception e) {
-			//throw new RuntimeException("Invocation failed", e);
+            return m.invoke(o, args);
+        } catch (Exception e) {
+            //throw new RuntimeException("Invocation failed", e);
             throw new RuntimeException(e);
-		} finally {
+        } finally {
             m.setAccessible(isAccessible);
         }
     }
 
     /**
-	 * Returns the minimum distance of two classes in an inheritance hierarchy
-	 * Null if there is no distance
-	 */
-	public static Integer getDistance(Class<?> given, Class<?> there)
-	{
-		int result;
-		if(there.isInterface()) {
-			result = _getDistanceInterface(given, there, 0);
+     * Returns the minimum distance of two classes in an inheritance hierarchy
+     * Null if there is no distance
+     */
+    public static Integer getDistance(Class<?> given, Class<?> there)
+    {
+        int result;
+        if(there.isInterface()) {
+            result = _getDistanceInterface(given, there, 0);
         } else {
-			result = _getDistanceClass(given, there);
+            result = _getDistanceClass(given, there);
         }
 
-		return result == Integer.MAX_VALUE ? null : result;
-	}
+        return result == Integer.MAX_VALUE ? null : result;
+    }
 
-	private static int _getDistanceClass(Class<?> given, Class<?> there)
-	{
-		int distance = 0;
-		do {
-			if(given == there) {
-				return distance;
+    private static int _getDistanceClass(Class<?> given, Class<?> there)
+    {
+        int distance = 0;
+        do {
+            if(given == there) {
+                return distance;
             }
 
-			distance += 1;
-			given = given.getSuperclass();
+            distance += 1;
+            given = given.getSuperclass();
 
 
-		} while (given != null);
+        } while (given != null);
 
-		return Integer.MAX_VALUE;
-	}
+        return Integer.MAX_VALUE;
+    }
 
-	private static int _getDistanceInterface(Class<?> given, Class<?> there, int depth)
-	{
-		if(given == there) {
-			return depth;
+    private static int _getDistanceInterface(Class<?> given, Class<?> there, int depth)
+    {
+        if(given == there) {
+            return depth;
         }
 
-		++depth;
+        ++depth;
 
-		int result = Integer.MAX_VALUE;
-		for(Class<?> item : given.getInterfaces()) {
-			result = Math.min(result, _getDistanceInterface(item, there, depth));
+        int result = Integer.MAX_VALUE;
+        for(Class<?> item : given.getInterfaces()) {
+            result = Math.min(result, _getDistanceInterface(item, there, depth));
         }
 
-		Class<?> superClass = given.getSuperclass();
-		if(superClass != null) {
-			result = Math.min(result, _getDistanceInterface(superClass, there, depth));
+        Class<?> superClass = given.getSuperclass();
+        if(superClass != null) {
+            result = Math.min(result, _getDistanceInterface(superClass, there, depth));
         }
 
-		return result;
-	}
+        return result;
+    }
 
     public static List<Class<?>> getTypeSignatureList(Object[] args)
     {
@@ -261,26 +286,26 @@ public class ClassUtils {
         return result;
     }
 
-	public static Set<Class<?>> getMostSpecificSubclasses(Class<?> given, Collection<Class<?>> classes) {
-	    // Filter the set by all classes that are a subclass of the given one
-	    Set<Class<?>> tmp = classes.stream()
-	        .filter(given::isAssignableFrom)
-	        .collect(Collectors.toSet());
-	
-	    Set<Class<?>> result = getNonSubsumedClasses(tmp);
-	    return result;
-	}
+    public static Set<Class<?>> getMostSpecificSubclasses(Class<?> given, Collection<Class<?>> classes) {
+        // Filter the set by all classes that are a subclass of the given one
+        Set<Class<?>> tmp = classes.stream()
+            .filter(given::isAssignableFrom)
+            .collect(Collectors.toSet());
 
-	
-	public static Set<Class<?>> getNonSubsumedClasses(Collection<Class<?>> classes) {
-	    // Retain all classes which are not a super class of any other
-	    Set<Class<?>> result = classes.stream()
-	        .filter(c -> classes.stream()
-	                .filter(d -> !c.equals(d)) // Do not compare classes to itself
-	                .noneMatch(c::isAssignableFrom))
-	        .collect(Collectors.toSet());
-	
-	    return result;
-	}
+        Set<Class<?>> result = getNonSubsumedClasses(tmp);
+        return result;
+    }
+
+
+    public static Set<Class<?>> getNonSubsumedClasses(Collection<Class<?>> classes) {
+        // Retain all classes which are not a super class of any other
+        Set<Class<?>> result = classes.stream()
+            .filter(c -> classes.stream()
+                    .filter(d -> !c.equals(d)) // Do not compare classes to itself
+                    .noneMatch(c::isAssignableFrom))
+            .collect(Collectors.toSet());
+
+        return result;
+    }
 
 }
