@@ -4,10 +4,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
@@ -259,6 +261,45 @@ public class MapUtils {
     public static <K, V, R extends Map<K, V>> R mergeCompatible(Map<? extends K, ? extends V> a, Map<? extends K, ? extends V> b, Supplier<R> resultSupplier) {
         R result = mergeCompatible(Arrays.asList(a, b), resultSupplier);
         return result;
+    }
+
+
+
+    /*
+     * Lazy map views based on a comment at https://github.com/google/guava/issues/912
+     */
+
+    /**
+     * Returns a view of the union of two maps.
+     *
+     * For all keys k, if either map contains a value for k, the returned map contains that value. If both maps
+     * contain a value for the same key, this map contains the value in the second of the two provided maps.
+     */
+    public static <K, V> Map<K, V> union(Map<K, ? extends V> a, Map<K, ? extends V> b) {
+        return union(a, b, (v1, v2) -> v2);
+    }
+
+    /**
+     * Returns a view of the union of two maps.
+     *
+     * For all keys k, if either map contains a value for k, the returned map contains that value. If both maps
+     * contain a value for the same key, the conflict is resolved with the provided function.
+     */
+    public static <K, V> Map<K, V> union(Map<K, ? extends V> a, Map<K, ? extends V> b, BinaryOperator<V> conflictHandler) {
+        return Maps.asMap(Sets.union(a.keySet(), b.keySet()),
+                (K k) -> {
+                    V r;
+                    if (!a.containsKey(k)) {
+                        r = b.get(k);
+                    } else if (!b.containsKey(k)) {
+                        r = a.get(k);
+                    } else {
+                        V v1 = a.get(k);
+                        V v2 = b.get(k);
+                        r = conflictHandler.apply(v1, v2);
+                    }
+                    return r;
+                });
     }
 
 }
