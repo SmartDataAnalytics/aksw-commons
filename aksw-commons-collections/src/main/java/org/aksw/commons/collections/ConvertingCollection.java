@@ -20,6 +20,10 @@ public class ConvertingCollection<F, B, C extends Collection<B>>
         this.converter = converter;
     }
 
+    public C getBackend() {
+        return backend;
+    }
+
     @Override
     public boolean add(F value) {
         B item = converter.reverse().convert(value);
@@ -29,9 +33,24 @@ public class ConvertingCollection<F, B, C extends Collection<B>>
     }
 
     @Override
+    public boolean remove(Object o) {
+        boolean result;
+        try {
+            @SuppressWarnings("unchecked")
+            B item = converter.reverse().convert((F)o);
+            result = backend.remove(item);
+        } catch(ClassCastException e) {
+            result = false;
+        }
+
+        return result;
+    }
+
+    @Override
     public boolean contains(Object o) {
         boolean result;
         try {
+            @SuppressWarnings("unchecked")
             B item = converter.reverse().convert((F)o);
             result = backend.contains(item);
         } catch(ClassCastException e) {
@@ -40,19 +59,6 @@ public class ConvertingCollection<F, B, C extends Collection<B>>
 
         return result;
 
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        boolean result;
-        try {
-            B item = converter.reverse().convert((F)o);
-            result = backend.remove(item);
-        } catch(ClassCastException e) {
-            result = false;
-        }
-
-        return result;
     }
 
     @Override

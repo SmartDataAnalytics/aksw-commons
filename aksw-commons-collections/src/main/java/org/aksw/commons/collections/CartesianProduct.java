@@ -17,16 +17,16 @@ public class CartesianProduct<T>
     protected List<? extends Iterable<? extends T>>	collections;
     protected boolean inPlace;
 
-	public CartesianProduct(List<? extends Iterable<? extends T>> collections)
-	{
-		this(false, collections);
-	}
+    public CartesianProduct(List<? extends Iterable<? extends T>> collections)
+    {
+        this(false, collections);
+    }
 
-	public CartesianProduct(boolean inPlace, List<? extends Iterable<? extends T>> collections)
-	{
-		this.inPlace = inPlace;
-		this.collections = collections;
-	}
+    public CartesianProduct(boolean inPlace, List<? extends Iterable<? extends T>> collections)
+    {
+        this.inPlace = inPlace;
+        this.collections = collections;
+    }
 
     public static <T> CartesianProduct<T> create(List<? extends Iterable<? extends T>> collections)
     {
@@ -54,6 +54,7 @@ public class CartesianProduct<T>
         return  new CartesianProduct<T>(false, tmp);
     }
 
+    @SafeVarargs
     public static <T> CartesianProduct<T> create(Iterable<? extends T>... collections)
     {
         return new CartesianProduct<T>(false, Arrays.asList(collections));
