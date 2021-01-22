@@ -1,12 +1,18 @@
 package org.aksw.commons.util.reflect;
 
 
-import org.apache.commons.collections15.map.LRUMap;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 
 
@@ -70,8 +76,9 @@ public class MultiMethod
 {
 
     // 5000 parameter combinations cached - this might be a bit overkill
-    private static LRUMap<InvocationSignature, Method> cache = new LRUMap(5000);
-
+//    private static LRUMap<InvocationSignature, Method> cache = new LRUMap(5000);
+	private static Cache<InvocationSignature, Method> cache = CacheBuilder.newBuilder().maximumSize(5000).build();
+	
     /**
      * Invoke the method of an object, that matches the name and arguments best.
      *
@@ -161,12 +168,12 @@ public class MultiMethod
 
         InvocationSignature invocationSignature = new InvocationSignature(clazz, name, typeSignature);
 
-        Method result = cache.get(invocationSignature);
+        Method result = cache.getIfPresent(invocationSignature);
         if(result != null) {
             return result;
         }
 
-        if(cache.containsKey(invocationSignature)) {
+        if(cache.asMap().containsKey(invocationSignature)) {
             throw new RuntimeException("No method found for given classes");
         } else {
             try {

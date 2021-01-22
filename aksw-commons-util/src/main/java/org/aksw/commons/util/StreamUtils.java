@@ -6,11 +6,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * Probably all covered by apache IOUtils
+ * 
  * @author Claus Stadler
  *         <p/>
  *         Date: 11/28/11
  *         Time: 10:37 PM
  */
+@Deprecated
 public class StreamUtils {
 
     public static void copy(InputStream in, OutputStream out, int bufferSize)
