@@ -43,7 +43,7 @@ public class ConversionServiceAdapter
 	
 	@Override
 	public <T> boolean canConvert(Class<?> sourceType, Class<T> targetType) {
-		boolean result = canConvert(sourceType, targetType);
+		boolean result = canConvert.test(sourceType, targetType);
 		return result;
 	}
 
