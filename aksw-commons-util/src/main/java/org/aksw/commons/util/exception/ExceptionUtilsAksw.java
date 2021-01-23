@@ -94,6 +94,13 @@ public class ExceptionUtilsAksw {
         }
     }
 
+    /**
+     * Forward the root cause message of the throwable 't' to 'handler' unless any of the 'predicates' evaluates
+     * to true. Useful to e.g. silently suppress broken pipe exceptions in shell scripting pipes.
+     * 
+     * The handler is typically something like logger::warn or logger::error.
+     *  
+     */
     @SafeVarargs
     public static <T extends Throwable> void forwardRootCauseMessageUnless(T t, Consumer<? super String> handler, Predicate<? super T> ... predicates) {
         boolean anyMatch = Arrays.asList(predicates).stream()
