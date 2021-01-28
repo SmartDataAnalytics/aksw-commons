@@ -16,7 +16,7 @@ import org.aksw.commons.serializable.lambda.SerializableSupplier;
 
 /**
  * A collector implementation that implements Serializable.
- * Note that the constructor does mandate the use of serializable versions of the lambdas.
+ * Note that the constructor does NOT mandate the use of serializable versions of the lambdas.
  * In order to create an instance from lambdas that are made serializable 
  * use the method {@link #create(SerializableSupplier, SerializableBiConsumer, SerializableBinaryOperator, SerializableFunction)}
  * 
