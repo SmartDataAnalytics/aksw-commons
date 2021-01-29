@@ -13,6 +13,7 @@ import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.Aggregator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
 import org.aksw.commons.serializable.lambda.SerializableBiFunction;
+import org.aksw.commons.serializable.lambda.SerializableBinaryOperator;
 import org.aksw.commons.serializable.lambda.SerializableFunction;
 import org.aksw.commons.serializable.lambda.SerializablePredicate;
 import org.aksw.commons.serializable.lambda.SerializableSupplier;
@@ -48,6 +49,7 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 	}
 
 	
+	/** InputSplit: Create the <b>same</b> accumulator type for each split of the input */
 	public static <I, K, J, O,
 		ACC extends Accumulator<J, O>,
 		AGG extends ParallelAggregator<J, O, ACC>> AggInputSplit<I, K, J, O, ACC, AGG>
@@ -100,6 +102,22 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 			ParallelAggregator<I, O2, ?> agg2)
 	{
 		return new AggInputBroadcast<>(agg1, agg2);
+	}
+
+	public static <I, K, O>
+	ParallelAggregator<I, Map<K, O>, ?> inputBroadcast(
+			Map<K, ParallelAggregator<I, O, ?>> subAggMap)
+	{
+		return new AggInputBroadcastMap<>(subAggMap);
+	}
+
+	
+	public static <I>
+	ParallelAggregator<I, I, Accumulator<I, I>> binaryOperator(
+			SerializableSupplier<I> zeroElementSupplier,
+			SerializableBinaryOperator<I> plusOperator)
+	{
+		return new AggBinaryOperator<>(zeroElementSupplier, plusOperator);
 	}
 
 	
