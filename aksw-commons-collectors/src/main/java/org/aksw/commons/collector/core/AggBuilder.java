@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.aksw.commons.collector.core.AggInputBroadcastMap.AccInputBroadcastMap;
 import org.aksw.commons.collector.core.AggInputFilter.AccInputFilter;
 import org.aksw.commons.collector.core.AggInputSplit.AccInputSplit;
 import org.aksw.commons.collector.core.AggInputTransform.AccInputTransform;
@@ -105,7 +106,7 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 	}
 
 	public static <I, K, O>
-	ParallelAggregator<I, Map<K, O>, ?> inputBroadcast(
+	AggInputBroadcastMap<I, K, O> inputBroadcastMap(
 			Map<K, ParallelAggregator<I, O, ?>> subAggMap)
 	{
 		return new AggInputBroadcastMap<>(subAggMap);
@@ -118,6 +119,18 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 			SerializableBinaryOperator<I> plusOperator)
 	{
 		return new AggBinaryOperator<>(zeroElementSupplier, plusOperator);
+	}
+
+	public static
+	ParallelAggregator<Long, Long, Accumulator<Long, Long>> maxLong()
+	{
+		return binaryOperator(() -> 0l, Math::max);
+	}
+
+	public static
+	ParallelAggregator<Integer, Integer, Accumulator<Integer, Integer>> maxInteger()
+	{
+		return binaryOperator(() -> 0, Math::max);
 	}
 
 	
