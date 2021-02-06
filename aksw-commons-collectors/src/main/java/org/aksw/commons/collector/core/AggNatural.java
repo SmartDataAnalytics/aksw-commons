@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
-import org.aksw.commons.serializable.lambda.SerializableSupplier;
+import org.aksw.commons.lambda.serializable.SerializableSupplier;
 
 
 /**

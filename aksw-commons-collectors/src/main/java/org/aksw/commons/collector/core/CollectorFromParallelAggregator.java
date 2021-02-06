@@ -2,14 +2,15 @@ package org.aksw.commons.collector.core;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collector.Characteristics;
 
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
-import org.aksw.commons.serializable.lambda.SerializableBiConsumer;
-import org.aksw.commons.serializable.lambda.SerializableBinaryOperator;
-import org.aksw.commons.serializable.lambda.SerializableCollector;
-import org.aksw.commons.serializable.lambda.SerializableFunction;
-import org.aksw.commons.serializable.lambda.SerializableSupplier;
+import org.aksw.commons.lambda.serializable.SerializableBiConsumer;
+import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
+import org.aksw.commons.lambda.serializable.SerializableCollector;
+import org.aksw.commons.lambda.serializable.SerializableFunction;
+import org.aksw.commons.lambda.serializable.SerializableSupplier;
 
 public class CollectorFromParallelAggregator<T, R, A extends Accumulator<T, R>>
 	implements SerializableCollector<T, A, R>

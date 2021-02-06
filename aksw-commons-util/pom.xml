@@ -6,9 +6,6 @@
 	<artifactId>aksw-commons-util</artifactId>
 	<packaging>jar</packaging>
 
-	<name>AKSW Commons Util</name>
-	<url>http://maven.apache.org</url>
-
 	<parent>
 		<artifactId>aksw-commons-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>

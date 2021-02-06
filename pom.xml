@@ -57,8 +57,10 @@
 		<module>aksw-commons-util</module>
 		<module>aksw-commons-util-xml</module>
 		<module>aksw-commons-beans</module>
-		<module>aksw-commons-serializable-lambdas</module>
+		<module>aksw-commons-lambdas-parent</module>
 		<module>aksw-commons-collectors</module>
+		<module>aksw-commons-io-parent</module>
+
 		<module>aksw-commons-legacy</module>
 	</modules>
 
@@ -162,7 +164,13 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-serializable-lambdas</artifactId>
+				<artifactId>aksw-commons-lambdas-serializable</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-lambdas-throwing</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 
@@ -254,6 +262,12 @@
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
 				<version>27.0.1-jre</version>
+			</dependency>
+
+			<dependency>
+				<groupId>io.reactivex.rxjava3</groupId>
+				<artifactId>rxjava</artifactId>
+				<version>3.0.6</version>
 			</dependency>
 
 			<dependency>

@@ -8,7 +8,7 @@ import java.util.function.BiFunction;
 
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
-import org.aksw.commons.serializable.lambda.SerializableBiFunction;
+import org.aksw.commons.lambda.serializable.SerializableBiFunction;
 
 /**
  * Accumulate mappings of least common ancestors

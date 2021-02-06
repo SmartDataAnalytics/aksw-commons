@@ -1,8 +1,8 @@
 package org.aksw.commons.util.exception;
 
 import java.net.UnknownHostException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -130,5 +130,34 @@ public class ExceptionUtilsAksw {
             .findFirst();
 
         return result;
+    }
+    
+    public static boolean isClosedChannelException(Throwable t) {
+        boolean result = t instanceof ClosedChannelException;
+        return result;
+    }
+
+    @SafeVarargs
+    public static void rethrowUnlessRootCauseMatches(
+            Throwable e,
+            Consumer<? super Predicate<? super Throwable>> firstMatchingConditionCallback,
+            Predicate<? super Throwable>... conditions) {
+        Throwable rootCause = ExceptionUtils.getRootCause(e);
+
+        Predicate<? super Throwable> match = Arrays.asList(conditions).stream()
+            .filter(p -> p.test(rootCause))
+            .findFirst()
+            .orElse(null);
+
+        if(match == null) {
+            throw new RuntimeException(e);
+        } else {
+            firstMatchingConditionCallback.accept(match);
+        }
+    }
+
+    @SafeVarargs
+    public static void rethrowUnlessRootCauseMatches(Throwable e, Predicate<? super Throwable>... conditions) {
+        rethrowUnlessRootCauseMatches(e, condition -> {}, conditions);
     }
 }

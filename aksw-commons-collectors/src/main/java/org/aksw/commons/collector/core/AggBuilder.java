@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.aksw.commons.collector.core.AggInputBroadcastMap.AccInputBroadcastMap;
 import org.aksw.commons.collector.core.AggInputFilter.AccInputFilter;
 import org.aksw.commons.collector.core.AggInputSplit.AccInputSplit;
 import org.aksw.commons.collector.core.AggInputTransform.AccInputTransform;
@@ -13,11 +12,11 @@ import org.aksw.commons.collector.core.AggOutputTransform.AccOutputTransform;
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.Aggregator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
-import org.aksw.commons.serializable.lambda.SerializableBiFunction;
-import org.aksw.commons.serializable.lambda.SerializableBinaryOperator;
-import org.aksw.commons.serializable.lambda.SerializableFunction;
-import org.aksw.commons.serializable.lambda.SerializablePredicate;
-import org.aksw.commons.serializable.lambda.SerializableSupplier;
+import org.aksw.commons.lambda.serializable.SerializableBiFunction;
+import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
+import org.aksw.commons.lambda.serializable.SerializableFunction;
+import org.aksw.commons.lambda.serializable.SerializablePredicate;
+import org.aksw.commons.lambda.serializable.SerializableSupplier;
 
 /**
  * Builder for parallel aggregators.

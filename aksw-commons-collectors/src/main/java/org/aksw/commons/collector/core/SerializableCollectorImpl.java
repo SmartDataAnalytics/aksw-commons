@@ -9,10 +9,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import org.aksw.commons.serializable.lambda.SerializableBiConsumer;
-import org.aksw.commons.serializable.lambda.SerializableBinaryOperator;
-import org.aksw.commons.serializable.lambda.SerializableFunction;
-import org.aksw.commons.serializable.lambda.SerializableSupplier;
+import org.aksw.commons.lambda.serializable.SerializableBiConsumer;
+import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
+import org.aksw.commons.lambda.serializable.SerializableFunction;
+import org.aksw.commons.lambda.serializable.SerializableSupplier;
 
 /**
  * A collector implementation that implements Serializable.

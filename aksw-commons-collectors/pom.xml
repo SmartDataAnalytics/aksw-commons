@@ -6,9 +6,6 @@
 	<artifactId>aksw-commons-collectors</artifactId>
 	<packaging>jar</packaging>
 
-	<name>AKSW Commons Collectors</name>
-	<url>http://maven.apache.org</url>
-
 	<parent>
 		<artifactId>aksw-commons-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
@@ -18,7 +15,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.aksw.commons</groupId>
-			<artifactId>aksw-commons-serializable-lambdas</artifactId>
+			<artifactId>aksw-commons-lambdas-serializable</artifactId>
 		</dependency>
 
 		<dependency>
