@@ -1,4 +1,4 @@
-package org.aksw.commons.util.life_cycle;
+package org.aksw.commons.util.lifecycle;
 
 /**
  * Basic implementation of a LifeCycle that checks for state violations

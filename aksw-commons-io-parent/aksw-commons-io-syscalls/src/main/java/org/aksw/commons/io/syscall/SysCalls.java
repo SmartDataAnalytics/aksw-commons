@@ -1,5 +1,6 @@
 package org.aksw.commons.io.syscall;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +12,7 @@ import com.google.common.base.Strings;
 public class SysCalls {
 
 	public static List<String> createDefaultSortSysCall(SysSort cmdSort) {
-		List<String> result = Arrays.asList("/usr/bin/sort", "-t", "\t");
+		List<String> result = new ArrayList<>(Arrays.asList("/usr/bin/sort", "-t", "\t"));
 		if(cmdSort.unique) {
 			result.add("-u");
 		}

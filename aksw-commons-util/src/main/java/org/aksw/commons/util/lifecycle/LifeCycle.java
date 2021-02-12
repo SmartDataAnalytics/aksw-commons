@@ -1,4 +1,4 @@
-package org.aksw.commons.util.life_cycle;
+package org.aksw.commons.util.lifecycle;
 
 /**
  * A very basic life cycle for things that can start and end

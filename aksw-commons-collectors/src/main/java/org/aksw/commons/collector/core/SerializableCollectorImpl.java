@@ -1,16 +1,15 @@
 package org.aksw.commons.collector.core;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 
 import org.aksw.commons.lambda.serializable.SerializableBiConsumer;
 import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
+import org.aksw.commons.lambda.serializable.SerializableCollector;
 import org.aksw.commons.lambda.serializable.SerializableFunction;
 import org.aksw.commons.lambda.serializable.SerializableSupplier;
 
@@ -28,7 +27,8 @@ import org.aksw.commons.lambda.serializable.SerializableSupplier;
  * @param <R>
  */
 public class SerializableCollectorImpl<T, A, R>
-	implements Collector<T, A, R>, Serializable
+	implements SerializableCollector<T, A, R>
+	// implements Collector<T, A, R>, Serializable
 {
 	private static final long serialVersionUID = 448920416560172402L;
 	

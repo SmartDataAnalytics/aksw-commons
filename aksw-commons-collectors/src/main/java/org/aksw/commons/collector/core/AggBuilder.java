@@ -12,8 +12,10 @@ import org.aksw.commons.collector.core.AggOutputTransform.AccOutputTransform;
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.Aggregator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
+import org.aksw.commons.lambda.serializable.SerializableBiConsumer;
 import org.aksw.commons.lambda.serializable.SerializableBiFunction;
 import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
+import org.aksw.commons.lambda.serializable.SerializableCollector;
 import org.aksw.commons.lambda.serializable.SerializableFunction;
 import org.aksw.commons.lambda.serializable.SerializablePredicate;
 import org.aksw.commons.lambda.serializable.SerializableSupplier;
@@ -132,6 +134,21 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 		return binaryOperator(() -> 0, Math::max);
 	}
 
+	public static <T, R, A> AggFromCollector<T, R, A> fromCollector(
+			SerializableSupplier<A> supplier,
+			SerializableBiConsumer<A, T> accumulator,
+			SerializableBinaryOperator<A> combiner,
+			SerializableFunction<A, R> finisher) {		
+		
+		SerializableCollector<T, A, R> collector = SerializableCollectorImpl.create(supplier, accumulator, combiner, finisher);		
+		return fromCollector(collector);
+	}
+
+	
+	public static <T, A, R> AggFromCollector<T, R, A> fromCollector(SerializableCollector<T, A, R> collector) {
+		return new AggFromCollector<>(collector);
+	}
+	
 	
 	
 	/*
