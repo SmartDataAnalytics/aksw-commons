@@ -40,7 +40,7 @@ public class ProcessPipesTest {
      */
     public static void main(String[] args) throws Exception {
 
-        if(true) {
+        if(false) {
             String pathStr = StandardSystemProperty.USER_DIR.value() + "/src/test/resources/kill-test.sh";
             Path path = Paths.get(pathStr);
             PipeTransformRx test = PipeTransformRx.fromSysCallStreamToStream("/bin/sh", "-c", "cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1000000 | LC_ALL=C sort -u | LC_ALL=C sort -R | LC_ALL=C sort -u");
@@ -135,7 +135,7 @@ public class ProcessPipesTest {
                         //.blockingGet();
                         .subscribe();
 
-            disposable.dispose();
+//            disposable.dispose();
 //            String line = new BufferedReader(new InputStreamReader(tmp)).readLine();
 //            tmp.close();
 //            System.out.println(line);

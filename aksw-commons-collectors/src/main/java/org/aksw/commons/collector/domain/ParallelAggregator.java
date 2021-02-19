@@ -27,6 +27,8 @@ public interface ParallelAggregator<I, O, ACC extends Accumulator<I, O>>
 	ACC combine(ACC a, ACC b);
 
 	
+	// O getValueEmpty();
+	
 	/**
 	 * Combine method that works on Objects. Exact type signatures are typically
 	 * too unwieldy to be carried around in user code.

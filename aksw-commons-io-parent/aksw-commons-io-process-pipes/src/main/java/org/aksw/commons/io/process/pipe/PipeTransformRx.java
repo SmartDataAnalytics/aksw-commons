@@ -19,6 +19,9 @@ import io.reactivex.rxjava3.core.SingleTransformer;
 
 /**
  * RxWrapper for pipe transforms
+ * 
+ * 'Polyfills' the path-based operations (mapStreamToPath, mapPathToStream, mapPathtoPath)
+ * using mapStreamToStream.
  *
  * @author raven
  *

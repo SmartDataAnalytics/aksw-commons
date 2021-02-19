@@ -62,6 +62,18 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 		return new AggInputSplit<>(state, keyMapper, valueMapper);
 	}
 
+	public static <I, K, J, O,
+		ACC extends Accumulator<J, O>,
+		AGG extends ParallelAggregator<J, O, ACC>> AggInputSplit<I, K, J, O, ACC, AGG>
+	inputSplit(
+			Set<K> fixedKeys,
+			boolean considerNewKeys,
+			SerializableFunction<? super I, ? extends Set<? extends K>> keyMapper,
+			SerializableBiFunction<? super I, ? super K, ? extends J> valueMapper,
+			AGG state) {
+		return new AggInputSplit<>(state, fixedKeys, considerNewKeys, keyMapper, valueMapper);
+	}
+	
 //	public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggInputFilter<I, O, ACC, AGG>
 //	inputFilter(SerializablePredicate<? super I> inputFilter, AGG state) {
 //	 return new AggInputFilter<>(state, inputFilter);

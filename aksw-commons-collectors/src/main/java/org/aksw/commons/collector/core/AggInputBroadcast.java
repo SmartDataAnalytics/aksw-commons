@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 
-import org.aksw.commons.collector.core.AggInputBroadcast.AccInputSplitStatic;
+import org.aksw.commons.collector.core.AggInputBroadcast.AccInputBroadcast;
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
 
@@ -29,12 +29,12 @@ public class AggInputBroadcast<I, O1, O2,
 	SUBACC2 extends Accumulator<I, O2>,
 	SUBAGG2 extends ParallelAggregator<I, O2, SUBACC2>
 	>
-	implements ParallelAggregator<I, Entry<O1, O2>, AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2>>, Serializable
+	implements ParallelAggregator<I, Entry<O1, O2>, AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2>>, Serializable
 {
 	private static final long serialVersionUID = 0;
 
 
-	public static interface AccInputSplitStatic<I, O1, O2,
+	public static interface AccInputBroadcast<I, O1, O2,
 		SUBACC1 extends Accumulator<I, O1>,
 		SUBACC2 extends Accumulator<I, O2>>
 	extends Accumulator<I, Entry<O1, O2>> {
@@ -52,24 +52,24 @@ public class AggInputBroadcast<I, O1, O2,
 	}
 	
 	@Override
-	public AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2> createAccumulator() {
-		return new AccInputSplitStaticImpl(subAgg1.createAccumulator(), subAgg2.createAccumulator());
+	public AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2> createAccumulator() {
+		return new AccInputBroadcastImpl(subAgg1.createAccumulator(), subAgg2.createAccumulator());
 	}
 	
 	@Override
-	public AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2> combine(
-			AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2> a,
-			AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2> b) {
+	public AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2> combine(
+			AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2> a,
+			AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2> b) {
 
 		SUBACC1 newSubAcc1 = subAgg1.combine(a.getSubAcc1(), b.getSubAcc1());
 		SUBACC2 newSubAcc2 = subAgg2.combine(a.getSubAcc2(), b.getSubAcc2());
 		
-		return new AccInputSplitStaticImpl(newSubAcc1, newSubAcc2); 
+		return new AccInputBroadcastImpl(newSubAcc1, newSubAcc2); 
 	}
 
 
-	public class AccInputSplitStaticImpl
-		implements AccInputSplitStatic<I, O1, O2, SUBACC1, SUBACC2>, Serializable
+	public class AccInputBroadcastImpl
+		implements AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2>, Serializable
 	{
 		private static final long serialVersionUID = 0;
 		
@@ -78,7 +78,7 @@ public class AggInputBroadcast<I, O1, O2,
 		
 		
 		
-		public AccInputSplitStaticImpl(SUBACC1 subAcc1, SUBACC2 subAcc2) {
+		public AccInputBroadcastImpl(SUBACC1 subAcc1, SUBACC2 subAcc2) {
 			super();
 			this.subAcc1 = subAcc1;
 			this.subAcc2 = subAcc2;

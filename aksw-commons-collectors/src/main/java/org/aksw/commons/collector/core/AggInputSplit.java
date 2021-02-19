@@ -1,7 +1,7 @@
 package org.aksw.commons.collector.core;
 
 import java.io.Serializable;
-import java.util.AbstractMap.SimpleEntry;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,36 +17,9 @@ import org.aksw.commons.collector.domain.ParallelAggregator;
 import com.google.common.collect.Sets;
 
 
-//class AccSplitInput<I, K, J, O, SUBACC extends Accumulator<J, O>>
-//	implements Accumulator<I, SUBACC>, Serializable
-//{
-//	// AggSplitInput
-//	protected Map<K, SUBACC> keyToSubAcc;
-//	
-//	// protected SUBACC subAcc;
-//	protected Function<? super I, ? extends J> inputTransform;
-//	
-//	public AccSplitInput(SUBACC subAcc, Function<? super I, ? extends J> inputTransform) {
-//		super();
-//		this.subAcc = subAcc;
-//	}
-//	
-//	@Override
-//	public void accumulate(I input) {
-//		J transformedInput = inputTransform.apply(input);
-//		subAcc.accumulate(transformedInput);
-//	}
-//	
-//	@Override
-//	public SUBACC getValue() {
-//		return subAcc;
-//	}		
-//}
-
-
 /**
- * An aggregator that splits the index into a set of keys and forwards the input to the accumulators
- * for each key
+ * An aggregator that splits the index into a set of keys and forwards the input to the sub-aggregator's accumulator
+ * for each key. 
  * 
  * @author raven
  *
@@ -66,21 +39,40 @@ public class AggInputSplit<I, K, J, O,
 
 	public static interface AccInputSplit<I, K, J, O, SUBACC extends Accumulator<J, O>>
 		extends AccWrapper<I, Map<K, O>, Map<K, SUBACC>> {
-		}
-
+	}
 	
+	// A set of fixed keys
+	/**  For those keys a fresh sub accumulator will be allocated immediately upon calling {@link #createAccumulator()} */
+	protected Set<K> fixedKeys;
 	
-	// Map a binding to a set of keys; only unique items are used from the iterable
+	// Whether to take into account keys besides those in the set of fixedKeys in accumulation */
+	protected boolean considerNewKeys;
+	
+	// Map an input to a set of keys
 	protected Function<? super I, ? extends Set<? extends K>> keyMapper;
 
+	// Map input and key to a value
     protected BiFunction<? super I, ? super K, ? extends J> valueMapper;
 
 	protected SUBAGG subAgg;
 	
+	/**
+	 * Create an instance with an empty set of fixedKeys and with addition of new keys allowed
+	 */
 	public AggInputSplit(SUBAGG subAgg,
 			Function<? super I, ? extends Set<? extends K>> keyMapper,
 			BiFunction<? super I, ? super K, ? extends J> valueMapper) {
+		this(subAgg, Collections.emptySet(), true, keyMapper, valueMapper);
+	}
+
+	public AggInputSplit(SUBAGG subAgg,
+			Set<K> fixedKeys,
+			boolean considerNewKeys,
+			Function<? super I, ? extends Set<? extends K>> keyMapper,
+			BiFunction<? super I, ? super K, ? extends J> valueMapper) {
 		super();
+		this.fixedKeys = fixedKeys;
+		this.considerNewKeys = considerNewKeys;
 		this.subAgg = subAgg;
 		this.keyMapper = keyMapper;
 		this.valueMapper = valueMapper;
@@ -88,7 +80,12 @@ public class AggInputSplit<I, K, J, O,
 	
 	@Override
 	public AccInputSplit<I, K, J, O, SUBACC> createAccumulator() {
-		return new AccSplitInputImpl(new LinkedHashMap<>());
+		Map<K, SUBACC> keyToSubAcc = new LinkedHashMap<>();
+		for (K key : fixedKeys) {
+			keyToSubAcc.put(key, subAgg.createAccumulator());
+		}
+				
+		return new AccSplitInputImpl(keyToSubAcc);
 	}
 	
 	@Override
@@ -136,8 +133,6 @@ public class AggInputSplit<I, K, J, O,
 
 		protected Map<K, SUBACC> keyToSubAcc;
 		
-		
-		
 		public AccSplitInputImpl(Map<K, SUBACC> keyToSubAcc) {
 			super();
 			this.keyToSubAcc = keyToSubAcc;
@@ -147,19 +142,23 @@ public class AggInputSplit<I, K, J, O,
 		public void accumulate(I input) {
 			Set<? extends K> keys = keyMapper.apply(input);
 			for (K key : keys) {
-				
-				SUBACC subAcc = keyToSubAcc.computeIfAbsent(key, k -> subAgg.createAccumulator());
-
-				J newInput = valueMapper.apply(input, key);
-				subAcc.accumulate(newInput);
+				if (considerNewKeys || fixedKeys.contains(key)) {					
+					SUBACC subAcc = keyToSubAcc.computeIfAbsent(key, k -> subAgg.createAccumulator());
+	
+					J newInput = valueMapper.apply(input, key);
+					subAcc.accumulate(newInput);
+				}
 			}
 		}
 
 		@Override
 		public Map<K, O> getValue() {
 			Map<K, O> result = keyToSubAcc.entrySet().stream()
-				.map(e -> new SimpleEntry<>(e.getKey(), e.getValue().getValue()))
-				.collect(Collectors.toMap(Entry::getKey, Entry::getValue, (u, v) -> u, LinkedHashMap::new));
+				.collect(Collectors.toMap(
+						Entry::getKey,
+						e -> e.getValue().getValue(),
+						(u, v) -> u,
+						LinkedHashMap::new));
 			
 			return result;
 		}

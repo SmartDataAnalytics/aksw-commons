@@ -14,6 +14,8 @@ import java.util.function.Function;
 
 import org.aksw.commons.io.endpoint.FileCreation;
 import org.aksw.commons.util.exception.ExceptionUtilsAksw;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.io.ByteStreams;
 
@@ -33,7 +35,8 @@ import com.google.common.io.ByteStreams;
  *
  */
 public class ProcessPipeUtils {
-
+	private static final Logger logger = LoggerFactory.getLogger(ProcessPipeUtils.class); 
+	
 
 
     /**
@@ -64,7 +67,7 @@ public class ProcessPipeUtils {
                             match -> {
                                 /* Silently ignore, because closing the channel is valid */
                                 // TODO Add logger just in case
-                                System.err.println("[DEBUG] Channel closed prematurely");
+                                logger.debug("Channel closed prematurely");
                             },
                             ExceptionUtilsAksw::isClosedChannelException);
 
@@ -129,7 +132,7 @@ public class ProcessPipeUtils {
                 if(exitValue == 0) {
                     future.complete(path);
                 } else {
-                    future.completeExceptionally(new RuntimeException("Process ended with non-zero exit code " + exitValue));
+                    future.completeExceptionally(new RuntimeException("Process creating file " + path + " ended with non-zero exit code " + exitValue));
                 }
 
             } catch(InterruptedException e) {

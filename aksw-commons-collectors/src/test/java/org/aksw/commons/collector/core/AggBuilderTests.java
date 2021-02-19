@@ -1,10 +1,14 @@
 package org.aksw.commons.collector.core;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 import org.aksw.commons.collector.core.AggInputBroadcastMap.AccInputBroadcastMap;
+import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +41,30 @@ public class AggBuilderTests {
 		Map<String, Integer> actual = acc.getValue();
 		
 		Map<String, Integer> expected = Collections.singletonMap("strLen", 8); // 8 = "testtest".length()
+		Assert.assertEquals(expected, actual);
+	}
+	
+	
+	@Test
+	public void aggInputSplitWithFixedKeysTest() {
+		Map<String, Long> expected = new LinkedHashMap<>();
+		expected.put("a", 0l);
+		expected.put("b", 1l);
+		expected.put("c", 2l);
+		expected.put("d", 1l);
+		
+		ParallelAggregator<String, Map<String, Long>, ?> agg = AggBuilder.inputSplit(
+				new LinkedHashSet<>(Arrays.asList("a", "b", "c")), true,
+				input -> Collections.singleton(input),
+				(input, key) -> key, AggBuilder.counting());
+		
+		Accumulator<String, Map<String, Long>> acc = agg.createAccumulator();
+		acc.accumulate("b");
+		acc.accumulate("c");
+		acc.accumulate("c");
+		acc.accumulate("d");
+		
+		Map<String, Long> actual = acc.getValue();
 		Assert.assertEquals(expected, actual);
 	}
 }

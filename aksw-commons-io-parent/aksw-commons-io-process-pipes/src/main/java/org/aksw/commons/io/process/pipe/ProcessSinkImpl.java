@@ -18,14 +18,14 @@ public class ProcessSinkImpl
     protected ProcessBuilder processBuilder;
 
     // Post start action, e.g. starting a thread to do copying
-    protected Consumer<? super Process> postStart;
+    protected Consumer<? super Process> postStartAction;
 
     protected Process process;
 
     public ProcessSinkImpl(ProcessBuilder processBuilder, Consumer<? super Process> postStart) {
         super();
         this.processBuilder = processBuilder;
-        this.postStart = postStart;
+        this.postStartAction = postStart;
     }
 
     protected synchronized Process startProcess() {
@@ -39,7 +39,7 @@ public class ProcessSinkImpl
 
     public InputStream getInputStream() {
         startProcess();
-        postStart.accept(process);
+        postStartAction.accept(process);
         InputStream result = process.getInputStream();
         return result;
     }
@@ -47,7 +47,7 @@ public class ProcessSinkImpl
     public FileCreation redirectTo(Path path) {
         processBuilder.redirectOutput(path.toFile());
         startProcess();
-        postStart.accept(process);
+        postStartAction.accept(process);
         FileCreation result = ProcessPipeUtils.createFileCreation(process, path);
         return result;
     }
