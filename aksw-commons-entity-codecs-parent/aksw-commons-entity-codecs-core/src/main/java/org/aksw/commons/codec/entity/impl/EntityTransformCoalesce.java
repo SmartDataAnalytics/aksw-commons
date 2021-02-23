@@ -6,6 +6,16 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.codec.entity.api.EntityTransform;
 
+/**
+ * EntityTransform based on a collection of transforms that is delegated to.
+ * For a given argument the first applicable transform from the backing collection
+ * is taken and applied.
+ * If there is no applicable transform for an argument an {@link IllegalArgumentException} is raised.
+ * 
+ * @author Claus Stadler
+ *
+ * @param <T>
+ */
 public class EntityTransformCoalesce<T>
 	implements EntityTransform<T>
 {

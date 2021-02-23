@@ -14,4 +14,13 @@ public interface EntityCodecDirect<T> {
 
 	boolean canDecode(T entity);
 	T decode(T entity);
+	
+	/** Convenience method that decodes the argument if possible and otherwise returns it as given */
+	default T decodeOrGetAsGiven(T entity) {
+		boolean canDecode = canDecode(entity);
+		T result = canDecode
+				? decode(entity)
+				: entity;
+		return result;
+	}
 }
