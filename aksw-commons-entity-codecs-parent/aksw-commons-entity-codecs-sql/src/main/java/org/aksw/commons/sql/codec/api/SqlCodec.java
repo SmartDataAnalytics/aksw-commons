@@ -1,4 +1,4 @@
-package org.aksw.commons.sql.identifier.codec.api;
+package org.aksw.commons.sql.codec.api;
 
 import org.aksw.commons.codec.entity.api.EntityCodec;
 

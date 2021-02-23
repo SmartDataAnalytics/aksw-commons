@@ -1,4 +1,4 @@
-package org.aksw.commons.codec.playground.main;
+package org.aksw.commons.sql.codec.playground.main;
 
 import java.util.Arrays;
 
@@ -7,8 +7,9 @@ import org.aksw.commons.codec.entity.impl.EntityCodecImpl;
 import org.aksw.commons.codec.entity.impl.EntityTransformCoalesce;
 import org.aksw.commons.codec.string.api.StringCodec;
 import org.aksw.commons.codec.string.impl.StringCodecPrefixAndSuffix;
-import org.aksw.commons.sql.identifier.codec.api.SqlCodec;
-import org.aksw.commons.sql.identifier.codec.impl.SqlCodecImpl;
+import org.aksw.commons.sql.codec.api.SqlCodec;
+import org.aksw.commons.sql.codec.impl.SqlCodecImpl;
+
 
 public class MainPlaygroundCodec {
 	public static void main(String[] args) {

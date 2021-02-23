@@ -1,7 +1,7 @@
-package org.aksw.commons.sql.identifier.codec.impl;
+package org.aksw.commons.sql.codec.impl;
 
 import org.aksw.commons.codec.entity.api.EntityCodec;
-import org.aksw.commons.sql.identifier.codec.api.SqlCodec;
+import org.aksw.commons.sql.codec.api.SqlCodec;
 
 public class SqlCodecImpl
 	implements SqlCodec
