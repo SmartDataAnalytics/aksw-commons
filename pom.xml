@@ -60,6 +60,7 @@
 		<module>aksw-commons-lambdas-parent</module>
 		<module>aksw-commons-collectors</module>
 		<module>aksw-commons-io-parent</module>
+		<module>aksw-commons-sql</module>
 
 		<module>aksw-commons-legacy</module>
 	</modules>
