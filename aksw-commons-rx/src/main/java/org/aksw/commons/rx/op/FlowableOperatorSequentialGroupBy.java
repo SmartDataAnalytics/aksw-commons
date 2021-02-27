@@ -172,6 +172,9 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
         protected long accNum = 0;
         protected V currentAcc = null;
 
+        protected boolean upstreamCompleted = false;
+        protected boolean lastItemSent = false;
+        
         protected AtomicLong pending = new AtomicLong();
 
         public SubscriberImpl(Subscriber<? super Entry<K, V>> downstream) {
@@ -231,15 +234,35 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
             }
         }
 
+        /** 
+         * If there is a remaining request upon onComplete then the last item can be sent out at that time.
+         * Otherwise we have to wait for additional requests.
+         */
+        protected void trySendLastItem() {
+        	if (upstreamCompleted && !lastItemSent) {
+        		
+            	// If we saw any items
+            	if (accNum != 0) {
+                    if (pending.get() > 0) {
+                    	// System.out.println("EMITTED ITEM ON COMPLETE");
+                    	lastItemSent = true;
+                    	downstream.onNext(new SimpleEntry<>(currentKey, currentAcc));
+                		downstream.onComplete();
+                    }
+                } else {
+                	// If there were no items to send then we have no more pending last item
+            		lastItemSent = true;
+                    downstream.onComplete();
+                }
+        	}
+        }
+        
+        /** Called when the upstream completes */
         @Override
         public void onComplete() {
-        	// If we saw any items
-        	if (accNum != 0) {
-                // System.out.println("EMITTED ITEM ON COMPLETE");
-                downstream.onNext(new SimpleEntry<>(currentKey, currentAcc));
-            }
+        	upstreamCompleted = true;
 
-            downstream.onComplete();
+        	trySendLastItem();
         }
 
         @Override
@@ -250,17 +273,24 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
         @Override
         public void request(long n) {
             if (SubscriptionHelper.validate(n)) {
-                BackpressureHelper.add(pending, n);
+                long before = BackpressureHelper.add(pending, n);
 //                pending.addAndGet(n);
 //                System.out.println("BEFORE REQUESTED " + n + " total pending " + pending.get() + " " + Thread.currentThread());
-                upstream.request(1);
+
+                
+                if (before == 0) {
+                	upstream.request(1);
+                }
 //                System.out.println("AFTER REQUESTED " + n + " total pending " + pending.get() + " " + Thread.currentThread());
             }
+            
+            trySendLastItem();
         }
 
         @Override
         public void cancel() {
             upstream.cancel();
+            upstream = SubscriptionHelper.CANCELLED;
         }
     }
 }
