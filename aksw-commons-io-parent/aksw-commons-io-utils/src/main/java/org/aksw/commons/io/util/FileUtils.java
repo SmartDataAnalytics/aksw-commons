@@ -28,25 +28,7 @@ public class FileUtils {
 	/** TODO Add: Recursively delete all empty folders 
 	 * @throws IOException */
 	
-	
-	public static void main(String[] args) throws IOException {
-		Path path = Paths.get("/home/raven/tmp/lsq/data/dbpedia/test");
-
-		List<Path> paths = listPaths(path, "part*");
-		Collections.sort(paths, (a, b) -> a.getFileName().toString().compareTo(b.getFileName().toString()));
-		System.out.println("Merging: " + paths);
 		
-		Stopwatch sw = Stopwatch.createStarted();
-		FileMerger merger = FileMerger.create(
-				Paths.get("/tmp/merged.trig"),
-				paths);
-		merger.addProgressListener(self -> System.out.println("Progress: " + self.getProgress()));
-		merger.run();
-		
-		System.out.println(sw.elapsed(TimeUnit.SECONDS));
-		
-	}
-	
 	
 	/**
 	 * Return a list of files matching a given glob pattern and a base path

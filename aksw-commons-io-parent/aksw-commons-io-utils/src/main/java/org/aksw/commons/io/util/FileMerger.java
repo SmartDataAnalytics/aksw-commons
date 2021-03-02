@@ -17,7 +17,8 @@ import java.util.function.Consumer;
  * Use {@link #create(Path, List)} to set up an instance of this class.
  * Use {@link #run()} to perform the merge.
  * Calling run while another thread is already running raises an {@link IllegalStateException}.
- * Run be called in succession in which the process is repeated.
+ * In principle, run be called again after another invocation completes in which the process with the exact
+ * same parameters is repeated; although typically the usefulness is limited.
  * 
  * @author Claus Stadler
  */
@@ -110,6 +111,24 @@ public class FileMerger
 	}
 	
 	
+//	public static void main(String[] args) throws IOException {
+//		Path path = Paths.get(args[0]);
+//
+//		List<Path> paths = listPaths(path, "part*");
+//		Collections.sort(paths, (a, b) -> a.getFileName().toString().compareTo(b.getFileName().toString()));
+//		System.out.println("Merging: " + paths);
+//		
+//		Stopwatch sw = Stopwatch.createStarted();
+//		FileMerger merger = FileMerger.create(
+//				Paths.get("/tmp/merged.trig"),
+//				paths);
+//		merger.addProgressListener(self -> System.out.println("Progress: " + self.getProgress()));
+//		merger.run();
+//		
+//		System.out.println(sw.elapsed(TimeUnit.SECONDS));
+//		
+//	}
+
 //  Experimenting with multi threading; for some reason this just hangs
 //	try (FileChannel out = FileChannel.open(dest, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {					
 //	}

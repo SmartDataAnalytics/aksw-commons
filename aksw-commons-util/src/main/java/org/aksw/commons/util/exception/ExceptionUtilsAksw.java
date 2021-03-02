@@ -115,12 +115,13 @@ public class ExceptionUtilsAksw {
 
     /** Check the stack trace for whether it contains an instance of any of the given exceptions
         classes and return that instance. Arguments are checked in order. */
-    public static Optional<Throwable> unwrap(Throwable given, Class<?>... priorities) {
+    @SafeVarargs
+	public static Optional<Throwable> unwrap(Throwable given, Class<? extends Throwable>... priorities) {
         Optional<Throwable> result = unwrap(given, Arrays.asList(priorities));
         return result;
     }
 
-    public static Optional<Throwable> unwrap(Throwable given, List<Class<?>> priorities) {
+    public static Optional<Throwable> unwrap(Throwable given, List<Class<? extends Throwable>> priorities) {
 
         // Iterate the classes by priority and return the first match
         Optional<Throwable> result = priorities.stream()
