@@ -77,11 +77,6 @@ public class CollectionUtils {
         return result;
     }
 
-    public static <T> Set<T> asSet(Iterable<T> c)
-    {
-        return (c instanceof Set) ? (Set<T>)c : newCollection(LinkedHashSet::new, c);
-    }
-
     /** Transforms an array into a Hashset. @author Konrad Höffner */
     static <T> Set<T> asSet(T[] a)
     {
