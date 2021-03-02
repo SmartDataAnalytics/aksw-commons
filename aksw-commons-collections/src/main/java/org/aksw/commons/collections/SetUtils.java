@@ -1,6 +1,7 @@
 package org.aksw.commons.collections;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,11 @@ public class SetUtils {
     public static <T> Set<T> asSet(Iterable<T> c)
     {
         return (c instanceof Set) ? (Set<T>)c : CollectionUtils.newCollection(LinkedHashSet::new, c);
+    }
+
+    public static <T> Set<T> newLinkedHashSet(Iterator<? extends T> c)
+    {
+    	return CollectionUtils.newCollection(LinkedHashSet::new, c);
     }
 
 
