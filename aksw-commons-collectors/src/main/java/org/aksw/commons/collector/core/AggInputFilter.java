@@ -49,6 +49,7 @@ public class AggInputFilter<
 		return new AccFilterInputImpl(subAcc, inputFilter);
 	}
 
+
 	@Override
 	public AccInputFilter<I, O, SUBACC> combine(AccInputFilter<I, O, SUBACC> a,
 			AccInputFilter<I, O, SUBACC> b) {
@@ -60,12 +61,47 @@ public class AggInputFilter<
 		
 		return new AccFilterInputImpl(combined, inputFilter); 
 	}
+
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((inputFilter == null) ? 0 : inputFilter.hashCode());
+		result = prime * result + ((subAgg == null) ? 0 : subAgg.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggInputFilter other = (AggInputFilter) obj;
+		if (inputFilter == null) {
+			if (other.inputFilter != null)
+				return false;
+		} else if (!inputFilter.equals(other.inputFilter))
+			return false;
+		if (subAgg == null) {
+			if (other.subAgg != null)
+				return false;
+		} else if (!subAgg.equals(other.subAgg))
+			return false;
+		return true;
+	}
+
 //	@Override
 //	public O getValue(AccFilterInput<I, O, SUBACC> a) {
 //		return subAgg.getValue(a.getValue());
 //	}
 
+	
+	
+	
 	
 	public class AccFilterInputImpl
 		implements AccInputFilter<I, O, SUBACC>, Serializable
@@ -103,6 +139,44 @@ public class AggInputFilter<
 		@Override
 		public O getValue() {
 			return subAcc.getValue();
-		}		
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((inputFilter == null) ? 0 : inputFilter.hashCode());
+			result = prime * result + ((subAcc == null) ? 0 : subAcc.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccFilterInputImpl other = (AccFilterInputImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (inputFilter == null) {
+				if (other.inputFilter != null)
+					return false;
+			} else if (!inputFilter.equals(other.inputFilter))
+				return false;
+			if (subAcc == null) {
+				if (other.subAcc != null)
+					return false;
+			} else if (!subAcc.equals(other.subAcc))
+				return false;
+			return true;
+		}
+
+		private AggInputFilter getEnclosingInstance() {
+			return AggInputFilter.this;
+		}
 	}
 }

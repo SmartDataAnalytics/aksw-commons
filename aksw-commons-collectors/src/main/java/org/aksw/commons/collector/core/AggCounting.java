@@ -32,6 +32,15 @@ public class AggCounting<I>
 		return new AccCounting(newCount);
 	}
 
+	@Override
+	public int hashCode() {
+		return 41;
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		return other == null ? false : getClass() == other.getClass();
+	}
 	
 	public class AccCounting
 		implements Accumulator<I, Long>, Serializable
@@ -53,6 +62,35 @@ public class AggCounting<I>
 		@Override
 		public Long getValue() {
 			return count;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + (int) (count ^ (count >>> 32));
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccCounting other = (AccCounting) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (count != other.count)
+				return false;
+			return true;
+		}
+
+		private AggCounting getEnclosingInstance() {
+			return AggCounting.this;
 		}
 	}
 }

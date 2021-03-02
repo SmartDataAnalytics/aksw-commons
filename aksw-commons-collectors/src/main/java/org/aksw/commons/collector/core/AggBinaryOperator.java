@@ -44,6 +44,39 @@ public class AggBinaryOperator<I>
 		return new AccBinaryOperatorImpl(combinedValue);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((plusOperator == null) ? 0 : plusOperator.hashCode());
+		result = prime * result + ((zeroElementSupplier == null) ? 0 : zeroElementSupplier.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggBinaryOperator other = (AggBinaryOperator) obj;
+		if (plusOperator == null) {
+			if (other.plusOperator != null)
+				return false;
+		} else if (!plusOperator.equals(other.plusOperator))
+			return false;
+		if (zeroElementSupplier == null) {
+			if (other.zeroElementSupplier != null)
+				return false;
+		} else if (!zeroElementSupplier.equals(other.zeroElementSupplier))
+			return false;
+		return true;
+	}
+
+
+
 	public class AccBinaryOperatorImpl
 		implements Accumulator<I, I>, Serializable
 	{
@@ -64,6 +97,38 @@ public class AggBinaryOperator<I>
 		@Override
 		public I getValue() {
 			return value;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((value == null) ? 0 : value.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccBinaryOperatorImpl other = (AccBinaryOperatorImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (value == null) {
+				if (other.value != null)
+					return false;
+			} else if (!value.equals(other.value))
+				return false;
+			return true;
+		}
+
+		private AggBinaryOperator getEnclosingInstance() {
+			return AggBinaryOperator.this;
 		}
 	}
 }

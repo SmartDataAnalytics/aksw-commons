@@ -2,6 +2,7 @@ package org.aksw.commons.collector.core;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,8 +14,6 @@ import java.util.stream.Collectors;
 import org.aksw.commons.collector.core.AggInputSplit.AccInputSplit;
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
-
-import com.google.common.collect.Sets;
 
 
 /**
@@ -97,7 +96,10 @@ public class AggInputSplit<I, K, J, O,
 		
 		Map<K, SUBACC> newMap = new LinkedHashMap<>();
 		
-		Set<K> allKeys = Sets.union(accA.keySet(), accB.keySet());
+		// Set<K> allKeys = Sets.union(accA.keySet(), accB.keySet());
+		Set<K> allKeys = new HashSet<>();
+		allKeys.addAll(accA.keySet());
+		allKeys.addAll(accB.keySet());
 		for (K key : allKeys) {
 			SUBACC subAccA = accA.get(key);
 			SUBACC subAccB = accB.get(key);
@@ -124,7 +126,55 @@ public class AggInputSplit<I, K, J, O,
 		
 		return new AccSplitInputImpl(newMap); 
 	}
-	
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (considerNewKeys ? 1231 : 1237);
+		result = prime * result + ((fixedKeys == null) ? 0 : fixedKeys.hashCode());
+		result = prime * result + ((keyMapper == null) ? 0 : keyMapper.hashCode());
+		result = prime * result + ((subAgg == null) ? 0 : subAgg.hashCode());
+		result = prime * result + ((valueMapper == null) ? 0 : valueMapper.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggInputSplit other = (AggInputSplit) obj;
+		if (considerNewKeys != other.considerNewKeys)
+			return false;
+		if (fixedKeys == null) {
+			if (other.fixedKeys != null)
+				return false;
+		} else if (!fixedKeys.equals(other.fixedKeys))
+			return false;
+		if (keyMapper == null) {
+			if (other.keyMapper != null)
+				return false;
+		} else if (!keyMapper.equals(other.keyMapper))
+			return false;
+		if (subAgg == null) {
+			if (other.subAgg != null)
+				return false;
+		} else if (!subAgg.equals(other.subAgg))
+			return false;
+		if (valueMapper == null) {
+			if (other.valueMapper != null)
+				return false;
+		} else if (!valueMapper.equals(other.valueMapper))
+			return false;
+		return true;
+	}
+
+
+
 
 	public class AccSplitInputImpl
 		implements AccInputSplit<I, K, J, O, SUBACC>, Serializable
@@ -167,6 +217,37 @@ public class AggInputSplit<I, K, J, O,
 		public Map<K, SUBACC> getSubAcc() {
 			return keyToSubAcc;
 		}
-		
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((keyToSubAcc == null) ? 0 : keyToSubAcc.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccSplitInputImpl other = (AccSplitInputImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (keyToSubAcc == null) {
+				if (other.keyToSubAcc != null)
+					return false;
+			} else if (!keyToSubAcc.equals(other.keyToSubAcc))
+				return false;
+			return true;
+		}
+
+		private AggInputSplit getEnclosingInstance() {
+			return AggInputSplit.this;
+		}
 	}
 }

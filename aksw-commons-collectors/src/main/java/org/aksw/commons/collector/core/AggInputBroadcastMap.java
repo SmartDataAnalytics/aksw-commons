@@ -68,6 +68,32 @@ public class AggInputBroadcastMap<I, K, O>
 		return new AccInputBroadcastMapImpl(newMap); 
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((subAggMap == null) ? 0 : subAggMap.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggInputBroadcastMap other = (AggInputBroadcastMap) obj;
+		if (subAggMap == null) {
+			if (other.subAggMap != null)
+				return false;
+		} else if (!subAggMap.equals(other.subAggMap))
+			return false;
+		return true;
+	}
+
+
 
 	public class AccInputBroadcastMapImpl
 		implements AccInputBroadcastMap<I, K, O>, Serializable
@@ -103,6 +129,37 @@ public class AggInputBroadcastMap<I, K, O>
 		public Map<K, Accumulator<I, O>> getSubAccMap() {
 			return keyToSubAcc;
 		}
-		
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((keyToSubAcc == null) ? 0 : keyToSubAcc.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccInputBroadcastMapImpl other = (AccInputBroadcastMapImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (keyToSubAcc == null) {
+				if (other.keyToSubAcc != null)
+					return false;
+			} else if (!keyToSubAcc.equals(other.keyToSubAcc))
+				return false;
+			return true;
+		}
+
+		private AggInputBroadcastMap getEnclosingInstance() {
+			return AggInputBroadcastMap.this;
+		}
 	}
 }

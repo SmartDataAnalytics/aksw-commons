@@ -43,4 +43,29 @@ public class AggNatural<I, C extends Collection<I>>
 	public Accumulator<I, C> combine(Accumulator<I, C> a, Accumulator<I, C> b) {
 		return ParallelAggregators.combineAccumulators(a, b, x -> x, x -> x);
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((accSupplier == null) ? 0 : accSupplier.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggNatural other = (AggNatural) obj;
+		if (accSupplier == null) {
+			if (other.accSupplier != null)
+				return false;
+		} else if (!accSupplier.equals(other.accSupplier))
+			return false;
+		return true;
+	}
 }

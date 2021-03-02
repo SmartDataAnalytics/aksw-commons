@@ -44,6 +44,38 @@ public class AggOutputTransform<I, O, P,
 		
 		return new AccOutputTransformImpl(combined, outputTransform);
 	}
+		
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((outputTransform == null) ? 0 : outputTransform.hashCode());
+		result = prime * result + ((subAgg == null) ? 0 : subAgg.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggOutputTransform other = (AggOutputTransform) obj;
+		if (outputTransform == null) {
+			if (other.outputTransform != null)
+				return false;
+		} else if (!outputTransform.equals(other.outputTransform))
+			return false;
+		if (subAgg == null) {
+			if (other.subAgg != null)
+				return false;
+		} else if (!subAgg.equals(other.subAgg))
+			return false;
+		return true;
+	}
+
 
 	public class AccOutputTransformImpl
 		implements AccOutputTransform<I, O, P, SUBACC>, Serializable
@@ -74,6 +106,44 @@ public class AggOutputTransform<I, O, P,
 			O rawResult = subAcc.getValue();
 			P result = outputTransform.apply(rawResult);
 			return result;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((outputTransform == null) ? 0 : outputTransform.hashCode());
+			result = prime * result + ((subAcc == null) ? 0 : subAcc.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccOutputTransformImpl other = (AccOutputTransformImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (outputTransform == null) {
+				if (other.outputTransform != null)
+					return false;
+			} else if (!outputTransform.equals(other.outputTransform))
+				return false;
+			if (subAcc == null) {
+				if (other.subAcc != null)
+					return false;
+			} else if (!subAcc.equals(other.subAcc))
+				return false;
+			return true;
+		}
+
+		private AggOutputTransform getEnclosingInstance() {
+			return AggOutputTransform.this;
 		}
 	}
 }

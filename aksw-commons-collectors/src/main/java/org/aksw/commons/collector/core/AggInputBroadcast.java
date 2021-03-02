@@ -68,6 +68,39 @@ public class AggInputBroadcast<I, O1, O2,
 	}
 
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((subAgg1 == null) ? 0 : subAgg1.hashCode());
+		result = prime * result + ((subAgg2 == null) ? 0 : subAgg2.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggInputBroadcast other = (AggInputBroadcast) obj;
+		if (subAgg1 == null) {
+			if (other.subAgg1 != null)
+				return false;
+		} else if (!subAgg1.equals(other.subAgg1))
+			return false;
+		if (subAgg2 == null) {
+			if (other.subAgg2 != null)
+				return false;
+		} else if (!subAgg2.equals(other.subAgg2))
+			return false;
+		return true;
+	}
+
+
+
 	public class AccInputBroadcastImpl
 		implements AccInputBroadcast<I, O1, O2, SUBACC1, SUBACC2>, Serializable
 	{
@@ -107,6 +140,43 @@ public class AggInputBroadcast<I, O1, O2,
 		public SUBACC2 getSubAcc2() {
 			return subAcc2;
 		}
-		
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getEnclosingInstance().hashCode();
+			result = prime * result + ((subAcc1 == null) ? 0 : subAcc1.hashCode());
+			result = prime * result + ((subAcc2 == null) ? 0 : subAcc2.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccInputBroadcastImpl other = (AccInputBroadcastImpl) obj;
+			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+				return false;
+			if (subAcc1 == null) {
+				if (other.subAcc1 != null)
+					return false;
+			} else if (!subAcc1.equals(other.subAcc1))
+				return false;
+			if (subAcc2 == null) {
+				if (other.subAcc2 != null)
+					return false;
+			} else if (!subAcc2.equals(other.subAcc2))
+				return false;
+			return true;
+		}
+
+		private AggInputBroadcast getEnclosingInstance() {
+			return AggInputBroadcast.this;
+		}
 	}
 }

@@ -60,8 +60,35 @@ public class AggLcaMap<T>
 		
 		return a;
 	}
-
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((lcaFinder == null) ? 0 : lcaFinder.hashCode());
+		return result;
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AggLcaMap other = (AggLcaMap) obj;
+		if (lcaFinder == null) {
+			if (other.lcaFinder != null)
+				return false;
+		} else if (!lcaFinder.equals(other.lcaFinder))
+			return false;
+		return true;
+	}
+
+
+
 	public static class AccLcaMap<T>
 		implements Accumulator<T, Map<T, T>>, Serializable
 	{
@@ -124,6 +151,37 @@ public class AggLcaMap<T>
 		
 		public static <T> AccLcaMap<T> create(SerializableBiFunction<? super T, ? super T, ? extends T> lcaFinder) {
 			return new AccLcaMap<>(lcaFinder);
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((childToAncestor == null) ? 0 : childToAncestor.hashCode());
+			result = prime * result + ((lcaFinder == null) ? 0 : lcaFinder.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			AccLcaMap other = (AccLcaMap) obj;
+			if (childToAncestor == null) {
+				if (other.childToAncestor != null)
+					return false;
+			} else if (!childToAncestor.equals(other.childToAncestor))
+				return false;
+			if (lcaFinder == null) {
+				if (other.lcaFinder != null)
+					return false;
+			} else if (!lcaFinder.equals(other.lcaFinder))
+				return false;
+			return true;
 		}
 	}
 

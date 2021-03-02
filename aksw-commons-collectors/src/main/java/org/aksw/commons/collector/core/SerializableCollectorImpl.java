@@ -62,4 +62,46 @@ public class SerializableCollectorImpl<T, A, R>
 		return new SerializableCollectorImpl<>(supplier, accumulator, combiner, finisher);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((accumulator == null) ? 0 : accumulator.hashCode());
+		result = prime * result + ((combiner == null) ? 0 : combiner.hashCode());
+		result = prime * result + ((finisher == null) ? 0 : finisher.hashCode());
+		result = prime * result + ((supplier == null) ? 0 : supplier.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SerializableCollectorImpl other = (SerializableCollectorImpl) obj;
+		if (accumulator == null) {
+			if (other.accumulator != null)
+				return false;
+		} else if (!accumulator.equals(other.accumulator))
+			return false;
+		if (combiner == null) {
+			if (other.combiner != null)
+				return false;
+		} else if (!combiner.equals(other.combiner))
+			return false;
+		if (finisher == null) {
+			if (other.finisher != null)
+				return false;
+		} else if (!finisher.equals(other.finisher))
+			return false;
+		if (supplier == null) {
+			if (other.supplier != null)
+				return false;
+		} else if (!supplier.equals(other.supplier))
+			return false;
+		return true;
+	}
 };
