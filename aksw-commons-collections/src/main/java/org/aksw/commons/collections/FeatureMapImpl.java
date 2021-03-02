@@ -232,7 +232,7 @@ public class FeatureMapImpl<K, V>
 	@Override
 	public Set<Set<K>> getTagSets(Object v) {
 		@SuppressWarnings("unchecked")
-		Set<Set<K>> result = SetUtils.asSet(valueToTagSets.get((V)v));
+		Set<Set<K>> result = CollectionUtils.asSet(valueToTagSets.get((V)v));
 		return result;
 	}
 }
