@@ -44,7 +44,7 @@ public class AccCollection<I, C extends Collection<I>>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AccCollection other = (AccCollection) obj;
+		AccCollection<?, ?> other = (AccCollection<?, ?>) obj;
 		if (value == null) {
 			if (other.value != null)
 				return false;

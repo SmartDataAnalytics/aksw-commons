@@ -2,7 +2,6 @@ package org.aksw.commons.collector.core;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collector.Characteristics;
 
 import org.aksw.commons.collector.domain.Accumulator;
 import org.aksw.commons.collector.domain.ParallelAggregator;
@@ -70,7 +69,7 @@ public class CollectorFromParallelAggregator<T, R, A extends Accumulator<T, R>>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		CollectorFromParallelAggregator other = (CollectorFromParallelAggregator) obj;
+		CollectorFromParallelAggregator<?, ?, ?> other = (CollectorFromParallelAggregator<?, ?, ?>) obj;
 		if (aggregator == null) {
 			if (other.aggregator != null)
 				return false;

@@ -80,7 +80,7 @@ public class AggInputFilter<
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggInputFilter other = (AggInputFilter) obj;
+		AggInputFilter<?, ?, ?, ?> other = (AggInputFilter<?, ?, ?, ?>) obj;
 		if (inputFilter == null) {
 			if (other.inputFilter != null)
 				return false;
@@ -159,6 +159,7 @@ public class AggInputFilter<
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccFilterInputImpl other = (AccFilterInputImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -175,7 +176,7 @@ public class AggInputFilter<
 			return true;
 		}
 
-		private AggInputFilter getEnclosingInstance() {
+		private AggInputFilter<?, ?, ?, ?> getEnclosingInstance() {
 			return AggInputFilter.this;
 		}
 	}

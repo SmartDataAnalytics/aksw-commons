@@ -81,7 +81,7 @@ public class SerializableCollectorImpl<T, A, R>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		SerializableCollectorImpl other = (SerializableCollectorImpl) obj;
+		SerializableCollectorImpl<?, ?, ?> other = (SerializableCollectorImpl<?, ?, ?>) obj;
 		if (accumulator == null) {
 			if (other.accumulator != null)
 				return false;

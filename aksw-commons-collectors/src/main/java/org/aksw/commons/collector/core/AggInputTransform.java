@@ -63,7 +63,7 @@ public class AggInputTransform<I, J, O,
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggInputTransform other = (AggInputTransform) obj;
+		AggInputTransform<?, ?, ?, ?, ?> other = (AggInputTransform<?, ?, ?, ?, ?>) obj;
 		if (inputTransform == null) {
 			if (other.inputTransform != null)
 				return false;
@@ -128,6 +128,7 @@ public class AggInputTransform<I, J, O,
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccTransformInputImpl other = (AccTransformInputImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -144,7 +145,7 @@ public class AggInputTransform<I, J, O,
 			return true;
 		}
 
-		private AggInputTransform getEnclosingInstance() {
+		private AggInputTransform<?, ?, ?, ?, ?> getEnclosingInstance() {
 			return AggInputTransform.this;
 		}
 	}

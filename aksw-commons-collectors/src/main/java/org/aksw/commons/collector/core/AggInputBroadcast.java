@@ -85,7 +85,7 @@ public class AggInputBroadcast<I, O1, O2,
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggInputBroadcast other = (AggInputBroadcast) obj;
+		AggInputBroadcast<?, ?, ?, ?, ?, ?, ?> other = (AggInputBroadcast<?, ?, ?, ?, ?, ?, ?>) obj;
 		if (subAgg1 == null) {
 			if (other.subAgg1 != null)
 				return false;
@@ -159,6 +159,7 @@ public class AggInputBroadcast<I, O1, O2,
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccInputBroadcastImpl other = (AccInputBroadcastImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -175,7 +176,7 @@ public class AggInputBroadcast<I, O1, O2,
 			return true;
 		}
 
-		private AggInputBroadcast getEnclosingInstance() {
+		private AggInputBroadcast<?, ?, ?, ?, ?, ?, ?> getEnclosingInstance() {
 			return AggInputBroadcast.this;
 		}
 	}

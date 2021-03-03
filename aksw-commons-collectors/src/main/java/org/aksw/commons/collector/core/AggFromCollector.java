@@ -57,7 +57,7 @@ public class AggFromCollector<I, O, A>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggFromCollector other = (AggFromCollector) obj;
+		AggFromCollector<?, ?, ?> other = (AggFromCollector<?, ?, ?>) obj;
 		if (collector == null) {
 			if (other.collector != null)
 				return false;
@@ -112,6 +112,7 @@ public class AggFromCollector<I, O, A>
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccFromCollectorImpl other = (AccFromCollectorImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -123,7 +124,7 @@ public class AggFromCollector<I, O, A>
 			return true;
 		}
 
-		private AggFromCollector getEnclosingInstance() {
+		private AggFromCollector<?, ?, ?> getEnclosingInstance() {
 			return AggFromCollector.this;
 		}
 	}

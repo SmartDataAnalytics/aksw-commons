@@ -81,6 +81,7 @@ public class AggCounting<I>
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccCounting other = (AccCounting) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -89,7 +90,7 @@ public class AggCounting<I>
 			return true;
 		}
 
-		private AggCounting getEnclosingInstance() {
+		private AggCounting<?> getEnclosingInstance() {
 			return AggCounting.this;
 		}
 	}

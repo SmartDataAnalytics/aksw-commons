@@ -147,7 +147,7 @@ public class AggInputSplit<I, K, J, O,
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggInputSplit other = (AggInputSplit) obj;
+		AggInputSplit<?, ?, ?, ?, ?, ?> other = (AggInputSplit<?, ?, ?, ?, ?, ?>) obj;
 		if (considerNewKeys != other.considerNewKeys)
 			return false;
 		if (fixedKeys == null) {
@@ -235,6 +235,7 @@ public class AggInputSplit<I, K, J, O,
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccSplitInputImpl other = (AccSplitInputImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -246,7 +247,7 @@ public class AggInputSplit<I, K, J, O,
 			return true;
 		}
 
-		private AggInputSplit getEnclosingInstance() {
+		private AggInputSplit<?, ?, ?, ?, ?, ?> getEnclosingInstance() {
 			return AggInputSplit.this;
 		}
 	}

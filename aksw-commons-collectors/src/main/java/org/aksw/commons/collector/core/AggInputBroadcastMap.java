@@ -84,7 +84,7 @@ public class AggInputBroadcastMap<I, K, O>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggInputBroadcastMap other = (AggInputBroadcastMap) obj;
+		AggInputBroadcastMap<?, ?, ?> other = (AggInputBroadcastMap<?, ?, ?>) obj;
 		if (subAggMap == null) {
 			if (other.subAggMap != null)
 				return false;
@@ -147,6 +147,7 @@ public class AggInputBroadcastMap<I, K, O>
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccInputBroadcastMapImpl other = (AccInputBroadcastMapImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -158,7 +159,7 @@ public class AggInputBroadcastMap<I, K, O>
 			return true;
 		}
 
-		private AggInputBroadcastMap getEnclosingInstance() {
+		private AggInputBroadcastMap<?, ?, ?> getEnclosingInstance() {
 			return AggInputBroadcastMap.this;
 		}
 	}

@@ -62,7 +62,7 @@ public class AggOutputTransform<I, O, P,
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggOutputTransform other = (AggOutputTransform) obj;
+		AggOutputTransform<?, ?, ?, ?, ?> other = (AggOutputTransform<?, ?, ?, ?, ?>) obj;
 		if (outputTransform == null) {
 			if (other.outputTransform != null)
 				return false;
@@ -126,6 +126,7 @@ public class AggOutputTransform<I, O, P,
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccOutputTransformImpl other = (AccOutputTransformImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -142,7 +143,7 @@ public class AggOutputTransform<I, O, P,
 			return true;
 		}
 
-		private AggOutputTransform getEnclosingInstance() {
+		private AggOutputTransform<?, ?, ?, ?, ?> getEnclosingInstance() {
 			return AggOutputTransform.this;
 		}
 	}

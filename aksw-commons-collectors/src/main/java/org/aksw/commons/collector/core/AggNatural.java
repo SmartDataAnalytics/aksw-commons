@@ -60,7 +60,7 @@ public class AggNatural<I, C extends Collection<I>>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggNatural other = (AggNatural) obj;
+		AggNatural<?, ?> other = (AggNatural<?, ?>) obj;
 		if (accSupplier == null) {
 			if (other.accSupplier != null)
 				return false;

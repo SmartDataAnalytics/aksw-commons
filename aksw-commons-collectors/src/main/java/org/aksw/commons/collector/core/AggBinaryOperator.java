@@ -61,7 +61,7 @@ public class AggBinaryOperator<I>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggBinaryOperator other = (AggBinaryOperator) obj;
+		AggBinaryOperator<?> other = (AggBinaryOperator<?>) obj;
 		if (plusOperator == null) {
 			if (other.plusOperator != null)
 				return false;
@@ -116,6 +116,7 @@ public class AggBinaryOperator<I>
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
+			@SuppressWarnings("unchecked")
 			AccBinaryOperatorImpl other = (AccBinaryOperatorImpl) obj;
 			if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
 				return false;
@@ -127,7 +128,7 @@ public class AggBinaryOperator<I>
 			return true;
 		}
 
-		private AggBinaryOperator getEnclosingInstance() {
+		private AggBinaryOperator<?> getEnclosingInstance() {
 			return AggBinaryOperator.this;
 		}
 	}

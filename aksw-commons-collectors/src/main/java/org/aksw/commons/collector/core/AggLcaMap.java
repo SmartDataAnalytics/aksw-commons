@@ -78,7 +78,7 @@ public class AggLcaMap<T>
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		AggLcaMap other = (AggLcaMap) obj;
+		AggLcaMap<?> other = (AggLcaMap<?>) obj;
 		if (lcaFinder == null) {
 			if (other.lcaFinder != null)
 				return false;
@@ -170,7 +170,7 @@ public class AggLcaMap<T>
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			AccLcaMap other = (AccLcaMap) obj;
+			AccLcaMap<?> other = (AccLcaMap<?>) obj;
 			if (childToAncestor == null) {
 				if (other.childToAncestor != null)
 					return false;
