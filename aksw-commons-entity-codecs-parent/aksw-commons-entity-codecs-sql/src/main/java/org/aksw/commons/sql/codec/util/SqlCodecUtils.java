@@ -32,6 +32,11 @@ public class SqlCodecUtils {
 		return result;
 	}
 
+	public static SqlCodec createSqlCodecDoubleQuotes() {
+		SqlCodec result = SqlCodecUtils.createSqlCodec("'", "\"");
+		return result;
+	}
+
 	/** Create an sql codec suitable for use with apache spark - uses backticks for escaping sql identifiers */
 	public static SqlCodec createSqlCodecForApacheSpark() {
 		SqlCodec result = SqlCodecUtils.createSqlCodec("'", "`", "\"", "'");
