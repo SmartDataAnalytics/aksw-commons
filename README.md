@@ -14,6 +14,11 @@ A modular utility collection for solving recurrent basic tasks in a productive a
 * [SQL](aksw-commons-sql) Utilities to parse SQL statements (using [JSqlParser](https://github.com/JSQLParser/JSqlParser) and (re-)encode mentioned identifiers using *Entity Codec: SQL)*.
 * [RX](aksw-commons-rx) Additional operators and utilities for the Reactive eXtensions for Java [RxJava](https://github.com/ReactiveX/RxJava). Most prominently features on-line aggregation of consecutive items belonging to the same group using [FlowableOperatorSequentialGroupBy](aksw-commons-rx/src/main/java/org/aksw/commons/rx/op/FlowableOperatorSequentialGroupBy.java). Also includes an operator for [measuring throughput](aksw-commons-rx/src/main/java/org/aksw/commons/rx/op/OperatorObserveThroughput.java).
 * [XML](aksw-commons-util-xml): Static convenience methods for loading XML and evaluating XPath expressions.
+* [io-utils](aksw-commons-io-utils): Various utilities. Includes a Java NIO-based file merger (because FileUtils.copyMerge is missing in Hadoop 3), URI-to-path conversion.
+* [io-syscalls](aksw-commons-io-syscalls): Abstraction over java's ProcessBuilder to efficiently pass streams and file arguments to system processes.
+* [io-process-pipes](aksw-commons-io-process-pipes): Abstraction to efficiently build pipes using both system calls and native java implementations alike. Main use case is to enable codec implementations that make use of system calls, such as using lbzip2 instead commons compress. Under development.
+
+* [util](aksw-commons-util): This package needs refactoring as it contains utils for unrelated domains, such as JDBC metadata retrieval and health checking. Also the name 'util' is too generic.
 
 
 ### Where is it used?
