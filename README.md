@@ -25,9 +25,9 @@ A modular utility collection for solving recurrent basic tasks in a productive a
 AKSW Commons is essentially the jena-idenpendent code from our [jena-sparql-api](https://github.com/SmartDataAnalytics/jena-sparql-api) Semantic Web toolkit.
 
 * [RDFUnit](https://github.com/AKSW/RDFUnit): RDF data quality assessment framework
-* [DL-Learner](https://github.com/AKSW/RDFUnit): Framework for symbolic machine learning
-* [Facete](https://github.com/AKSW/RDFUnit): Faceted Search framework
-* [SANSA](https://github.com/AKSW/RDFUnit): Big Data RDF Processing and Analytics framework
+* [DL-Learner](https://github.com/SmartDataAnalytics/DL-Learner): Framework for symbolic machine learning
+* [Facete](https://github.com/SmartDataAnalytics/DL-Learner): Faceted Search framework
+* [SANSA](https://github.com/SANSA-Stack/SANSA-Stack): Big Data RDF Processing and Analytics framework
 
 
 ### License
