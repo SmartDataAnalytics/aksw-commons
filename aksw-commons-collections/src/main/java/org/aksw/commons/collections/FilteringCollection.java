@@ -11,18 +11,26 @@ public class FilteringCollection<T, C extends Collection<T>>
     extends AbstractCollection<T>
 {
     protected C backend;
-    protected Predicate<Object> predicate;
+    protected Predicate<? super T> predicate;
 
-    public FilteringCollection(C backend, Predicate<Object> predicate) {
+    public FilteringCollection(C backend, Predicate<? super T> predicate) {
         super();
         this.backend = backend;
         this.predicate = predicate;
     }
 
+    public C getBackend() {
+		return backend;
+	}
+    
+    public Predicate<? super T> getPredicate() {
+		return predicate;
+	}
+    
     @Override
     public boolean add(T e) {
         if(!predicate.test(e)) {
-            throw new IllegalArgumentException("add failed because item was rejected by predicate " + e);
+            throw new IllegalArgumentException("add failed because item was rejected by predicate; violating item: " + e);
         }
         boolean result = backend.add(e);
         return result;
@@ -30,23 +38,34 @@ public class FilteringCollection<T, C extends Collection<T>>
 
     @Override
     public boolean contains(Object o) {
-        boolean accepted = predicate.test(o);
+    	boolean result;
+    	try {
+    		boolean accepted = predicate.test((T)o);
+    		
+            result = accepted
+                    ? backend.contains(o)
+                    : false;
+    	} catch (ClassCastException e) {
+    		result = false;
+    	}
 
-        boolean result = accepted
-                ? backend.contains(o)
-                : false;
 
         return result;
     }
 
     @Override
     public boolean remove(Object o) {
-        boolean accepted = predicate.test(o);
-
-        boolean result = accepted
-                ? backend.remove(o)
-                : false;
-
+    	boolean result;
+    	try {
+	        boolean accepted = predicate.test((T)o);
+	
+	        result = accepted
+	                ? backend.remove(o)
+	                : false;
+    	} catch (ClassCastException e) {
+    		result = false;
+    	}
+    	
         return result;
     }
 

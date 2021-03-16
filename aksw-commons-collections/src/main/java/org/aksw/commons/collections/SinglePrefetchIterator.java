@@ -3,9 +3,6 @@ package org.aksw.commons.collections;
 import java.io.Closeable;
 import java.util.Iterator;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * An abstract base class for iterating over containers of unknown size. This
  * works by prefetching junks of the container: Whenever the iterator reaches
@@ -23,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public abstract class SinglePrefetchIterator<T>
     implements Iterator<T>, Closeable
 {
-    private static Logger logger = LoggerFactory.getLogger(SinglePrefetchIterator.class);
+//    private static Logger logger = LoggerFactory.getLogger(SinglePrefetchIterator.class);
     private T	    current		= null;
     private boolean finished	= false;
 
@@ -53,7 +50,8 @@ public abstract class SinglePrefetchIterator<T>
         }
         catch(Exception e) {
             current = null;
-            logger.error("Error prefetching data", e);
+            throw new RuntimeException("Error prefetching data", e);
+//            logger.error("Error prefetching data", e);
         }
     }
 

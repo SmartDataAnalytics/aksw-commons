@@ -8,8 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang.StringEscapeUtils;
-
 
 
 public class Inserter {
@@ -53,8 +51,12 @@ public class Inserter {
 		} else if(o instanceof Number) {
 			return "" + o;
 		} else{
-			return "'" + StringEscapeUtils.escapeSql("" + o) + "'";
+			return "'" + escapeSqlUnsafe("" + o) + "'";
 		}
+	}
+	
+	public static String escapeSqlUnsafe(String str) {
+		return str.replace("'", "\\'");
 	}
 
 	public String composeCheckPart(List<Object> cells, int columnWidth, int[] idMap) {

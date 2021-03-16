@@ -1,9 +1,14 @@
 package org.aksw.commons.collections;
 
 
-import com.google.common.collect.Sets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import com.google.common.collect.Sets;
 
 /**
  * Created by Claus Stadler
@@ -109,7 +114,7 @@ public class MultiMaps
         Collection<V> values = map.get(key);
         return (values == null)
                 ? Collections.<V>emptySet()
-                : CollectionUtils.asSet(values);
+                : SetUtils.asSet(values);
     }
 
     /**

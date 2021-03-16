@@ -45,7 +45,12 @@ public class GeneratorBlacklist<T>
 		GeneratorBlacklist<T> result = create(generator, blacklist::contains);
 	    return result;
 	}
-	
+
+	public static GeneratorBlacklist<String> create(String prefix, Collection<?> blacklist) {
+		GeneratorBlacklist<String> result = create(Generator.create(prefix), blacklist::contains);
+	    return result;
+	}
+
 //	@Override
 //	public String toString() {
 //	    return "current: " + generator.current() + ", blacklist: " + blacklist;

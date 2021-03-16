@@ -1,12 +1,15 @@
 package org.aksw.commons.collections;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 
 public class IterableUtils {
+
     /**
      * Will only compare as many items as there are in the shorter iterable
      * 

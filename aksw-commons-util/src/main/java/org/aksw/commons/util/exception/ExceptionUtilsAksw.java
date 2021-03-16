@@ -1,8 +1,8 @@
 package org.aksw.commons.util.exception;
 
 import java.net.UnknownHostException;
+import java.nio.channels.ClosedChannelException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -94,6 +94,13 @@ public class ExceptionUtilsAksw {
         }
     }
 
+    /**
+     * Forward the root cause message of the throwable 't' to 'handler' unless any of the 'predicates' evaluates
+     * to true. Useful to e.g. silently suppress broken pipe exceptions in shell scripting pipes.
+     * 
+     * The handler is typically something like logger::warn or logger::error.
+     *  
+     */
     @SafeVarargs
     public static <T extends Throwable> void forwardRootCauseMessageUnless(T t, Consumer<? super String> handler, Predicate<? super T> ... predicates) {
         boolean anyMatch = Arrays.asList(predicates).stream()
@@ -108,12 +115,13 @@ public class ExceptionUtilsAksw {
 
     /** Check the stack trace for whether it contains an instance of any of the given exceptions
         classes and return that instance. Arguments are checked in order. */
-    public static Optional<Throwable> unwrap(Throwable given, Class<?>... priorities) {
+    @SafeVarargs
+	public static Optional<Throwable> unwrap(Throwable given, Class<? extends Throwable>... priorities) {
         Optional<Throwable> result = unwrap(given, Arrays.asList(priorities));
         return result;
     }
 
-    public static Optional<Throwable> unwrap(Throwable given, List<Class<?>> priorities) {
+    public static Optional<Throwable> unwrap(Throwable given, List<Class<? extends Throwable>> priorities) {
 
         // Iterate the classes by priority and return the first match
         Optional<Throwable> result = priorities.stream()
@@ -123,5 +131,34 @@ public class ExceptionUtilsAksw {
             .findFirst();
 
         return result;
+    }
+    
+    public static boolean isClosedChannelException(Throwable t) {
+        boolean result = t instanceof ClosedChannelException;
+        return result;
+    }
+
+    @SafeVarargs
+    public static void rethrowUnlessRootCauseMatches(
+            Throwable e,
+            Consumer<? super Predicate<? super Throwable>> firstMatchingConditionCallback,
+            Predicate<? super Throwable>... conditions) {
+        Throwable rootCause = ExceptionUtils.getRootCause(e);
+
+        Predicate<? super Throwable> match = Arrays.asList(conditions).stream()
+            .filter(p -> p.test(rootCause))
+            .findFirst()
+            .orElse(null);
+
+        if(match == null) {
+            throw new RuntimeException(e);
+        } else {
+            firstMatchingConditionCallback.accept(match);
+        }
+    }
+
+    @SafeVarargs
+    public static void rethrowUnlessRootCauseMatches(Throwable e, Predicate<? super Throwable>... conditions) {
+        rethrowUnlessRootCauseMatches(e, condition -> {}, conditions);
     }
 }
