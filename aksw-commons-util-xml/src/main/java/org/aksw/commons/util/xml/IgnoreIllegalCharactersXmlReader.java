@@ -1,4 +1,4 @@
-package org.aksw.commons.util;
+package org.aksw.commons.util.xml;
 
 import java.io.BufferedReader;
 import java.io.IOException;

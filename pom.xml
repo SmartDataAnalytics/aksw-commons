@@ -62,6 +62,7 @@
 		<module>aksw-commons-io-parent</module>
 		<module>aksw-commons-entity-codecs-parent</module>
 		<module>aksw-commons-rx</module>
+		<module>aksw-commons-jgit-utils</module>
 
 		<module>aksw-commons-legacy</module>
 	</modules>

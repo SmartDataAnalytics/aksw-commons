@@ -5,10 +5,17 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.SortedMap;
+import java.util.TreeSet;
 
 public class StringUtils
-{
+{	
 	/**
 	 * Return the number of end-of-line characters at the current position - if any.
 	 * For non-eol positions the result is 0

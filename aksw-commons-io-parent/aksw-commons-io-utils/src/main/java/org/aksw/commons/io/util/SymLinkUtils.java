@@ -2,6 +2,7 @@ package org.aksw.commons.io.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
@@ -10,6 +11,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.aksw.common.io.util.symlink.SymbolicLinkStrategy;
 
 public class SymLinkUtils {
     /**
@@ -38,6 +41,7 @@ public class SymLinkUtils {
      * @return
      */
     public static Path resolveSymLinkAbsolute(Path symLinkSrc, Path symLinkTgt) {
+    	// resolveSibling instead of getParent.resolve?
         Path result = symLinkSrc.getParent().resolve(symLinkTgt).normalize().toAbsolutePath();
         return result;
     }
@@ -52,7 +56,12 @@ public class SymLinkUtils {
      * @return
      * @throws IOException
      */
-    public static Collection<Path> allocateSymbolicLink(Path rawTarget, Path rawSourceFolder, String prefix, String suffix) throws IOException {
+    public static Collection<Path> allocateSymbolicLink(
+    		SymbolicLinkStrategy symlinkStrategy,
+    		Path rawTarget,
+    		Path rawSourceFolder,
+    		String prefix,
+    		String suffix) throws IOException {
         Path sourceFolder = rawSourceFolder.normalize();
         Path target = rawTarget.normalize();
 
@@ -64,7 +73,7 @@ public class SymLinkUtils {
 
         //System.out.println("Realtivation: " + file.relativize(folder));
 
-        Map<Path, Path> existingSymLinks = readSymbolicLinks(rawSourceFolder, prefix, suffix);
+        Map<Path, Path> existingSymLinks = readSymbolicLinks(symlinkStrategy, rawSourceFolder, prefix, suffix);
 
         Collection<Path> result = existingSymLinks.entrySet().stream()
                 .filter(e -> {
@@ -92,15 +101,16 @@ public class SymLinkUtils {
 //            })
 //            .collect(Collectors.toList());
 
-        if(result.isEmpty()) {
+        if (result.isEmpty()) {
             for(int i = 1; ; ++i) {
                 String cand = prefix + (i == 1 ? "" : i) + suffix;
                 Path c = sourceFolder.resolve(cand);
 
                 //Path relTgt = c.relativize(target);
 
-                if(!Files.exists(c)) {
-                    Files.createSymbolicLink(c, relTgt);
+                if (!Files.exists(c, LinkOption.NOFOLLOW_LINKS)) {
+                	symlinkStrategy.createSymbolicLink(c, relTgt);
+                    // Files.createSymbolicLink(c, relTgt);
                     result = Collections.singleton(c);
                     break;
                 }
@@ -120,30 +130,36 @@ public class SymLinkUtils {
      * @return
      * @throws IOException
      */
-    public static Map<Path, Path> readSymbolicLinks(Path sourceFolder, String prefix, String suffix) throws IOException {
-        Map<Path, Path> result = Files.list(sourceFolder)
-                .filter(Files::isSymbolicLink)
-                .filter(path -> {
-                    String fileName = path.getFileName().toString();
-
-                    boolean r = fileName.startsWith(prefix) && fileName.endsWith(suffix);
-                    // TODO Check that the string between prefix and suffix is either an empty string
-                    // or corresponds to a number
-                    return r;
-                })
-                .flatMap(path -> {
-                    Stream<Entry<Path, Path>> r;
-                    try {
-                        r = Stream.of(new SimpleEntry<>(path, Files.readSymbolicLink(path)));
-                    } catch (IOException e) {
-                        // logger.warn("Error reading symoblic link; skipping", e);
-                        r = Stream.empty();
-                    }
-                    return r;
-                })
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
-        return result;
+    public static Map<Path, Path> readSymbolicLinks(
+    		SymbolicLinkStrategy symlinkStrategy,
+    		Path sourceFolder,
+    		String prefix,
+    		String suffix) throws IOException {
+        try (Stream<Path> stream = Files.list(sourceFolder)) {
+	    	Map<Path, Path> result = stream
+	                .filter(symlinkStrategy::isSymbolicLink)
+	                .filter(path -> {
+	                    String fileName = path.getFileName().toString();
+	
+	                    boolean r = fileName.startsWith(prefix) && fileName.endsWith(suffix);
+	                    // TODO Check that the string between prefix and suffix is either an empty string
+	                    // or corresponds to a number
+	                    return r;
+	                })
+	                .flatMap(path -> {
+	                    Stream<Entry<Path, Path>> r;
+	                    try {
+	                        r = Stream.of(new SimpleEntry<>(path, symlinkStrategy.readSymbolicLink(path)));
+	                    } catch (IOException e) {
+	                        // logger.warn("Error reading symoblic link; skipping", e);
+	                        r = Stream.empty();
+	                    }
+	                    return r;
+	                })
+	                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+	
+	        return result;
+        }
     }
 
 }
