@@ -34,7 +34,10 @@ public class SymLinkUtils {
 
     /**
      * Given a path that is considered a symlink and its target, return the absolute path
-     * obtained by resolving the target (which may be a relative path) against the symblink
+     * obtained by resolving the target (which may be a relative path) against the symlink.
+     * 
+     * This method allows resolving a relative symlinkTgt of a different file system (e.g. UNIX) against
+     * a symLinkSrc (e.g. WebDAV)
      * 
      * @param symLinkSrc
      * @param symLinkTgt
@@ -42,7 +45,14 @@ public class SymLinkUtils {
      */
     public static Path resolveSymLinkAbsolute(Path symLinkSrc, Path symLinkTgt) {
     	// resolveSibling instead of getParent.resolve?
-        Path result = symLinkSrc.getParent().resolve(symLinkTgt).normalize().toAbsolutePath();
+    	
+    	Path result;
+    	if (symLinkTgt.isAbsolute()) {
+    		result = symLinkTgt;
+    	} else {
+    		String[] tgtSegments = PathUtils.getPathSegments(symLinkTgt);
+    		result = PathUtils.resolve(symLinkSrc.getParent(), tgtSegments).normalize().toAbsolutePath();
+    	}
         return result;
     }
 
@@ -120,6 +130,37 @@ public class SymLinkUtils {
         return result;
     }
     
+    
+    public static Stream<Entry<Path, Path>> streamSymbolicLinks(
+    		SymbolicLinkStrategy symlinkStrategy,
+    		Path sourceFolder,
+    		String prefix,
+    		String suffix) throws IOException {
+
+        Stream<Entry<Path, Path>> result = Files.list(sourceFolder)
+            .filter(symlinkStrategy::isSymbolicLink)
+            .filter(path -> {
+                String fileName = path.getFileName().toString();
+
+                boolean r = fileName.startsWith(prefix) && fileName.endsWith(suffix);
+                // TODO Check that the string between prefix and suffix is either an empty string
+                // or corresponds to a number
+                return r;
+            })
+            .flatMap(path -> {
+                Stream<Entry<Path, Path>> r;
+                try {
+                    r = Stream.of(new SimpleEntry<>(path, symlinkStrategy.readSymbolicLink(path)));
+                } catch (IOException e) {
+                    // logger.warn("Error reading symoblic link; skipping", e);
+                    r = Stream.empty();
+                }
+                return r;
+            });
+
+        return result;
+    }
+ 
 
     /**
      * Within 'sourceFolder' read all symbolic links with the pattern 'baseName${number}' and return a map
@@ -135,29 +176,9 @@ public class SymLinkUtils {
     		Path sourceFolder,
     		String prefix,
     		String suffix) throws IOException {
-        try (Stream<Path> stream = Files.list(sourceFolder)) {
+        try (Stream<Entry<Path, Path>> stream = streamSymbolicLinks(symlinkStrategy, sourceFolder, prefix, suffix)) {
 	    	Map<Path, Path> result = stream
-	                .filter(symlinkStrategy::isSymbolicLink)
-	                .filter(path -> {
-	                    String fileName = path.getFileName().toString();
-	
-	                    boolean r = fileName.startsWith(prefix) && fileName.endsWith(suffix);
-	                    // TODO Check that the string between prefix and suffix is either an empty string
-	                    // or corresponds to a number
-	                    return r;
-	                })
-	                .flatMap(path -> {
-	                    Stream<Entry<Path, Path>> r;
-	                    try {
-	                        r = Stream.of(new SimpleEntry<>(path, symlinkStrategy.readSymbolicLink(path)));
-	                    } catch (IOException e) {
-	                        // logger.warn("Error reading symoblic link; skipping", e);
-	                        r = Stream.empty();
-	                    }
-	                    return r;
-	                })
 	                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-	
 	        return result;
         }
     }

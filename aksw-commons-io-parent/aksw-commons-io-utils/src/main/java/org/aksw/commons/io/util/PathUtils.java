@@ -34,6 +34,15 @@ public class PathUtils {
 		return result;
 	}
 
+	public static String[] splitBySlash(String str) {
+		String[] result = Arrays.asList(str.split("/+")).stream()
+				.map(String::trim)
+				.filter(x -> !x.isEmpty())
+				.collect(Collectors.toList())
+				.toArray(new String[0]);
+		
+		return result;
+	}
 
 	public static String join(String[] segments) {
 		String result = Arrays.asList(segments).stream().collect(Collectors.joining("/"));

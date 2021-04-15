@@ -40,12 +40,12 @@
 
 
 		<!-- Not ideal to depend on jena; but here it's just for testing -->
-		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-arq</artifactId>
-			<version>3.17.0</version>
-			<scope>test</scope>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.jena</groupId> -->
+<!-- 			<artifactId>jena-arq</artifactId> -->
+<!-- 			<version>3.17.0</version> -->
+<!-- 			<scope>test</scope> -->
+<!-- 		</dependency> -->
 
 
 		<dependency>

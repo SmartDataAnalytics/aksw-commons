@@ -14,12 +14,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 public class UriToPathUtils {
 
-	
-	public static String[] splitBySlash(String str) {
-		String[] result = str.split("/+"); // Treat consecutive dots as one 
-		return result;
-	}
-
 	public static String[] toPathSegments(URI uri) {
 		List<String> parts = new ArrayList<>();
 		
@@ -39,12 +33,12 @@ public class UriToPathUtils {
 			// on file:// urls with SCHEME_PATTERN_MATCH_FAILED
 			// Tilde is common symbol with e.g. the Apache Web server's userdir mod
 			String tmp = path.replaceAll("~", "_");
-			parts.addAll(Arrays.asList(splitBySlash(tmp)));
+			parts.addAll(Arrays.asList(PathUtils.splitBySlash(tmp)));
 		}
 
 		String query = uri.getQuery();
 		if (query != null) {
-			parts.addAll(Arrays.asList(splitBySlash(query)));
+			parts.addAll(Arrays.asList(PathUtils.splitBySlash(query)));
 		}
 
 		String[] result = parts.toArray(new String[0]);		return result;
@@ -53,7 +47,7 @@ public class UriToPathUtils {
 	
 	public static String[] toPathSegments(String uri) {
 		URI u = UriUtils.newURI(uri);
-		String[] result = toPathSegments(uri);
+		String[] result = toPathSegments(u);
 		return result;
 	}
 
