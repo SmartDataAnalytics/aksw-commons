@@ -2,8 +2,7 @@ package org.aksw.common.io.util.symlink;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -11,7 +10,6 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 
@@ -46,13 +44,19 @@ public class SymbolicLinkStrategyFile
 	@Override
 	public void createSymbolicLink(Path link, Path target) throws IOException {
 		byte[] bytes = target.toString().getBytes(StandardCharsets.UTF_8);
-		try (FileChannel fc = FileChannel.open(link, openOptions)) {
-			fc.write(ByteBuffer.wrap(bytes));
-			
-			if (Arrays.asList(openOptions).contains(StandardOpenOption.DSYNC)) {
-				fc.force(true); // Is that needed if we use DSYNC?
-			}
+		try (OutputStream out = Files.newOutputStream(link, openOptions)) {
+			out.write(bytes);			
+			out.flush();
 		}
+		
+// FIXME Not all VFS support file channel
+//		try (FileChannel fc = FileChannel.open(link, openOptions)) {
+//			fc.write(ByteBuffer.wrap(bytes));
+//			
+//			if (Arrays.asList(openOptions).contains(StandardOpenOption.DSYNC)) {
+//				fc.force(true); // Is that needed if we use DSYNC?
+//			}
+//		}
 	}
 
 	@Override
