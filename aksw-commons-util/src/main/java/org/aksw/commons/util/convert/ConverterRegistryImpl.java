@@ -1,11 +1,9 @@
 package org.aksw.commons.util.convert;
 
-import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.aksw.commons.util.memoize.MemoizedBiFunction;
