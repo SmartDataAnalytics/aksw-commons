@@ -7,11 +7,49 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.aksw.commons.collections.IteratorUtils;
+
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;
 
 public class StreamUtils {
+	
+	/**
+	 * Create a single-use {@link Iterable} from a stream. Allows for easier use of Streams in
+	 * for-loops:
+	 * 
+	 * <pre>{@code
+	 *   Stream<T> stream = ...;
+	 *   for (T item : StreamUtils.iterableOf(stream)) {
+	 *   }
+	 * }</pre>
+	 * 
+	 * @param <T>
+	 * @param stream
+	 * @return
+	 */
+	public static <T> Iterable<T> iterable(Stream<T> stream) {
+		Iterable<T> result = () -> stream.iterator();
+		return result;
+	}
 
+	
+    public static <T> T expectOneItem(Stream<T> stream) {
+    	try {
+    		return IteratorUtils.expectOneItem(stream.iterator());
+    	} finally {
+    		stream.close();
+    	}
+    }
+
+    public static <T> T expectZeroOrOneItems(Stream<T> stream) {
+    	try {
+    		return IteratorUtils.expectZeroOrOneItems(stream.iterator());
+    	} finally {
+    		stream.close();
+    	}
+    }
+	
     /**
      * Note we could implement another version where each batch's List is lazy loaded from the stream -
      * but this would probably require complete consumption of each batch in order

@@ -7,7 +7,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 
 public class IterableUtils {
-
     
     public static <T> T expectOneItem(Iterable<T> iterable) {
     	return IteratorUtils.expectOneItem(iterable.iterator());
