@@ -33,6 +33,12 @@ public interface Ref<T>
      */
     Ref<T> acquire(Object purpose);
 
+    default Ref<T> acquire() {
+    	return acquire(null);
+    }
+
+    
+
     /**
      * A reference may itself be released, but references to it may keep it alive
      *

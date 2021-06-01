@@ -38,7 +38,7 @@ public class RefImpl<T>
      * closing a reference removes the map entry before it can be accessed and conversely,
      * synchronizing on the map prevents the reference from becoming released.
      * 
-     * TODO Point to the ImprovedLoadingCache implementation
+     * TODO Point to the ClaimingLoadingCache implementation
      */
     protected Object synchronizer;
 
@@ -77,11 +77,11 @@ public class RefImpl<T>
      */
     @Override
     protected void finalize() throws Throwable {
-        super.finalize();
-
-        if(!isReleased) {
+        if (!isReleased) {
             close();
         }
+
+        super.finalize();
     }
 
 
@@ -171,6 +171,10 @@ public class RefImpl<T>
     public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
         // return new ReferenceImpl<T>(null, value, releaseAction, comment);
     	return create(value, null, releaseAction, comment);
+    }
+
+    public static <T> Ref<T> create(T value, Object synchronizer, AutoCloseable releaseAction) {
+        return create(value, synchronizer, releaseAction, null);
     }
 
     public static <T> Ref<T> create(T value, Object synchronizer, AutoCloseable releaseAction, Object comment) {
