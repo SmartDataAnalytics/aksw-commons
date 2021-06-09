@@ -71,17 +71,6 @@ public class StorageNodeLeafDomainList<D, C, V>
         return true;
     }
 
-    @Override
-    public boolean isSetNode() {
-        return true;
-    }
-
-    @Override
-    public List<?> getStoreAsList(Object store) {
-        return (List<?>)store;
-    }
-
-
     public V tupleToValue(D tupleLike) {
         V result = valueFunction.map(tupleLike, (d, i) -> tupleAccessor.get(d, tupleIdxs[i]));
         return result;

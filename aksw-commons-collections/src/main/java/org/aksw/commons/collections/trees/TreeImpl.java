@@ -47,10 +47,10 @@ public class TreeImpl<T>
 
     @Override
     public List<T> getChildren(T node) {
-        // TODO We could be default treate null as a super-root node whose only child is the root node.
+        // TODO We could by default treat null as a super-root node whose only child is the root node.
         // It would also be consistent in the sense that the parent of the root would be null and its child would be the root
         List<T> result = node == null
-                ? (root == null ? Collections.emptyList() : Collections.singletonList(root))
+                ? (root != null ? Collections.emptyList() : parentToChildren.apply(node))
                 : parentToChildren.apply(node);
 
 //        List<T> result = parentToChild.apply(node);

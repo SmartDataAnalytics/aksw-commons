@@ -50,6 +50,17 @@ abstract class StorageNodeListBase<D, C, V>
         return listSupplier.get();
     }
 
+    
+    @Override
+    public boolean isListNode() {
+        return true;
+    }
+
+    @Override
+    public List<?> getStoreAsList(Object store) {
+        return (List<?>)store;
+    }
+
     @Override
     public boolean isEmpty(List<V> store) {
         boolean result = store.isEmpty();

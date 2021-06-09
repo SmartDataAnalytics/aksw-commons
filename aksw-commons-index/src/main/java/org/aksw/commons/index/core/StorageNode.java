@@ -94,6 +94,17 @@ public interface StorageNode<D, C, V> {
     }
 
     /**
+     * Whether this storage node stores are lists
+     *
+     * Experimental method; may be replaced by a generic getStoreType() method that returns e.g Alt.class, Set.class, etc.
+     *
+     * @return
+     */
+    default boolean isListNode() {
+        return false;
+    }
+
+    /**
      * Whether this storage node stores are a maps
      *
      * Experimental method; may be replaced by a generic getStoreType() method that returns e.g Alt.class, Set.class, etc.

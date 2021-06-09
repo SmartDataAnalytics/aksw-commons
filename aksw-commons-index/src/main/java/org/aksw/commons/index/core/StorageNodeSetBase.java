@@ -51,6 +51,16 @@ abstract class StorageNodeSetBase<D, C, V>
     }
 
     @Override
+    public boolean isSetNode() {
+        return true;
+    }
+
+    @Override
+    public Set<?> getStoreAsSet(Object store) {
+        return (Set<?>)store;
+    }
+    
+    @Override
     public boolean isEmpty(Set<V> store) {
         boolean result = store.isEmpty();
         return result;

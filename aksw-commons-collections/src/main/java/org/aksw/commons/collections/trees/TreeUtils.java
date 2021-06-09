@@ -411,7 +411,7 @@ public class TreeUtils {
     public static <T> Stream<T> leafStream(Tree<T> tree) {
         T root = tree.getRoot();
         Stream<T> result = inOrderSearch(root, tree::getChildren)
-            .filter(node -> node == null ? true : tree.getChildren(node).isEmpty());
+            .filter(node -> node == null ? root != null : tree.getChildren(node).isEmpty());
 
 //        List<T> result = new ArrayList<T>();
 //        T root = tree.getRoot();
