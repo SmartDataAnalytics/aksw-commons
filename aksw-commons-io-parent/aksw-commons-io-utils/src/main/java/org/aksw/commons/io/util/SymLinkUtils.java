@@ -12,7 +12,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.aksw.common.io.util.symlink.SymbolicLinkStrategy;
+import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 
 public class SymLinkUtils {
     /**

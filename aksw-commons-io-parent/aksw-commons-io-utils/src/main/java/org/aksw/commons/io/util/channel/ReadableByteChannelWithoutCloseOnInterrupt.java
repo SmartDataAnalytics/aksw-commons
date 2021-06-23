@@ -1,4 +1,4 @@
-package org.aksw.common.io.util.channel;
+package org.aksw.commons.io.util.channel;
 
 import java.io.IOException;
 import java.io.InputStream;

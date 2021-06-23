@@ -1,4 +1,4 @@
-package org.aksw.common.io.util.symlink;
+package org.aksw.commons.io.util.symlink;
 
 public class SymbolicLinkStrategies {
 	public static final SymbolicLinkStrategy STANDARD = new SymbolicLinkStrategyStandard();

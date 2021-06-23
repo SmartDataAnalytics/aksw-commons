@@ -1,4 +1,4 @@
-package org.aksw.common.io.util.symlink;
+package org.aksw.commons.io.util.symlink;
 
 import java.io.IOException;
 import java.io.InputStream;
