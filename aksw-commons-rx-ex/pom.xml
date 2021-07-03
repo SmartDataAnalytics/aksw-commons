@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>aksw-commons-rx</artifactId>
+	<artifactId>aksw-commons-rx-ex</artifactId>
 	<packaging>jar</packaging>
 
 	<parent>
@@ -13,24 +13,10 @@
 	</parent>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.aksw.commons</groupId>
-			<artifactId>aksw-commons-util</artifactId>
-		</dependency>
 
 		<dependency>
-			<groupId>org.aksw.commons</groupId>
-			<artifactId>aksw-commons-collections</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.aksw.commons</groupId>
-			<artifactId>aksw-commons-rx-ex</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
+			<groupId>io.reactivex.rxjava3</groupId>
+			<artifactId>rxjava</artifactId>
 		</dependency>
 
 		<dependency>

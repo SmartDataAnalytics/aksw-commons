@@ -1,6 +1,7 @@
 
-RxJava Operators
+# Extended RxJava Operators
 
+Tho content of this module are plain extensions of rx with no dependencies on further libraries (except for slfj4 logging).
 
 ## Operators for aggregation / accumulation
 

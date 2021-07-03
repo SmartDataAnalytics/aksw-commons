@@ -61,6 +61,7 @@
 		<module>aksw-commons-collectors</module>
 		<module>aksw-commons-io-parent</module>
 		<module>aksw-commons-entity-codecs-parent</module>
+		<module>aksw-commons-rx-ex</module>
 		<module>aksw-commons-rx</module>
 		<module>aksw-commons-jgit-utils</module>
 		<module>aksw-commons-tuples</module>
@@ -167,6 +168,18 @@
 				<version>${project.version}</version>
 			</dependency>
 
+                        <dependency>
+                                <groupId>org.aksw.commons</groupId>
+                                <artifactId>aksw-commons-rx-ex</artifactId>
+                                <version>${project.version}</version>
+                        </dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-rx</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-lambdas-serializable</artifactId>
@@ -254,13 +267,8 @@
 			<!-- </dependency> -->
 
 			<!-- Used for SQL-Escapting (StringEscapeUtils) -->
-			<!--
-			<dependency>
-				<groupId>commons-lang</groupId>
-				<artifactId>commons-lang</artifactId>
-				<version>2.5</version>
-			</dependency>
-			-->
+			<!-- <dependency> <groupId>commons-lang</groupId> <artifactId>commons-lang</artifactId> 
+				<version>2.5</version> </dependency> -->
 
 			<dependency>
 				<groupId>org.apache.commons</groupId>
