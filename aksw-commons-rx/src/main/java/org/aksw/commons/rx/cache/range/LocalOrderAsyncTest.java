@@ -39,7 +39,7 @@ class MyPublisher<T, S extends Comparable<S>> {
     }
 }
 
-public class AsyncLoadTest {
+public class LocalOrderAsyncTest {
     public static void main(String[] args) {
         LocalOrderSpec<Long, Long> spec = LocalOrderSpecImpl.forLong(x -> x);
 
