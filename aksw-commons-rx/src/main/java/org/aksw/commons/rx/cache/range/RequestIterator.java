@@ -310,22 +310,19 @@ public class RequestIterator<T>
     /**
      * Abort the request
      */
-    public void abort() {
+    public void close() {
         // Prevent creating an action after this method is called
         if (!isAborted) {
             synchronized (this) {
                 if (!isAborted) {
                     isAborted = true;
-                    close();
+
+                    // TODO Release all claimed pages
+                    // TODO Release all claimed task-ranges
+
                 }
             }
         }
-    }
-
-
-    public void close() {
-        // TODO Release all claimed pages
-        // TODO Release all claimed task-ranges
     }
 
 }

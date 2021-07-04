@@ -78,6 +78,9 @@ public class SmartRangeCacheImpl<T>
 {
     protected RangedSupplier<Long, T> backend;
 
+    protected int pageSize;
+    protected ClaimingCache<Long, RangeBuffer<T>> pageCache;
+
 
     /**
      * A service for loading pages
@@ -87,8 +90,6 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    protected int pageSize;
-    protected ClaimingCache<Long, RangeBuffer<T>> pageCache;
     // protected SortedCache<Long, RangeBuffer<T>> pageCache;
 
     protected Set<RangeRequestExecutor<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
@@ -282,7 +283,7 @@ public class SmartRangeCacheImpl<T>
                     e.onComplete();
                 }
             },
-            RequestIterator::abort);
+            RequestIterator::close);
     }
 
 
