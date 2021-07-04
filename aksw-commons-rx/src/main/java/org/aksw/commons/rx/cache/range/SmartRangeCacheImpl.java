@@ -11,6 +11,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 
+import org.aksw.commons.rx.op.FlowableOperatorSequentialGroupBy;
+import org.aksw.commons.rx.op.OperatorLocalOrder;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
@@ -20,8 +22,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
+import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 
 interface PageManager<T> {
     // Reference<? extends Page<T>>
@@ -100,6 +104,18 @@ public class SmartRangeCacheImpl<T>
     protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock(true);
 
     protected volatile long knownSize = -1;
+
+    protected PublishSubject<Ref<Page<T>>> pageLoadPublisher = PublishSubject.create();
+
+
+    public Flowable<Page<T>> getPageFlow(long pageId) {
+
+        pageLoadPublisher
+            .toFlowable(BackpressureStrategy.BUFFER)
+            .lift(OperatorLocalOrder.<Ref<Page<T>>>forLong(pageId, Page::getOffset));
+
+
+    }
 
     public SmartRangeCacheImpl(RangedSupplier<Long, T> backend) {
         this.backend = backend;

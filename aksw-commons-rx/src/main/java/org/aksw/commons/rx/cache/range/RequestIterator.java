@@ -288,7 +288,7 @@ public class RequestIterator<T>
             currentIndex = cache.getIndexInPageForOffset(currentOffset);
         }
 
-        T result = null; //currentPageRef.get().get(currentIndex);
+        T result = currentPageRef.get().get(currentIndex);
 
         ++currentIndex;
         ++currentOffset;

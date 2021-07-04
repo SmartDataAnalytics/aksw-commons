@@ -19,29 +19,29 @@ import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.internal.subscriptions.SubscriptionHelper;
 
 public final class OperatorLocalOrder<T, S>
+    extends LocalOrderBase<T, S>
     implements FlowableOperator<T, T> {
 
     private static final Logger logger = LoggerFactory.getLogger(OperatorLocalOrder.class);
 
-    protected Function<? super T, ? extends S> extractSeqId;
-    protected Function<? super S, ? extends S> incrementSeqId;
-
-    protected BiFunction<? super S, ? super S, ? extends Number> distanceFn;
-
     protected S initialExpectedSeqId;
-
 
     public OperatorLocalOrder(
             S initialExpectedSeqId,
             Function<? super S, ? extends S> incrementSeqId,
             BiFunction<? super S, ? super S, ? extends Number> distanceFn,
             Function<? super T, ? extends S> extractSeqId) {
-        super();
-        this.extractSeqId = extractSeqId;
-        this.incrementSeqId = incrementSeqId;
-        this.distanceFn = distanceFn;
+        super(incrementSeqId, distanceFn, extractSeqId);
         this.initialExpectedSeqId = initialExpectedSeqId;
     }
+
+    public OperatorLocalOrder(
+            S initialExpectedSeqId,
+            LocalOrderSpec<T, S> localOrderSpec) {
+        super(localOrderSpec);
+        this.initialExpectedSeqId = initialExpectedSeqId;
+    }
+
 
 
     public class SubscriberImpl
@@ -204,14 +204,21 @@ public final class OperatorLocalOrder<T, S>
 
     public static <T> OperatorLocalOrder<T, Long> forLong(long initiallyExpectedId, Function<? super T, ? extends Long> extractSeqId) {
         return new OperatorLocalOrder<T, Long>(
-        		initiallyExpectedId,
-        		id -> Long.valueOf(id.longValue() + 1l),
-        		(a, b) -> a - b, extractSeqId);
+                initiallyExpectedId,
+                id -> Long.valueOf(id.longValue() + 1l),
+                (a, b) -> a - b, extractSeqId);
     }
 
     public static <T, S extends Comparable<S>> OperatorLocalOrder<T, S> wrap(S initiallyExpectedId, Function<? super S, ? extends S> incrementSeqId, BiFunction<? super S, ? super S, ? extends Number> distanceFn, Function<? super T, ? extends S> extractSeqId) {
         return new OperatorLocalOrder<T, S>(initiallyExpectedId, incrementSeqId, distanceFn, extractSeqId);
     }
+
+    public static <T, S extends Comparable<S>> FlowableOperator<T, T> create(
+            S initialExpectedSeqId,
+            LocalOrderSpec<T, S> orderSpec) {
+        return new OperatorLocalOrder<T, S>(initialExpectedSeqId, orderSpec);
+    }
+
 
     public static <T, S extends Comparable<S>> FlowableOperator<T, T> create(
             S initialExpectedSeqId,
