@@ -8,6 +8,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.aksw.commons.rx.range.RangedSupplier;
+import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.sink.BulkingSink;
 
@@ -54,7 +55,7 @@ public class RangeRequestExecutor<T> {
     // protected Set<Ref<Page<T>>> claimedPages;
 
     /** The page the executor is currently writing to */
-    protected Ref<RangeBuffer<T>> currentPageRef;
+    protected Ref<RangeBufferImpl<T>> currentPageRef;
 
     protected long requestOffset;
 
@@ -283,10 +284,10 @@ public class RangeRequestExecutor<T> {
 
 
         int offsetInPage = manager.getIndexInPageForOffset(offset);
-        RangeBuffer<T> rangeBuffer = currentPageRef.get();
+        RangeBufferImpl<T> rangeBuffer = currentPageRef.get();
 
         BulkingSink<T> sink = new BulkingSink<>(bulkSize,
-                (arr, start, len) -> rangeBuffer.put(offsetInPage, arr, start, len));
+                (arr, start, len) -> rangeBuffer.putAll(offsetInPage, arr, start, len));
 
 
         // TODO Fix limit computation

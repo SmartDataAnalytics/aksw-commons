@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import org.aksw.commons.rx.op.FlowableOperatorSequentialGroupBy;
 import org.aksw.commons.rx.op.OperatorLocalOrder;
 import org.aksw.commons.rx.range.RangedSupplier;
+import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
@@ -83,7 +84,7 @@ public class SmartRangeCacheImpl<T>
     protected RangedSupplier<Long, T> backend;
 
     protected int pageSize;
-    protected ClaimingCache<Long, RangeBuffer<T>> pageCache;
+    protected ClaimingCache<Long, RangeBufferImpl<T>> pageCache;
 
 
     /**
@@ -125,10 +126,10 @@ return null;
         pageCache = new ClaimingCache<>(
                 CacheBuilder.newBuilder()
                     .maximumSize(1000)
-                    .build(new CacheLoader<Long, RangeBuffer<T>>() {
+                    .build(new CacheLoader<Long, RangeBufferImpl<T>>() {
                         @Override
-                        public RangeBuffer<T> load(Long key) throws Exception {
-                            RangeBuffer<T> result = new RangeBuffer<T>(pageSize);
+                        public RangeBufferImpl<T> load(Long key) throws Exception {
+                            RangeBufferImpl<T> result = new RangeBufferImpl<T>(pageSize);
                             onPageLoad(key, result);
                             return result;
                         }
@@ -147,7 +148,7 @@ return null;
      * Note that the listener is invoked before the entry can be registered at the cache -
      * cache lookups must not be performed in the listener's flow of control.
      */
-    protected void onPageLoad(Long key, RangeBuffer<T> page) {
+    protected void onPageLoad(Long key, RangeBufferImpl<T> page) {
 
     }
 
@@ -174,13 +175,13 @@ return null;
      *
      *
      * */
-    public Ref<RangeBuffer<T>> getPageForOffset(long offset) {
+    public Ref<RangeBufferImpl<T>> getPageForOffset(long offset) {
         long pageId = getPageIdForOffset(offset);
         return getPageForPageId(pageId);
     }
 
-    public Ref<RangeBuffer<T>> getPageForPageId(long pageId) {
-        Ref<RangeBuffer<T>> result;
+    public Ref<RangeBufferImpl<T>> getPageForPageId(long pageId) {
+        Ref<RangeBufferImpl<T>> result;
         try {
             result = pageCache.claim(pageId);
         } catch (ExecutionException e) {
@@ -210,9 +211,9 @@ return null;
 
 
 
-    protected Set<BiConsumer<Long, RangeBuffer<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
+    protected Set<BiConsumer<Long, RangeBufferImpl<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
-    public Runnable addPageLoadListener(BiConsumer<Long, RangeBuffer<T>> listener) {
+    public Runnable addPageLoadListener(BiConsumer<Long, RangeBufferImpl<T>> listener) {
         pageLoadListeners.add(listener);
         return () -> pageLoadListeners.remove(listener);
     }
@@ -236,7 +237,7 @@ return null;
     /// protected RangeMap<Long, Object> autoClaimers;
 
 
-    public NavigableMap<Long, Ref<RangeBuffer<T>>> claimPages(Range<Long> requestRange) {
+    public NavigableMap<Long, Ref<RangeBufferImpl<T>>> claimPages(Range<Long> requestRange) {
 
 
 

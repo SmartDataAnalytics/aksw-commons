@@ -1,7 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -9,6 +13,20 @@ import java.util.stream.LongStream;
 import org.aksw.commons.rx.op.LocalOrderSpec;
 import org.aksw.commons.rx.op.LocalOrderSpecImpl;
 import org.aksw.commons.rx.op.OperatorLocalOrder;
+import org.aksw.commons.rx.range.KeyObjectStore;
+import org.aksw.commons.rx.range.KeyObjectStoreImpl;
+import org.aksw.commons.rx.range.ObjectFileStoreKyro;
+import org.aksw.commons.util.range.RangeBuffer;
+import org.aksw.commons.util.range.RangeBufferImpl;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -35,12 +53,70 @@ class MyPublisher<T, S extends Comparable<S>> {
     public Flowable<T> createFlow(S start) {
         return publishSubject
             .toFlowable(BackpressureStrategy.ERROR)
+            .filter(item -> orderSpec.getDistanceFn().apply(start, orderSpec.getExtractSeqId().apply(item)).longValue() > 0)
             .lift(OperatorLocalOrder.<T, S>create(start, orderSpec));
     }
 }
 
+class RangeMapSerializer
+    extends Serializer<RangeMap>
+{
+    public static <K extends Comparable<K>, V> Map<Range<K>, V> toMap(RangeMap<K, V> rangeMap) {
+        return new HashMap<Range<K>, V>(rangeMap.asMapOfRanges());
+    }
+
+    public static <K extends Comparable<K>, V> RangeMap<K, V> fromMap(Map<Range<K>, V> map) {
+        TreeRangeMap<K, V> result = TreeRangeMap.create();
+        map.entrySet().forEach(e -> {
+            map.put(e.getKey(), e.getValue());
+        });
+        return result;
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void write(Kryo kryo, Output output, RangeMap object) {
+        kryo.writeClassAndObject(output, toMap(object));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public RangeMap read(Kryo kryo, Input input, Class<RangeMap> type) {
+        Map map = (Map)kryo.readClassAndObject(input);
+        RangeMap result = fromMap(map);
+        return result;
+    }
+}
+
 public class LocalOrderAsyncTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        main1();
+    }
+
+    public static void main1() throws Exception {
+        Kryo kryo = new Kryo();
+
+        Serializer<?> javaSerializer = new JavaSerializer();
+        Serializer<?> rangeMapSerializer = new RangeMapSerializer();
+        kryo.register(TreeRangeMap.class, rangeMapSerializer);
+        kryo.register(Range.class, javaSerializer);
+
+        KeyObjectStore objStore = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryo));
+
+        List<String> key = Arrays.asList("q1", "100");
+        RangeBuffer<String> value = new RangeBufferImpl<>(1024);
+        value.put(0, "hello");
+        objStore.put(key, value);
+
+
+        RangeBuffer<String> restored = objStore.get(key);
+        System.out.println(restored.get(0));
+        System.out.println(restored.getKnownSize());
+
+    }
+
+    public static void main2() {
         LocalOrderSpec<Long, Long> spec = LocalOrderSpecImpl.forLong(x -> x);
 
         MyPublisher<Long, Long> publisher = MyPublisher.create(spec);

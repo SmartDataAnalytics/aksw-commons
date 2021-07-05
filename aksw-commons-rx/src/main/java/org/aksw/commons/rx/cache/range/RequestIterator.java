@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.aksw.commons.collections.PrefetchIterator;
+import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.Ref;
 
@@ -46,10 +47,10 @@ public class RequestIterator<T>
 
     /** Pages claimed so far by this iterator;
      * new pages will be added to this map asynchronously when they become available */
-    protected ConcurrentNavigableMap<Long, Ref<RangeBuffer<T>>> claimedPages;
+    protected ConcurrentNavigableMap<Long, Ref<RangeBufferImpl<T>>> claimedPages;
 
     /** The reference to the current page */
-    protected Ref<RangeBuffer<T>> currentPageRef = null;
+    protected Ref<RangeBufferImpl<T>> currentPageRef = null;
     protected int currentIndex = -1;
 
 
@@ -92,7 +93,7 @@ public class RequestIterator<T>
     }
 
 
-    protected void onPageLoaded(long offset, Ref<RangeBuffer<T>> content) {
+    protected void onPageLoaded(long offset, Ref<RangeBufferImpl<T>> content) {
         Range<Long> claimAheadRange = getClaimAheadRange();
 
         if (claimAheadRange.contains(offset)) {
@@ -187,7 +188,7 @@ public class RequestIterator<T>
                 if (!claimedPages.containsKey(pageOffset)) {
                     r = Iterators.singletonIterator(Range.closedOpen(pageOffset, pageOffset + pageSize));
                 } else {
-                    Ref<RangeBuffer<T>> pageRef = claimedPages.get(pageOffset);
+                    Ref<RangeBufferImpl<T>> pageRef = claimedPages.get(pageOffset);
                     // Shift the range to the page offset
                     r = Iterators.transform(pageRef.get().getLoadedRanges().asMapOfRanges().keySet().iterator(),
                             range -> RangeUtils.apply(range, pageOffset, (endpoint, value) -> LongMath.saturatedAdd(endpoint, (long)value)));

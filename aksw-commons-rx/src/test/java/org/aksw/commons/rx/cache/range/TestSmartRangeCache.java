@@ -3,7 +3,7 @@ package org.aksw.commons.rx.cache.range;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 import org.junit.Ignore;
 
-// @Ignore
+@Ignore
 public class TestSmartRangeCache
     extends RangeCacheTestSuite
 {

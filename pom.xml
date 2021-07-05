@@ -168,11 +168,23 @@
 				<version>${project.version}</version>
 			</dependency>
 
-                        <dependency>
-                                <groupId>org.aksw.commons</groupId>
-                                <artifactId>aksw-commons-rx-ex</artifactId>
-                                <version>${project.version}</version>
-                        </dependency>
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-utils</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-rx-ex</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
