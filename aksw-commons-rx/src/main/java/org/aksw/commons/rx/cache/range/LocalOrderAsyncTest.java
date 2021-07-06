@@ -21,12 +21,15 @@ import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -98,6 +101,7 @@ public class LocalOrderAsyncTest {
         main1();
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
     public static <V> ClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
         ClaimingCache<Long, V> result = ClaimingCache.<Long, V>create(
@@ -116,6 +120,8 @@ public class LocalOrderAsyncTest {
                     Ref<V> r = RefImpl.create(v, null, () -> {
                         // Sync the page upon closing it
                         store.put(internalKey, v);
+                        logger.info("Synced " + internalKey);
+                        System.out.println("Synced" + internalKey);
                     });
 
                     return r;
@@ -168,6 +174,8 @@ public class LocalOrderAsyncTest {
         }
 
 
+
+        cache.invalidateAll();
 
 
     }

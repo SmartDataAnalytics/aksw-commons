@@ -1,5 +1,6 @@
 package org.aksw.commons.util.range;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -33,10 +34,6 @@ public class RangeBufferImpl<T>
 {
     private static final long serialVersionUID = 1L;
 
-    // Dummy throwable because range map does not allow null values
-    // and optional is not serializable...
-    public static final Throwable OK = new Throwable();
-
 
     protected T[] buffer;
 
@@ -47,7 +44,7 @@ public class RangeBufferImpl<T>
     protected RangeMap<Integer, List<Throwable>> loadedRanges;
     protected volatile int knownSize;
 
-    protected transient List<T> listView;
+    // protected transient List<T> listView;
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     protected RangeBufferImpl() {
@@ -60,7 +57,8 @@ public class RangeBufferImpl<T>
     }
 
     public List<T> getBufferAsList() {
-        return listView;
+        // return listView;
+        return Arrays.asList(buffer);
     }
 
     @SuppressWarnings("unchecked")
@@ -74,13 +72,18 @@ public class RangeBufferImpl<T>
         this.loadedRanges = loadedRanges;
         this.knownSize = knownSize;
 
-       postConstruct(); // Is that needed?
+       postConstruct();
     }
 
     // @PostConstruct
     protected void postConstruct() {
-        this.listView = Arrays.asList(buffer);
+        //  this.listView = Arrays.asList(buffer);
+    }
 
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+            in.defaultReadObject();
+            postConstruct();
     }
 
     public ReadWriteLock getReadWriteLock() {
@@ -105,7 +108,7 @@ public class RangeBufferImpl<T>
 
     @Override
     public int getCapacity() {
-        return listView.size();
+        return buffer.length; // listView.size();
     }
 
 //	public void add(T item) {

@@ -130,7 +130,11 @@ public class ClaimingCache<K, V> {
                     Ref<V> tmpRef = primaryRef.acquire();
                     secondaryRef = RefImpl.create(primaryRef, claimed, () -> {
                         // Hand back the value to the cache
-                        cache.put(key, primaryRef);
+                        // If the value is already in the cache it will get removed / released
+                        // so we need to create yet another helper reference
+                        Ref<V> handBackRef = primaryRef.getRootRef().acquire();
+                        cache.put(key, handBackRef);
+
                         claimed.remove(key);
                         tmpRef.close();
                     }, null);
@@ -145,5 +149,9 @@ public class ClaimingCache<K, V> {
         }
 
         return result;
+    }
+
+    public void invalidateAll() {
+        cache.invalidateAll();
     }
 }
