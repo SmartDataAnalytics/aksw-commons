@@ -37,7 +37,7 @@ public class RefImpl<T>
      * This allows for e.g. synchronizing on a {@code Map<K, Reference<V>}, such that
      * closing a reference removes the map entry before it can be accessed and conversely,
      * synchronizing on the map prevents the reference from becoming released.
-     * 
+     *
      * TODO Point to the ClaimingLoadingCache implementation
      */
     protected Object synchronizer;
@@ -51,11 +51,11 @@ public class RefImpl<T>
     protected Map<Ref<T>, Object> childRefs = new WeakHashMap<Ref<T>, Object>();
 
     public RefImpl(
-    		RefImpl<T> parent,
-    		T value,
-    		Object synchronizer,
-    		AutoCloseable releaseAction,
-    		Object comment) {
+            RefImpl<T> parent,
+            T value,
+            Object synchronizer,
+            AutoCloseable releaseAction,
+            Object comment) {
         super();
 
         // logger.debug("Acquired reference " + comment + " from " + parent);
@@ -100,35 +100,35 @@ public class RefImpl<T>
 
     @Override
     public Ref<T> acquire(Object comment) {
-    	synchronized (synchronizer) {
-	        if (!isAlive()) {
-	            throw new RuntimeException("Cannot aquire from a reference with isAlive=false");
-	        }
-	
-	        // A bit of ugliness to allow the reference to release itself
-	        @SuppressWarnings("rawtypes")
-	        Ref[] tmp = new Ref[1];
-	        tmp[0] = new RefImpl<T>(this, value, null, () -> release(tmp[0]), comment);
-	
-	        @SuppressWarnings("unchecked")
-	        Ref<T> result = (Ref<T>)tmp[0];
-	        childRefs.put(result, comment);
-	        return result;
-    	}
+        synchronized (synchronizer) {
+            if (!isAlive()) {
+                throw new RuntimeException("Cannot aquire from a reference with isAlive=false");
+            }
+
+            // A bit of ugliness to allow the reference to release itself
+            @SuppressWarnings("rawtypes")
+            Ref[] tmp = new Ref[1];
+            tmp[0] = new RefImpl<T>(this, value, null, () -> release(tmp[0]), comment);
+
+            @SuppressWarnings("unchecked")
+            Ref<T> result = (Ref<T>)tmp[0];
+            childRefs.put(result, comment);
+            return result;
+        }
     }
 
 //	void release(Reference<T> childRef) {
     protected void release(Object childRef) {
-    	synchronized (synchronizer) {
-	        boolean isContained = childRefs.containsKey(childRef);
-	        if (!isContained) {
-	            throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
-	        } else {
-	            childRefs.remove(childRef);
-	        }
-	
-	        checkRelease();
-    	}
+        synchronized (synchronizer) {
+            boolean isContained = childRefs.containsKey(childRef);
+            if (!isContained) {
+                throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
+            } else {
+                childRefs.remove(childRef);
+            }
+
+            checkRelease();
+        }
     }
 
     @Override
@@ -139,21 +139,21 @@ public class RefImpl<T>
 
     @Override
     public void close() {
-    	synchronized (synchronizer) {
-	        if (isReleased) {
-	            throw new RuntimeException("Reference was already released");
-	        }
-	
-	        // logger.debug("Released reference " + comment + " to " + parent);
-	
-	        isReleased = true;
-	
-	        checkRelease();
-    	}
+        synchronized (synchronizer) {
+            if (isReleased) {
+                throw new RuntimeException("Reference was already released");
+            }
+
+            // logger.debug("Released reference " + comment + " to " + parent);
+
+            isReleased = true;
+
+            checkRelease();
+        }
     }
 
     protected void checkRelease() {
-    	
+
         if (!isAlive()) {
             if (releaseAction != null) {
                 try {
@@ -170,7 +170,7 @@ public class RefImpl<T>
 
     public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
         // return new ReferenceImpl<T>(null, value, releaseAction, comment);
-    	return create(value, null, releaseAction, comment);
+        return create(value, null, releaseAction, comment);
     }
 
     public static <T> Ref<T> create(T value, Object synchronizer, AutoCloseable releaseAction) {
@@ -181,7 +181,7 @@ public class RefImpl<T>
         return new RefImpl<T>(null, value, synchronizer, releaseAction, comment);
     }
 
-    
+
     public static <T> Ref<T> createClosed() {
         RefImpl<T> result = new RefImpl<T>(null, null, null, null, null);
         result.isReleased = true;
@@ -191,6 +191,16 @@ public class RefImpl<T>
     @Override
     public boolean isClosed() {
         return isReleased;
+    }
+
+    @SuppressWarnings("resource")
+    @Override
+    public Ref<T> getRootRef() {
+        RefImpl<T> result = this;
+        while (result.parent != null) {
+            result = result.parent;
+        }
+        return result;
     }
 
     @Override

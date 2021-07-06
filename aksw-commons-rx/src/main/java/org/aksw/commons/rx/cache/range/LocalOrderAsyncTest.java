@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -18,12 +19,15 @@ import org.aksw.commons.rx.range.KeyObjectStoreImpl;
 import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
+import org.aksw.commons.util.ref.Ref;
+import org.aksw.commons.util.ref.RefImpl;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -94,6 +98,33 @@ public class LocalOrderAsyncTest {
         main1();
     }
 
+
+    public static <V> ClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
+        ClaimingCache<Long, V> result = ClaimingCache.<Long, V>create(
+               CacheBuilder.newBuilder().maximumSize(1000),
+               key -> {
+                    List<String> internalKey = Arrays.asList(Long.toString(key));
+                    V value;
+                    try {
+                        value = store.get(internalKey);
+                    } catch (Exception e) {
+                        // throw new RuntimeException(e);
+                        value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                    }
+
+                    V v = value;
+                    Ref<V> r = RefImpl.create(v, null, () -> {
+                        // Sync the page upon closing it
+                        store.put(internalKey, v);
+                    });
+
+                    return r;
+                },
+                notification -> { notification.getValue().close(); });
+
+        return result;
+    }
+
     public static void main1() throws Exception {
         Kryo kryo = new Kryo();
 
@@ -110,9 +141,34 @@ public class LocalOrderAsyncTest {
         objStore.put(key, value);
 
 
+
         RangeBuffer<String> restored = objStore.get(key);
         System.out.println(restored.get(0));
         System.out.println(restored.getKnownSize());
+
+
+
+        ClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
+
+
+        try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
+            page1.get().put(0, "hello");
+        }
+
+        try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
+            page2.get().put(0, "world");
+        }
+
+        try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
+            System.out.println(page1.get().get(0).next());
+        }
+
+        try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
+            System.out.println(page2.get().get(0).next());
+        }
+
+
+
 
     }
 

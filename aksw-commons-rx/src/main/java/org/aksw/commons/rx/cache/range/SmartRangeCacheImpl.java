@@ -123,19 +123,20 @@ return null;
 
         pageSize = 1024;
 
-        pageCache = new ClaimingCache<>(
-                CacheBuilder.newBuilder()
-                    .maximumSize(1000)
-                    .build(new CacheLoader<Long, RangeBufferImpl<T>>() {
-                        @Override
-                        public RangeBufferImpl<T> load(Long key) throws Exception {
-                            RangeBufferImpl<T> result = new RangeBufferImpl<T>(pageSize);
-                            onPageLoad(key, result);
-                            return result;
-                        }
-                    }),
-                new TreeMap<>()
-        );
+        pageCache = null;
+//        new ClaimingCache<>(
+//                CacheBuilder.newBuilder()
+//                    .maximumSize(1000)
+//                    .build(new CacheLoader<Long, RangeBufferImpl<T>>() {
+//                        @Override
+//                        public RangeBufferImpl<T> load(Long key) throws Exception {
+//                            RangeBufferImpl<T> result = new RangeBufferImpl<T>(pageSize);
+//                            onPageLoad(key, result);
+//                            return result;
+//                        }
+//                    }),
+//                new TreeMap<>()
+//        );
     }
 
     public int getPageSize() {

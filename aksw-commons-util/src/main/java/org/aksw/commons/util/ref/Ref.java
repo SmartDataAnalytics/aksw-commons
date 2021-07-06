@@ -19,6 +19,11 @@ public interface Ref<T>
     extends AutoCloseable
 {
     /**
+     * Get the root reference
+     */
+    Ref<T> getRootRef();
+
+    /**
      * Get the referent
      *
      * @return The referent
@@ -34,10 +39,10 @@ public interface Ref<T>
     Ref<T> acquire(Object purpose);
 
     default Ref<T> acquire() {
-    	return acquire(null);
+        return acquire(null);
     }
 
-    
+
 
     /**
      * A reference may itself be released, but references to it may keep it alive
