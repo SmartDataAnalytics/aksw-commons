@@ -131,7 +131,7 @@ public class LocalOrderAsyncTest {
         return result;
     }
 
-    public static void main1() throws Exception {
+    public static KeyObjectStore createKeyObjectStore() {
         Kryo kryo = new Kryo();
 
         Serializer<?> javaSerializer = new JavaSerializer();
@@ -139,7 +139,13 @@ public class LocalOrderAsyncTest {
         kryo.register(TreeRangeMap.class, rangeMapSerializer);
         kryo.register(Range.class, javaSerializer);
 
-        KeyObjectStore objStore = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryo));
+        KeyObjectStore result = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryo));
+
+        return result;
+    }
+
+    public static void main1() throws Exception {
+        KeyObjectStore objStore = createKeyObjectStore();
 
         List<String> key = Arrays.asList("q1", "100");
         RangeBuffer<String> value = new RangeBufferImpl<>(1024);
@@ -158,19 +164,19 @@ public class LocalOrderAsyncTest {
 
 
         try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
-            page1.get().put(0, "hello");
+            page1.get().put(10, "hello");
         }
 
         try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
-            page2.get().put(0, "world");
+            page2.get().put(15, "world");
         }
 
         try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
-            System.out.println(page1.get().get(0).next());
+            System.out.println(page1.get().get(10).next());
         }
 
         try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
-            System.out.println(page2.get().get(0).next());
+            System.out.println(page2.get().get(15).next());
         }
 
 

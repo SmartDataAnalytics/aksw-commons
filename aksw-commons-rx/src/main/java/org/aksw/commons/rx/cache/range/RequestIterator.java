@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.util.range.RangeBufferImpl;
@@ -15,6 +16,7 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.math.LongMath;
+
 
 /**
  * The class drives the iteration of items from the cache
@@ -47,10 +49,13 @@ public class RequestIterator<T>
 
     /** Pages claimed so far by this iterator;
      * new pages will be added to this map asynchronously when they become available */
-    protected ConcurrentNavigableMap<Long, Ref<RangeBufferImpl<T>>> claimedPages;
+    protected ConcurrentNavigableMap<Long, Ref<RangeBufferImpl<T>>> claimedPages = new ConcurrentSkipListMap<>();
 
     /** The reference to the current page */
     protected Ref<RangeBufferImpl<T>> currentPageRef = null;
+    protected Iterator<T> currentPageIt = null;
+
+
     protected int currentIndex = -1;
 
 
@@ -287,9 +292,10 @@ public class RequestIterator<T>
         if (currentPageRef == null) {
             currentPageRef = cache.getPageForOffset(currentOffset);
             currentIndex = cache.getIndexInPageForOffset(currentOffset);
+            currentPageIt = currentPageRef.get().get(currentIndex);
         }
 
-        T result = null ;//currentPageRef.get().get(currentIndex);
+        T result = currentPageIt.next();
 
         ++currentIndex;
         ++currentOffset;

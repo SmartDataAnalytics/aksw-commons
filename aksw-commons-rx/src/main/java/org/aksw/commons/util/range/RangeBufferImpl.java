@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -46,11 +47,16 @@ public class RangeBufferImpl<T>
 
     // protected transient List<T> listView;
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    protected transient Condition hasData = readWriteLock.writeLock().newCondition();
+
+    public Condition getHasDataCondition() {
+        return hasData;
+    }
+
 
     protected RangeBufferImpl() {
         super();
     }
-
 
     public T[] getBuffer() {
         return buffer;
@@ -137,6 +143,7 @@ public class RangeBufferImpl<T>
             loadedRanges.put(Range.closedOpen(pageOffset, pageOffset + arrLength), Collections.emptyList());
         } finally {
             writeLock.unlock();
+            hasData.signalAll();
         }
     }
 

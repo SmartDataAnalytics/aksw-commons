@@ -10,7 +10,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 
 /**
- * An iterator over a range buffer that blocks if a items are not loaded.
+ * An iterator over a range buffer that blocks if items are not loaded.
  *
  * @author raven
  *
@@ -46,8 +46,9 @@ public class RangeBufferIterator<T>
             readsFromCurrentRange = 0;
 
             Entry<Range<Integer>, List<Throwable>> entry = null;
-            Lock lock = rangeBuffer.getReadWriteLock().readLock();
-            lock.lock();
+            Lock readLock = rangeBuffer.getReadWriteLock().readLock();
+
+            readLock.lock();
             try {
                 // If the index is outside of the known size then abort
                 int knownSize = rangeBuffer.getKnownSize();
@@ -58,26 +59,37 @@ public class RangeBufferIterator<T>
 
                     if (entry == null) {
                         // Wait for data to become available
+                        // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
+                        Lock writeLock = rangeBuffer.getReadWriteLock().writeLock();
+                        readLock.unlock();
+                        writeLock.lock();
                         try {
-                            wait();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                            while ((entry = loadedRanges.getEntry(currentIndex)) == null) {
+                                try {
+                                    rangeBuffer.getHasDataCondition().await();
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                            readLock.lock();
+                        } finally {
+                            writeLock.unlock();
                         }
                     }
                 }
             } finally {
-                lock.unlock();
+                readLock.unlock();
             }
 
             if (entry != null) {
                 List<Throwable> throwable = entry.getValue();
                 if (!throwable.isEmpty()) {
-                    throw new RuntimeException("Attempt to read a range of data marked with an error", throwable.get(0));
+                    throw new RuntimeException("Attempt to read a range of data marked with an error",
+                            throwable.get(0));
                 }
 
                 Range<Integer> range = entry.getKey();
-                rangeIterator = rangeBuffer.getBufferAsList()
-                        .subList(range.lowerEndpoint(), range.upperEndpoint())
+                rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
                         .iterator();
                 break;
             }

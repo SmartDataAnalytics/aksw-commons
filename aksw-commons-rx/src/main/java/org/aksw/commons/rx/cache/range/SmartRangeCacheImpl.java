@@ -11,19 +11,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 
-import org.aksw.commons.rx.op.FlowableOperatorSequentialGroupBy;
-import org.aksw.commons.rx.op.OperatorLocalOrder;
+import org.aksw.commons.rx.range.KeyObjectStore;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
-import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.PublishSubject;
@@ -118,12 +114,13 @@ return null;
 
     }
 
-    public SmartRangeCacheImpl(RangedSupplier<Long, T> backend) {
+    public SmartRangeCacheImpl(RangedSupplier<Long, T> backend, KeyObjectStore objStore) {
         this.backend = backend;
 
         pageSize = 1024;
 
-        pageCache = null;
+
+        pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
 //        new ClaimingCache<>(
 //                CacheBuilder.newBuilder()
 //                    .maximumSize(1000)
@@ -305,8 +302,8 @@ return null;
     }
 
 
-    public static <V> ListPaginator<V> wrap(ListPaginator<V> backend) {
-        return new SmartRangeCacheImpl<V>(backend);
+    public static <V> ListPaginator<V> wrap(RangedSupplier<Long, V> backend, KeyObjectStore store) {
+        return new SmartRangeCacheImpl<V>(backend, store);
     }
 
     @Override

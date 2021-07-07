@@ -92,6 +92,14 @@ public class ClaimingCache<K, V> {
         return RefImpl.create(tmpRef.get().get(), claimed, tmpRef::close);
     }
 
+    public Ref<V> claimUnsafe(K key) {
+        try {
+            return claim(key);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Claim a reference to the key's entry.
      *
@@ -145,6 +153,18 @@ public class ClaimingCache<K, V> {
                 } else {
                     result = link(secondaryRef); //secondaryRef.acquire();
                 }
+            }
+        }
+
+        return result;
+    }
+
+    /** Cannot raise an ExecutionException because it does not trigger loading */
+    public Ref<V> claimIfPresent(K key) {
+        Ref<V> result = null;
+        synchronized (claimed) {
+            if (claimed.containsKey(key) || cache.getIfPresent(key) != null) {
+                result = claimUnsafe(key);
             }
         }
 
