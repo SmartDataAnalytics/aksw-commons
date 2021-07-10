@@ -43,8 +43,9 @@
 
 	<properties>
 		<!-- tell the compiler we can use 1.6 -->
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<!-- <maven.compiler.source>1.8</maven.compiler.source> -->
+		<!-- <maven.compiler.target>1.8</maven.compiler.target> -->
+		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
 
@@ -104,10 +105,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
+				<version>3.6.2</version>
 				<configuration>
-					<source>${maven.compiler.source}</source>
-					<target>${maven.compiler.target}</target>
+					<release>${maven.compiler.release}</release>
+					<!-- <source>${maven.compiler.source}</source> <target>${maven.compiler.target}</target> -->
 					<encoding>${project.build.sourceEncoding}</encoding>
 				</configuration>
 			</plugin>

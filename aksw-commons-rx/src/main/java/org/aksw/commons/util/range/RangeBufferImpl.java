@@ -142,8 +142,8 @@ public class RangeBufferImpl<T>
             System.arraycopy(arrayWithItemsOfTypeT, arrOffset, buffer, pageOffset, arrLength);
             loadedRanges.put(Range.closedOpen(pageOffset, pageOffset + arrLength), Collections.emptyList());
         } finally {
-            writeLock.unlock();
             hasData.signalAll();
+            writeLock.unlock();
         }
     }
 

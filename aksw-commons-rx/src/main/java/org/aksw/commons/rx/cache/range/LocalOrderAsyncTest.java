@@ -20,6 +20,7 @@ import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.Ref;
+import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.ref.RefImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +30,7 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -103,9 +103,9 @@ public class LocalOrderAsyncTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
-    public static <V> ClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
-        ClaimingCache<Long, V> result = ClaimingCache.<Long, V>create(
-               CacheBuilder.newBuilder().maximumSize(1000),
+    public static <V> ClaimingCache2<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
+        ClaimingCache2<Long, V> result = ClaimingCache2.<Long, V>create(
+               Caffeine.newBuilder().maximumSize(1000),
                key -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
                     V value;
@@ -126,7 +126,7 @@ public class LocalOrderAsyncTest {
 
                     return r;
                 },
-                notification -> { notification.getValue().close(); });
+                (key, value, cause) -> { value.close(); });
 
         return result;
     }
@@ -160,23 +160,23 @@ public class LocalOrderAsyncTest {
 
 
 
-        ClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
+        ClaimingCache2<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
 
 
-        try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
-            page1.get().put(10, "hello");
+        try (RefFuture<RangeBuffer<String>> page1 = cache.claim(1024l)) {
+            page1.await().put(10, "hello");
         }
 
-        try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
-            page2.get().put(15, "world");
+        try (RefFuture<RangeBuffer<String>> page2 = cache.claim(2048l)) {
+            page2.await().put(15, "world");
         }
 
-        try (Ref<RangeBuffer<String>> page1 = cache.claim(1024l)) {
-            System.out.println(page1.get().get(10).next());
+        try (RefFuture<RangeBuffer<String>> page1 = cache.claim(1024l)) {
+            System.out.println(page1.await().get(10).next());
         }
 
-        try (Ref<RangeBuffer<String>> page2 = cache.claim(2048l)) {
-            System.out.println(page2.get().get(15).next());
+        try (RefFuture<RangeBuffer<String>> page2 = cache.claim(2048l)) {
+            System.out.println(page2.await().get(15).next());
         }
 
 

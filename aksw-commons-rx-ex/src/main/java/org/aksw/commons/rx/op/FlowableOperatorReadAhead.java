@@ -94,7 +94,7 @@ public final class FlowableOperatorReadAhead<T>
             int n = 0;
 
 
-            // getAndUpdate: Decrement by 1 unless the value is already 0
+            // getAndUpdate: Decrement by 1 unless the value was already 0
             while (!queue.isEmpty() && downstreamDemand.getAndUpdate(v -> v == 0 ? 0 : v - 1) > 0) {
                 T item = null;
                 try {
@@ -133,7 +133,7 @@ public final class FlowableOperatorReadAhead<T>
         @Override
         public void onNext(T item) {
             // Unconditionally adding items to the queue might be
-            // Implicitly over performance
+            // simplicity over performance
             queue.add(item);
             drain();
         }

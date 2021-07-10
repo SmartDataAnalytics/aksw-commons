@@ -120,7 +120,7 @@ return null;
         pageSize = 1024;
 
 
-        pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+        pageCache = null; //LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
 //        new ClaimingCache<>(
 //                CacheBuilder.newBuilder()
 //                    .maximumSize(1000)
