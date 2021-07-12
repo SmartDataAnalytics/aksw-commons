@@ -17,7 +17,7 @@ public abstract class RangeCacheTestSuite {
     protected abstract <T> ListPaginator<T> wrapWithCache(ListPaginator<T> backend);
 
     @Test
-    public void test() {
+    public void test() throws InterruptedException {
 
         List<String> items = LongStream.range(0, 10000)
                 .mapToObj(i -> "item #" + i)
@@ -30,6 +30,9 @@ public abstract class RangeCacheTestSuite {
         Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 20l));
 
         System.out.println(flow.toList().blockingGet());
+
+        Thread.sleep(500000);
+        System.out.println("Waited 5s");
     }
 
 }

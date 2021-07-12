@@ -234,7 +234,10 @@ public class RangeRequestExecutor<T>
                 break;
             }
         }
+
+        close();
     }
+
 
     public long getCurrentOffset() {
         return offset;

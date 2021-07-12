@@ -70,12 +70,14 @@ public class AsyncClaimingCache<K, V> {
             .removalListener(new RemovalListener<K, Ref<V>>() {
                 @Override
                 public void onRemoval(K key, Ref<V> primaryRef, RemovalCause cause) {
+                    System.out.println("Closed: " + key);
                     primaryRef.close();
                 }
             })
             .buildAsync(new CacheLoader<K, Ref<V>>() {
                 @Override
                 public Ref<V> load(K key) throws Exception {
+                    System.out.println("Loaded: " + key);
                     // If the reference is still in the claimed map then
                     // re-acquire it (without having to actually load anything)
                     Ref<V> primaryRef = null;

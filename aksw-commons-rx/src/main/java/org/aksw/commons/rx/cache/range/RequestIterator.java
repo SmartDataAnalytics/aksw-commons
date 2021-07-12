@@ -1,6 +1,7 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
@@ -11,17 +12,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import org.aksw.commons.collections.PrefetchIterator;
 import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
+import org.aksw.commons.util.slot.Slot;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -58,9 +57,21 @@ public class RequestIterator<T>
     protected int maxReadAheadItemCount = 100;
 
 
-    /** Pages claimed so far by this iterator;
-     * new pages will be added to this map asynchronously when they become available */
+    /**
+     * Pages claimed so far by this iterator
+     * Presently only the iterator claims pages on checkpoints
+     * TODO Currently a concurrent map because it is under consideration to fire async
+     *      events when pages are loaded.
+     *
+     */
     protected ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = new ConcurrentSkipListMap<>();
+
+    // protected ConcurrentNavigableMap<Long, Slot<>> claimedPages = new ConcurrentSkipListMap<>();
+    /**
+     * Exectors provide slots into which clients can place the requested range endpoints
+     */
+    protected Collection<Slot<Long>> claimedSlots = new ArrayList<>();
+
 
     /** The reference to the current page */
     // protected RefFuture<RangeBufferImpl<T>> currentPageRef = null;
@@ -147,6 +158,7 @@ public class RequestIterator<T>
         return claimedPages.computeIfAbsent(pageId, idx -> cache.getPageForPageId(idx));
     }
 
+
     /**
      * Schedule ensured loading of the next 'n' items since the last
      * checkpoint.
@@ -176,6 +188,9 @@ public class RequestIterator<T>
         NavigableMap<Long, RefFuture<RangeBuffer<T>>> toRelease = claimedPages.headMap(startPageId, false);
         toRelease.values().forEach(Ref::close);
         toRelease.clear();
+
+        claimedSlots.forEach(Slot::close);
+        claimedSlots.clear();
 
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
@@ -229,7 +244,8 @@ public class RequestIterator<T>
                 while (gapIt.hasNext()) {
                     Range<Long> gap = gapIt.next();
 
-                    cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
+                    Slot<Long> slot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
+                    claimedSlots.add(slot);
                 }
             } else {
                 Range<Long> gap = null;
@@ -313,10 +329,12 @@ public class RequestIterator<T>
                 ++currentIndex;
                 ++currentOffset;
             } else {
+                close();
                 result = endOfData();
             }
 
         } else {
+            close();
             result = endOfData();
         }
 
@@ -346,7 +364,11 @@ public class RequestIterator<T>
                     isAborted = true;
 
                     // Release all claimed pages
-                    claimedPages.forEach((k, v) -> v.close());
+                    // Remove all claimed pages before the checkpoint
+                    claimedPages.values().forEach(Ref::close);
+                    claimedSlots.forEach(Slot::close);
+                    claimedPages.clear();
+                    claimedSlots.clear();
 
                     // TODO Release all claimed task-ranges
 
