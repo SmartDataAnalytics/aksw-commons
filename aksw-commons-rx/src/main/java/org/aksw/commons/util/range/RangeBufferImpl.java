@@ -53,11 +53,6 @@ public class RangeBufferImpl<T>
         return hasData;
     }
 
-
-    protected RangeBufferImpl() {
-        super();
-    }
-
     public T[] getBuffer() {
         return buffer;
     }
@@ -65,6 +60,10 @@ public class RangeBufferImpl<T>
     public List<T> getBufferAsList() {
         // return listView;
         return Arrays.asList(buffer);
+    }
+
+    protected RangeBufferImpl() {
+        super();
     }
 
     @SuppressWarnings("unchecked")

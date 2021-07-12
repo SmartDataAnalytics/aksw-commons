@@ -31,8 +31,8 @@ public abstract class RangeCacheTestSuite {
 
         System.out.println(flow.toList().blockingGet());
 
-        Thread.sleep(500000);
-        System.out.println("Waited 5s");
+        Thread.sleep(50000);
+        System.out.println("Done waiting");
     }
 
 }

@@ -112,10 +112,9 @@ public class AsyncClaimingCache<K, V> {
         return RefImpl.create(tmpRef.get().get(), synchronizer, tmpRef::close);
     }
 
-        public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
-            return hideInnerRef(refToRef, claimed);
-        }
-
+    public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
+        return hideInnerRef(refToRef, claimed);
+    }
 
 //    public  <V> Ref<CompletableFuture<V>> hideInnerRef(Ref<? extends CompletableFuture<? extends Ref<V>>> refToRef) {
 //        Ref<? extends CompletableFuture<? extends Ref<V>>> tmpRef = refToRef.acquire();

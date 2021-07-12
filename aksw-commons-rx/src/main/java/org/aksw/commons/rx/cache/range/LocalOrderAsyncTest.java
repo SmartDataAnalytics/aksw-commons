@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -31,6 +32,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -75,7 +77,7 @@ class RangeMapSerializer
     public static <K extends Comparable<K>, V> RangeMap<K, V> fromMap(Map<Range<K>, V> map) {
         TreeRangeMap<K, V> result = TreeRangeMap.create();
         map.entrySet().forEach(e -> {
-            map.put(e.getKey(), e.getValue());
+            result.put(e.getKey(), e.getValue());
         });
         return result;
     }
@@ -105,7 +107,7 @@ public class LocalOrderAsyncTest {
 
     public static <V> AsyncClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
         AsyncClaimingCache<Long, V> result = AsyncClaimingCache.<Long, V>create(
-               Caffeine.newBuilder().maximumSize(1000),
+               Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).maximumSize(1000).expireAfterWrite(1, TimeUnit.SECONDS),
                key -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
                     V value;
@@ -137,6 +139,7 @@ public class LocalOrderAsyncTest {
         Serializer<?> javaSerializer = new JavaSerializer();
         Serializer<?> rangeMapSerializer = new RangeMapSerializer();
         kryo.register(TreeRangeMap.class, rangeMapSerializer);
+        // kryo.register(RangeMap.class, rangeMapSerializer);
         kryo.register(Range.class, javaSerializer);
 
         KeyObjectStore result = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryo));

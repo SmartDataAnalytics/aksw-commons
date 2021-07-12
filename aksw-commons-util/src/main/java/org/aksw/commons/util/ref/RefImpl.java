@@ -66,7 +66,7 @@ public class RefImpl<T>
         this.synchronizer = synchronizer == null ? this : synchronizer;
         this.comment = comment;
 
-        boolean traceAcquisitions = false;
+        boolean traceAcquisitions = true;
         if(traceAcquisitions) {
             this.aquisitionStackTrace = Thread.currentThread().getStackTrace();
         }
