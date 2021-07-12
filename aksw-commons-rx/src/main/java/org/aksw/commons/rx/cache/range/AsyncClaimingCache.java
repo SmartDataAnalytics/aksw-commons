@@ -105,9 +105,13 @@ public class AsyncClaimingCache<K, V> {
 //        return RefImpl.create(tmpRef.get().get(), claimed, tmpRef::close);
 //    }
 
-        public  <V> Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
-            Ref<? extends Ref<V>> tmpRef = refToRef.acquire();
-            return RefImpl.create(tmpRef.get().get(), claimed, tmpRef::close);
+    public static <V> Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef, Object synchronizer) {
+        Ref<? extends Ref<V>> tmpRef = refToRef.acquire();
+        return RefImpl.create(tmpRef.get().get(), synchronizer, tmpRef::close);
+    }
+
+        public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
+            return hideInnerRef(refToRef, claimed);
         }
 
 
@@ -146,8 +150,10 @@ public class AsyncClaimingCache<K, V> {
             secondaryRef = claimed.get(key);
 
             if (secondaryRef != null) {
-//                CompletableFuture<Ref<V>> resolvedFuture = CompletableFuture.completedFuture(secondaryRef);
-//                result = RefFutureImpl.fromFuture(resolvedFuture, claimed); // , resolvedFuture)// hideInnerRef(secondaryRef); //secondaryRef.acquire();
+//                CompletableFuture<Ref<V>> resolvedFuture = CompletableFuture.completedFuture(secondaryRef.acquire());
+                Ref<V> tmp = hideInnerRef(secondaryRef);
+                // result = RefFutureImpl.fromFuture(resolvedFuture, claimed); // , resolvedFuture)// hideInnerRef(secondaryRef); //secondaryRef.acquire();
+                result = RefFutureImpl.fromFuture(CompletableFuture.completedFuture(tmp), claimed);
 
             }
         }

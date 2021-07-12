@@ -19,11 +19,14 @@ import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.math.LongMath;
+import com.google.common.primitives.Ints;
 
 
 /**
@@ -52,7 +55,7 @@ public class RequestIterator<T>
 
 
     /** Do not send requests to the backend as long as that many items can be served from the cache */
-    protected long readAheadItemCount = 100;
+    protected int maxReadAheadItemCount = 100;
 
 
     /** Pages claimed so far by this iterator;
@@ -60,7 +63,7 @@ public class RequestIterator<T>
     protected ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = new ConcurrentSkipListMap<>();
 
     /** The reference to the current page */
-    protected RefFuture<RangeBufferImpl<T>> currentPageRef = null;
+    // protected RefFuture<RangeBufferImpl<T>> currentPageRef = null;
     protected Iterator<T> currentPageIt = null;
 
 
@@ -91,9 +94,12 @@ public class RequestIterator<T>
     protected long nextCheckpointOffset = 0;
 
 
-    public RequestIterator(SmartRangeCacheImpl<T> cache) {
+    public RequestIterator(SmartRangeCacheImpl<T> cache, Range<Long> requestRange) {
         super();
         this.cache = cache;
+        this.requestRange = requestRange;
+
+        currentOffset = nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
     }
 
 
@@ -215,35 +221,44 @@ public class RequestIterator<T>
 
             // Prevent creation of new executors while we analyze the state
             cache.getExecutorCreationReadLock().lock();
-
-
             candExecutors.addAll(cache.getExecutors());
 
-            Range<Long> gap = null;
-            while (gapIt.hasNext()) {
-                 gap = gapIt.next();
 
-                // Remove candidate executors that cannot serve the gap
-                // In the worst case no executors remain - in that case
-                // we have to create a new executor that starts after the last
-                // position that can be served by one of the current executors
-                List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
-                for (RangeRequestExecutor<T> candExecutor : candExecutors) {
-                    Range<Long> ewr = candExecutor.getWorkingRange();
-                    if (ewr.encloses(gap)) {
-                        nextCandExecutors.add(candExecutor);
-                    }
+            boolean usePoorMansApproach = true;
+            if (usePoorMansApproach) {
+                while (gapIt.hasNext()) {
+                    Range<Long> gap = gapIt.next();
+
+                    cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
                 }
+            } else {
+                Range<Long> gap = null;
+                while (gapIt.hasNext()) {
+                     gap = gapIt.next();
 
-                // No executor could deal with all the gaps in the read ahead range
-                // Abort the search
-                if (nextCandExecutors.isEmpty()) {
-                    break;
+                    // Remove candidate executors that cannot serve the gap
+                    // In the worst case no executors remain - in that case
+                    // we have to create a new executor that starts after the last
+                    // position that can be served by one of the current executors
+                    List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
+                    for (RangeRequestExecutor<T> candExecutor : candExecutors) {
+                        Range<Long> ewr = candExecutor.getWorkingRange();
+                        if (ewr.encloses(gap)) {
+                            nextCandExecutors.add(candExecutor);
+                        }
+                    }
+
+                    // No executor could deal with all the gaps in the read ahead range
+                    // Abort the search
+                    if (nextCandExecutors.isEmpty()) {
+                        break;
+                    }
                 }
             }
 
-
             // TODO Create an executor...
+
+
 
             // Register the request range to it
 
@@ -253,6 +268,8 @@ public class RequestIterator<T>
             pages.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
 
             cache.getExecutorCreationReadLock().unlock();
+
+            nextCheckpointOffset += n;
         }
     }
 
@@ -261,7 +278,12 @@ public class RequestIterator<T>
     protected T computeNext() {
         if (currentOffset == nextCheckpointOffset) {
             try {
-                checkpoint(readAheadItemCount);
+                long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
+                int numItemUntilRequestRangeEnd = Ints.saturatedCast(end - currentOffset + 1);
+
+                int n = Math.min(maxReadAheadItemCount, numItemUntilRequestRangeEnd);
+
+                checkpoint(n);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -269,22 +291,35 @@ public class RequestIterator<T>
 
         // RangeBuffer<T> currentPage = null;
 
-        if (currentPageRef == null) {
-            long pageId = cache.getPageIdForOffset(currentOffset);
-            RangeBuffer<T> currentPage;
-            try {
-                currentPage = getPage(pageId).await();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
+        T result;
+
+        if (requestRange.contains(currentOffset)) {
+
+            if (currentPageIt == null || !currentPageIt.hasNext()) {
+                // long pageId = cache.getPageIdForOffset(currentOffset);
+                RangeBuffer<T> currentPage;
+                try {
+                    currentPage = claimedPages.firstEntry().getValue().await();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+
+                currentIndex = cache.getIndexInPageForOffset(currentOffset);
+                currentPageIt = currentPage.get(currentIndex);
             }
-            currentIndex = cache.getIndexInPageForOffset(currentOffset);
-            currentPageIt = currentPage.get(currentIndex);
+
+            if (currentPageIt.hasNext()) {
+                result = currentPageIt.next();
+                ++currentIndex;
+                ++currentOffset;
+            } else {
+                result = endOfData();
+            }
+
+        } else {
+            result = endOfData();
         }
 
-        T result = currentPageIt.next();
-
-        ++currentIndex;
-        ++currentOffset;
 
         return result;
 //

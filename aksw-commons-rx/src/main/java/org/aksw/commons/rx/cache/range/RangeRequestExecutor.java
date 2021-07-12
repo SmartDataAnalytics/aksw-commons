@@ -39,7 +39,7 @@ public class RangeRequestExecutor<T>
      * Reference to the manager - if there is a failure in processing the request the executor
      * notifies it
      */
-    protected SmartRangeCacheImpl<T> manager;
+    protected SmartRangeCacheImpl<T> cacheSystem;
 
     protected SlottedBuilder<Long, Long> endpointRequests = SlottedBuilderImpl.create(
             values -> values.stream().reduce(-1l,Math::max));
@@ -78,7 +78,7 @@ public class RangeRequestExecutor<T>
 
     // protected Map<Long, >
 
-    protected RangedSupplier<Long, T> backend;
+    // protected RangedSupplier<Long, T> backend;
 
 
 
@@ -115,10 +115,13 @@ public class RangeRequestExecutor<T>
     protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock();
 
 
-    public RangeRequestExecutor(long requestOffset) {
+    public RangeRequestExecutor(SmartRangeCacheImpl<T> cacheSystem, long requestOffset, long requestLimit, long terminationDelay) {
         super();
+        this.cacheSystem = cacheSystem;
         this.requestOffset = requestOffset;
         this.offset = requestOffset;
+        this.requestLimit = requestLimit;
+        this.terminationDelay = terminationDelay;
     }
 
     /** Time in seconds it took to obtain the first item */
@@ -172,11 +175,10 @@ public class RangeRequestExecutor<T>
 
 
     protected void init() {
-
         // Synchronize because abort may be called concurrently
         synchronized (this) {
             if (!isAborted) {
-                Flowable<T> backendFlow = backend.apply(Range.atLeast(offset));
+                Flowable<T> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
                 iterator = backendFlow.blockingIterable().iterator();
                 disposable = (Disposable)iterator;
             } else {
@@ -185,7 +187,16 @@ public class RangeRequestExecutor<T>
         }
     }
 
+    @Override
     public void run() {
+        try {
+            runCore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void runCore() {
         init();
 
         // Measuring the time for the first item may be meaningless if an underlying cache is used
@@ -206,15 +217,19 @@ public class RangeRequestExecutor<T>
             if (iterator.hasNext()) {
 
                 // Shut down if there is no pending request for further data
-                try {
-                    Thread.sleep(terminationDelay);
-                } catch (InterruptedException e) {
-
+                long maxEndpoint = endpointRequests.build();
+                if (offset >= maxEndpoint) {
+                    try {
+                        Thread.sleep(terminationDelay);
+                    } catch (InterruptedException e) {
+                    }
                 }
 
-                if (requestLimit < numItemsProcessed) {
+                maxEndpoint = endpointRequests.build();
+                if (offset >= maxEndpoint) {
                     break;
                 }
+
             } else {
                 break;
             }
@@ -244,10 +259,10 @@ public class RangeRequestExecutor<T>
         int bulkSize = 16;
         // BulkConsumer<T>
 
-        long pageId = manager.getPageIdForOffset(offset);
-        int offsetInPage = manager.getIndexInPageForOffset(offset);
+        long pageId = cacheSystem.getPageIdForOffset(offset);
+        int offsetInPage = cacheSystem.getIndexInPageForOffset(offset);
 
-        int pageSize = manager.getPageSize();
+        int pageSize = cacheSystem.getPageSize();
 
         // Make sure we don't acquire a page while close is invoked
         // FIXME Only acquire a page if it is necessary
@@ -256,7 +271,7 @@ public class RangeRequestExecutor<T>
                 currentPageRef.close();
             }
 
-            currentPageRef = manager.getPageForPageId(pageId);
+            currentPageRef = cacheSystem.getPageForPageId(pageId);
         }
 
 
@@ -289,7 +304,7 @@ public class RangeRequestExecutor<T>
         sink.close();
 
         numItemsProcessed += i;
-        offset += numItemsProcessed;
+        offset += i;
 
         // If there is no further item although the request range has not been covered
         // then we have detected the end
@@ -300,7 +315,7 @@ public class RangeRequestExecutor<T>
         // (2) a known higher offset in the smart cache or
         // (3) another request with the same offset that yield results
         if (!hasNext && numItemsProcessed < requestLimit) {
-            manager.setKnownSize(offset);
+            cacheSystem.setKnownSize(offset);
         }
     }
 

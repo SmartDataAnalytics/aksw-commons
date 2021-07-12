@@ -87,6 +87,9 @@ public class SmartRangeCacheImpl<T>
     protected int pageSize;
     protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
+    protected long requestLimit;
+    protected long terminationDelayInMs;
+
 
     protected ExecutorService executorService =
             MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
@@ -106,10 +109,12 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public SmartRangeCacheImpl(RangedSupplier<Long, T> backend, KeyObjectStore objStore) {
+    public SmartRangeCacheImpl(RangedSupplier<Long, T> backend, KeyObjectStore objStore, long requestLimit, long terminationDelayInMs) {
         this.backend = backend;
 
         pageSize = 1024;
+        this.requestLimit = requestLimit;
+        this.terminationDelayInMs = terminationDelayInMs;
 
 
         pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
@@ -126,6 +131,10 @@ public class SmartRangeCacheImpl<T>
 //                    }),
 //                new TreeMap<>()
 //        );
+    }
+
+    public RangedSupplier<Long, T> getBackend() {
+        return backend;
     }
 
     public void setKnownSize(long knownSize) {
@@ -230,16 +239,16 @@ public class SmartRangeCacheImpl<T>
     public Slot<Long> newExecutor(long offset, long initialLength) {
         // RangeRequestExecutor<T> result;
         Slot<Long> slot;
-        executorCreationLock.writeLock().lock();
+        //executorCreationLock.writeLock().lock();
         try {
-            RangeRequestExecutor<T> worker = new RangeRequestExecutor<>(offset);
+            RangeRequestExecutor<T> worker = new RangeRequestExecutor<>(this, offset, requestLimit, terminationDelayInMs);
             slot = worker.getEndpointSlot();
             slot.set(offset + initialLength);
 
             executors.add(worker);
             executorService.submit(worker);
         } finally {
-            executorCreationLock.writeLock().unlock();
+            // executorCreationLock.writeLock().unlock();
         }
         return slot;
     }
@@ -259,7 +268,7 @@ public class SmartRangeCacheImpl<T>
      */
     public RequestIterator<T> request(Range<Long> requestRange) {
 
-        RequestIterator<T> result = new RequestIterator<>(this);
+        RequestIterator<T> result = new RequestIterator<>(this, requestRange);
 
         return result;
 //
@@ -303,8 +312,12 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-    public static <V> ListPaginator<V> wrap(RangedSupplier<Long, V> backend, KeyObjectStore store) {
-        return new SmartRangeCacheImpl<V>(backend, store);
+    public static <V> ListPaginator<V> wrap(
+            RangedSupplier<Long, V> backend,
+            KeyObjectStore store,
+            long requestLimit,
+            long terminationDelayInMs) {
+        return new SmartRangeCacheImpl<V>(backend, store, requestLimit, terminationDelayInMs);
     }
 
     @Override
