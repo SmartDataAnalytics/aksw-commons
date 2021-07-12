@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
@@ -22,6 +23,7 @@ import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -86,7 +88,9 @@ public class SmartRangeCacheImpl<T>
     protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
 
-    protected ExecutorService executorService = Executors.newCachedThreadPool();
+    protected ExecutorService executorService =
+            MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
+
 
 
     // protected SortedCache<Long, RangeBuffer<T>> pageCache;
@@ -108,7 +112,7 @@ public class SmartRangeCacheImpl<T>
         pageSize = 1024;
 
 
-        pageCache = null; //LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+        pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
 //        new ClaimingCache<>(
 //                CacheBuilder.newBuilder()
 //                    .maximumSize(1000)
@@ -154,7 +158,7 @@ public class SmartRangeCacheImpl<T>
 
 
     public long getPageIdForOffset(long offset) {
-        long result = offset % pageSize;
+        long result = offset / pageSize;
         return result;
     }
 

@@ -167,15 +167,16 @@ public class RequestIterator<T>
         long endPageId = cache.getPageIdForOffset(end);
 
         // Remove all claimed pages before the checkpoint
-        claimedPages.headMap(startPageId, false).clear();
+        NavigableMap<Long, RefFuture<RangeBuffer<T>>> toRelease = claimedPages.headMap(startPageId, false);
+        toRelease.values().forEach(Ref::close);
+        toRelease.clear();
 
-        for (long i = startPageId; i < endPageId; ++i) {
+        for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
-            cache.getPageForOffset(i);
         }
 
 
-        NavigableMap<Long, RangeBuffer<T>> pages = LongStream.range(startPageId, endPageId)
+        NavigableMap<Long, RangeBuffer<T>> pages = LongStream.rangeClosed(startPageId, endPageId)
                 .boxed()
                 .collect(Collectors.toMap(
                     pageId -> pageId * pageSize,
