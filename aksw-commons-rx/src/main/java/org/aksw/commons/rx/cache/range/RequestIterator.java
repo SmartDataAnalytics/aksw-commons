@@ -3,18 +3,26 @@ package org.aksw.commons.rx.cache.range;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import org.aksw.commons.collections.PrefetchIterator;
+import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.Ref;
+import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.math.LongMath;
 
 
@@ -49,10 +57,10 @@ public class RequestIterator<T>
 
     /** Pages claimed so far by this iterator;
      * new pages will be added to this map asynchronously when they become available */
-    protected ConcurrentNavigableMap<Long, Ref<RangeBufferImpl<T>>> claimedPages = new ConcurrentSkipListMap<>();
+    protected ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = new ConcurrentSkipListMap<>();
 
     /** The reference to the current page */
-    protected Ref<RangeBufferImpl<T>> currentPageRef = null;
+    protected RefFuture<RangeBufferImpl<T>> currentPageRef = null;
     protected Iterator<T> currentPageIt = null;
 
 
@@ -98,7 +106,7 @@ public class RequestIterator<T>
     }
 
 
-    protected void onPageLoaded(long offset, Ref<RangeBufferImpl<T>> content) {
+    protected void onPageLoaded(long offset, RefFuture<RangeBuffer<T>> content) {
         Range<Long> claimAheadRange = getClaimAheadRange();
 
         if (claimAheadRange.contains(offset)) {
@@ -129,150 +137,121 @@ public class RequestIterator<T>
     }
 
 
+    public RefFuture<RangeBuffer<T>> getPage(long pageId) {
+        return claimedPages.computeIfAbsent(pageId, idx -> cache.getPageForPageId(idx));
+    }
+
     /**
+     * Schedule ensured loading of the next 'n' items since the last
+     * checkpoint.
+     *
      * Check whether there are any gaps ahead that require
      * scheduling requests to the backend
      *
      */
-    public void checkpoint() throws Exception {
+    public void checkpoint(long n) throws Exception {
 
         List<RangeRequestExecutor<T>> candExecutors = new ArrayList<>();
 
-        Range<Long> readAheadRange = null;
 
-        List<CompletableFuture<Runnable>> pauseFutures = new ArrayList<>();
-
-        // Prevent creation of new executors while we analyze the state
-        cache.getExecutorCreationReadLock().lock();
+        long start = nextCheckpointOffset;
+        long end = start + n;
 
 
-        // Pause relevant running executors - executors are relevant if their working range
-        // overlaps with the read ahead range of this iterator
-        for (RangeRequestExecutor<T> executor : cache.getExecutors()) {
-            Range<Long> workingRange = executor.getWorkingRange();
-            if (!readAheadRange.intersection(workingRange).isEmpty()) {
-                // Pause only returns when the executor has halted
-                CompletableFuture<Runnable> pauseLock = executor.pause()
-                        .whenComplete((unpause, throwable) -> {
-                            Range<Long> pausedWorkingRange = executor.getWorkingRange();
-                            if (!readAheadRange.intersection(pausedWorkingRange).isEmpty()) {
-                                candExecutors.add(executor);
-                            }
-                        });
-            }
-        }
-
-
-
-
-        // Wait for all relevant executors to pause
-        CompletableFuture<Void> allPaused = CompletableFuture.allOf(pauseFutures.toArray(new CompletableFuture[0]));
-        allPaused.get();
-
-
-        // Check the claimed pages ahead of the current offset for any gaps
-        long pageId = cache.getPageIdForOffset(currentOffset);
+        Range<Long> requestRange = Range.closedOpen(start, end);
 
         long pageSize = cache.getPageSize();
-        long pageOffset = pageId * pageSize;
 
-        long readAheadPages = readAheadItemCount / pageSize;
+        // Check for any additional pages that need claiming
+        long startPageId = cache.getPageIdForOffset(start);
+        long endPageId = cache.getPageIdForOffset(end);
 
+        // Remove all claimed pages before the checkpoint
+        claimedPages.headMap(startPageId, false).clear();
 
-        long firstGapSeen = Long.MAX_VALUE;
-
-        // Create an iterator over the gaps
-        Iterator<Range<Long>> gaps = new PrefetchIterator<Range<Long>>() {
-            int i = 0;
-            @Override
-            protected Iterator<Range<Long>> prefetch() throws Exception {
-                long pageOffset = (pageId + i) * pageSize;
-
-                Iterator<Range<Long>> r;
-                // If a page is not loaded at all then a request has to start at that page
-                if (!claimedPages.containsKey(pageOffset)) {
-                    r = Iterators.singletonIterator(Range.closedOpen(pageOffset, pageOffset + pageSize));
-                } else {
-                    Ref<RangeBufferImpl<T>> pageRef = claimedPages.get(pageOffset);
-                    // Shift the range to the page offset
-                    r = Iterators.transform(pageRef.get().getLoadedRanges().asMapOfRanges().keySet().iterator(),
-                            range -> RangeUtils.apply(range, pageOffset, (endpoint, value) -> LongMath.saturatedAdd(endpoint, (long)value)));
-                }
-                return r;
-            }
-        };
-
-
-        // (1) If there is not gap within the read ahead range then locate the first gap
-        // within the effective claim ahead range and schedule a checkpoint at gap.offset - read ahead range
-
-        // (2) If there is a gap within the read ahead range then it is necessary to determine the request
-        // range. The request range starts from the offset of the first gap.
-
-        // (2a) If the request range is within the claim ahead range then set the request range
-        //      at most to the endpoint of the last gap in that range
-        //      More specifically, start covering the gaps and decide whether to schedule checkpoints
-        //      or requests.
-
-        // (2b) Note that the request range may extend over claim ahead - hence,
-        //      In that case we are forced to create a new executor with the request limit
-        //      because we cannot guarantee that pages will be available
-        //
-
-        // candExecutors.iterator().next().requestEndpoint(this, firstGapSeen);
-
-
-
-        while (gaps.hasNext()) {
-            Range<Long> gap = gaps.next();
-
-            // Abort if the gap offset is outside of the working range
-
-            long gapStart = pageOffset + gap.lowerEndpoint();
-            long gapEnd = pageOffset + gap.upperEndpoint();
-
-            // executor.tryExtendRange(gapEnd);
-
-            // Remove candidate executors that cannot serve the gap
-            // In the worst case no executors remain - in that case
-            // we have to create a new executor that starts after the last
-            // position that can be served by one of the current executors
-            List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
-            for (RangeRequestExecutor<T> candExecutor : candExecutors) {
-                Range<Long> ewr = candExecutor.getWorkingRange();
-                if (ewr.encloses(gap)) {
-                    nextCandExecutors.add(candExecutor);
-                }
-            }
-
-            // No executor could deal with all the gaps in the read ahead range
-            // Find the executor that can
-            if (nextCandExecutors.isEmpty()) {
-                break;
-            }
+        for (long i = startPageId; i < endPageId; ++i) {
+            claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
+            cache.getPageForOffset(i);
         }
 
 
+        NavigableMap<Long, RangeBuffer<T>> pages = LongStream.range(startPageId, endPageId)
+                .boxed()
+                .collect(Collectors.toMap(
+                    pageId -> pageId * pageSize,
+                    pageId -> {
+                        try {
+                            return claimedPages.get(pageId).await();
+                        } catch (InterruptedException | ExecutionException e1) {
+                            // TODO Improve handling
+                            throw new RuntimeException(e1);
+                        }
+                    },
+                    (u, v) -> { throw new RuntimeException("should not happen"); },
+                    TreeMap::new));
 
 
+        // Lock all pages
+        try {
+            pages.values().forEach(page -> page.getReadWriteLock().readLock().lock());
 
-        // for every gap decide on the following
-        // (.) can be scheduled for an executor?
-        // (.) if not, is a new executor needed immediately (gap within read ahead range)?
-        // (.) do we need to defer the decision and schedule another checkpoint?
-
-        // Pass as many gaps as possible in the read ahead range to a running executor
-        // If there is any unserved gap in the rar then start a new executor
+            // Range<Long> totalRange = Range.closedOpen(pageOffset, pageOffset + pageSize);
 
 
+            RangeSet<Long> loadedRanges = TreeRangeSet.create();
+            pages.entrySet().stream().flatMap(e -> e.getValue().getLoadedRanges().asMapOfRanges().keySet().stream().map(range ->
+                    RangeUtils.apply(
+                            range,
+                            e.getKey() * pageSize,
+                            (endpoint, value) -> LongMath.saturatedAdd(endpoint, (long)value)))
+                )
+                .forEach(loadedRanges::add);
 
 
-//			currentOffset
+            RangeSet<Long> gaps = RangeUtils.gaps(requestRange, loadedRanges);
+            Iterator<Range<Long>> gapIt = gaps.asRanges().iterator();
 
 
-        // Unpause the paused executors
-        for (CompletableFuture<Runnable> future : pauseFutures) {
-            future.get().run();
+            // Prevent creation of new executors while we analyze the state
+            cache.getExecutorCreationReadLock().lock();
+
+
+            candExecutors.addAll(cache.getExecutors());
+
+            Range<Long> gap = null;
+            while (gapIt.hasNext()) {
+                 gap = gapIt.next();
+
+                // Remove candidate executors that cannot serve the gap
+                // In the worst case no executors remain - in that case
+                // we have to create a new executor that starts after the last
+                // position that can be served by one of the current executors
+                List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
+                for (RangeRequestExecutor<T> candExecutor : candExecutors) {
+                    Range<Long> ewr = candExecutor.getWorkingRange();
+                    if (ewr.encloses(gap)) {
+                        nextCandExecutors.add(candExecutor);
+                    }
+                }
+
+                // No executor could deal with all the gaps in the read ahead range
+                // Abort the search
+                if (nextCandExecutors.isEmpty()) {
+                    break;
+                }
+            }
+
+
+            // TODO Create an executor...
+
+            // Register the request range to it
+
+
+        } finally {
+            // Unlock all pages
+            pages.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
+
+            cache.getExecutorCreationReadLock().unlock();
         }
     }
 
@@ -281,18 +260,24 @@ public class RequestIterator<T>
     protected T computeNext() {
         if (currentOffset == nextCheckpointOffset) {
             try {
-                checkpoint();
+                checkpoint(readAheadItemCount);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
+         }
 
         // RangeBuffer<T> currentPage = null;
 
         if (currentPageRef == null) {
-            currentPageRef = cache.getPageForOffset(currentOffset);
+            long pageId = cache.getPageIdForOffset(currentOffset);
+            RangeBuffer<T> currentPage;
+            try {
+                currentPage = getPage(pageId).await();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
             currentIndex = cache.getIndexInPageForOffset(currentOffset);
-            currentPageIt = currentPageRef.get().get(currentIndex);
+            currentPageIt = currentPage.get(currentIndex);
         }
 
         T result = currentPageIt.next();
@@ -324,7 +309,9 @@ public class RequestIterator<T>
                 if (!isAborted) {
                     isAborted = true;
 
-                    // TODO Release all claimed pages
+                    // Release all claimed pages
+                    claimedPages.forEach((k, v) -> v.close());
+
                     // TODO Release all claimed task-ranges
 
                 }

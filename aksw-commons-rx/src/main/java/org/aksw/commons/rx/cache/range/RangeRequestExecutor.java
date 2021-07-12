@@ -3,17 +3,21 @@ package org.aksw.commons.rx.cache.range;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.aksw.commons.rx.range.RangedSupplier;
+import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
-import org.aksw.commons.util.ref.Ref;
+import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.sink.BulkingSink;
+import org.aksw.commons.util.slot.Slot;
+import org.aksw.commons.util.slot.SlottedBuilder;
+import org.aksw.commons.util.slot.SlottedBuilderImpl;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
+import com.google.common.math.IntMath;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.Ints;
 
@@ -27,8 +31,9 @@ import io.reactivex.rxjava3.disposables.Disposable;
  *
  * @param <T>
  */
-public class RangeRequestExecutor<T> {
-    // After processing a page, an executor can claim another one
+public class RangeRequestExecutor<T>
+    implements Runnable
+{
 
     /**
      * Reference to the manager - if there is a failure in processing the request the executor
@@ -36,6 +41,8 @@ public class RangeRequestExecutor<T> {
      */
     protected SmartRangeCacheImpl<T> manager;
 
+    protected SlottedBuilder<Long, Long> endpointRequests = SlottedBuilderImpl.create(
+            values -> values.stream().reduce(-1l,Math::max));
 
 
     /** The data supplying iterator */
@@ -48,24 +55,21 @@ public class RangeRequestExecutor<T> {
     protected boolean isAborted = false;
 
 
-    protected ReentrantReadWriteLock pauseLock = new ReentrantReadWriteLock(true);
-    protected volatile boolean isPaused = false;
-
     /** The pages claimed by the executor */
     // protected Set<Ref<Page<T>>> claimedPages;
 
-    /** The page the executor is currently writing to */
-    protected Ref<RangeBufferImpl<T>> currentPageRef;
+    /**
+     * The page the executor is currently writing to
+     * Preloading of pages is requested by the client iterator
+     * So we probably there is not much benefit from doing it here too
+     */
+    protected RefFuture<RangeBuffer<T>> currentPageRef;
 
     protected long requestOffset;
 
 
-    // The endpoints of the requests being served by this executor
-    protected Map<Object, Long> contextToEndpoint;
-
     // The effective endpoint; the maximum value in contextToEndpoint
     protected long effectiveEndpoint;
-
 
 
     /** The requestLimit must take result-set-limit on the backend into account! */
@@ -77,12 +81,6 @@ public class RangeRequestExecutor<T> {
     protected RangedSupplier<Long, T> backend;
 
 
-    protected long numItemsRead;
-
-    /** The executor synchronizes on itself ('this') and advertises the next offset upon which
-     *  it re-checks its conditions */
-    // protected long nextInterceptableOffset;
-
 
     /** Report read items in chunks preferably and at most this size.
      *  Prevents synchronization on every single item. */
@@ -93,14 +91,12 @@ public class RangeRequestExecutor<T> {
     protected long offset;
 
 
-    protected long currentLimit;
-
-
-    protected boolean terminateIfNoObserver;
-
-    // Task termination may be delayed in order to allow it to recover should another observer register
-    // in the delay phase
+    /**
+     * Task termination may be delayed in order to allow it to recover should another observer register
+     * in the delay phase
+     */
     protected long terminationDelay;
+
 
 
 
@@ -119,6 +115,12 @@ public class RangeRequestExecutor<T> {
     protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock();
 
 
+    public RangeRequestExecutor(long requestOffset) {
+        super();
+        this.requestOffset = requestOffset;
+        this.offset = requestOffset;
+    }
+
     /** Time in seconds it took to obtain the first item */
     public Duration getFirstItemTime() {
         return firstItemTime;
@@ -127,27 +129,6 @@ public class RangeRequestExecutor<T> {
     /** Throughput measured in items per second */
     public float getThroughput() {
         return numItemsProcessed / (float)(processingTimeInNanos / 1e9);
-    }
-
-
-
-    /**
-     * A call to this method acquires a lock that causes the executor to pause
-     * at the next checkpoint. The client must eventually call .unlock() on the returned lock.
-     *
-     * The method only returns when the executor has reached that checkpoint.
-     *
-     * Note that the returned lock is a read lock from a ReentrantReadWriteLock.
-     * These locks do not support testing for ownership, so the client code must take care
-     * of properly releasing any acquired locks.
-     *
-     * https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6207928
-     */
-    public CompletableFuture<Runnable> pause() throws InterruptedException {
-        // RefImpl.create(null, backend, currentPageRef)
-        Lock result = pauseLock.readLock();
-        result.lock();
-        return CompletableFuture.completedFuture(() -> result.unlock());
     }
 
 
@@ -213,41 +194,30 @@ public class RangeRequestExecutor<T> {
         iterator.hasNext();
         Duration firstItemTime = firstItemTimer.elapsed();
 
-        Lock writeLock = pauseLock.writeLock();
-        writeLock.lock();
-
-        try {
-
-            // pauseLock.writeLock().newCondition();
-            while (true) {
-                while (pauseLock.hasQueuedThreads()) {
-                    isPaused = true;
-                    writeLock.unlock();
-                    writeLock.lock();
-                }
-                isPaused = false;
-
+        // pauseLock.writeLock().newCondition();
+        while (true) {
+            try {
                 process(reportingInterval);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
 
-                if (iterator.hasNext()) {
+            if (iterator.hasNext()) {
 
-                    // Shut down if there is no pending request for further data
-                    try {
-                        Thread.sleep(terminationDelay);
-                    } catch (InterruptedException e) {
+                // Shut down if there is no pending request for further data
+                try {
+                    Thread.sleep(terminationDelay);
+                } catch (InterruptedException e) {
 
-                    }
+                }
 
-                    if (currentLimit < numItemsRead) {
-                        break;
-                    }
-                } else {
+                if (requestLimit < numItemsProcessed) {
                     break;
                 }
+            } else {
+                break;
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -266,11 +236,18 @@ public class RangeRequestExecutor<T> {
 
 
     /**
+     * @throws ExecutionException
+     * @throws InterruptedException
      *
      */
-    public void process(int n) {
+    public void process(int n) throws InterruptedException, ExecutionException {
         int bulkSize = 16;
         // BulkConsumer<T>
+
+        long pageId = manager.getPageIdForOffset(offset);
+        int offsetInPage = manager.getIndexInPageForOffset(offset);
+
+        int pageSize = manager.getPageSize();
 
         // Make sure we don't acquire a page while close is invoked
         // FIXME Only acquire a page if it is necessary
@@ -279,20 +256,27 @@ public class RangeRequestExecutor<T> {
                 currentPageRef.close();
             }
 
-            currentPageRef = manager.getPageForOffset(offset);
+            currentPageRef = manager.getPageForPageId(pageId);
         }
 
 
-        int offsetInPage = manager.getIndexInPageForOffset(offset);
-        RangeBufferImpl<T> rangeBuffer = currentPageRef.get();
+        RangeBuffer<T> rangeBuffer = currentPageRef.await();
 
         BulkingSink<T> sink = new BulkingSink<>(bulkSize,
                 (arr, start, len) -> rangeBuffer.putAll(offsetInPage, arr, start, len));
 
 
-        // TODO Fix limit computation
-        int limit = Math.min(Ints.saturatedCast(currentLimit), rangeBuffer.getCapacity());
-        limit = Math.min(limit, reportingInterval);
+        long maxEndpoint = endpointRequests.build();
+
+        int numItemsUntilPageEnd = rangeBuffer.getCapacity() - offsetInPage;
+        long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
+        long numItemsUntilEndpoint = maxEndpoint - offset;
+
+        long limit = Math.min(Math.min(Math.min(
+                reportingInterval,
+                numItemsUntilPageEnd),
+                numItemsUtilRequestLimit),
+                numItemsUntilEndpoint);
 
         int i = 0;
         boolean hasNext;
@@ -304,8 +288,8 @@ public class RangeRequestExecutor<T> {
         sink.flush();
         sink.close();
 
-        numItemsRead += i;
-        offset += numItemsRead;
+        numItemsProcessed += i;
+        offset += numItemsProcessed;
 
         // If there is no further item although the request range has not been covered
         // then we have detected the end
@@ -315,69 +299,14 @@ public class RangeRequestExecutor<T> {
         // (1) a known result-set-limit value on the smart cache
         // (2) a known higher offset in the smart cache or
         // (3) another request with the same offset that yield results
-        if (!hasNext && numItemsRead < requestLimit) {
-            // manager.setKnownSize(offset);
+        if (!hasNext && numItemsProcessed < requestLimit) {
+            manager.setKnownSize(offset);
         }
-
-
-        // throughputTimer.start()
-
-        // Note: The SmartRangeCache assigns (range-retrieval) tasks to running executors
-        //
-
-        // Check if we are still serving any tasks - possible outcomes:
-        // (1) no more tasks are being served:
-        //     Possibly finish reading a certain chunk, then go into standby
-        //     If no further request arrives in time then terminate
-        // (2) there are still open tasks
-        //     Check whether to trigger read-ahead: This means that this executor is known having to
-        //     terminate (e.g. reached the backend-max-result-size limit) but more data is requested
-        //
-
-
-        // (x) there are requests but they cannot be served
-        //     (this can only happen if the backend raises an exception)
-        // If there is any request served up to the read-ahead trigger point
-        // then schedule a new task at the ExecutorManager
-
-        // computeNextCheckpoint()
-
-
-
     }
 
 
-    protected void updateEffectiveEndpoint() {
-        effectiveEndpoint = contextToEndpoint.values().stream()
-                .mapToLong(x -> x).reduce(-1l,Math::max);
+    public Slot<Long> getEndpointSlot() {
+        return endpointRequests.newSlot();
     }
-
-    /**
-     * Add or update the endpoint for the given context object.
-     *
-     *
-     * @param context
-     * @param newLimit
-     * @return A runnable that unregisters the endpoint for this executor. Unregistering the last endpoint
-     *         may pause or cancel the executor.
-     */
-    public Runnable requestEndpoint(Object context, long endpoint) {
-        synchronized (this) {
-            Range<Long> workingRange = getWorkingRange();
-            if (!workingRange.contains(endpoint)) {
-                throw new IllegalArgumentException(String.format("Request for endpoint %d is outside of working range %s", endpoint, workingRange));
-            }
-            contextToEndpoint.put(context, endpoint);
-            updateEffectiveEndpoint();
-        }
-
-        return () -> {
-            synchronized (this) {
-                contextToEndpoint.remove(context);
-                updateEffectiveEndpoint();
-            }
-        };
-    }
-
 }
 

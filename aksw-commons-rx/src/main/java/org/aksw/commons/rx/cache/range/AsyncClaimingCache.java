@@ -40,7 +40,7 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
  * @param <K>
  * @param <V>
  */
-public class ClaimingCache2<K, V> {
+public class AsyncClaimingCache<K, V> {
     /** The cache with the primary loader */
     protected AsyncLoadingCache<K, Ref<V>> activeCache;
 
@@ -53,15 +53,15 @@ public class ClaimingCache2<K, V> {
     // Only successfully loaded items can be added into the claimed cache
     protected Map<K, Ref<Ref<V>>> claimed;
 
-    public static <K, V> ClaimingCache2<K, V> create(
+    public static <K, V> AsyncClaimingCache<K, V> create(
             Caffeine<Object, Object> cacheBuilder,
             Function<K, Ref<V>> cacheLoader,
             RemovalListener<K, Ref<V>> removalListener) {
-        return new ClaimingCache2<>(cacheBuilder, cacheLoader, removalListener);
+        return new AsyncClaimingCache<>(cacheBuilder, cacheLoader, removalListener);
     }
 
 
-    public ClaimingCache2(
+    public AsyncClaimingCache(
             Caffeine<Object, Object> cacheBuilder,
             Function<K, Ref<V>> cacheLoader,
             RemovalListener<K, Ref<V>> removalListener
@@ -165,6 +165,14 @@ public class ClaimingCache2<K, V> {
     }
 
 
+    /**
+     * Once the primary ref is delivered by the cache, it is
+     * claimed. Claiming creates a secondary reference.
+     *
+     * @param key
+     * @param primaryRef
+     * @return
+     */
     protected Ref<V> postProcessLoadedItem(K key, Ref<V> primaryRef) {
         Ref<V> result = null;
         // Put a reference to the value into claimed

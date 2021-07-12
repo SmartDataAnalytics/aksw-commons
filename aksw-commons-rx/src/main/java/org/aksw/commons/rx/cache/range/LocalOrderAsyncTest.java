@@ -103,8 +103,8 @@ public class LocalOrderAsyncTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
-    public static <V> ClaimingCache2<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
-        ClaimingCache2<Long, V> result = ClaimingCache2.<Long, V>create(
+    public static <V> AsyncClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
+        AsyncClaimingCache<Long, V> result = AsyncClaimingCache.<Long, V>create(
                Caffeine.newBuilder().maximumSize(1000),
                key -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
@@ -160,11 +160,16 @@ public class LocalOrderAsyncTest {
 
 
 
-        ClaimingCache2<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
+        AsyncClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
 
+        // troll the system: Acquire a page which we want to load in a moment
+        // and cancel its request
+        // This may potentially sometimes cause troubles with kryo - its not clear whether this is harmless:
+        // [kryo] Unable to load class  with kryo's ClassLoader. Retrying with current..
+        cache.claim(1024l).close();
 
         try (RefFuture<RangeBuffer<String>> page1 = cache.claim(1024l)) {
-            page1.await().put(10, "hello");
+            page1.await().put(10, "hello!!!");
         }
 
         try (RefFuture<RangeBuffer<String>> page2 = cache.claim(2048l)) {

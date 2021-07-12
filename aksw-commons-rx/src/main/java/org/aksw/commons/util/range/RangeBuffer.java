@@ -2,6 +2,7 @@ package org.aksw.commons.util.range;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.common.collect.RangeMap;
 
@@ -24,5 +25,8 @@ public interface RangeBuffer<T> {
 
     /** -1 if unknown */
     int knownSize();
+
+    ReadWriteLock getReadWriteLock();
+
 
 }

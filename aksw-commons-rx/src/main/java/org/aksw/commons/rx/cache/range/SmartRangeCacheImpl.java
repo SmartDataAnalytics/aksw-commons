@@ -4,17 +4,20 @@ import java.util.Collections;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 
 import org.aksw.commons.rx.range.KeyObjectStore;
 import org.aksw.commons.rx.range.RangedSupplier;
+import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
-import org.aksw.commons.util.ref.Ref;
+import org.aksw.commons.util.ref.RefFuture;
+import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
 import com.google.common.collect.Range;
@@ -22,7 +25,6 @@ import com.google.common.collect.Sets;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.subjects.PublishSubject;
 
 interface PageManager<T> {
     // Reference<? extends Page<T>>
@@ -77,18 +79,14 @@ class ExecutorPool {
 public class SmartRangeCacheImpl<T>
     implements ListPaginator<T>
 {
+    /** The supplier for actually retrieving data from the backend */
     protected RangedSupplier<Long, T> backend;
 
     protected int pageSize;
-    protected ClaimingCache<Long, RangeBufferImpl<T>> pageCache;
+    protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
 
-    /**
-     * A service for loading pages
-     *
-     */
-    protected CompletionService<Page> pageLoderService;
-
+    protected ExecutorService executorService = Executors.newCachedThreadPool();
 
 
     // protected SortedCache<Long, RangeBuffer<T>> pageCache;
@@ -102,17 +100,7 @@ public class SmartRangeCacheImpl<T>
 
     protected volatile long knownSize = -1;
 
-    protected PublishSubject<Ref<Page<T>>> pageLoadPublisher = PublishSubject.create();
 
-
-    public Flowable<Page<T>> getPageFlow(long pageId) {
-//
-//        pageLoadPublisher
-//            .toFlowable(BackpressureStrategy.BUFFER)
-//            .lift(OperatorLocalOrder.<Ref<Page<T>>>forLong(pageId, Page::getOffset));
-return null;
-
-    }
 
     public SmartRangeCacheImpl(RangedSupplier<Long, T> backend, KeyObjectStore objStore) {
         this.backend = backend;
@@ -135,6 +123,10 @@ return null;
 //                new TreeMap<>()
 //        );
     }
+
+    public void setKnownSize(long knownSize) {
+        this.knownSize = knownSize;
+     }
 
     public int getPageSize() {
         return pageSize;
@@ -173,13 +165,13 @@ return null;
      *
      *
      * */
-    public Ref<RangeBufferImpl<T>> getPageForOffset(long offset) {
+    public RefFuture<RangeBuffer<T>> getPageForOffset(long offset) {
         long pageId = getPageIdForOffset(offset);
         return getPageForPageId(pageId);
     }
 
-    public Ref<RangeBufferImpl<T>> getPageForPageId(long pageId) {
-        Ref<RangeBufferImpl<T>> result;
+    public RefFuture<RangeBuffer<T>> getPageForPageId(long pageId) {
+        RefFuture<RangeBuffer<T>> result;
         try {
             result = pageCache.claim(pageId);
         } catch (ExecutionException e) {
@@ -193,17 +185,12 @@ return null;
     }
 
 
-    protected void updateExecutors() {
-
-    }
 
     public Runnable register(RequestIterator<T> it) {
         activeRequests.add(it);
-        updateExecutors();
 
         return () -> {
             activeRequests.remove(it);
-            updateExecutors();
         };
     }
 
@@ -235,12 +222,22 @@ return null;
     /// protected RangeMap<Long, Object> autoClaimers;
 
 
-    public NavigableMap<Long, Ref<RangeBufferImpl<T>>> claimPages(Range<Long> requestRange) {
 
+    public Slot<Long> newExecutor(long offset, long initialLength) {
+        // RangeRequestExecutor<T> result;
+        Slot<Long> slot;
+        executorCreationLock.writeLock().lock();
+        try {
+            RangeRequestExecutor<T> worker = new RangeRequestExecutor<>(offset);
+            slot = worker.getEndpointSlot();
+            slot.set(offset + initialLength);
 
-
-
-        return null;
+            executors.add(worker);
+            executorService.submit(worker);
+        } finally {
+            executorCreationLock.writeLock().unlock();
+        }
+        return slot;
     }
 
     /**
