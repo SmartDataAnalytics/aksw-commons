@@ -8,6 +8,7 @@ import org.aksw.jena_sparql_api.lookup.ListPaginator;
 import org.aksw.jena_sparql_api.lookup.ListPaginatorFromList;
 import org.junit.Test;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Range;
 
 import io.reactivex.rxjava3.core.Flowable;

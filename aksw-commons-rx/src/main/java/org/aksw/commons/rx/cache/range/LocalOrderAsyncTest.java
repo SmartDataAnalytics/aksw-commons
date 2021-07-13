@@ -107,7 +107,9 @@ public class LocalOrderAsyncTest {
 
     public static <V> AsyncClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
         AsyncClaimingCache<Long, V> result = AsyncClaimingCache.<Long, V>create(
-               Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).maximumSize(1000).expireAfterWrite(1, TimeUnit.SECONDS),
+               Caffeine.newBuilder()
+               .scheduler(Scheduler.systemScheduler())
+               .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
                key -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
                     V value;

@@ -49,6 +49,22 @@ public class RangeBufferImpl<T>
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     protected transient Condition hasData = readWriteLock.writeLock().newCondition();
 
+
+    /** Clones the object. Internally attempts to acquire the read lock. */
+    @Override
+    protected RangeBufferImpl<T> clone() throws CloneNotSupportedException {
+        Lock readLock = getReadWriteLock().readLock();
+        readLock.lock();
+        try {
+            RangeMap<Integer, List<Throwable>> rangeMapClone = TreeRangeMap.create();
+            rangeMapClone.putAll(loadedRanges);
+            T[] bufferClone = buffer.clone();
+            return new RangeBufferImpl<>(bufferClone, rangeMapClone, knownSize);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     public Condition getHasDataCondition() {
         return hasData;
     }

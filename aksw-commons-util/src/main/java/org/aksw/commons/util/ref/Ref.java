@@ -30,6 +30,15 @@ public interface Ref<T>
      */
     T get();
 
+
+    /**
+     * Return the object on which reference acquisition, release and the close action
+     * are synchronized on.
+     */
+    Object getSynchronizer();
+
+
+
     /**
      * Acquire a new reference with a given comment object
      * Acquiration fails if isAlive() returns false

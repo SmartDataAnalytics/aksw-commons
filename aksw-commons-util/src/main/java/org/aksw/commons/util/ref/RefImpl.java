@@ -90,6 +90,11 @@ public class RefImpl<T>
     }
 
     @Override
+    public Object getSynchronizer() {
+        return synchronizer;
+    }
+
+    @Override
     public T get() {
         if (isReleased) {
             throw new RuntimeException("Cannot get value of a released reference");

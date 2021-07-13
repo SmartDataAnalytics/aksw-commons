@@ -21,6 +21,7 @@ import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -82,10 +83,12 @@ public class SmartRangeCacheImpl<T>
     implements ListPaginator<T>
 {
     /** The supplier for actually retrieving data from the backend */
-    protected RangedSupplier<Long, T> backend;
+    protected ListPaginator<T> backend;
 
     protected int pageSize;
     protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
+    // protected AsyncClaimingCache<String, Object> metadataCache;
+
 
     protected long requestLimit;
     protected long terminationDelayInMs;
@@ -109,7 +112,7 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public SmartRangeCacheImpl(RangedSupplier<Long, T> backend, KeyObjectStore objStore, long requestLimit, long terminationDelayInMs) {
+    public SmartRangeCacheImpl(ListPaginator<T> backend, KeyObjectStore objStore, long requestLimit, long terminationDelayInMs) {
         this.backend = backend;
 
         pageSize = 1024;
@@ -117,7 +120,10 @@ public class SmartRangeCacheImpl<T>
         this.terminationDelayInMs = terminationDelayInMs;
 
 
-        pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+        this.pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+        // this.metadataCache = Caffeine.newBuilder()
+
+
 //        new ClaimingCache<>(
 //                CacheBuilder.newBuilder()
 //                    .maximumSize(1000)
@@ -139,7 +145,7 @@ public class SmartRangeCacheImpl<T>
 
     public void setKnownSize(long knownSize) {
         this.knownSize = knownSize;
-     }
+    }
 
     public int getPageSize() {
         return pageSize;
@@ -313,7 +319,7 @@ public class SmartRangeCacheImpl<T>
 
 
     public static <V> ListPaginator<V> wrap(
-            RangedSupplier<Long, V> backend,
+            ListPaginator<V> backend,
             KeyObjectStore store,
             long requestLimit,
             long terminationDelayInMs) {
@@ -322,11 +328,12 @@ public class SmartRangeCacheImpl<T>
 
     @Override
     public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
+        return backend.fetchCount(itemLimit, rowLimit);
+
         // If the size is known then return it - otherwise send at most one query to the backend for counting
         // and return the result.
         // Extension: If the count becomes known before the query returns then we could abort the count-request
         // and return the newly known value instead
-        throw new UnsupportedOperationException("not implemented yet");
 //		if (knownSize < 0) {
 //			return
 //		} else {

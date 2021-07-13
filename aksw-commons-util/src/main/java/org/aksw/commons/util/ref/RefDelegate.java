@@ -37,6 +37,11 @@ public interface RefDelegate<T, R extends Ref<T>>
     }
 
     @Override
+    default Object getSynchronizer() {
+        return getDelegate().getSynchronizer();
+    }
+
+    @Override
     default StackTraceElement[] getAquisitionStackTrace() {
         return getDelegate().getAquisitionStackTrace();
     }

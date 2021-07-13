@@ -21,6 +21,13 @@ public class RefFutureImpl<T>
     }
 
 
+    /** Wrap an existing ref with completed future */
+    public static <T> RefFuture<T> fromRef(Ref<T> ref) {
+        RefFuture<T> result = RefFutureImpl.fromFuture(CompletableFuture.completedFuture(ref), ref.getSynchronizer());
+        return result;
+    }
+
+
     public static <T> RefFuture<T> fromFuture(CompletableFuture<Ref<T>> future, Object synchronizer) {
       return wrap(RefImpl.create(future.thenApply(Ref::get), synchronizer, () -> {
           try {

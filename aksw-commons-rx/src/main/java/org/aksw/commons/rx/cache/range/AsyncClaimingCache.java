@@ -5,19 +5,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.ref.RefFutureImpl;
 import org.aksw.commons.util.ref.RefImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.github.benmanes.caffeine.cache.Scheduler;
 
 
 /**
@@ -41,17 +45,21 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
  * @param <V>
  */
 public class AsyncClaimingCache<K, V> {
-    /** The cache with the primary loader */
-    protected AsyncLoadingCache<K, Ref<V>> activeCache;
+
+    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCache.class);
+
+    // Only successfully loaded items can be added into the claimed cache
+    protected Map<K, Ref<Ref<V>>> level1;
 
     /** If the sync pool is non null, then eviction of an item from the active cache
      *  adds those items to this pool. There, items can be scheduled for syncing
      *  e.g. with the file system. An item can be reactived from the sync poll. */
-    protected Cache<K, V> syncPool;
 
+    protected AsyncLoadingCache<K, Ref<V>> level2;
 
-    // Only successfully loaded items can be added into the claimed cache
-    protected Map<K, Ref<Ref<V>>> claimed;
+    /** The cache with the primary loader */
+    protected AsyncLoadingCache<K, Ref<V>> level3;
+
 
     public static <K, V> AsyncClaimingCache<K, V> create(
             Caffeine<Object, Object> cacheBuilder,
@@ -66,23 +74,40 @@ public class AsyncClaimingCache<K, V> {
             Function<K, Ref<V>> cacheLoader,
             RemovalListener<K, Ref<V>> removalListener
             ) {
-        this.activeCache = cacheBuilder
+
+        this.level2 = Caffeine.newBuilder()
+                .scheduler(Scheduler.systemScheduler())
+                .expireAfterWrite(1, TimeUnit.SECONDS)
+                .removalListener((K key, Ref<V> primaryRef, RemovalCause removalCause) -> {
+                    logger.debug("Level2: Syncing & passing to level 3: " + key);
+                    removalListener.onRemoval(key, primaryRef, removalCause);
+                    // RefFuture<V> refFuture = RefFutureImpl.fromRef(primaryRef);
+
+                    Ref<V> handBackRef = primaryRef.getRootRef().acquire();
+                    level3.put(key, CompletableFuture.completedFuture(handBackRef));
+
+                    // level3.put(key, CompletableFuture.completedFuture(primaryRef));
+                    // primaryRef.close();
+                })
+                .buildAsync((K key, Executor executor) -> level3.get(key));
+
+        this.level3 = cacheBuilder
             .removalListener(new RemovalListener<K, Ref<V>>() {
                 @Override
                 public void onRemoval(K key, Ref<V> primaryRef, RemovalCause cause) {
-                    System.out.println("Closed: " + key);
+                    logger.debug("Level3: Closed: " + key);
                     primaryRef.close();
                 }
             })
             .buildAsync(new CacheLoader<K, Ref<V>>() {
                 @Override
                 public Ref<V> load(K key) throws Exception {
-                    System.out.println("Loaded: " + key);
+                    logger.debug("Level3: Loading: " + key);
                     // If the reference is still in the claimed map then
                     // re-acquire it (without having to actually load anything)
                     Ref<V> primaryRef = null;
-                    synchronized (claimed) {
-                        Ref<Ref<V>> secondaryRef = claimed.get(key);
+                    synchronized (level1) {
+                        Ref<Ref<V>> secondaryRef = level1.get(key);
                         if (secondaryRef != null) {
                             // Acquire claimed's root ref for the cache
                             primaryRef = secondaryRef.get().acquire(); // claimedRef.getRootRef().acquire("cache");
@@ -97,7 +122,7 @@ public class AsyncClaimingCache<K, V> {
                 }
             });
 
-        claimed = new HashMap<>();
+        level1 = new HashMap<>();
     }
 
 
@@ -113,7 +138,7 @@ public class AsyncClaimingCache<K, V> {
     }
 
     public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
-        return hideInnerRef(refToRef, claimed);
+        return hideInnerRef(refToRef, level1);
     }
 
 //    public  <V> Ref<CompletableFuture<V>> hideInnerRef(Ref<? extends CompletableFuture<? extends Ref<V>>> refToRef) {
@@ -147,25 +172,24 @@ public class AsyncClaimingCache<K, V> {
         Ref<Ref<V>> secondaryRef;
 
         // Synchronize on 'claimed' because removals can occur asynchronously
-        synchronized (claimed) {
-            secondaryRef = claimed.get(key);
+        synchronized (level1) {
+            secondaryRef = level1.get(key);
 
             if (secondaryRef != null) {
 //                CompletableFuture<Ref<V>> resolvedFuture = CompletableFuture.completedFuture(secondaryRef.acquire());
                 Ref<V> tmp = hideInnerRef(secondaryRef);
                 // result = RefFutureImpl.fromFuture(resolvedFuture, claimed); // , resolvedFuture)// hideInnerRef(secondaryRef); //secondaryRef.acquire();
-                result = RefFutureImpl.fromFuture(CompletableFuture.completedFuture(tmp), claimed);
-
+                result = RefFutureImpl.fromRef(tmp);
             }
         }
 
         if (secondaryRef == null) {
             // Don't block 'claimed' while computing the value asynchronously
             // Hence, compute the value outside of the synchronized block
-            CompletableFuture<Ref<V>> tmp = activeCache.get(key)
+            CompletableFuture<Ref<V>> tmp = level2.get(key)
                     .thenApply(item -> postProcessLoadedItem(key, item));
 
-            result = RefFutureImpl.fromFuture(tmp, claimed);
+            result = RefFutureImpl.fromFuture(tmp, level1);
         }
 
         return result;
@@ -184,29 +208,29 @@ public class AsyncClaimingCache<K, V> {
         Ref<V> result = null;
         // Put a reference to the value into claimed
         // (if that hasn't happened asynchronously already)
-        synchronized (claimed) {
+        synchronized (level1) {
             // Check whether in the meantime the entry has been claimed
-            Ref<Ref<V>> secondaryRef = claimed.get(key);
+            Ref<Ref<V>> secondaryRef = level1.get(key);
             if (secondaryRef == null) {
                 // Note that the root ref is synchronized on 'claimed' as well
                 // Hence, if the ref had been released then claimed.get(key) would have yeld null
 
                 // Ref<V> secondaryRef = primaryRef.acquire("rootClaim");
                 Ref<V> tmpRef = primaryRef.acquire();
-                secondaryRef = RefImpl.create(primaryRef, claimed, () -> {
+                secondaryRef = RefImpl.create(primaryRef, level1, () -> {
                     // Hand back the value to the cache
                     // If the value is already in the cache it will get removed / released
                     // so we need to create yet another helper reference
                     Ref<V> handBackRef = primaryRef.getRootRef().acquire();
-                    activeCache.put(key, CompletableFuture.completedFuture(handBackRef));
+                    level2.put(key, CompletableFuture.completedFuture(handBackRef));
 
-                    claimed.remove(key);
+                    level1.remove(key);
                     tmpRef.close();
                 }, null);
                 result = hideInnerRef(secondaryRef); //secondaryRef.acquire();
                 secondaryRef.close();
 
-                claimed.put(key, secondaryRef);
+                level1.put(key, secondaryRef);
             } else {
                 result = hideInnerRef(secondaryRef); //secondaryRef.acquire();
             }
@@ -217,8 +241,8 @@ public class AsyncClaimingCache<K, V> {
     /** Cannot raise an ExecutionException because it does not trigger loading */
     public RefFuture<V> claimIfPresent(K key) {
         RefFuture<V> result = null;
-        synchronized (claimed) {
-            if (claimed.containsKey(key) || activeCache.getIfPresent(key) != null) {
+        synchronized (level1) {
+            if (level1.containsKey(key) || level2.getIfPresent(key) != null || level3.getIfPresent(key) != null) {
                 result = claimUnsafe(key);
             }
         }
@@ -227,6 +251,6 @@ public class AsyncClaimingCache<K, V> {
     }
 
     public void invalidateAll() {
-        activeCache.synchronous().invalidateAll();
+        level3.synchronous().invalidateAll();
     }
 }
