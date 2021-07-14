@@ -75,6 +75,8 @@ public class AsyncClaimingCache<K, V> {
             RemovalListener<K, Ref<V>> removalListener
             ) {
 
+        this.level1 = new HashMap<>();
+
         this.level2 = Caffeine.newBuilder()
                 .scheduler(Scheduler.systemScheduler())
                 .expireAfterWrite(1, TimeUnit.SECONDS)
@@ -89,7 +91,11 @@ public class AsyncClaimingCache<K, V> {
                     // level3.put(key, CompletableFuture.completedFuture(primaryRef));
                     // primaryRef.close();
                 })
-                .buildAsync((K key, Executor executor) -> level3.get(key));
+                // .buildAsync((K key, Executor executor) -> {
+                .buildAsync(key -> {
+                    logger.debug("Level2: Delegating request to level 3");
+                    return level3.get(key).get().acquire();
+                });
 
         this.level3 = cacheBuilder
             .removalListener(new RemovalListener<K, Ref<V>>() {
@@ -121,8 +127,6 @@ public class AsyncClaimingCache<K, V> {
                     return primaryRef;
                 }
             });
-
-        level1 = new HashMap<>();
     }
 
 
