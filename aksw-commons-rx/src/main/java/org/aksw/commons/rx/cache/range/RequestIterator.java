@@ -122,14 +122,14 @@ public class RequestIterator<T>
         return Range.closedOpen(currentOffset, currentOffset + claimAheadLength);
     }
 
-
-    protected void onPageLoaded(long offset, RefFuture<RangeBuffer<T>> content) {
-        Range<Long> claimAheadRange = getClaimAheadRange();
-
-        if (claimAheadRange.contains(offset)) {
-            claimedPages.put(offset, content.acquire());
-        }
-    }
+//
+//    protected void onPageLoaded(long offset, RefFuture<RangeBuffer<T>> content) {
+//        Range<Long> claimAheadRange = getClaimAheadRange();
+//
+//        if (claimAheadRange.contains(offset)) {
+//            claimedPages.put(offset, content.acquire());
+//        }
+//    }
 
 
 
@@ -154,9 +154,9 @@ public class RequestIterator<T>
     }
 
 
-    public RefFuture<RangeBuffer<T>> getPage(long pageId) {
-        return claimedPages.computeIfAbsent(pageId, idx -> cache.getPageForPageId(idx));
-    }
+//    public RefFuture<RangeBuffer<T>> getPage(long pageId) {
+//        return claimedPages.computeIfAbsent(pageId, idx -> cache.getPageForPageId(idx));
+//    }
 
 
     /**
@@ -310,12 +310,13 @@ public class RequestIterator<T>
         T result;
 
         if (requestRange.contains(currentOffset)) {
-
             if (currentPageIt == null || !currentPageIt.hasNext()) {
                 // long pageId = cache.getPageIdForOffset(currentOffset);
                 RangeBuffer<T> currentPage;
                 try {
-                    currentPage = claimedPages.firstEntry().getValue().await();
+                    long pageId = cache.getPageIdForOffset(currentOffset);
+                    currentPage = claimedPages.get(pageId).await();
+                    // currentPage = claimedPages.pollFirstEntry().getValue().await();
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 }

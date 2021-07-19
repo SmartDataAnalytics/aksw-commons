@@ -52,7 +52,7 @@ public class RangeBufferIterator<T>
             try {
                 // If the index is outside of the known size then abort
                 int knownSize = rangeBuffer.getKnownSize();
-                if (knownSize >= 0 && currentIndex >= knownSize) {
+                if (currentIndex >= rangeBuffer.getCapacity() || (knownSize >= 0 && currentIndex >= knownSize)) {
                     return endOfData();
                 } else {
                     entry = loadedRanges.getEntry(currentIndex);
