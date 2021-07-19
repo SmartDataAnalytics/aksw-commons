@@ -221,7 +221,7 @@ public class RequestIterator<T>
 
 
             RangeSet<Long> loadedRanges = TreeRangeSet.create();
-            pages.entrySet().stream().flatMap(e -> e.getValue().getLoadedRanges().asMapOfRanges().keySet().stream().map(range ->
+            pages.entrySet().stream().flatMap(e -> e.getValue().getLoadedRanges().asRanges().stream().map(range ->
                     RangeUtils.apply(
                             range,
                             e.getKey() * pageSize,

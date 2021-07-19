@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
@@ -12,9 +11,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
+import com.google.common.collect.TreeRangeSet;
 
 /**
  * A list where ranges can be marked as 'loaded'.
@@ -42,7 +44,8 @@ public class RangeBufferImpl<T>
      * If the value is null then the range is considered as successfully loaded.
      * If a throwable is present then there was an error processing the range
      */
-    protected RangeMap<Integer, List<Throwable>> loadedRanges;
+    protected RangeSet<Integer> loadedRanges;
+    protected RangeMap<Integer, List<Throwable>> failedRanges;
     protected volatile int knownSize;
 
     // protected transient List<T> listView;
@@ -56,10 +59,15 @@ public class RangeBufferImpl<T>
         Lock readLock = getReadWriteLock().readLock();
         readLock.lock();
         try {
-            RangeMap<Integer, List<Throwable>> rangeMapClone = TreeRangeMap.create();
-            rangeMapClone.putAll(loadedRanges);
+            RangeSet<Integer> loadedRangesClone = TreeRangeSet.create();
+            loadedRangesClone.addAll(loadedRanges);
+
+            RangeMap<Integer, List<Throwable>> failedRangesClone = TreeRangeMap.create();
+            failedRangesClone.putAll(failedRangesClone);
+
+
             T[] bufferClone = buffer.clone();
-            return new RangeBufferImpl<>(bufferClone, rangeMapClone, knownSize);
+            return new RangeBufferImpl<>(bufferClone, loadedRangesClone, failedRangesClone, knownSize);
         } finally {
             readLock.unlock();
         }
@@ -84,13 +92,19 @@ public class RangeBufferImpl<T>
 
     @SuppressWarnings("unchecked")
     public RangeBufferImpl(int size) {
-        this((T[])new Object[size], TreeRangeMap.create(), -1);
+        this((T[])new Object[size], TreeRangeSet.create(), TreeRangeMap.create(), -1);
     }
 
-    public RangeBufferImpl(T[] buffer, RangeMap<Integer, List<Throwable>> loadedRanges, int knownSize) {
+    public RangeBufferImpl(
+            T[] buffer,
+            RangeSet<Integer> loadedRanges,
+            RangeMap<Integer, List<Throwable>> failedRanges,
+            int knownSize)
+    {
         super();
         this.buffer = buffer;
         this.loadedRanges = loadedRanges;
+        this.failedRanges = failedRanges;
         this.knownSize = knownSize;
 
        postConstruct();
@@ -122,7 +136,12 @@ public class RangeBufferImpl<T>
     }
 
     @Override
-    public RangeMap<Integer, List<Throwable>> getLoadedRanges() {
+    public RangeMap<Integer, List<Throwable>> getFailedRanges() {
+        return failedRanges;
+    }
+
+    @Override
+    public RangeSet<Integer> getLoadedRanges() {
         return loadedRanges;
     }
 
@@ -155,7 +174,8 @@ public class RangeBufferImpl<T>
 
         try {
             System.arraycopy(arrayWithItemsOfTypeT, arrOffset, buffer, pageOffset, arrLength);
-            loadedRanges.put(Range.closedOpen(pageOffset, pageOffset + arrLength), Collections.emptyList());
+            loadedRanges.add(
+                    Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));
         } finally {
             hasData.signalAll();
             writeLock.unlock();

@@ -5,10 +5,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -34,7 +37,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
+import com.google.common.collect.TreeRangeSet;
+import com.sun.jdi.Value;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -66,6 +72,34 @@ class MyPublisher<T, S extends Comparable<S>> {
     }
 }
 
+
+class RangeSetSerializer
+    extends Serializer<RangeSet>
+{
+    public static <T extends Comparable<T>> Set<Range<T>> toSet(RangeSet<T> rangeSet) {
+        return new HashSet<Range<T>>(rangeSet.asRanges());
+    }
+
+    public static <T extends Comparable<T>> RangeSet<T> fromSet(Set<Range<T>> set) {
+        TreeRangeSet<T> result = TreeRangeSet.create();
+        result.addAll(set);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void write(Kryo kryo, Output output, RangeSet object) {
+        kryo.writeClassAndObject(output, toSet(object));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public RangeSet read(Kryo kryo, Input input, Class<RangeSet> type) {
+        Set set = (Set)kryo.readClassAndObject(input);
+        RangeSet result = fromSet(set);
+        return result;
+    }
+}
 class RangeMapSerializer
     extends Serializer<RangeMap>
 {
@@ -104,16 +138,16 @@ public class LocalOrderAsyncTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
-    public static <V> AsyncClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
+    public static <V> AsyncClaimingCache<Long, RangeBuffer<V>> syncedRangeBuffer(KeyObjectStore store, Supplier<RangeBuffer<V>> newValue) {
 
-        AsyncClaimingCache<Long, V> result = AsyncClaimingCache.create(
-                AsyncRefCache.<Long, V>create(
+        AsyncClaimingCache<Long, RangeBuffer<V>> result = AsyncClaimingCache.create(
+                AsyncRefCache.<Long, RangeBuffer<V>>create(
                    Caffeine.newBuilder()
                    .scheduler(Scheduler.systemScheduler())
                    .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
                    key -> {
                        List<String> internalKey = Arrays.asList(Long.toString(key));
-                       V value;
+                       RangeBuffer<V> value;
                        try {
                            value = store.get(internalKey);
                        } catch (Exception e) {
@@ -121,7 +155,7 @@ public class LocalOrderAsyncTest {
                            value = newValue.get(); //new RangeBufferImpl<V>(1024);
                        }
 
-                       V r = value;
+                       RangeBuffer<V> r = value;
     //                   Ref<V> r = RefImpl.create(v, null, () -> {
     //                       // Sync the page upon closing it
     //                       store.put(internalKey, v);
@@ -135,10 +169,15 @@ public class LocalOrderAsyncTest {
                    (key, value, cause) -> {}),
                 (key, value, cause) -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
+
+                    Lock readLock = value.getReadWriteLock().readLock();
+                    readLock.lock();
                     try {
                         store.put(internalKey, value);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
+                    } finally {
+                        readLock.unlock();
                     }
                     logger.info("Synced " + internalKey);
                     System.out.println("Synced" + internalKey);
@@ -152,7 +191,9 @@ public class LocalOrderAsyncTest {
         Kryo kryo = new Kryo();
 
         Serializer<?> javaSerializer = new JavaSerializer();
+        Serializer<?> rangeSetSerializer = new RangeSetSerializer();
         Serializer<?> rangeMapSerializer = new RangeMapSerializer();
+        kryo.register(TreeRangeSet.class, rangeSetSerializer);
         kryo.register(TreeRangeMap.class, rangeMapSerializer);
         // kryo.register(RangeMap.class, rangeMapSerializer);
         kryo.register(Range.class, javaSerializer);

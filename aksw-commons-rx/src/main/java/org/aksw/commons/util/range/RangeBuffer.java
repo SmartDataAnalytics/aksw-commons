@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.common.collect.RangeMap;
+import com.google.common.collect.RangeSet;
 
 public interface RangeBuffer<T> {
 
@@ -12,7 +13,8 @@ public interface RangeBuffer<T> {
 
     int getKnownSize();
 
-    RangeMap<Integer, List<Throwable>> getLoadedRanges();
+    RangeMap<Integer, List<Throwable>> getFailedRanges();
+    RangeSet<Integer> getLoadedRanges();
 
     int getCapacity();
 
