@@ -112,10 +112,15 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public SmartRangeCacheImpl(ListPaginator<T> backend, KeyObjectStore objStore, long requestLimit, long terminationDelayInMs) {
+    public SmartRangeCacheImpl(
+            ListPaginator<T> backend,
+            KeyObjectStore objStore,
+            int pageSize,
+            long requestLimit,
+            long terminationDelayInMs) {
         this.backend = backend;
 
-        pageSize = 1024;
+        this.pageSize = pageSize;
         this.requestLimit = requestLimit;
         this.terminationDelayInMs = terminationDelayInMs;
 
@@ -321,9 +326,11 @@ public class SmartRangeCacheImpl<T>
     public static <V> ListPaginator<V> wrap(
             ListPaginator<V> backend,
             KeyObjectStore store,
+            int pageSize,
             long requestLimit,
             long terminationDelayInMs) {
-        return new SmartRangeCacheImpl<V>(backend, store, requestLimit, terminationDelayInMs);
+        return new SmartRangeCacheImpl<V>(
+                backend, store, pageSize, requestLimit, terminationDelayInMs);
     }
 
     @Override

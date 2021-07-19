@@ -2,24 +2,21 @@ package org.aksw.commons.rx.cache.range;
 
 import java.time.Duration;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.sink.BulkingSink;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.commons.util.slot.SlottedBuilder;
 import org.aksw.commons.util.slot.SlottedBuilderImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
-import com.google.common.math.IntMath;
 import com.google.common.math.LongMath;
-import com.google.common.primitives.Ints;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -34,6 +31,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 public class RangeRequestExecutor<T>
     implements Runnable
 {
+    private static final Logger logger = LoggerFactory.getLogger(RangeRequestExecutor.class);
 
     /**
      * Reference to the manager - if there is a failure in processing the request the executor
@@ -192,6 +190,7 @@ public class RangeRequestExecutor<T>
         try {
             runCore();
         } catch (Exception e) {
+            logger.error("Exceptional termination", e);
             e.printStackTrace();
         }
     }
@@ -210,7 +209,7 @@ public class RangeRequestExecutor<T>
             try {
                 process(reportingInterval);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                 throw new RuntimeException(e);
             }
 
 
@@ -264,8 +263,6 @@ public class RangeRequestExecutor<T>
 
         long pageId = cacheSystem.getPageIdForOffset(offset);
         int offsetInPage = cacheSystem.getIndexInPageForOffset(offset);
-
-        int pageSize = cacheSystem.getPageSize();
 
         // Make sure we don't acquire a page while close is invoked
         // FIXME Only acquire a page if it is necessary

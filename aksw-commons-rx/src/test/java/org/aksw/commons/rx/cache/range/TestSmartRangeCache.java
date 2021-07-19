@@ -9,6 +9,7 @@ public class TestSmartRangeCache
     @Override
     protected <T> ListPaginator<T> wrapWithCache(ListPaginator<T> backend) {
 
-        return SmartRangeCacheImpl.wrap(backend, LocalOrderAsyncTest.createKeyObjectStore(), 10000, 1000);
+        return SmartRangeCacheImpl.wrap(
+                backend, LocalOrderAsyncTest.createKeyObjectStore(), 1024, 10000, 1000);
     }
 }

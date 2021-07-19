@@ -1,5 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,9 +21,7 @@ import org.aksw.commons.rx.range.KeyObjectStoreImpl;
 import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
-import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
-import org.aksw.commons.util.ref.RefImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,31 +105,45 @@ public class LocalOrderAsyncTest {
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
     public static <V> AsyncClaimingCache<Long, V> syncedRangeBuffer(KeyObjectStore store, Supplier<V> newValue) {
-        AsyncClaimingCache<Long, V> result = AsyncClaimingCache.<Long, V>create(
-               Caffeine.newBuilder()
-               .scheduler(Scheduler.systemScheduler())
-               .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
-               key -> {
+
+        AsyncClaimingCache<Long, V> result = AsyncClaimingCache.create(
+                AsyncRefCache.<Long, V>create(
+                   Caffeine.newBuilder()
+                   .scheduler(Scheduler.systemScheduler())
+                   .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
+                   key -> {
+                       List<String> internalKey = Arrays.asList(Long.toString(key));
+                       V value;
+                       try {
+                           value = store.get(internalKey);
+                       } catch (Exception e) {
+                           // throw new RuntimeException(e);
+                           value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                       }
+
+                       V r = value;
+    //                   Ref<V> r = RefImpl.create(v, null, () -> {
+    //                       // Sync the page upon closing it
+    //                       store.put(internalKey, v);
+    //                       logger.info("Synced " + internalKey);
+    //                       System.out.println("Synced" + internalKey);
+    //                   });
+    //
+                       return r;
+
+                   },
+                   (key, value, cause) -> {}),
+                (key, value, cause) -> {
                     List<String> internalKey = Arrays.asList(Long.toString(key));
-                    V value;
                     try {
-                        value = store.get(internalKey);
-                    } catch (Exception e) {
-                        // throw new RuntimeException(e);
-                        value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                        store.put(internalKey, value);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-
-                    V v = value;
-                    Ref<V> r = RefImpl.create(v, null, () -> {
-                        // Sync the page upon closing it
-                        store.put(internalKey, v);
-                        logger.info("Synced " + internalKey);
-                        System.out.println("Synced" + internalKey);
-                    });
-
-                    return r;
-                },
-                (key, value, cause) -> { value.close(); });
+                    logger.info("Synced " + internalKey);
+                    System.out.println("Synced" + internalKey);
+                }
+            );
 
         return result;
     }

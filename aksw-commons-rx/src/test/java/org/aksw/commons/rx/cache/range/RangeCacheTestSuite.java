@@ -28,11 +28,12 @@ public abstract class RangeCacheTestSuite {
 
         ListPaginator<String> frontend = wrapWithCache(backend);
 
-        Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 20l));
+//        Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 20l));
+        Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 2000l));
 
         System.out.println(flow.toList().blockingGet());
 
-        Thread.sleep(50000);
+        Thread.sleep(5000);
         System.out.println("Done waiting");
     }
 

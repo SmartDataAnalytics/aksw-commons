@@ -54,6 +54,8 @@
 	</properties>
 
 	<modules>
+		<module>aksw-commons-resources-test-config</module>
+
 		<module>aksw-commons-collections</module>
 		<module>aksw-commons-util</module>
 		<module>aksw-commons-util-xml</module>
@@ -162,6 +164,12 @@
 
 	<dependencyManagement>
 		<dependencies>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-resources-test-config</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
