@@ -25,13 +25,14 @@ public abstract class RangeCacheTestSuite {
                 .collect(Collectors.toList());
 
         ListPaginator<String> backend = ListPaginatorFromList.wrap(items);
-
+//        ListPaginator<String> frontend = backend;
         ListPaginator<String> frontend = wrapWithCache(backend);
 
 //        Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 20l));
         Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 2000l));
 
-        System.out.println(flow.toList().blockingGet());
+        // System.out.println(flow.toList().blockingGet());
+        flow.toList().blockingGet().forEach(System.out::println);
 
         Thread.sleep(5000);
         System.out.println("Done waiting");

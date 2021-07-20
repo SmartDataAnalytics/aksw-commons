@@ -38,29 +38,35 @@ public class SlottedBuilderImpl<W, P>
 
         @Override
         public void close() {
-            slots.remove(this);
+            synchronized (slots) {
+                slots.remove(this);
+            }
         }
     }
 
     @Override
-    public Slot<P> newSlot() {
+    public synchronized Slot<P> newSlot() {
         Slot<P> result = new SlotImpl();
-        slots.add(result);
+        synchronized (slots) {
+            slots.add(result);
+        }
         return result;
     }
 
     @Override
     public W build() {
-        Collection<P> parts = slots.stream()
-            .filter(slot -> slot != null)
-            .map(Slot::getSupplier)
-            .filter(supplier -> supplier != null)
-            .map(Supplier::get)
-            .filter(part -> part != null)
-            .collect(Collectors.toList());
+        synchronized (slots) {
+            Collection<P> parts = slots.stream()
+                .filter(slot -> slot != null)
+                .map(Slot::getSupplier)
+                .filter(supplier -> supplier != null)
+                .map(Supplier::get)
+                .filter(part -> part != null)
+                .collect(Collectors.toList());
 
-        W result = assembler.apply(parts);
-        return result;
+            W result = assembler.apply(parts);
+            return result;
+        }
     }
 
 

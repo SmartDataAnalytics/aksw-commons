@@ -32,7 +32,10 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
+import com.esotericsoftware.minlog.Log;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
@@ -40,7 +43,6 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
-import com.sun.jdi.Value;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -188,17 +190,24 @@ public class LocalOrderAsyncTest {
     }
 
     public static KeyObjectStore createKeyObjectStore() {
-        Kryo kryo = new Kryo();
+        KryoFactory factory = new KryoFactory() {
+            public Kryo create() {
+                Kryo kryo = new Kryo();
 
-        Serializer<?> javaSerializer = new JavaSerializer();
-        Serializer<?> rangeSetSerializer = new RangeSetSerializer();
-        Serializer<?> rangeMapSerializer = new RangeMapSerializer();
-        kryo.register(TreeRangeSet.class, rangeSetSerializer);
-        kryo.register(TreeRangeMap.class, rangeMapSerializer);
-        // kryo.register(RangeMap.class, rangeMapSerializer);
-        kryo.register(Range.class, javaSerializer);
+                Serializer<?> javaSerializer = new JavaSerializer();
+                Serializer<?> rangeSetSerializer = new RangeSetSerializer();
+                Serializer<?> rangeMapSerializer = new RangeMapSerializer();
+                kryo.register(TreeRangeSet.class, rangeSetSerializer);
+                kryo.register(TreeRangeMap.class, rangeMapSerializer);
+                kryo.register(Range.class, javaSerializer);
 
-        KeyObjectStore result = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryo));
+                return kryo;
+            }
+        };
+        // Build pool with SoftReferences enabled (optional)
+        KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+
+        KeyObjectStore result = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryoPool));
 
         return result;
     }
