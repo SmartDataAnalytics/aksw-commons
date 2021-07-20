@@ -176,6 +176,8 @@ public class RangeBufferImpl<T>
             System.arraycopy(arrayWithItemsOfTypeT, arrOffset, buffer, pageOffset, arrLength);
             loadedRanges.add(
                     Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));
+
+            System.out.println("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges);
         } finally {
             hasData.signalAll();
             writeLock.unlock();

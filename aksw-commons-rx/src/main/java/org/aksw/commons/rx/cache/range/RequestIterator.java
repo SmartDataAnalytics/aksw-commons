@@ -185,12 +185,22 @@ public class RequestIterator<T>
         long endPageId = cache.getPageIdForOffset(end);
 
         // Remove all claimed pages before the checkpoint
-        NavigableMap<Long, RefFuture<RangeBuffer<T>>> toRelease = claimedPages.headMap(startPageId, false);
-        toRelease.values().forEach(Ref::close);
-        toRelease.clear();
+        NavigableMap<Long, RefFuture<RangeBuffer<T>>> pagesToRelease = claimedPages.headMap(startPageId, false);
+        pagesToRelease.values().forEach(Ref::close);
+        pagesToRelease.clear();
 
-        claimedSlots.forEach(Slot::close);
-        claimedSlots.clear();
+        // Remove all slots that are in the past
+        // FIXME We need a better strategy for handling slots
+        // TODO If the slot belongs to an executor with remaining request capacity then update the slot
+        Iterator<Slot<Long>> it = claimedSlots.iterator();
+        while (it.hasNext()) {
+            Slot<Long> slot = it.next();
+            Long value = slot.getSupplier().get();
+            if (value < currentOffset) {
+                slot.close();
+                it.remove();
+            }
+        }
 
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
@@ -200,7 +210,7 @@ public class RequestIterator<T>
         NavigableMap<Long, RangeBuffer<T>> pages = LongStream.rangeClosed(startPageId, endPageId)
                 .boxed()
                 .collect(Collectors.toMap(
-                    pageId -> pageId * pageSize,
+                    pageId -> pageId,
                     pageId -> {
                         try {
                             return claimedPages.get(pageId).await();
@@ -234,7 +244,7 @@ public class RequestIterator<T>
             Iterator<Range<Long>> gapIt = gaps.asRanges().iterator();
 
 
-            // Prevent creation of new executors while we analyze the state
+            // Prevent creation of new executors (other than by us) while we analyze the state
             cache.getExecutorCreationReadLock().lock();
             candExecutors.addAll(cache.getExecutors());
 

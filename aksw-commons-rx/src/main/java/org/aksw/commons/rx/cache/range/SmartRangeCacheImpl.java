@@ -220,12 +220,12 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    protected Set<BiConsumer<Long, RangeBufferImpl<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
+    // protected Set<BiConsumer<Long, RangeBufferImpl<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
-    public Runnable addPageLoadListener(BiConsumer<Long, RangeBufferImpl<T>> listener) {
-        pageLoadListeners.add(listener);
-        return () -> pageLoadListeners.remove(listener);
-    }
+//    public Runnable addPageLoadListener(BiConsumer<Long, RangeBufferImpl<T>> listener) {
+//        pageLoadListeners.add(listener);
+//        return () -> pageLoadListeners.remove(listener);
+//    }
 
 
     /** The open requests sorted by the start of their lowest GAP! (not the original request offset)
@@ -257,6 +257,7 @@ public class SmartRangeCacheImpl<T>
             slot.set(offset + initialLength);
 
             executors.add(worker);
+            System.out.println("NEW WORKER: " + offset + ":" + initialLength);
             executorService.submit(worker);
         } finally {
             // executorCreationLock.writeLock().unlock();

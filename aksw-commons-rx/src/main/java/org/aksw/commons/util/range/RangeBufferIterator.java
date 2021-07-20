@@ -95,7 +95,7 @@ public class RangeBufferIterator<T>
                         failures.get(0));
             }
 
-            Range<Integer> range = entry; //.getKey();
+            Range<Integer> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();
             rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
                     .iterator();
             break;
