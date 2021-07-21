@@ -46,8 +46,8 @@ public abstract class RangeCacheTestSuite {
                 .collect(Collectors.toList());
 
         ListPaginator<String> backend = ListPaginatorFromList.wrap(items);
-        ListPaginator<String> frontend = backend;
-        // ListPaginator<String> frontend = wrapWithCache(backend);
+        // ListPaginator<String> frontend = backend;
+        ListPaginator<String> frontend = wrapWithCache(backend);
 
 
         Range<Long> range = frontend.fetchCount(null, null).blockingGet();

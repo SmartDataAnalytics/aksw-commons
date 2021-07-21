@@ -1,6 +1,8 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,11 +16,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.aksw.commons.rx.range.KeyObjectStore;
+import org.aksw.commons.rx.range.KeyObjectStoreImpl;
+import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
@@ -28,10 +31,17 @@ import org.aksw.jena_sparql_api.lookup.ListPaginator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeRangeMap;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -98,6 +108,10 @@ public class SmartRangeCacheImpl<T>
     protected int pageSize;
     protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
+    /**
+     * Reuse of the caching infrastructure for a single entry for the count.
+     * The infrastructure enables dealing with concurrent requests and synchronization
+     */
     protected AsyncClaimingCache<String, Range<Long>> countCache;
 
 
@@ -130,6 +144,8 @@ public class SmartRangeCacheImpl<T>
             ListPaginator<T> backend,
             KeyObjectStore objStore,
             int pageSize,
+            long maxCachedPageCount,
+            Duration syncDelayDuration,
             long requestLimit,
             long terminationDelayInMs) {
         this.backend = backend;
@@ -139,14 +155,17 @@ public class SmartRangeCacheImpl<T>
         this.terminationDelayInMs = terminationDelayInMs;
 
 
-        this.pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+
+
+        this.pageCache = LocalOrderAsyncTest.syncedRangeBuffer(maxCachedPageCount, syncDelayDuration, objStore, () -> new RangeBufferImpl<T>(pageSize));
 
 
         this.countCache = AsyncClaimingCache.create(
+                syncDelayDuration,
                 AsyncRefCache.<String, Range<Long>>create(
                    Caffeine.newBuilder()
                    .scheduler(Scheduler.systemScheduler())
-                   .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
+                   .maximumSize(1),
                    key -> {
                        List<String> internalKey = Arrays.asList(key);
                        Range<Long> value;
@@ -381,10 +400,12 @@ public class SmartRangeCacheImpl<T>
             ListPaginator<V> backend,
             KeyObjectStore store,
             int pageSize,
+            long maxCachedPageCount,
+            Duration syncDelayDuration,
             long requestLimit,
             long terminationDelayInMs) {
         return new SmartRangeCacheImpl<V>(
-                backend, store, pageSize, requestLimit, terminationDelayInMs);
+                backend, store, pageSize, maxCachedPageCount, syncDelayDuration, requestLimit, terminationDelayInMs);
     }
 
     @Override
@@ -423,4 +444,28 @@ public class SmartRangeCacheImpl<T>
 
     }
 
+
+
+    public static KeyObjectStore createKeyObjectStore(Path basePath) {
+        KryoFactory factory = new KryoFactory() {
+            public Kryo create() {
+                Kryo kryo = new Kryo();
+
+                Serializer<?> javaSerializer = new JavaSerializer();
+                Serializer<?> rangeSetSerializer = new RangeSetSerializer();
+                Serializer<?> rangeMapSerializer = new RangeMapSerializer();
+                kryo.register(TreeRangeSet.class, rangeSetSerializer);
+                kryo.register(TreeRangeMap.class, rangeMapSerializer);
+                kryo.register(Range.class, javaSerializer);
+
+                return kryo;
+            }
+        };
+        // Build pool with SoftReferences enabled (optional)
+        KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+
+        KeyObjectStore result = KeyObjectStoreImpl.create(basePath, new ObjectFileStoreKyro(kryoPool));
+
+        return result;
+    }
 }

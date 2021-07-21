@@ -1,5 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -18,7 +19,9 @@ public class AsyncClaimingCacheTests {
 
     public AsyncClaimingCache<String, String> createTestCache() {
         AsyncClaimingCache<String, String> result = AsyncClaimingCache.create(
-                AsyncRefCache.create(Caffeine.newBuilder()
+                Duration.ofSeconds(1),
+                AsyncRefCache.create(
+                        Caffeine.newBuilder()
                         .scheduler(Scheduler.systemScheduler())
                         .expireAfterWrite(1, TimeUnit.SECONDS),
                         key -> {

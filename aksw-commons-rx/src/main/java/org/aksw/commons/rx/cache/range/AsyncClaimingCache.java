@@ -1,11 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
@@ -78,21 +78,24 @@ public class AsyncClaimingCache<K, V> {
     // protected boolean cancelUnclaimedIncompleteTasks;
 
     public static <K, V> AsyncClaimingCache<K, V> create(
+            Duration syncDelayDuration,
             // Caffeine<Object, Object> cacheBuilder,
             AsyncRefCache<K, V> level3,
             RemovalListener<K, V> removalListener) {
-        return new AsyncClaimingCache<>(level3, removalListener);
+        return new AsyncClaimingCache<>(level3, removalListener, syncDelayDuration);
     }
 
 
     public AsyncClaimingCache(
             AsyncRefCache<K, V> level3,
-            RemovalListener<K, V> removalListener
+            RemovalListener<K, V> removalListener,
+            Duration syncDelayDuration
             ) {
 
         this.level2 = Caffeine.newBuilder()
                 .scheduler(Scheduler.systemScheduler())
-                .expireAfterWrite(1, TimeUnit.SECONDS)
+                // .expireAfterWrite(1, TimeUnit.SECONDS)
+                .expireAfterWrite(syncDelayDuration)
                 .removalListener((K key, SingleValuedAccessor<RefFuture<V>> holder, RemovalCause removalCause) -> {
                     logger.debug("Level2: Syncing & passing to level 3: " + key);
 

@@ -2,6 +2,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -20,8 +20,6 @@ import org.aksw.commons.rx.op.LocalOrderSpec;
 import org.aksw.commons.rx.op.LocalOrderSpecImpl;
 import org.aksw.commons.rx.op.OperatorLocalOrder;
 import org.aksw.commons.rx.range.KeyObjectStore;
-import org.aksw.commons.rx.range.KeyObjectStoreImpl;
-import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.RefFuture;
@@ -32,10 +30,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.pool.KryoFactory;
-import com.esotericsoftware.kryo.pool.KryoPool;
-import com.esotericsoftware.kryo.serializers.JavaSerializer;
-import com.esotericsoftware.minlog.Log;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
@@ -140,13 +134,18 @@ public class LocalOrderAsyncTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
-    public static <V> AsyncClaimingCache<Long, RangeBuffer<V>> syncedRangeBuffer(KeyObjectStore store, Supplier<RangeBuffer<V>> newValue) {
+    public static <V> AsyncClaimingCache<Long, RangeBuffer<V>> syncedRangeBuffer(
+            long maximumSize,
+            Duration syncDelayDuration,
+            KeyObjectStore store,
+            Supplier<RangeBuffer<V>> newValue) {
 
         AsyncClaimingCache<Long, RangeBuffer<V>> result = AsyncClaimingCache.create(
+                syncDelayDuration,
                 AsyncRefCache.<Long, RangeBuffer<V>>create(
                    Caffeine.newBuilder()
                    .scheduler(Scheduler.systemScheduler())
-                   .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
+                   .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
                    key -> {
                        List<String> internalKey = Arrays.asList(Long.toString(key));
                        RangeBuffer<V> value;
@@ -189,31 +188,10 @@ public class LocalOrderAsyncTest {
         return result;
     }
 
-    public static KeyObjectStore createKeyObjectStore() {
-        KryoFactory factory = new KryoFactory() {
-            public Kryo create() {
-                Kryo kryo = new Kryo();
 
-                Serializer<?> javaSerializer = new JavaSerializer();
-                Serializer<?> rangeSetSerializer = new RangeSetSerializer();
-                Serializer<?> rangeMapSerializer = new RangeMapSerializer();
-                kryo.register(TreeRangeSet.class, rangeSetSerializer);
-                kryo.register(TreeRangeMap.class, rangeMapSerializer);
-                kryo.register(Range.class, javaSerializer);
-
-                return kryo;
-            }
-        };
-        // Build pool with SoftReferences enabled (optional)
-        KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
-
-        KeyObjectStore result = KeyObjectStoreImpl.create(Paths.get("/tmp/test/"), new ObjectFileStoreKyro(kryoPool));
-
-        return result;
-    }
 
     public static void main1() throws Exception {
-        KeyObjectStore objStore = createKeyObjectStore();
+        KeyObjectStore objStore = SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test/"));
 
         List<String> key = Arrays.asList("q1", "100");
         RangeBuffer<String> value = new RangeBufferImpl<>(1024);
@@ -228,7 +206,7 @@ public class LocalOrderAsyncTest {
 
 
 
-        AsyncClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(objStore, () -> new RangeBufferImpl<String>(1024));
+        AsyncClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(10, Duration.ofSeconds(1), objStore, () -> new RangeBufferImpl<String>(1024));
 
         // troll the system: Acquire a page which we want to load in a moment
         // and cancel its request
