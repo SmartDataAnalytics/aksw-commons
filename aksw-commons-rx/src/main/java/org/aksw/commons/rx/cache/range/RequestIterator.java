@@ -1,9 +1,13 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -70,7 +74,8 @@ public class RequestIterator<T>
     /**
      * Exectors provide slots into which clients can place the requested range endpoints
      */
-    protected Collection<Slot<Long>> claimedSlots = new ArrayList<>();
+    // protected Collection<Slot<Long>> claimedSlots = new ArrayList<>();
+    protected Map<RangeRequestExecutor<T>, Slot<Long>> workerToSlot = new HashMap<>();
 
 
     /** The reference to the current page */
@@ -192,15 +197,7 @@ public class RequestIterator<T>
         // Remove all slots that are in the past
         // FIXME We need a better strategy for handling slots
         // TODO If the slot belongs to an executor with remaining request capacity then update the slot
-        Iterator<Slot<Long>> it = claimedSlots.iterator();
-        while (it.hasNext()) {
-            Slot<Long> slot = it.next();
-            Long value = slot.getSupplier().get();
-            if (value < currentOffset) {
-                slot.close();
-                it.remove();
-            }
-        }
+        clearPassedSlots();
 
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
@@ -240,8 +237,10 @@ public class RequestIterator<T>
                 .forEach(loadedRanges::add);
 
 
-            RangeSet<Long> gaps = RangeUtils.gaps(requestRange, loadedRanges);
-            Iterator<Range<Long>> gapIt = gaps.asRanges().iterator();
+            RangeSet<Long> rawGaps = RangeUtils.gaps(requestRange, loadedRanges);
+            Deque<Range<Long>> gaps = new ArrayDeque<>(rawGaps.asRanges());
+
+            // Iterator<Range<Long>> gapIt = gaps.asRanges().iterator();
 
 
             // Prevent creation of new executors (other than by us) while we analyze the state
@@ -251,35 +250,82 @@ public class RequestIterator<T>
 
             boolean usePoorMansApproach = true;
             if (usePoorMansApproach) {
-                while (gapIt.hasNext()) {
-                    Range<Long> gap = gapIt.next();
+                // while (gapIt.hasNext()) {
+                while (!gaps.isEmpty()) {
 
-                    Slot<Long> slot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
-                    claimedSlots.add(slot);
-                }
-            } else {
-                Range<Long> gap = null;
-                while (gapIt.hasNext()) {
-                     gap = gapIt.next();
+                    Range<Long> gap = gaps.pollFirst();
 
-                    // Remove candidate executors that cannot serve the gap
-                    // In the worst case no executors remain - in that case
-                    // we have to create a new executor that starts after the last
-                    // position that can be served by one of the current executors
-                    List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
-                    for (RangeRequestExecutor<T> candExecutor : candExecutors) {
-                        Range<Long> ewr = candExecutor.getWorkingRange();
-                        if (ewr.encloses(gap)) {
-                            nextCandExecutors.add(candExecutor);
+                    // Check whether the gap could be added any of the currently claimed slots
+                    // We need a slot's executor in order to query the executors max request range
+
+                    long coveredOffset = start;
+                    for (Entry<RangeRequestExecutor<T>, Slot<Long>> e : workerToSlot.entrySet()) {
+                        RangeRequestExecutor<T> worker = e.getKey();
+                        Slot<Long> slot = e.getValue();
+
+                        long workerStartOffset = worker.getCurrentOffset();
+
+                        // The worker must start before-or-at the gap
+                        if (workerStartOffset > coveredOffset) {
+                            continue;
+                        }
+
+
+                        long workerEndOffset = worker.getEndOffset();
+                        long maxPossibleEndpoint = Math.min(worker.getEndOffset(), end);
+
+
+                        // If it is not possible to cover the whole gap, then put back the remaining gap for
+                        // further analysis
+                        Range<Long> remainingGap = Range.closedOpen(maxPossibleEndpoint, gap.upperEndpoint());
+                        if (!remainingGap.isEmpty()) {
+                            gaps.addFirst(remainingGap);
+                        }
+
+                        if (maxPossibleEndpoint > coveredOffset) {
+                            coveredOffset = maxPossibleEndpoint;
+                            Long oldValue = slot.getSupplier().get();
+                            slot.set(maxPossibleEndpoint);
+
+                            System.out.println("Updated slot " + oldValue + " -> " + slot.getSupplier().get());
+
                         }
                     }
 
-                    // No executor could deal with all the gaps in the read ahead range
-                    // Abort the search
-                    if (nextCandExecutors.isEmpty()) {
-                        break;
+                    if (coveredOffset == start) {
+                        Entry<RangeRequestExecutor<T>, Slot<Long>> workerAndSlot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
+                        workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
+
+                        // Put the gap back because maybe it is too large to be covered by a single executor
+                        // and thus needs splitting
+                        gaps.addFirst(gap);
+                        // workerToSlot.entrySet().add(workerAndSlot);
                     }
                 }
+            } else {
+                throw new RuntimeException("not implemented");
+//                Range<Long> gap = null;
+//                while (gapIt.hasNext()) {
+//                     gap = gapIt.next();
+//
+//                    // Remove candidate executors that cannot serve the gap
+//                    // In the worst case no executors remain - in that case
+//                    // we have to create a new executor that starts after the last
+//                    // position that can be served by one of the current executors
+//                    List<RangeRequestExecutor<T>> nextCandExecutors = new ArrayList<>(candExecutors.size());
+//                    for (RangeRequestExecutor<T> candExecutor : candExecutors) {
+//                        Range<Long> ewr = candExecutor.getWorkingRange();
+//                        if (ewr.encloses(gap)) {
+//                            nextCandExecutors.add(candExecutor);
+//                        }
+//                    }
+//
+//                    // No executor could deal with all the gaps in the read ahead range
+//                    // Abort the search
+//                    if (nextCandExecutors.isEmpty()) {
+//                        break;
+//                    }
+//                }
             }
 
             // TODO Create an executor...
@@ -296,6 +342,19 @@ public class RequestIterator<T>
             cache.getExecutorCreationReadLock().unlock();
 
             nextCheckpointOffset += n;
+        }
+    }
+
+
+    public void clearPassedSlots() {
+        Iterator<Slot<Long>> it = workerToSlot.values().iterator();
+        while (it.hasNext()) {
+            Slot<Long> slot = it.next();
+            Long value = slot.getSupplier().get();
+            if (value < currentOffset) {
+                slot.close();
+                it.remove();
+            }
         }
     }
 
@@ -377,9 +436,9 @@ public class RequestIterator<T>
                     // Release all claimed pages
                     // Remove all claimed pages before the checkpoint
                     claimedPages.values().forEach(Ref::close);
-                    claimedSlots.forEach(Slot::close);
+                    workerToSlot.values().forEach(Slot::close);
                     claimedPages.clear();
-                    claimedSlots.clear();
+                    workerToSlot.clear();
 
                     // TODO Release all claimed task-ranges
 

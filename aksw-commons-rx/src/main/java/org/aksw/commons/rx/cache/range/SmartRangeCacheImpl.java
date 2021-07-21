@@ -1,6 +1,8 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
@@ -11,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
 
 import org.aksw.commons.rx.range.KeyObjectStore;
 import org.aksw.commons.rx.range.RangedSupplier;
@@ -21,7 +22,6 @@ import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -247,12 +247,13 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public Slot<Long> newExecutor(long offset, long initialLength) {
+    public Entry<RangeRequestExecutor<T>, Slot<Long>> newExecutor(long offset, long initialLength) {
         // RangeRequestExecutor<T> result;
+        RangeRequestExecutor<T> worker;
         Slot<Long> slot;
         //executorCreationLock.writeLock().lock();
         try {
-            RangeRequestExecutor<T> worker = new RangeRequestExecutor<>(this, offset, requestLimit, terminationDelayInMs);
+            worker = new RangeRequestExecutor<>(this, offset, requestLimit, terminationDelayInMs);
             slot = worker.getEndpointSlot();
             slot.set(offset + initialLength);
 
@@ -262,8 +263,9 @@ public class SmartRangeCacheImpl<T>
         } finally {
             // executorCreationLock.writeLock().unlock();
         }
-        return slot;
+        return new SimpleEntry<>(worker, slot);
     }
+
 
     /**
      * Create a RequestContext for the given requestRange:

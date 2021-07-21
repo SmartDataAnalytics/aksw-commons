@@ -8,8 +8,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.sink.BulkingSink;
+import org.aksw.commons.util.slot.ObservableSlottedValue;
+import org.aksw.commons.util.slot.ObservableSlottedValueImpl;
 import org.aksw.commons.util.slot.Slot;
-import org.aksw.commons.util.slot.SlottedBuilder;
 import org.aksw.commons.util.slot.SlottedBuilderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,8 @@ public class RangeRequestExecutor<T>
      */
     protected SmartRangeCacheImpl<T> cacheSystem;
 
-    protected SlottedBuilder<Long, Long> endpointRequests = SlottedBuilderImpl.create(
-            values -> values.stream().reduce(-1l,Math::max));
+    protected ObservableSlottedValue<Long, Long> endpointRequests = ObservableSlottedValueImpl.wrap(SlottedBuilderImpl.create(
+            values -> values.stream().reduce(-1l,Math::max)));
 
 
     /** The data supplying iterator */
@@ -120,6 +121,14 @@ public class RangeRequestExecutor<T>
         this.offset = requestOffset;
         this.requestLimit = requestLimit;
         this.terminationDelay = terminationDelay;
+
+        endpointRequests.addValueChangeListener(event -> {
+            logger.info("Slot event on " + this + ": " + event);
+
+            synchronized (endpointRequests) {
+                endpointRequests.notifyAll();
+            }
+        });
     }
 
     /** Time in seconds it took to obtain the first item */
@@ -216,17 +225,21 @@ public class RangeRequestExecutor<T>
             if (iterator.hasNext()) {
 
                 // Shut down if there is no pending request for further data
-                long maxEndpoint = endpointRequests.build();
-                if (offset >= maxEndpoint) {
-                    try {
-                        Thread.sleep(terminationDelay);
-                    } catch (InterruptedException e) {
+                synchronized (endpointRequests)  {
+                    long maxEndpoint = endpointRequests.build();
+                    if (offset >= maxEndpoint) {
+                        try {
+                            endpointRequests.wait(terminationDelay);
+                        } catch (InterruptedException e) {
+                        }
                     }
                 }
 
-                maxEndpoint = endpointRequests.build();
-                if (offset >= maxEndpoint) {
-                    break;
+                synchronized (endpointRequests) {
+                    long maxEndpoint = endpointRequests.build();
+                    if (offset >= maxEndpoint) {
+                        break;
+                    }
                 }
 
             } else {
