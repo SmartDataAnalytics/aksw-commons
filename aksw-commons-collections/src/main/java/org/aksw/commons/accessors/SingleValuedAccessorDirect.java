@@ -1,29 +1,36 @@
 package org.aksw.commons.accessors;
 
+import java.io.Serializable;
+
 public class SingleValuedAccessorDirect<T>
-	implements SingleValuedAccessor<T>
+    implements SingleValuedAccessor<T>, Serializable
 {
-	protected T value;
-	
-	
-	public SingleValuedAccessorDirect() {
-		this(null);
-	}
-	
-	public SingleValuedAccessorDirect(T value) {
-		super();
-		this.value = value;
-	}
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-	@Override
-	public T get() {
-		return value;
-	}
+    protected T value;
 
-	@Override
-	public void set(T value) {
-		this.value = value;
-	}
+
+    public SingleValuedAccessorDirect() {
+        this(null);
+    }
+
+    public SingleValuedAccessorDirect(T value) {
+        super();
+        this.value = value;
+    }
+
+    @Override
+    public T get() {
+        return value;
+    }
+
+    @Override
+    public void set(T value) {
+        this.value = value;
+    }
 
 
 }

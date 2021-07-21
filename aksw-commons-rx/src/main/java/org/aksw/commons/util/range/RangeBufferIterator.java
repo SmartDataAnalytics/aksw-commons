@@ -2,7 +2,6 @@ package org.aksw.commons.util.range;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 
 import com.google.common.collect.AbstractIterator;

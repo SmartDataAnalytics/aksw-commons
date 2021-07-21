@@ -29,7 +29,7 @@ public class ListPaginatorFromList<T>
 
     @Override
     public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
-        return Single.just(Range.lessThan((long)backend.size()));
+        return Single.just(Range.closedOpen((long)0, (long)backend.size()));
     }
 
     public static <T> ListPaginator<T> wrap(List<T> list) {

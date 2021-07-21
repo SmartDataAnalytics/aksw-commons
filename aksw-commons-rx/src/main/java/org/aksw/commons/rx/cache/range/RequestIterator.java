@@ -21,6 +21,8 @@ import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ContiguousSet;
@@ -47,6 +49,8 @@ import com.google.common.primitives.Ints;
 public class RequestIterator<T>
     extends AbstractIterator<T>
 {
+    private static final Logger logger = LoggerFactory.getLogger(RequestIterator.class);
+
     protected SmartRangeCacheImpl<T> cache;
 
     /**
@@ -287,7 +291,7 @@ public class RequestIterator<T>
                             Long oldValue = slot.getSupplier().get();
                             slot.set(maxPossibleEndpoint);
 
-                            System.out.println("Updated slot " + oldValue + " -> " + slot.getSupplier().get());
+                            logger.debug("Updated slot " + oldValue + " -> " + slot.getSupplier().get());
 
                         }
                     }

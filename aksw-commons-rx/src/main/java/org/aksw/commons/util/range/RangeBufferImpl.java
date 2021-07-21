@@ -11,6 +11,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -35,6 +38,9 @@ import com.google.common.collect.TreeRangeSet;
 public class RangeBufferImpl<T>
     implements RangeBuffer<T>, Serializable
 {
+    private static final Logger logger = LoggerFactory.getLogger(RangeBufferIterator.class);
+
+
     private static final long serialVersionUID = 1L;
 
 
@@ -177,7 +183,7 @@ public class RangeBufferImpl<T>
             loadedRanges.add(
                     Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));
 
-            System.out.println("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges);
+            logger.debug("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges);
         } finally {
             hasData.signalAll();
             writeLock.unlock();

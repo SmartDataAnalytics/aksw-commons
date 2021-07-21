@@ -1,7 +1,10 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -11,6 +14,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,7 +25,11 @@ import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -82,11 +90,17 @@ class ExecutorPool {
 public class SmartRangeCacheImpl<T>
     implements ListPaginator<T>
 {
+    private static final Logger logger = LoggerFactory.getLogger(SmartRangeCacheImpl.class);
+
     /** The supplier for actually retrieving data from the backend */
     protected ListPaginator<T> backend;
 
     protected int pageSize;
     protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
+
+    protected AsyncClaimingCache<String, Range<Long>> countCache;
+
+
     // protected AsyncClaimingCache<String, Object> metadataCache;
 
 
@@ -126,6 +140,43 @@ public class SmartRangeCacheImpl<T>
 
 
         this.pageCache = LocalOrderAsyncTest.syncedRangeBuffer(objStore, () -> new RangeBufferImpl<T>(pageSize));
+
+
+        this.countCache = AsyncClaimingCache.create(
+                AsyncRefCache.<String, Range<Long>>create(
+                   Caffeine.newBuilder()
+                   .scheduler(Scheduler.systemScheduler())
+                   .maximumSize(3000).expireAfterWrite(1, TimeUnit.SECONDS),
+                   key -> {
+                       List<String> internalKey = Arrays.asList(key);
+                       Range<Long> value;
+                       // Long value;
+                       try {
+                           value = objStore.get(internalKey);
+                       } catch (Exception e) {
+                           value = backend.fetchCount(null,null).blockingGet(); // newValue.get(); //new RangeBufferImpl<V>(1024);
+                           // CountInfo countInfo = RangeUtils.toCountInfo(range);
+                           // value = countInfo.getCount();
+                       }
+
+                       return value;
+                   },
+                   (key, value, cause) -> {}),
+                (key, value, cause) -> {
+                    List<String> internalKey = Arrays.asList(key);
+
+                    try {
+                        objStore.put(internalKey, value);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    logger.info("Synced " + internalKey);
+                    System.out.println("Synced" + internalKey);
+                }
+            );
+
+
         // this.metadataCache = Caffeine.newBuilder()
 
 
@@ -338,7 +389,27 @@ public class SmartRangeCacheImpl<T>
 
     @Override
     public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
-        return backend.fetchCount(itemLimit, rowLimit);
+
+        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
+                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
+                (ee, e) -> {
+                    try {
+                        if (!ee.getValue()) {
+                            Range<Long> range = ee.getKey().await();
+                            e.onNext(range);
+                            ee.setValue(true);
+                        } else {
+                            e.onComplete();
+                        }
+                    } catch (Exception x) {
+                        e.onError(x);
+                    }
+                },
+                ee -> ee.getKey().close())
+                .singleOrError();
+
+        return result;
+
 
         // If the size is known then return it - otherwise send at most one query to the backend for counting
         // and return the result.

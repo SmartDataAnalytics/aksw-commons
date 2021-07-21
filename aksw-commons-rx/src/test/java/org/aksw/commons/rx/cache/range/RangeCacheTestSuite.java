@@ -37,4 +37,26 @@ public abstract class RangeCacheTestSuite {
         System.out.println("Done waiting");
     }
 
+
+    @Test
+    public void testCount() throws InterruptedException {
+
+        List<String> items = LongStream.range(0, 10000)
+                .mapToObj(i -> "item #" + i)
+                .collect(Collectors.toList());
+
+        ListPaginator<String> backend = ListPaginatorFromList.wrap(items);
+        ListPaginator<String> frontend = backend;
+        // ListPaginator<String> frontend = wrapWithCache(backend);
+
+
+        Range<Long> range = frontend.fetchCount(null, null).blockingGet();
+
+        System.out.println(range);
+
+        Thread.sleep(5000);
+        System.out.println("Done waiting");
+    }
+
+
 }
