@@ -235,11 +235,15 @@ public class RangeRequestExecutor<T>
                     }
                 }
 
+                // If there are no more slots or we have reached to known size then terminate
                 synchronized (endpointRequests) {
                     long maxEndpoint = endpointRequests.build();
-                    if (offset >= maxEndpoint) {
+                    if (maxEndpoint < 0 || (cacheSystem.knownSize > 0 && offset >= cacheSystem.knownSize)) {
                         break;
                     }
+//                    if (offset >= maxEndpoint) {
+//                        break;
+//                    }
                 }
 
             } else {
@@ -297,12 +301,14 @@ public class RangeRequestExecutor<T>
         long maxEndpoint = endpointRequests.build();
 
         int numItemsUntilPageEnd = rangeBuffer.getCapacity() - offsetInPage;
+        int numItemsUntilPageKnownSize = rangeBuffer.getKnownSize() >= 0 ? rangeBuffer.getKnownSize() : rangeBuffer.getCapacity();
         long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
         long numItemsUntilEndpoint = maxEndpoint - offset;
 
-        long limit = Math.min(Math.min(Math.min(
+        long limit = Math.min(Math.min(Math.min(Math.min(
                 reportingInterval,
                 numItemsUntilPageEnd),
+                numItemsUntilPageKnownSize),
                 numItemsUtilRequestLimit),
                 numItemsUntilEndpoint);
 
@@ -328,6 +334,8 @@ public class RangeRequestExecutor<T>
         // (2) a known higher offset in the smart cache or
         // (3) another request with the same offset that yield results
         if (!hasNext && numItemsProcessed < requestLimit) {
+            int knownPageSize = offsetInPage + i;
+            rangeBuffer.setKnownSize(knownPageSize);
             cacheSystem.setKnownSize(offset);
         }
     }

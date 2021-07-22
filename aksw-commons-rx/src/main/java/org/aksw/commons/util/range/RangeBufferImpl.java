@@ -199,6 +199,7 @@ public class RangeBufferImpl<T>
             try {
                 this.knownSize = size;
             } finally {
+                hasData.signalAll();
                 writeLock.unlock();
             }
         }

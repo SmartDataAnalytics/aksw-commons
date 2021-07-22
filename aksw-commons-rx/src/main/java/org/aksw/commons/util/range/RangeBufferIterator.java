@@ -72,7 +72,8 @@ public class RangeBufferIterator<T>
                         readLock.unlock();
                         writeLock.lock();
                         try {
-                            while ((entry = loadedRanges.rangeContaining(currentIndex)) == null) {
+                            while ((entry = loadedRanges.rangeContaining(currentIndex)) == null &&
+                                    ((knownSize = rangeBuffer.getKnownSize()) < 0 || currentIndex < knownSize)) {
                                 try {
                                     rangeBuffer.getHasDataCondition().await();
                                 } catch (InterruptedException e) {
@@ -94,9 +95,13 @@ public class RangeBufferIterator<T>
                         failures.get(0));
             }
 
-            Range<Integer> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();
-            rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
-                    .iterator();
+            if (entry == null) {
+                return endOfData();
+            } else {
+                Range<Integer> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();
+                rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
+                        .iterator();
+            }
             break;
         }
 

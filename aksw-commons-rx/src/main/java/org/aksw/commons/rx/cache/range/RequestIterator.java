@@ -368,9 +368,9 @@ public class RequestIterator<T>
         if (currentOffset == nextCheckpointOffset) {
             try {
                 long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
-                int numItemUntilRequestRangeEnd = Ints.saturatedCast(end - currentOffset + 1);
+                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(LongMath.saturatedAdd(end - currentOffset, 1));
 
-                int n = Math.min(maxReadAheadItemCount, numItemUntilRequestRangeEnd);
+                int n = Math.min(maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
 
                 checkpoint(n);
             } catch (Exception e) {
