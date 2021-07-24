@@ -263,6 +263,12 @@ public class RequestIterator<T>
                     // We need a slot's executor in order to query the executors max request range
 
                     long coveredOffset = start;
+
+                    // The covered offset is the maximum of the slots
+                    for (Slot<Long> slot : workerToSlot.values()) {
+                        coveredOffset = Math.max(coveredOffset, slot.getSupplier().get());
+                    }
+
                     for (Entry<RangeRequestExecutor<T>, Slot<Long>> e : workerToSlot.entrySet()) {
                         RangeRequestExecutor<T> worker = e.getKey();
                         Slot<Long> slot = e.getValue();

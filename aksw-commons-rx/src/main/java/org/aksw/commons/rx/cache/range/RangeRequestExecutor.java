@@ -64,11 +64,11 @@ public class RangeRequestExecutor<T>
      */
     protected RefFuture<RangeBuffer<T>> currentPageRef;
 
-    protected long requestOffset;
+    protected final long requestOffset;
 
 
     // The effective endpoint; the maximum value in contextToEndpoint
-    protected long effectiveEndpoint;
+    protected volatile long effectiveEndpoint;
 
 
     /** The requestLimit must take result-set-limit on the backend into account! */
@@ -87,7 +87,7 @@ public class RangeRequestExecutor<T>
 
 
 
-    protected long offset;
+    protected volatile long offset;
 
 
     /**
@@ -333,6 +333,8 @@ public class RangeRequestExecutor<T>
         // (1) a known result-set-limit value on the smart cache
         // (2) a known higher offset in the smart cache or
         // (3) another request with the same offset that yield results
+
+        // TODO set the known size if the page is full
         if (!hasNext && numItemsProcessed < requestLimit) {
             int knownPageSize = offsetInPage + i;
             rangeBuffer.setKnownSize(knownPageSize);

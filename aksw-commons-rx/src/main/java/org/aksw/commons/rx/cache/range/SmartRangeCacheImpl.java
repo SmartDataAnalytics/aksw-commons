@@ -328,7 +328,7 @@ public class SmartRangeCacheImpl<T>
             slot.set(offset + initialLength);
 
             executors.add(worker);
-            System.out.println("NEW WORKER: " + offset + ":" + initialLength);
+            logger.debug("NEW WORKER: " + offset + ":" + initialLength);
             executorService.submit(worker);
         } finally {
             // executorCreationLock.writeLock().unlock();
