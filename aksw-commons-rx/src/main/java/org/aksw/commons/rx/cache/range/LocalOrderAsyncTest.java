@@ -5,12 +5,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -26,17 +22,8 @@ import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Serializer;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeMap;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeMap;
-import com.google.common.collect.TreeRangeSet;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -69,64 +56,6 @@ class MyPublisher<T, S extends Comparable<S>> {
 }
 
 
-class RangeSetSerializer
-    extends Serializer<RangeSet>
-{
-    public static <T extends Comparable<T>> Set<Range<T>> toSet(RangeSet<T> rangeSet) {
-        return new HashSet<Range<T>>(rangeSet.asRanges());
-    }
-
-    public static <T extends Comparable<T>> RangeSet<T> fromSet(Set<Range<T>> set) {
-        TreeRangeSet<T> result = TreeRangeSet.create();
-        result.addAll(set);
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void write(Kryo kryo, Output output, RangeSet object) {
-        kryo.writeClassAndObject(output, toSet(object));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public RangeSet read(Kryo kryo, Input input, Class<RangeSet> type) {
-        Set set = (Set)kryo.readClassAndObject(input);
-        RangeSet result = fromSet(set);
-        return result;
-    }
-}
-class RangeMapSerializer
-    extends Serializer<RangeMap>
-{
-    public static <K extends Comparable<K>, V> Map<Range<K>, V> toMap(RangeMap<K, V> rangeMap) {
-        return new HashMap<Range<K>, V>(rangeMap.asMapOfRanges());
-    }
-
-    public static <K extends Comparable<K>, V> RangeMap<K, V> fromMap(Map<Range<K>, V> map) {
-        TreeRangeMap<K, V> result = TreeRangeMap.create();
-        map.entrySet().forEach(e -> {
-            result.put(e.getKey(), e.getValue());
-        });
-        return result;
-    }
-
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void write(Kryo kryo, Output output, RangeMap object) {
-        kryo.writeClassAndObject(output, toMap(object));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public RangeMap read(Kryo kryo, Input input, Class<RangeMap> type) {
-        Map map = (Map)kryo.readClassAndObject(input);
-        RangeMap result = fromMap(map);
-        return result;
-    }
-}
-
 public class LocalOrderAsyncTest {
     public static void main(String[] args) throws Exception {
         main1();
@@ -152,6 +81,7 @@ public class LocalOrderAsyncTest {
                        try {
                            value = store.get(internalKey);
                        } catch (Exception e) {
+                           logger.warn("Error", e);
                            // throw new RuntimeException(e);
                            value = newValue.get(); //new RangeBufferImpl<V>(1024);
                        }
@@ -191,7 +121,7 @@ public class LocalOrderAsyncTest {
 
 
     public static void main1() throws Exception {
-        KeyObjectStore objStore = SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test/"));
+        KeyObjectStore objStore = SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test/"), null);
 
         List<String> key = Arrays.asList("q1", "100");
         RangeBuffer<String> value = new RangeBufferImpl<>(1024);

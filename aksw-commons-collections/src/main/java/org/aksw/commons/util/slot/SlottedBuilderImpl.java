@@ -42,6 +42,11 @@ public class SlottedBuilderImpl<W, P>
                 slots.remove(this);
             }
         }
+
+        @Override
+        public String toString() {
+            return "SlotImpl [suppliedValue=" + supplier.get() + "]";
+        }
     }
 
     @Override

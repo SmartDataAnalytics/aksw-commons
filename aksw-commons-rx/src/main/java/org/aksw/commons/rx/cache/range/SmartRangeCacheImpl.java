@@ -18,7 +18,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
+import org.aksw.commons.kyro.guava.RangeMapSerializer;
+import org.aksw.commons.kyro.guava.RangeSetSerializer;
 import org.aksw.commons.rx.range.KeyObjectStore;
 import org.aksw.commons.rx.range.KeyObjectStoreImpl;
 import org.aksw.commons.rx.range.ObjectFileStoreKyro;
@@ -446,7 +449,7 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public static KeyObjectStore createKeyObjectStore(Path basePath) {
+    public static KryoPool createKyroPool(Consumer<Kryo> customRegistrator) {
         KryoFactory factory = new KryoFactory() {
             public Kryo create() {
                 Kryo kryo = new Kryo();
@@ -458,12 +461,18 @@ public class SmartRangeCacheImpl<T>
                 kryo.register(TreeRangeMap.class, rangeMapSerializer);
                 kryo.register(Range.class, javaSerializer);
 
+                if (customRegistrator != null) {
+                    customRegistrator.accept(kryo);
+                }
                 return kryo;
             }
         };
         // Build pool with SoftReferences enabled (optional)
-        KryoPool kryoPool = new KryoPool.Builder(factory).softReferences().build();
+        KryoPool result = new KryoPool.Builder(factory).softReferences().build();
+        return result;
+    }
 
+    public static KeyObjectStore createKeyObjectStore(Path basePath, KryoPool kryoPool) {
         KeyObjectStore result = KeyObjectStoreImpl.create(basePath, new ObjectFileStoreKyro(kryoPool));
 
         return result;

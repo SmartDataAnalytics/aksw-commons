@@ -5,10 +5,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.aksw.commons.io.util.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KeyObjectStoreImpl
     implements KeyObjectStore
 {
+    private static final Logger logger = LoggerFactory.getLogger(KeyObjectStoreImpl.class);
+
     protected Path rootPath;
     protected PathResolver pathResolver;
     protected ObjectFileStore objectFileStore;
@@ -34,6 +38,7 @@ public class KeyObjectStoreImpl
     public <T> T get(Iterable<String> keySegments) throws IOException, ClassNotFoundException{
         Path absPath = pathResolver.resolve(rootPath, keySegments);
         T result = objectFileStore.readAs(absPath);
+        logger.debug("Loading object from " + absPath);
         return result;
     }
 

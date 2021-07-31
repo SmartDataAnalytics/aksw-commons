@@ -362,6 +362,7 @@ public class RequestIterator<T>
             Slot<Long> slot = it.next();
             Long value = slot.getSupplier().get();
             if (value < currentOffset) {
+                logger.info("Clearing slot with value " + slot.getSupplier().get() + " because offset " + currentOffset + "is higher ");
                 slot.close();
                 it.remove();
             }
@@ -445,6 +446,10 @@ public class RequestIterator<T>
 
                     // Release all claimed pages
                     // Remove all claimed pages before the checkpoint
+
+                    logger.debug("Releasing pages: " + claimedPages.keySet());
+                    logger.debug("Releasing slots: " + workerToSlot);
+
                     claimedPages.values().forEach(Ref::close);
                     workerToSlot.values().forEach(Slot::close);
                     claimedPages.clear();

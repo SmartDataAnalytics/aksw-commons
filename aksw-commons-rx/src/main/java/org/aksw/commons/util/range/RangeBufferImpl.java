@@ -211,6 +211,16 @@ public class RangeBufferImpl<T>
         return knownSize;
     }
 
+    @Override
+    public String toString() {
+        return "RangeBufferImpl [capacity=" + buffer.length + ", knownSize=" + knownSize + ", loadedRanges="
+                + loadedRanges + ", failedRanges=" + failedRanges + "]";
+    }
+
+
+
+
+
 //	public static <T> Page<T> create(int pageSize) {
 //		return new Page<T>((T[])new Object[pageSize], 0);
 //	}
