@@ -3,6 +3,8 @@ package org.aksw.commons.rx.cache.range;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.aksw.commons.util.range.RangeBuffer;
@@ -29,10 +31,10 @@ import io.reactivex.rxjava3.disposables.Disposable;
  *
  * @param <T>
  */
-public class RangeRequestExecutor<T>
+public class RangeRequestWorker<T>
     implements Runnable
 {
-    private static final Logger logger = LoggerFactory.getLogger(RangeRequestExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(RangeRequestWorker.class);
 
     /**
      * Reference to the manager - if there is a failure in processing the request the executor
@@ -63,6 +65,7 @@ public class RangeRequestExecutor<T>
      * So we probably there is not much benefit from doing it here too
      */
     protected RefFuture<RangeBuffer<T>> currentPageRef;
+    protected long currentPageId = -1;
 
     protected final long requestOffset;
 
@@ -96,6 +99,14 @@ public class RangeRequestExecutor<T>
      */
     protected long terminationDelay;
 
+    /** Wait mode - true: do not fetch more data then there is demand - false: keep pre-fetching data */
+    protected boolean waitMode = false;
+
+    /**
+     * A timer is started as soon as there is no more explicit demand for data
+     * Until that timer reaches terminationDelay, the worker can keep fetching data from the backend
+     */
+    protected transient Stopwatch terminationTimer = Stopwatch.createUnstarted();
 
 
 
@@ -114,7 +125,7 @@ public class RangeRequestExecutor<T>
     protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock();
 
 
-    public RangeRequestExecutor(SmartRangeCacheImpl<T> cacheSystem, long requestOffset, long requestLimit, long terminationDelay) {
+    public RangeRequestWorker(SmartRangeCacheImpl<T> cacheSystem, long requestOffset, long requestLimit, long terminationDelay) {
         super();
         this.cacheSystem = cacheSystem;
         this.requestOffset = requestOffset;
@@ -205,16 +216,22 @@ public class RangeRequestExecutor<T>
     }
 
     public void runCore() {
+
         init();
 
         // Measuring the time for the first item may be meaningless if an underlying cache is used
         // It may be better to measure on e.g. the HTTP level using interceptors on HTTP client
-        Stopwatch firstItemTimer = Stopwatch.createStarted();
+        Stopwatch stopwatch = Stopwatch.createStarted();
         iterator.hasNext();
-        Duration firstItemTime = firstItemTimer.elapsed();
+        firstItemTime = stopwatch.elapsed();
 
         // pauseLock.writeLock().newCondition();
         while (true) {
+
+            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay) {
+                break;
+            }
+
             try {
                 process(reportingInterval);
             } catch (Exception e) {
@@ -227,30 +244,55 @@ public class RangeRequestExecutor<T>
                 // Shut down if there is no pending request for further data
                 synchronized (endpointRequests)  {
                     long maxEndpoint = endpointRequests.build();
+
                     if (offset >= maxEndpoint) {
-                        try {
-                            endpointRequests.wait(terminationDelay);
-                        } catch (InterruptedException e) {
+                        if (waitMode) {
+                            try {
+                                endpointRequests.wait(terminationDelay);
+                            } catch (InterruptedException e) {
+                            }
+                        } else {
+                            // continue-mode: keep on fetching data while we still have time
+
+                            if (maxEndpoint < 0 && !terminationTimer.isRunning()) {
+                                logger.debug("No more demand for data - starting termination timer");
+                                terminationTimer.start();
+                            }
                         }
+                    } else {
+                        // There is demand for data - Reset the termination timer
+                        if (terminationTimer.isRunning()) {
+                            logger.debug("New demand for data - stopping/resetting termination timer");
+                            terminationTimer.reset();
+                        }
+
                     }
                 }
 
                 // If there are no more slots or we have reached to known size then terminate
-                synchronized (endpointRequests) {
-                    long maxEndpoint = endpointRequests.build();
-                    if (maxEndpoint < 0 || (cacheSystem.knownSize > 0 && offset >= cacheSystem.knownSize)) {
-                        break;
+                if (cacheSystem.knownSize > 0 && offset >= cacheSystem.knownSize) {
+                    break;
+                }
+
+                if (waitMode) {
+                    synchronized (endpointRequests) {
+                        long maxEndpoint = endpointRequests.build();
+                        if (maxEndpoint < 0) {
+                            break;
+                        }
+    //                    if (offset >= maxEndpoint) {
+    //                        break;
+    //                    }
                     }
-//                    if (offset >= maxEndpoint) {
-//                        break;
-//                    }
                 }
 
             } else {
+                // If there is no more data then terminate immediately
                 break;
             }
         }
 
+        logger.debug("RangeRequestWorker is terminating");
         close();
     }
 
@@ -283,14 +325,17 @@ public class RangeRequestExecutor<T>
 
         // Make sure we don't acquire a page while close is invoked
         // FIXME Only acquire a page if it is necessary
-        synchronized (this) {
-            if (currentPageRef != null) {
-                currentPageRef.close();
+
+        if (currentPageId != pageId) {
+            synchronized (this) {
+                if (currentPageRef != null) {
+                    currentPageRef.close();
+                }
+
+                currentPageId = pageId;
+                currentPageRef = cacheSystem.getPageForPageId(pageId);
             }
-
-            currentPageRef = cacheSystem.getPageForPageId(pageId);
         }
-
 
         RangeBuffer<T> rangeBuffer = currentPageRef.await();
 
@@ -305,40 +350,56 @@ public class RangeRequestExecutor<T>
         long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
         long numItemsUntilEndpoint = maxEndpoint - offset;
 
-        long limit = Math.min(Math.min(Math.min(Math.min(
+        long limit = Math.min(Math.min(Math.min(
                 reportingInterval,
                 numItemsUntilPageEnd),
                 numItemsUntilPageKnownSize),
-                numItemsUtilRequestLimit),
-                numItemsUntilEndpoint);
+                numItemsUtilRequestLimit);
 
-        int i = 0;
-        boolean hasNext;
-        while ((hasNext = iterator.hasNext()) && i < limit && !isAborted && !Thread.interrupted()) {
-            T item = iterator.next();
-            ++i;
-            sink.accept(item);
+        // In wait mode stop exactly at maxEndpoint
+        if (waitMode) {
+            limit = Math.min(limit, numItemsUntilEndpoint);
         }
-        sink.flush();
-        sink.close();
 
-        numItemsProcessed += i;
-        offset += i;
+        // Explicitly acquire the write lock in order to update the
+        // buffer and possibly the known size in one operation
+        Lock writeLock = rangeBuffer.getReadWriteLock().writeLock();
+        writeLock.lock();
+        try {
 
-        // If there is no further item although the request range has not been covered
-        // then we have detected the end
+            int i = 0;
+            boolean hasNext;
+            while ((hasNext = iterator.hasNext()) && i < limit && !isAborted && !Thread.interrupted()) {
+                T item = iterator.next();
+                ++i;
+                sink.accept(item);
+            }
 
-        // Note: We may have also just hit the backend's result-set-limit
-        // This is the case if there is
-        // (1) a known result-set-limit value on the smart cache
-        // (2) a known higher offset in the smart cache or
-        // (3) another request with the same offset that yield results
+            sink.flush();
+            sink.close();
 
-        // TODO set the known size if the page is full
-        if (!hasNext && numItemsProcessed < requestLimit) {
-            int knownPageSize = offsetInPage + i;
-            rangeBuffer.setKnownSize(knownPageSize);
-            cacheSystem.setKnownSize(offset);
+            numItemsProcessed += i;
+            offset += i;
+
+            // If there is no further item although the request range has not been covered
+            // then we have detected the end
+
+            // Note: We may have also just hit the backend's result-set-limit
+            // This is the case if there is
+            // (1) a known result-set-limit value on the smart cache
+            // (2) a known higher offset in the smart cache or
+            // (3) another request with the same offset that yield results
+
+            // TODO set the known size if the page is full
+            if (!hasNext && numItemsProcessed < requestLimit) {
+                if (rangeBuffer.getKnownSize() < 0) {
+                    int knownPageSize = offsetInPage + i;
+                    rangeBuffer.setKnownSize(knownPageSize);
+                    cacheSystem.setKnownSize(offset);
+                }
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 

@@ -1,4 +1,4 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.path.api;
 
 import java.nio.file.Path;
 

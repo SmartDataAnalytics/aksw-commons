@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Range;
 
+import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Flowable;
 
 public abstract class RangeCacheTestSuite {
@@ -31,7 +32,10 @@ public abstract class RangeCacheTestSuite {
         Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 2000l));
 
         // System.out.println(flow.toList().blockingGet());
-        flow.toList().blockingGet().forEach(System.out::println);
+        List<String> actual = flow.toList().blockingGet();
+
+
+        // flow.toList().blockingGet().forEach(System.out::println);
 
         Thread.sleep(5000);
         System.out.println("Done waiting");

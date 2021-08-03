@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
@@ -72,6 +73,8 @@ public class AsyncClaimingCache<K, V> {
     // protected AsyncLoadingCache<K, Ref<V>> level3;
     protected AsyncRefCache<K, V> level3;
 
+    /** The listener for when an item is removed from *all* levels of the cache */
+    // protected RemovalListener<K, V> removalListener;
 
     /** Whether to cancel loading of items that were unclaimed before loading completed,
      *  if false, the future returned by level3 will not be cancelled */
@@ -80,15 +83,22 @@ public class AsyncClaimingCache<K, V> {
     public static <K, V> AsyncClaimingCache<K, V> create(
             Duration syncDelayDuration,
             // Caffeine<Object, Object> cacheBuilder,
-            AsyncRefCache<K, V> level3,
-            RemovalListener<K, V> removalListener) {
-        return new AsyncClaimingCache<>(level3, removalListener, syncDelayDuration);
+            // AsyncRefCache<K, V> level3,
+
+            Caffeine<Object, Object> level3Master,
+            Function<K, V> level3CacheLoader,
+            RemovalListener<K, V> level3RemovalListener,
+
+            RemovalListener<K, V> level2RemovalListener) {
+        return new AsyncClaimingCache<>(level3Master, level3CacheLoader, level3RemovalListener, level2RemovalListener, syncDelayDuration);
     }
 
 
     public AsyncClaimingCache(
-            AsyncRefCache<K, V> level3,
-            RemovalListener<K, V> removalListener,
+            Caffeine<Object, Object> level3Master,
+            Function<K, V> level3CacheLoader,
+            RemovalListener<K, V> level3RemovalListener,
+            RemovalListener<K, V> level2RemovalListener,
             Duration syncDelayDuration
             ) {
 
@@ -96,11 +106,10 @@ public class AsyncClaimingCache<K, V> {
                 .scheduler(Scheduler.systemScheduler())
                 // .expireAfterWrite(1, TimeUnit.SECONDS)
                 .expireAfterWrite(syncDelayDuration)
-                .removalListener((K key, SingleValuedAccessor<RefFuture<V>> holder, RemovalCause removalCause) -> {
-                    logger.debug("Level2: Syncing & passing to level 3: " + key);
-
+                .evictionListener((K key, SingleValuedAccessor<RefFuture<V>> holder, RemovalCause removalCause) -> {
                     RefFuture<V> refFuture = holder.get();
                     if (refFuture != null) {
+                        logger.debug("Level2 eviction action: Syncing & passing to level 3: " + key);
                         CompletableFuture<V> future = refFuture.get();
                         if (future.isDone()) {
                             V value;
@@ -109,12 +118,14 @@ public class AsyncClaimingCache<K, V> {
                             } catch (InterruptedException | ExecutionException e) {
                                 throw new RuntimeException(e);
                             }
-                            removalListener.onRemoval(key, value, removalCause);
+                            level2RemovalListener.onRemoval(key, value, removalCause);
 
                             // RefFuture<V> tmpRef = refFuture.acquire();
                             level3.put(key, refFuture);
                             // tmpRef.close();
                         }
+                    } else {
+                        logger.debug("Level2 eviction action: Reference was null - assuming re-claimed to level 1");
                     }
 
                     // RefFuture<V> refFuture = RefFutureImpl.fromRef(primaryRef);
@@ -128,7 +139,23 @@ public class AsyncClaimingCache<K, V> {
                 .build();
                 // .build(key -> new SingleValuedAccessor<>(level3.getAsRefFuture(key)));
 
-        this.level3 = level3;
+        // Configure the level3 eviction listener such that the custom listener is only
+        // invoked if a key is not present in any other levels of the cache
+        this.level3 = new AsyncRefCache<>(
+                level3Master,
+                level3CacheLoader,
+                (key, value, removalCause) -> {
+                    synchronized (level1) {
+                        SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
+                        boolean isKeyPresentInLevel1Or2 = level1.containsKey(key) || (holder != null && holder.get() != null);
+
+                        if (!isKeyPresentInLevel1Or2) {
+                            logger.debug("Complete eviction of " + key + " is - no longer present in any other level");
+                            level3RemovalListener.onRemoval(key, value, removalCause);
+                        }
+                    }
+                });
+
 //
 //        this.level3 = cacheBuilder
 //            .removalListener(new RemovalListener<K, Ref<V>>() {

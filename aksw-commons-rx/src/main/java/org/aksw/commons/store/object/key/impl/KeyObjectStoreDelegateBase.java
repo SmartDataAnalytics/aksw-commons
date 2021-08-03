@@ -1,4 +1,6 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.key.impl;
+
+import org.aksw.commons.store.object.key.api.KeyObjectStore;
 
 public class KeyObjectStoreDelegateBase
     implements KeyObjectStoreDelegate

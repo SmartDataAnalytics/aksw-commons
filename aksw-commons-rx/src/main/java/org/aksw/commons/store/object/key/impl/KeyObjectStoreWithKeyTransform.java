@@ -1,8 +1,10 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.key.impl;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
+
+import org.aksw.commons.store.object.key.api.KeyObjectStore;
 
 import com.google.common.collect.Iterables;
 

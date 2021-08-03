@@ -1,10 +1,12 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.path.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+
+import org.aksw.commons.store.object.path.api.ObjectFileStore;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -16,6 +18,7 @@ public class ObjectFileStoreKyro
     implements ObjectFileStore
 {
     protected KryoPool kryoPool;
+    // TODO Add support for a (hadoop) codec pool
 
     public ObjectFileStoreKyro(KryoPool kryoPool) {
         super();

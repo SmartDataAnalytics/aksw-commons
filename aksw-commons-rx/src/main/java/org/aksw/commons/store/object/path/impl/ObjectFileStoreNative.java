@@ -1,9 +1,10 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.path.impl;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import org.aksw.commons.io.util.FileUtils;
+import org.aksw.commons.store.object.path.api.ObjectFileStore;
 
 
 public class ObjectFileStoreNative

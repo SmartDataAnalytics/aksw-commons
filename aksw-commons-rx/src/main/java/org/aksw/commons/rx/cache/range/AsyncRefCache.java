@@ -27,7 +27,7 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
  * can be cancelled independently. Only if all futures are cancelled then the
  * actual future is cancelled.
  *
- * One a master's future is loaded the slave futures will close themselves
+ * Once a master's future is loaded then the slave futures will close themselves
  * as the loading can no longer be interrupted.
  *
  * @author raven

@@ -129,7 +129,7 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
 
 
     public static <I>
-    ParallelAggregator<I, I, Accumulator<I, I>> reduce(
+    ParallelAggregator<I, I, Accumulator<I, I>> fold(
             SerializableSupplier<I> zeroElementSupplier,
             SerializableBinaryOperator<I> plusOperator)
     {
@@ -156,13 +156,13 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
     public static
     ParallelAggregator<Long, Long, Accumulator<Long, Long>> maxLong()
     {
-        return reduce(() -> 0l, Math::max);
+        return fold(() -> 0l, Math::max);
     }
 
     public static
     ParallelAggregator<Integer, Integer, Accumulator<Integer, Integer>> maxInteger()
     {
-        return reduce(() -> 0, Math::max);
+        return fold(() -> 0, Math::max);
     }
 
 

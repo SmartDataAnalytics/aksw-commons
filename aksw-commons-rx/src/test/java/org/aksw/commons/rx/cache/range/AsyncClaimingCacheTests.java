@@ -20,8 +20,8 @@ public class AsyncClaimingCacheTests {
     public AsyncClaimingCache<String, String> createTestCache() {
         AsyncClaimingCache<String, String> result = AsyncClaimingCache.create(
                 Duration.ofSeconds(1),
-                AsyncRefCache.create(
-                        Caffeine.newBuilder()
+
+                Caffeine.newBuilder()
                         .scheduler(Scheduler.systemScheduler())
                         .expireAfterWrite(1, TimeUnit.SECONDS),
                         key -> {
@@ -32,7 +32,8 @@ public class AsyncClaimingCacheTests {
                             }
                             return "valueOf[" + key + "]";
                         },
-                        (key, value, cause) -> {}),
+                        (key, value, cause) -> {},
+
                 (key, value, cause) -> {});
 
         return result;

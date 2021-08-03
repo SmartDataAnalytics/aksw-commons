@@ -19,7 +19,7 @@ public class RangeBufferTest {
 
         RangeBuffer<String> buffer = new RangeBufferImpl<>(10);
 
-        Future<List<String>> future = Flowable.fromIterable(() -> buffer.get(5))
+        Future<List<String>> future = Flowable.fromIterable(() -> buffer.blockingIterator(5))
                 .subscribeOn(Schedulers.computation())
                 .take(5)
                 .toList()

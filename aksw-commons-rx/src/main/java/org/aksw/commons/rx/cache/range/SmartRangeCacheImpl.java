@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -22,12 +24,13 @@ import java.util.function.Consumer;
 
 import org.aksw.commons.kyro.guava.RangeMapSerializer;
 import org.aksw.commons.kyro.guava.RangeSetSerializer;
-import org.aksw.commons.rx.range.KeyObjectStore;
-import org.aksw.commons.rx.range.KeyObjectStoreImpl;
-import org.aksw.commons.rx.range.ObjectFileStoreKyro;
 import org.aksw.commons.rx.range.RangedSupplier;
+import org.aksw.commons.store.object.key.api.KeyObjectStore;
+import org.aksw.commons.store.object.key.impl.KeyObjectStoreImpl;
+import org.aksw.commons.store.object.path.impl.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeBufferImpl;
+import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
@@ -42,62 +45,15 @@ import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.math.LongMath;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
-
-interface PageManager<T> {
-    // Reference<? extends Page<T>>
-    Page<T> getPage(long pageId);
-    int getPageSize();
-}
-
-
-interface Page<T> {
-    long getOffset();
-    PageManager<T> getPageManager();
-
-    T get(int offset);
-    void set(int offset, T value);
-    int getKnownSize();
-
-    default Page<T> getNextPage() {
-        return getPageManager().getPage(getOffset() + 1);
-    }
-}
-
-
-
-
-
-class RangeRequestContext<C extends Comparable<C>> {
-    protected Range<C> range;
-
-    public RangeRequestContext(Range<C> range) {
-        super();
-        this.range = range;
-    }
-
-    public Range<C> getRange() {
-        return range;
-    }
-}
-
-
-class ExecutorPool {
-    // protected
-    protected Set<Range<Long>> requestRanges;
-
-
-    public void addRequest(Range<Long> request) {
-
-    }
-
-}
 
 
 public class SmartRangeCacheImpl<T>
@@ -132,10 +88,10 @@ public class SmartRangeCacheImpl<T>
 
     // protected SortedCache<Long, RangeBuffer<T>> pageCache;
 
-    protected Set<RangeRequestExecutor<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
+    protected Set<RangeRequestWorker<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
 
-    protected Set<RequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
+    protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
     protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock(true);
 
@@ -165,7 +121,8 @@ public class SmartRangeCacheImpl<T>
 
         this.countCache = AsyncClaimingCache.create(
                 syncDelayDuration,
-                AsyncRefCache.<String, Range<Long>>create(
+
+                    // begin of level3 setup
                    Caffeine.newBuilder()
                    .scheduler(Scheduler.systemScheduler())
                    .maximumSize(1),
@@ -183,7 +140,9 @@ public class SmartRangeCacheImpl<T>
 
                        return value;
                    },
-                   (key, value, cause) -> {}),
+                   (key, value, cause) -> {},
+                   // end of level3 setup
+
                 (key, value, cause) -> {
                     List<String> internalKey = Arrays.asList(key);
 
@@ -240,7 +199,7 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-    public Set<RangeRequestExecutor<T>> getExecutors() {
+    public Set<RangeRequestWorker<T>> getExecutors() {
         return executors;
     }
 
@@ -283,7 +242,7 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public Runnable register(RequestIterator<T> it) {
+    public Runnable register(RangeRequestIterator<T> it) {
         activeRequests.add(it);
 
         return () -> {
@@ -320,13 +279,13 @@ public class SmartRangeCacheImpl<T>
 
 
 
-    public Entry<RangeRequestExecutor<T>, Slot<Long>> newExecutor(long offset, long initialLength) {
+    public Entry<RangeRequestWorker<T>, Slot<Long>> newExecutor(long offset, long initialLength) {
         // RangeRequestExecutor<T> result;
-        RangeRequestExecutor<T> worker;
+        RangeRequestWorker<T> worker;
         Slot<Long> slot;
         //executorCreationLock.writeLock().lock();
         try {
-            worker = new RangeRequestExecutor<>(this, offset, requestLimit, terminationDelayInMs);
+            worker = new RangeRequestWorker<>(this, offset, requestLimit, terminationDelayInMs);
             slot = worker.getEndpointSlot();
             slot.set(offset + initialLength);
 
@@ -353,9 +312,9 @@ public class SmartRangeCacheImpl<T>
      *
      * @param requestRange
      */
-    public RequestIterator<T> request(Range<Long> requestRange) {
+    public RangeRequestIterator<T> request(Range<Long> requestRange) {
 
-        RequestIterator<T> result = new RequestIterator<>(this, requestRange);
+        RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
 //
@@ -395,7 +354,7 @@ public class SmartRangeCacheImpl<T>
                     e.onComplete();
                 }
             },
-            RequestIterator::close);
+            RangeRequestIterator::close);
     }
 
 
@@ -477,4 +436,27 @@ public class SmartRangeCacheImpl<T>
 
         return result;
     }
+
+
+    public static <T> Deque<Range<Long>> computeGaps(Range<Long> requestRange, long pageSize,
+            NavigableMap<Long, RangeBuffer<T>> pages) {
+
+        // Range<Long> totalRange = Range.closedOpen(pageOffset, pageOffset + pageSize);
+
+
+        RangeSet<Long> loadedRanges = TreeRangeSet.create();
+        pages.entrySet().stream().flatMap(e -> e.getValue().getLoadedRanges().asRanges().stream().map(range ->
+                RangeUtils.apply(
+                        range,
+                        e.getKey() * pageSize,
+                        (endpoint, value) -> LongMath.saturatedAdd(endpoint, (long)value)))
+            )
+            .forEach(loadedRanges::add);
+
+
+        RangeSet<Long> rawGaps = RangeUtils.gaps(requestRange, loadedRanges);
+        Deque<Range<Long>> gaps = new ArrayDeque<>(rawGaps.asRanges());
+        return gaps;
+    }
+
 }

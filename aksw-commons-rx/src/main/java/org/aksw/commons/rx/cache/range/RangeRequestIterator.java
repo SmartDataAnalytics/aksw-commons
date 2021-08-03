@@ -1,6 +1,5 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
@@ -28,8 +26,6 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.Ints;
 
@@ -46,10 +42,10 @@ import com.google.common.primitives.Ints;
  *
  * @param <T>
  */
-public class RequestIterator<T>
+public class RangeRequestIterator<T>
     extends AbstractIterator<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(RequestIterator.class);
+    private static final Logger logger = LoggerFactory.getLogger(RangeRequestIterator.class);
 
     protected SmartRangeCacheImpl<T> cache;
 
@@ -79,7 +75,7 @@ public class RequestIterator<T>
      * Exectors provide slots into which clients can place the requested range endpoints
      */
     // protected Collection<Slot<Long>> claimedSlots = new ArrayList<>();
-    protected Map<RangeRequestExecutor<T>, Slot<Long>> workerToSlot = new HashMap<>();
+    protected Map<RangeRequestWorker<T>, Slot<Long>> workerToSlot = new HashMap<>();
 
 
     /** The reference to the current page */
@@ -114,7 +110,7 @@ public class RequestIterator<T>
     protected long nextCheckpointOffset = 0;
 
 
-    public RequestIterator(SmartRangeCacheImpl<T> cache, Range<Long> requestRange) {
+    public RangeRequestIterator(SmartRangeCacheImpl<T> cache, Range<Long> requestRange) {
         super();
         this.cache = cache;
         this.requestRange = requestRange;
@@ -178,7 +174,7 @@ public class RequestIterator<T>
      */
     public void checkpoint(long n) throws Exception {
 
-        List<RangeRequestExecutor<T>> candExecutors = new ArrayList<>();
+        List<RangeRequestWorker<T>> candExecutors = new ArrayList<>();
 
 
         long start = nextCheckpointOffset;
@@ -228,21 +224,7 @@ public class RequestIterator<T>
         try {
             pages.values().forEach(page -> page.getReadWriteLock().readLock().lock());
 
-            // Range<Long> totalRange = Range.closedOpen(pageOffset, pageOffset + pageSize);
-
-
-            RangeSet<Long> loadedRanges = TreeRangeSet.create();
-            pages.entrySet().stream().flatMap(e -> e.getValue().getLoadedRanges().asRanges().stream().map(range ->
-                    RangeUtils.apply(
-                            range,
-                            e.getKey() * pageSize,
-                            (endpoint, value) -> LongMath.saturatedAdd(endpoint, (long)value)))
-                )
-                .forEach(loadedRanges::add);
-
-
-            RangeSet<Long> rawGaps = RangeUtils.gaps(requestRange, loadedRanges);
-            Deque<Range<Long>> gaps = new ArrayDeque<>(rawGaps.asRanges());
+            Deque<Range<Long>> gaps = SmartRangeCacheImpl.computeGaps(requestRange, pageSize, pages);
 
             // Iterator<Range<Long>> gapIt = gaps.asRanges().iterator();
 
@@ -252,6 +234,8 @@ public class RequestIterator<T>
             candExecutors.addAll(cache.getExecutors());
 
 
+            // Poor mans approach: For every gap in the look ahead range create a new worker
+            // The improved approach would group 'nearby' gaps
             boolean usePoorMansApproach = true;
             if (usePoorMansApproach) {
                 // while (gapIt.hasNext()) {
@@ -259,7 +243,7 @@ public class RequestIterator<T>
 
                     Range<Long> gap = gaps.pollFirst();
 
-                    // Check whether the gap could be added any of the currently claimed slots
+                    // Check whether the gap could be added to any of the currently claimed slots
                     // We need a slot's executor in order to query the executors max request range
 
                     long coveredOffset = start;
@@ -269,8 +253,8 @@ public class RequestIterator<T>
                         coveredOffset = Math.max(coveredOffset, slot.getSupplier().get());
                     }
 
-                    for (Entry<RangeRequestExecutor<T>, Slot<Long>> e : workerToSlot.entrySet()) {
-                        RangeRequestExecutor<T> worker = e.getKey();
+                    for (Entry<RangeRequestWorker<T>, Slot<Long>> e : workerToSlot.entrySet()) {
+                        RangeRequestWorker<T> worker = e.getKey();
                         Slot<Long> slot = e.getValue();
 
                         long workerStartOffset = worker.getCurrentOffset();
@@ -282,7 +266,7 @@ public class RequestIterator<T>
 
 
                         long workerEndOffset = worker.getEndOffset();
-                        long maxPossibleEndpoint = Math.min(worker.getEndOffset(), end);
+                        long maxPossibleEndpoint = Math.min(workerEndOffset, end);
 
 
                         // If it is not possible to cover the whole gap, then put back the remaining gap for
@@ -303,7 +287,7 @@ public class RequestIterator<T>
                     }
 
                     if (coveredOffset == start) {
-                        Entry<RangeRequestExecutor<T>, Slot<Long>> workerAndSlot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
+                        Entry<RangeRequestWorker<T>, Slot<Long>> workerAndSlot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
                         workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
 
                         // Put the gap back because maybe it is too large to be covered by a single executor
@@ -402,7 +386,7 @@ public class RequestIterator<T>
                 }
 
                 currentIndex = cache.getIndexInPageForOffset(currentOffset);
-                currentPageIt = currentPage.get(currentIndex);
+                currentPageIt = currentPage.blockingIterator(currentIndex);
             }
 
             if (currentPageIt.hasNext()) {

@@ -54,12 +54,18 @@ public class RangeBufferImpl<T>
     protected RangeMap<Integer, List<Throwable>> failedRanges;
     protected volatile int knownSize;
 
+    /**
+     * Used for dirty checking; incremented on every put
+     * -even if the same items were re-added. Note that put acquires the write lock.
+     */
+    protected volatile long generation = 0;
+
     // protected transient List<T> listView;
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     protected transient Condition hasData = readWriteLock.writeLock().newCondition();
 
 
-    /** Clones the object. Internally attempts to acquire the read lock. */
+    /** Clones the object. Internally acquires the read lock. */
     @Override
     protected RangeBufferImpl<T> clone() throws CloneNotSupportedException {
         Lock readLock = getReadWriteLock().readLock();
@@ -132,10 +138,11 @@ public class RangeBufferImpl<T>
     }
 
     @Override
-    public Iterator<T> get(int offset) {
+    public Iterator<T> blockingIterator(int offset) {
         return new RangeBufferIterator<>(this, offset);
     }
 
+    /** -1 if unknown */
     @Override
     public int getKnownSize() {
         return knownSize;
@@ -183,11 +190,17 @@ public class RangeBufferImpl<T>
             loadedRanges.add(
                     Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));
 
-            logger.debug("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges);
+            ++generation;
+            logger.debug("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges + " Generation is now " + generation);
         } finally {
             hasData.signalAll();
             writeLock.unlock();
         }
+    }
+
+    @Override
+    public long getGeneration() {
+        return generation;
     }
 
     /** Sets the known size thereby synchronizing on 'this' */
@@ -198,17 +211,14 @@ public class RangeBufferImpl<T>
             writeLock.lock();
             try {
                 this.knownSize = size;
+                ++this.generation;
             } finally {
                 hasData.signalAll();
                 writeLock.unlock();
             }
+        } else {
+            throw new IllegalStateException("Known size has already been set");
         }
-    }
-
-    /** -1 if unknown */
-    @Override
-    public int knownSize() {
-        return knownSize;
     }
 
     @Override
@@ -216,6 +226,44 @@ public class RangeBufferImpl<T>
         return "RangeBufferImpl [capacity=" + buffer.length + ", knownSize=" + knownSize + ", loadedRanges="
                 + loadedRanges + ", failedRanges=" + failedRanges + "]";
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.deepHashCode(buffer);
+        result = prime * result + ((failedRanges == null) ? 0 : failedRanges.hashCode());
+        result = prime * result + knownSize;
+        result = prime * result + ((loadedRanges == null) ? 0 : loadedRanges.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        RangeBufferImpl other = (RangeBufferImpl) obj;
+        if (!Arrays.deepEquals(buffer, other.buffer))
+            return false;
+        if (failedRanges == null) {
+            if (other.failedRanges != null)
+                return false;
+        } else if (!failedRanges.equals(other.failedRanges))
+            return false;
+        if (knownSize != other.knownSize)
+            return false;
+        if (loadedRanges == null) {
+            if (other.loadedRanges != null)
+                return false;
+        } else if (!loadedRanges.equals(other.loadedRanges))
+            return false;
+        return true;
+    }
+
 
 
 

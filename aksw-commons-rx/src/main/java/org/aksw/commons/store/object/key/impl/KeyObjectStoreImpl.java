@@ -1,10 +1,16 @@
-package org.aksw.commons.rx.range;
+package org.aksw.commons.store.object.key.impl;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import org.aksw.commons.io.util.PathUtils;
+import org.aksw.commons.store.object.key.api.KeyObjectStore;
+import org.aksw.commons.store.object.path.api.ObjectFileStore;
+import org.aksw.commons.store.object.path.api.PathResolver;
+import org.aksw.commons.store.object.path.impl.ObjectFileStoreNative;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +45,30 @@ public class KeyObjectStoreImpl
         Path absPath = pathResolver.resolve(rootPath, keySegments);
         T result = objectFileStore.readAs(absPath);
         logger.debug("Loading object from " + absPath);
+        return result;
+    }
+
+
+    protected <T> T load(Path absPath) throws ClassNotFoundException, IOException {
+        T result = objectFileStore.readAs(absPath);
+        logger.debug("Loading object from " + absPath);
+        return result;
+
+    }
+
+    @Override
+    public <T> T computeIfAbsent(Iterable<String> keySegments, Callable<T> initializer)
+            throws ClassNotFoundException, IOException, ExecutionException {
+
+        Path absPath = pathResolver.resolve(rootPath, keySegments);
+        T result;
+        try {
+            result = Files.exists(absPath)
+                   ? load(absPath)
+                   : initializer.call();
+        } catch (Exception e) {
+            throw new ExecutionException(e);
+        }
         return result;
     }
 
