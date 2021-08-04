@@ -71,7 +71,7 @@ public class LocalOrderAsyncTest {
             KeyObjectStore store,
             Supplier<RangeBuffer<V>> newValue) {
 
-        Map<Object, Long> bufferToVersion = new IdentityHashMap<>();
+        Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
 
         AsyncClaimingCache<Long, RangeBuffer<V>> result = AsyncClaimingCache.create(
                 syncDelayDuration,
@@ -94,7 +94,7 @@ public class LocalOrderAsyncTest {
                        RangeBuffer<V> r = value;
                        long generation = value.getGeneration();
 
-                       bufferToVersion.put(r, generation);
+                       keyToVersion.put(key, generation);
 
     //                   Ref<V> r = RefImpl.create(v, null, () -> {
     //                       // Sync the page upon closing it
@@ -107,7 +107,7 @@ public class LocalOrderAsyncTest {
 
                    },
                    (key, value, cause) -> {
-                       bufferToVersion.remove(key);
+                       keyToVersion.remove(key);
                    },
                 // end of level3 setup
 
@@ -117,14 +117,14 @@ public class LocalOrderAsyncTest {
                     Lock readLock = value.getReadWriteLock().readLock();
                     readLock.lock();
 
-                    long version = bufferToVersion.get(value);
+                    long version = keyToVersion.get(key);
 
                     long generation = value.getGeneration();
 
                     try {
                         if (generation != version) {
                             logger.info("Syncing dirty buffer " + internalKey);
-                            bufferToVersion.put(internalKey, generation);
+                            keyToVersion.put(key, generation);
                             store.put(internalKey, value);
                         } else {
                             logger.info("Syncing not needed because of clean buffer " + internalKey);

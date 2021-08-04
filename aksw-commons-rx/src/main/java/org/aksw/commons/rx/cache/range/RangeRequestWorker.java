@@ -78,6 +78,10 @@ public class RangeRequestWorker<T>
     protected long requestLimit;
 
 
+    /** The number of items to process in one batch (before checking for conditions such as interrupts or no-more-demand) */
+    protected int bulkSize = 16;
+
+
     // protected Map<Long, >
 
     // protected RangedSupplier<Long, T> backend;
@@ -99,7 +103,10 @@ public class RangeRequestWorker<T>
      */
     protected long terminationDelay;
 
-    /** Wait mode - true: do not fetch more data then there is demand - false: keep pre-fetching data */
+    /**
+     * Wait mode - true: do not fetch more data then there is demand - false: keep pre-fetching data
+     *
+     */
     protected boolean waitMode = false;
 
     /**
@@ -121,8 +128,6 @@ public class RangeRequestWorker<T>
     protected long numItemsProcessed = 0;
     protected long processingTimeInNanos = 0;
 
-
-    protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock();
 
 
     public RangeRequestWorker(SmartRangeCacheImpl<T> cacheSystem, long requestOffset, long requestLimit, long terminationDelay) {
@@ -317,7 +322,6 @@ public class RangeRequestWorker<T>
      *
      */
     public void process(int n) throws InterruptedException, ExecutionException {
-        int bulkSize = 16;
         // BulkConsumer<T>
 
         long pageId = cacheSystem.getPageIdForOffset(offset);
