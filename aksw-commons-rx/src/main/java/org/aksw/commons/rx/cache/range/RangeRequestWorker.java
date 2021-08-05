@@ -1,11 +1,13 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.security.DomainCombiner;
 import java.time.Duration;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.LongFunction;
+import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.ref.RefFuture;
@@ -18,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.math.LongMath;
 
@@ -42,44 +46,42 @@ public class RangeRequestWorker<T>
      */
     protected SmartRangeCacheImpl<T> cacheSystem;
 
-    protected ObservableSlottedValue<Long, Long> endpointRequests = ObservableSlottedValueImpl.wrap(SlottedBuilderImpl.create(
+    /** Demands from clients to load data up to the supplied value */
+    protected ObservableSlottedValue<Long, Long> endpointDemands = ObservableSlottedValueImpl.wrap(SlottedBuilderImpl.create(
             values -> values.stream().reduce(-1l,Math::max)));
 
 
-    /** The data supplying iterator */
-    protected Iterator<T> iterator;
+    /**
+     * The data supplying iterator.
+     * If all data in the range of operation of this worker is cached then no backend request is made.
+     */
+    protected Iterator<T> iterator = null;
 
     /** The disposable of the data supplier */
     protected Disposable disposable;
 
     /** Whether processing is aborted */
-    protected boolean isAborted = false;
+    protected boolean isClosed = false;
 
+    /** The pages claimed by this worker */
+    protected PageRange<T> pageRange;
 
-    /** The pages claimed by the executor */
-    // protected Set<Ref<Page<T>>> claimedPages;
-
-    /**
-     * The page the executor is currently writing to
-     * Preloading of pages is requested by the client iterator
-     * So we probably there is not much benefit from doing it here too
-     */
-    protected RefFuture<RangeBuffer<T>> currentPageRef;
     protected long currentPageId = -1;
 
+    /** The offset of the original request */
     protected final long requestOffset;
 
-
-    // The effective endpoint; the maximum value in contextToEndpoint
-    protected volatile long effectiveEndpoint;
-
-
     /** The requestLimit must take result-set-limit on the backend into account! */
-    protected long requestLimit;
+    protected final long requestLimit;
 
 
-    /** The number of items to process in one batch (before checking for conditions such as interrupts or no-more-demand) */
-    protected int bulkSize = 16;
+    /** The effective endpoint; the maximum value in contextToEndpoint */
+    // protected volatile long effectiveEndpoint;
+
+
+    /** For a given offset return the maximum length of a run of items that have already been retrieved
+     *  before a separate request should be fired instead of retrieving those items twice and wasting data volume */
+    protected LongUnaryOperator offsetToMaxAllowedRefetchCount;
 
 
     // protected Map<Long, >
@@ -88,14 +90,18 @@ public class RangeRequestWorker<T>
 
 
 
+    /** The number of items to process in one batch (before checking for conditions such as interrupts or no-more-demand) */
+    protected int bulkSize = 16;
+
     /** Report read items in chunks preferably and at most this size.
      *  Prevents synchronization on every single item. */
-    protected int reportingInterval = 10;
+    protected int reportingInterval = bulkSize;
 
 
 
     protected volatile long offset;
 
+    protected long nextCheckpointOffset;
 
     /**
      * Task termination may be delayed in order to allow it to recover should another observer register
@@ -138,13 +144,19 @@ public class RangeRequestWorker<T>
         this.requestLimit = requestLimit;
         this.terminationDelay = terminationDelay;
 
-        endpointRequests.addValueChangeListener(event -> {
+        this.pageRange = cacheSystem.newPageRange();
+
+        endpointDemands.addValueChangeListener(event -> {
             logger.info("Slot event on " + this + ": " + event);
 
-            synchronized (endpointRequests) {
-                endpointRequests.notifyAll();
+            synchronized (endpointDemands) {
+                endpointDemands.notifyAll();
             }
         });
+    }
+
+    public long getMaxAllowedRefetchCount(long offset) {
+        return offsetToMaxAllowedRefetchCount.applyAsLong(offset);
     }
 
     /** Time in seconds it took to obtain the first item */
@@ -173,55 +185,80 @@ public class RangeRequestWorker<T>
         return result;
     }
 
+
     /**
      * Stops processing of this executor and
-     * also disposes the undelying data supplier (which is expected to terminate)
+     * also disposes the underlying data supplier (which is expected to terminate)
      */
-    public void abort() {
-        synchronized (this) {
-            if (!isAborted && disposable != null) {
+    public synchronized void close() {
+        if (!isClosed) {
+            isClosed = true;
+
+            // Cancel the backend process
+            if (disposable != null) {
                 disposable.dispose();
-                isAborted = true;
             }
+
+            // Free claimed resources (pages)
+            pageRange.releaseAll();
         }
     }
 
 
-    public void close() {
-        // Free claimed resources
-        synchronized (this) {
-            if (currentPageRef != null) {
-                currentPageRef.close();
-            }
-        }
-    }
-
-
-    protected void init() {
+    protected synchronized void init() {
         // Synchronize because abort may be called concurrently
-        synchronized (this) {
-            if (!isAborted) {
-                Flowable<T> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
-                iterator = backendFlow.blockingIterable().iterator();
-                disposable = (Disposable)iterator;
-            } else {
-                return; // Exit immediately due to abort
-            }
+        if (!isClosed) {
+            Flowable<T> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
+            iterator = backendFlow.blockingIterable().iterator();
+            disposable = (Disposable)iterator;
+        } else {
+            return; // Exit immediately due to abort
         }
     }
 
     @Override
     public void run() {
         try {
-            runCore();
+            checkpoint();
+            // If the checkpoint offset was not advanced then we reached end of data
+            if (nextCheckpointOffset != offset) {
+                runCore();
+            }
+            logger.debug("RangeRequestWorker normal termination");
         } catch (Exception e) {
-            logger.error("Exceptional termination", e);
-            e.printStackTrace();
+            logger.error("RangeRequestWorker exceptional termination", e);
+            throw new RuntimeException(e);
+        } finally {
+            close();
         }
     }
 
-    public void runCore() {
 
+    protected void checkpoint() {
+        long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
+        long effectiveLimit = Math.min(maxAllowedRefetchCount, requestLimit);
+
+        pageRange.claimByOffsetRange(offset, offset + effectiveLimit);
+        pageRange.lock();
+        try {
+
+            Deque<Range<Long>> gaps = pageRange.getGaps();
+            if (gaps.isEmpty()) {
+                // Nothing todo; not updating the limits will cause the worker to terminate
+            } else {
+                Range<Long> lastGap = gaps.getLast();
+                long last = ContiguousSet.create(lastGap, DiscreteDomain.longs()).last();
+
+                nextCheckpointOffset = last;
+            }
+
+        } finally {
+            pageRange.unlock();
+        }
+
+    }
+
+    public void runCore() {
         init();
 
         // Measuring the time for the first item may be meaningless if an underlying cache is used
@@ -237,6 +274,14 @@ public class RangeRequestWorker<T>
                 break;
             }
 
+            if (offset == nextCheckpointOffset) {
+                checkpoint();
+
+                if (offset == nextCheckpointOffset) {
+                    break;
+                }
+            }
+
             try {
                 process(reportingInterval);
             } catch (Exception e) {
@@ -247,13 +292,13 @@ public class RangeRequestWorker<T>
             if (iterator.hasNext()) {
 
                 // Shut down if there is no pending request for further data
-                synchronized (endpointRequests)  {
-                    long maxEndpoint = endpointRequests.build();
+                synchronized (endpointDemands)  {
+                    long maxEndpoint = endpointDemands.build();
 
                     if (offset >= maxEndpoint) {
                         if (waitMode) {
                             try {
-                                endpointRequests.wait(terminationDelay);
+                                endpointDemands.wait(terminationDelay);
                             } catch (InterruptedException e) {
                             }
                         } else {
@@ -280,8 +325,8 @@ public class RangeRequestWorker<T>
                 }
 
                 if (waitMode) {
-                    synchronized (endpointRequests) {
-                        long maxEndpoint = endpointRequests.build();
+                    synchronized (endpointDemands) {
+                        long maxEndpoint = endpointDemands.build();
                         if (maxEndpoint < 0) {
                             break;
                         }
@@ -296,9 +341,6 @@ public class RangeRequestWorker<T>
                 break;
             }
         }
-
-        logger.debug("RangeRequestWorker is terminating");
-        close();
     }
 
 
@@ -317,29 +359,17 @@ public class RangeRequestWorker<T>
 
 
     /**
-     * @throws ExecutionException
-     * @throws InterruptedException
+     * Process up to n more items.
+     *
+     * @throws Exception
      *
      */
-    public void process(int n) throws InterruptedException, ExecutionException {
-        // BulkConsumer<T>
+    public void process(int n) throws Exception {
 
         long pageId = cacheSystem.getPageIdForOffset(offset);
         int offsetInPage = cacheSystem.getIndexInPageForOffset(offset);
 
-        // Make sure we don't acquire a page while close is invoked
-        // FIXME Only acquire a page if it is necessary
-
-        if (currentPageId != pageId) {
-            synchronized (this) {
-                if (currentPageRef != null) {
-                    currentPageRef.close();
-                }
-
-                currentPageId = pageId;
-                currentPageRef = cacheSystem.getPageForPageId(pageId);
-            }
-        }
+        RefFuture<RangeBuffer<T>> currentPageRef = pageRange.getClaimedPages().get(pageId);
 
         RangeBuffer<T> rangeBuffer = currentPageRef.await();
 
@@ -347,21 +377,21 @@ public class RangeRequestWorker<T>
                 (arr, start, len) -> rangeBuffer.putAll(offsetInPage, arr, start, len));
 
 
-        long maxEndpoint = endpointRequests.build();
-
         int numItemsUntilPageEnd = rangeBuffer.getCapacity() - offsetInPage;
         int numItemsUntilPageKnownSize = rangeBuffer.getKnownSize() >= 0 ? rangeBuffer.getKnownSize() : rangeBuffer.getCapacity();
-        long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
-        long numItemsUntilEndpoint = maxEndpoint - offset;
+        // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
+        long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
         long limit = Math.min(Math.min(Math.min(
                 reportingInterval,
                 numItemsUntilPageEnd),
                 numItemsUntilPageKnownSize),
-                numItemsUtilRequestLimit);
+                numItemsUntilNextCheckpoint);
 
         // In wait mode stop exactly at maxEndpoint
         if (waitMode) {
+            long maxEndpointDemand = endpointDemands.build();
+            long numItemsUntilEndpoint = maxEndpointDemand - offset;
             limit = Math.min(limit, numItemsUntilEndpoint);
         }
 
@@ -373,7 +403,7 @@ public class RangeRequestWorker<T>
 
             int i = 0;
             boolean hasNext;
-            while ((hasNext = iterator.hasNext()) && i < limit && !isAborted && !Thread.interrupted()) {
+            while ((hasNext = iterator.hasNext()) && i < limit && !isClosed && !Thread.interrupted()) {
                 T item = iterator.next();
                 ++i;
                 sink.accept(item);
@@ -409,7 +439,32 @@ public class RangeRequestWorker<T>
 
 
     public Slot<Long> getEndpointSlot() {
-        return endpointRequests.newSlot();
+        return endpointDemands.newSlot();
     }
 }
 
+//
+//this.pageHelper = new PageHelperBase<>(cacheSystem, requestOffset) {
+//  protected void processGaps(Deque<Range<Long>> gaps, long start, long end) {
+//      // Check if there are any gaps within the max refetch range
+//      long maxAllowedRefetchCount = getMaxAllowedRefetchCount(start);
+//
+//      // Range<Long> refetchRange = Range.closedOpen(start, end);
+//
+//      // If there is no gap in range then cancel the backend request
+//      // if there is data demand then create a new executor
+//      if (gaps.isEmpty()) {
+//
+//      } else {
+//
+//      }
+//
+//
+//
+//
+//      // TODO Update the processing range
+//
+//
+//  }
+//};
+//

@@ -20,6 +20,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.math.IntMath;
 
 /**
  * A list where ranges can be marked as 'loaded'.
@@ -186,6 +187,15 @@ public class RangeBufferImpl<T>
         writeLock.lock();
 
         try {
+            // Prevented overwrites do not increment the generation
+            boolean preventOverwriteOfLoadedRanges = true;
+            if (preventOverwriteOfLoadedRanges) {
+                Range<Integer> writeRange = Range.closedOpen(arrOffset, IntMath.saturatedAdd(arrOffset, arrLength));
+                if (loadedRanges.encloses(writeRange)) {
+                    return;
+                }
+            }
+
             System.arraycopy(arrayWithItemsOfTypeT, arrOffset, buffer, pageOffset, arrLength);
             loadedRanges.add(
                     Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));

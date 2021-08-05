@@ -459,4 +459,8 @@ public class SmartRangeCacheImpl<T>
         return gaps;
     }
 
+
+    public PageRange<T> newPageRange() {
+        return new PageRange<>(this);
+    }
 }

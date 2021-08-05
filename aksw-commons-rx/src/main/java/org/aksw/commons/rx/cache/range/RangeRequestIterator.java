@@ -17,7 +17,7 @@ import com.google.common.primitives.Ints;
 
 /**
  * The class drives the iteration of items from the cache
- * and triggers fetching of data as necessary.
+ * and creates background data fetching processes as needed.
  *
  * Thereby this class does not fetch the data directly, but it declares
  * interest in data ranges. The SmartRangeCache will schedule loading of the region
@@ -32,7 +32,8 @@ public class RangeRequestIterator<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(RangeRequestIterator.class);
 
-    protected PageHelperBase<T> pageHelper;
+    protected PageHelperForConsumer<T> pageHelper;
+    protected SmartRangeCacheImpl<T> cache;
 
     /**
      * The original request range by this request.
@@ -48,14 +49,19 @@ public class RangeRequestIterator<T>
     /** The index of the next item to read */
     protected long currentOffset;
 
+    protected long nextCheckpointOffset;
+
+    protected int maxReadAheadItemCount;
+
+
     public RangeRequestIterator(SmartRangeCacheImpl<T> cache, Range<Long> requestRange) { //SmartRangeCacheImpl<T> cache, Range<Long> requestRange) {
         super();
+        this.cache = cache;
         this.requestRange = requestRange;
-
         long nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
-
-        this.pageHelper = new PageHelperForConsumer<>(cache, nextCheckpointOffset, this::getCurrentOffset);
-        currentOffset = pageHelper.getNextCheckpointOffset(); // nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
+        this.currentOffset = nextCheckpointOffset;
+        // this.pageHelper = new PageHelperForConsumer<>(cache, nextCheckpointOffset, this::getCurrentOffset);
+        //currentOffset = pageHelper.getNextCheckpointOffset(); // nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
     }
 
     public long getCurrentOffset() {
@@ -65,25 +71,19 @@ public class RangeRequestIterator<T>
 
     @Override
     protected T computeNext() {
-        long nextCheckpointOffset = pageHelper.getNextCheckpointOffset();
-        // Range<Long> requestRange = pageHelper.getRequestRange();
-        SmartRangeCacheImpl<T> cache = pageHelper.getCache();
-
-
         if (currentOffset == nextCheckpointOffset) {
             try {
                 long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
                 int numItemsUntilRequestRangeEnd = Ints.saturatedCast(LongMath.saturatedAdd(end - currentOffset, 1));
 
-                int n = Math.min(pageHelper.getMaxReadAheadItemCount(), numItemsUntilRequestRangeEnd);
+                int n = Math.min(maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
 
+                // Increments nextCheckpointOffset by n
                 pageHelper.checkpoint(n);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
          }
-
-        // RangeBuffer<T> currentPage = null;
 
         T result;
 
@@ -93,7 +93,7 @@ public class RangeRequestIterator<T>
                 RangeBuffer<T> currentPage;
                 try {
                     long pageId = cache.getPageIdForOffset(currentOffset);
-                    currentPage = pageHelper.getClaimedPages().get(pageId).await();
+                    currentPage = pageHelper.getPageRange().getClaimedPages().get(pageId).await();
                     // currentPage = claimedPages.pollFirstEntry().getValue().await();
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
@@ -120,6 +120,7 @@ public class RangeRequestIterator<T>
 
         return result;
     }
+
 
     /**
      * Abort the request

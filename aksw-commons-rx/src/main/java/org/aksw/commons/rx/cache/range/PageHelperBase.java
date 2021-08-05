@@ -1,17 +1,7 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.util.Deque;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
-import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.ref.Ref;
-import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,68 +24,26 @@ public abstract class PageHelperBase<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
-    protected SmartRangeCacheImpl<T> cache;
-
-    /**
-     * The original request range by this request.
-     * In general, the original request range has to be broken down into smaller ranges
-     * because of result size limits of the backend
-     */
+     protected PageRange<T> pageRange;
+     protected boolean isAborted = false;
 
 
-    /** Do not send requests to the backend as long as that many items can be served from the cache */
-    protected int maxReadAheadItemCount = 100;
-
-
-    /**
-     * Pages claimed so far by this iterator
-     * Presently only the iterator claims pages on checkpoints
-     * TODO Currently a concurrent map because it is under consideration to fire async
-     *      events when pages are loaded.
-     *
-     */
-    protected ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = new ConcurrentSkipListMap<>();
-    protected int currentIndex = -1;
-
-
-
-    protected Runnable abortAction = null;
-    protected boolean isAborted = false;
-
-    /** The index of the next item to process */
-    // protected long currentOffset;
-
-
-    /** At a checkpoint the data fetching tasks for the next blocks are scheduled
-      */
+    /** At a checkpoint the data fetching tasks for the next blocks are scheduled */
     protected long nextCheckpointOffset;
 
 
-    public PageHelperBase(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset) {
+    public PageHelperBase(PageRange<T> pageRange, long nextCheckpointOffset) {
         super();
-        this.cache = cache;
+        this.pageRange = pageRange;
         this.nextCheckpointOffset = nextCheckpointOffset;
     }
-
-//    public long getCurrentOffset() {
-//        return currentOffset;
-//    }
 
     public long getNextCheckpointOffset() {
         return nextCheckpointOffset;
     }
 
-
-    public int getMaxReadAheadItemCount() {
-        return maxReadAheadItemCount;
-    }
-
-    public SmartRangeCacheImpl<T> getCache() {
-        return cache;
-    }
-
-    public ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> getClaimedPages() {
-        return claimedPages;
+    public PageRange<T> getPageRange() {
+        return pageRange;
     }
 
     /**
@@ -111,58 +59,15 @@ public abstract class PageHelperBase<T>
         long start = nextCheckpointOffset;
         long end = start + n;
 
-
-        Range<Long> requestRange = Range.closedOpen(start, end);
-
-        long pageSize = cache.getPageSize();
-
-        // Check for any additional pages that need claiming
-        long startPageId = cache.getPageIdForOffset(start);
-        long endPageId = cache.getPageIdForOffset(end);
-
-        // Remove all claimed pages before the checkpoint
-        NavigableMap<Long, RefFuture<RangeBuffer<T>>> pagesToRelease = claimedPages.headMap(startPageId, false);
-        pagesToRelease.values().forEach(Ref::close);
-        pagesToRelease.clear();
-
-        for (long i = startPageId; i <= endPageId; ++i) {
-            claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
-        }
-
-
-        NavigableMap<Long, RangeBuffer<T>> pages = LongStream.rangeClosed(startPageId, endPageId)
-                .boxed()
-                .collect(Collectors.toMap(
-                    pageId -> pageId,
-                    pageId -> {
-                        try {
-                            return claimedPages.get(pageId).await();
-                        } catch (InterruptedException | ExecutionException e1) {
-                            // TODO Improve handling
-                            throw new RuntimeException(e1);
-                        }
-                    },
-                    (u, v) -> { throw new RuntimeException("should not happen"); },
-                    TreeMap::new));
-
-
-        // Lock all pages
+        pageRange.claimByOffsetRange(start, end);
+                // Lock all pages
         try {
-            pages.values().forEach(page -> page.getReadWriteLock().readLock().lock());
+            pageRange.lock();
 
-            // Prevent creation of new executors (other than by us) while we analyze the state
-            cache.getExecutorCreationReadLock().lock();
-
-            Deque<Range<Long>> gaps = SmartRangeCacheImpl.computeGaps(requestRange, pageSize, pages);
-
+            Deque<Range<Long>> gaps = pageRange.getGaps();
             processGaps(gaps, start, end);
-
-
         } finally {
-            // Unlock all pages
-            pages.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
-
-            cache.getExecutorCreationReadLock().unlock();
+            pageRange.unlock();
 
             nextCheckpointOffset += n;
         }
@@ -171,16 +76,7 @@ public abstract class PageHelperBase<T>
     protected abstract void processGaps(Deque<Range<Long>> gaps, long start, long end);
 
     protected void closeActual() {
-        isAborted = true;
-
-        // Release all claimed pages
-        // Remove all claimed pages before the checkpoint
-
-        logger.debug("Releasing pages: " + claimedPages.keySet());
-
-        claimedPages.values().forEach(Ref::close);
-        claimedPages.clear();
-        // TODO Release all claimed task-ranges
+        pageRange.releaseAll();
     }
 
     /**
@@ -198,3 +94,93 @@ public abstract class PageHelperBase<T>
     }
 
 }
+
+//
+//
+//public void claimPageIdRange(long startPageId, long endPageId) {
+//    // Remove any claimed page before startPageId
+//    NavigableMap<Long, RefFuture<RangeBuffer<T>>> prefixPagesToRelease = claimedPages.headMap(startPageId, false);
+//    prefixPagesToRelease.values().forEach(Ref::close);
+//    prefixPagesToRelease.clear();
+//
+//    // Remove any claimed page after endPageId
+//    NavigableMap<Long, RefFuture<RangeBuffer<T>>> suffixPagesToRelease = claimedPages.tailMap(endPageId, false);
+//    suffixPagesToRelease.values().forEach(Ref::close);
+//    suffixPagesToRelease.clear();
+//
+//
+//    for (long i = startPageId; i <= endPageId; ++i) {
+//        claimedPages.computeIfAbsent(i, idx -> cache.getPageForPageId(idx));
+//    }
+//}
+
+//
+//public Stream<Entry<Long, RangeBuffer<T>>> getPageStream() {
+//    return claimedPages.entrySet().stream()
+//            .map(e -> {
+//                Long pageId = e.getKey();
+//                RangeBuffer<T> buffer;
+//                try {
+//                    buffer = claimedPages.get(pageId).await();
+//                } catch (InterruptedException | ExecutionException e1) {
+//                    // TODO Improve handling
+//                    throw new RuntimeException(e1);
+//                }
+//                return new SimpleEntry<>(pageId, buffer);
+//            });
+//}
+//
+//
+//protected NavigableMap<Long, RangeBuffer<T>> computePageMap2() {
+//    return getPageStream().collect(
+//            Collectors.toMap(
+//                  Entry::getKey,
+//                  Entry::getValue,
+//                  (u, v) -> { throw new RuntimeException("should not happen"); },
+//                  TreeMap::new));
+//}
+
+//protected void updatePageMap() {
+//    if (pageMap == null) {
+//        pageMap = computePageMap();
+//    }
+//}
+//
+//protected NavigableMap<Long, RangeBuffer<T>> computePageMap() {
+//      return claimedPages.entrySet().stream()
+//      .collect(Collectors.toMap(
+//          Entry::getKey,
+//          e -> {
+//              Long pageId = e.getKey();
+//              RefFuture<RangeBuffer<T>> refFuture = e.getValue();
+//
+//              try {
+//                  return refFuture.await();
+//              } catch (InterruptedException | ExecutionException e1) {
+//                  // TODO Improve handling
+//                  throw new RuntimeException(e1);
+//              }
+//          },
+//          (u, v) -> { throw new RuntimeException("should not happen"); },
+//          TreeMap::new));
+//}
+//
+//
+//
+//
+// public void lockCurrentRange() {
+//     updatePageMap();
+//     pageMap.values().forEach(page -> page.getReadWriteLock().readLock().lock());
+//
+//     // Prevent creation of new executors (other than by us) while we analyze the state
+//     cache.getExecutorCreationReadLock().lock();
+// }
+//
+// public void unlockCurrentRange() {
+//     // Unlock all pages
+//     pages.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
+//
+//     cache.getExecutorCreationReadLock().unlock();
+// }
+//
+//

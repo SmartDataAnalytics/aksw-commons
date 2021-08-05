@@ -22,10 +22,12 @@ public class PageHelperForConsumer<T>
     protected Map<RangeRequestWorker<T>, Slot<Long>> workerToSlot = new HashMap<>();
 
     protected LongSupplier offsetSupplier;
+    protected SmartRangeCacheImpl<T> cache;
 
     public PageHelperForConsumer(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
-        super(cache, nextCheckpointOffset);
+        super(cache.newPageRange(), nextCheckpointOffset);
         this.offsetSupplier = offsetSupplier;
+        this.cache = cache;
     }
 
 
