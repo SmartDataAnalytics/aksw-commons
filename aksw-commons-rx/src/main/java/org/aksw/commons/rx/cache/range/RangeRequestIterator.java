@@ -1,9 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ExecutionException;
 
 import org.aksw.commons.util.range.RangeBuffer;
+import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,18 +51,19 @@ public class RangeRequestIterator<T>
     /** The index of the next item to read */
     protected long currentOffset;
 
-    protected long nextCheckpointOffset;
 
-    protected int maxReadAheadItemCount;
+    protected int maxReadAheadItemCount = 100;
 
 
     public RangeRequestIterator(SmartRangeCacheImpl<T> cache, Range<Long> requestRange) { //SmartRangeCacheImpl<T> cache, Range<Long> requestRange) {
         super();
         this.cache = cache;
         this.requestRange = requestRange;
+
         long nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
+
         this.currentOffset = nextCheckpointOffset;
-        // this.pageHelper = new PageHelperForConsumer<>(cache, nextCheckpointOffset, this::getCurrentOffset);
+        this.pageHelper = new PageHelperForConsumer<>(cache, nextCheckpointOffset, this::getCurrentOffset);
         //currentOffset = pageHelper.getNextCheckpointOffset(); // nextCheckpointOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).first();
     }
 
@@ -71,7 +74,7 @@ public class RangeRequestIterator<T>
 
     @Override
     protected T computeNext() {
-        if (currentOffset == nextCheckpointOffset) {
+        if (currentOffset == pageHelper.getNextCheckpointOffset()) {
             try {
                 long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
                 int numItemsUntilRequestRangeEnd = Ints.saturatedCast(LongMath.saturatedAdd(end - currentOffset, 1));
@@ -93,7 +96,14 @@ public class RangeRequestIterator<T>
                 RangeBuffer<T> currentPage;
                 try {
                     long pageId = cache.getPageIdForOffset(currentOffset);
-                    currentPage = pageHelper.getPageRange().getClaimedPages().get(pageId).await();
+                    ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = pageHelper.getPageRange().getClaimedPages();
+                    RefFuture<RangeBuffer<T>> pageRefFuture = claimedPages.get(pageId);
+
+                    if (pageRefFuture == null) {
+                        System.err.println("DEBUG POINT");
+                    }
+
+                    currentPage = pageRefFuture.await();
                     // currentPage = claimedPages.pollFirstEntry().getValue().await();
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);

@@ -146,6 +146,8 @@ public class RangeRequestWorker<T>
 
         this.pageRange = cacheSystem.newPageRange();
 
+        this.offsetToMaxAllowedRefetchCount = offset -> 5000;
+
         endpointDemands.addValueChangeListener(event -> {
             logger.info("Slot event on " + this + ": " + event);
 
@@ -205,7 +207,7 @@ public class RangeRequestWorker<T>
     }
 
 
-    protected synchronized void init() {
+    protected synchronized void initBackendRequest() {
         // Synchronize because abort may be called concurrently
         if (!isClosed) {
             Flowable<T> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
@@ -235,6 +237,13 @@ public class RangeRequestWorker<T>
 
 
     protected void checkpoint() {
+        // TODO We may have maxAllowedRefetchCount items ahead
+        // but a demand that spans across this range
+        // Hence, a new backend request needs to be made
+
+        // A demand overrides the worker's maxAllowedRefetchCount
+        // Demands should take refetching of ranges into account
+
         long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
         long effectiveLimit = Math.min(maxAllowedRefetchCount, requestLimit);
 
@@ -242,12 +251,13 @@ public class RangeRequestWorker<T>
         pageRange.lock();
         try {
 
+
             Deque<Range<Long>> gaps = pageRange.getGaps();
             if (gaps.isEmpty()) {
                 // Nothing todo; not updating the limits will cause the worker to terminate
             } else {
                 Range<Long> lastGap = gaps.getLast();
-                long last = ContiguousSet.create(lastGap, DiscreteDomain.longs()).last();
+                long last = LongMath.saturatedAdd(ContiguousSet.create(lastGap, DiscreteDomain.longs()).last(), 1);
 
                 nextCheckpointOffset = last;
             }
@@ -259,7 +269,7 @@ public class RangeRequestWorker<T>
     }
 
     public void runCore() {
-        init();
+        initBackendRequest();
 
         // Measuring the time for the first item may be meaningless if an underlying cache is used
         // It may be better to measure on e.g. the HTTP level using interceptors on HTTP client
@@ -293,9 +303,9 @@ public class RangeRequestWorker<T>
 
                 // Shut down if there is no pending request for further data
                 synchronized (endpointDemands)  {
-                    long maxEndpoint = endpointDemands.build();
+                    long maxDemandedEndpoint = endpointDemands.build();
 
-                    if (offset >= maxEndpoint) {
+                    if (offset >= maxDemandedEndpoint) {
                         if (waitMode) {
                             try {
                                 endpointDemands.wait(terminationDelay);
@@ -304,7 +314,7 @@ public class RangeRequestWorker<T>
                         } else {
                             // continue-mode: keep on fetching data while we still have time
 
-                            if (maxEndpoint < 0 && !terminationTimer.isRunning()) {
+                            if (maxDemandedEndpoint < 0 && !terminationTimer.isRunning()) {
                                 logger.debug("No more demand for data - starting termination timer");
                                 terminationTimer.start();
                             }
@@ -387,6 +397,10 @@ public class RangeRequestWorker<T>
                 numItemsUntilPageEnd),
                 numItemsUntilPageKnownSize),
                 numItemsUntilNextCheckpoint);
+
+//        if (limit < reportingInterval) {
+//            System.out.println("DEBUG POINT");
+//        }
 
         // In wait mode stop exactly at maxEndpoint
         if (waitMode) {

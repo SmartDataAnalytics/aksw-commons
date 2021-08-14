@@ -8,6 +8,13 @@ public interface Slot<P>
     Slot<P> setSupplier(Supplier<P> partSupplier);
     Supplier<P> getSupplier();
 
+    // TODO Rename to set/getValue?
+    default P get() {
+        Supplier<P> supplier = getSupplier();
+        P result = supplier == null ? null : supplier.get();
+        return result;
+    }
+
     default Slot<P> set(P part) {
         return setSupplier(() -> part);
     }

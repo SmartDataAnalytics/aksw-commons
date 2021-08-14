@@ -61,6 +61,7 @@ public class PageRange<T> {
         long startPageId = cache.getPageIdForOffset(startOffset);
         long endPageId = cache.getPageIdForOffset(endOffset);
 
+        offsetRange = Range.closedOpen(startOffset, endOffset);
         claimByPageIdRange(startPageId, endPageId);
     }
 
@@ -144,6 +145,7 @@ public class PageRange<T> {
         ensureUnlocked();
 
         isLocked = true;
+        updatePageMap();
         pageMap.values().forEach(page -> page.getReadWriteLock().readLock().lock());
 
         // Prevent creation of new executors (other than by us) while we analyze the state
@@ -151,6 +153,8 @@ public class PageRange<T> {
     }
 
     public Deque<Range<Long>> getGaps() {
+        updatePageMap();
+
         int pageSize = cache.getPageSize();
         Deque<Range<Long>> result = SmartRangeCacheImpl.computeGaps(offsetRange, pageSize, pageMap);
         return result;
@@ -158,6 +162,7 @@ public class PageRange<T> {
 
     public void unlock() {
         // Unlock all pages
+        updatePageMap();
         pageMap.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
 
         cache.getExecutorCreationReadLock().unlock();

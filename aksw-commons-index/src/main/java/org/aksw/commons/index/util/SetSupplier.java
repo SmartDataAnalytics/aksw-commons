@@ -66,14 +66,14 @@ public interface SetSupplier {
         };
     }
 
-    public static SetSupplier forTreeSet(Comparator<?> cmp) {
-        return new SetSupplierTreeSet(cmp);
+    public static <X> SetSupplier forTreeSet(Comparator<X> cmp) {
+        return new SetSupplierTreeSet<X>(cmp);
     }
 
-    public static class SetSupplierTreeSet implements SetSupplier {
-        protected Comparator<?> cmp;
+    public static class SetSupplierTreeSet<X> implements SetSupplier {
+        protected Comparator<X> cmp;
 
-        public SetSupplierTreeSet(Comparator<?> cmp) {
+        public SetSupplierTreeSet(Comparator<X> cmp) {
             super();
             this.cmp = cmp;
         }

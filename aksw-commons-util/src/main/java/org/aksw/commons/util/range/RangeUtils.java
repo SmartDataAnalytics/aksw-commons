@@ -3,19 +3,25 @@ package org.aksw.commons.util.range;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
+import com.google.common.math.LongMath;
 
 public class RangeUtils {
     public static final Range<Long> rangeStartingWithZero = Range.atLeast(0l);
@@ -269,6 +275,168 @@ public class RangeUtils {
     public static <C extends Comparable<C>> RangeSet<C> gaps(Range<C> request, RangeSet<C> ranges) {
         RangeSet<C> gaps = ranges.complement().subRangeSet(request);
         return gaps;
+    }
+
+
+
+    /**
+     * Given a map [start, end) pairs (start inclusive, end exclusive) of initial suppliers,
+     * return a schedule covers the set of gaps.
+     *
+     * @param <K>
+     * @param offsetToKey
+     * @param keyToMaxOffset // If there are multiple candidates with the same offset then only the one with the highest max offset should be chosen
+     * @param demandGaps
+     * @param maxRedundantSize The maximum number of consecutive items that may be fetched redundantly without enforcing a separate request.
+     * @param maxSupplierRange The maximum number of items a single supplier can supply.
+     */
+    public static NavigableMap<Long, Long> scheduleRangeSupply(
+            NavigableMap<Long, Long> supplyOffsetToEndpoint,
+            RangeSet<Long> demandGaps,
+            long maxRedundantSize,
+            long maxSupplierRange) {
+
+        // Copy the map; new allocations are tracked in it
+        NavigableMap<Long, Long> offsetToEndpoint = new TreeMap<>(supplyOffsetToEndpoint);
+        NavigableMap<Long, Long> result = new TreeMap<>();
+
+        // MapUtils.union(null, null)
+
+        // Preprocessing: Split all gaps by the worker's range endpoints (start and end)
+        // This way we can assign complete sub-ranges to workers which should make the code simpler
+        // because there is no need to handle splitting in the gap-worker-assignment algo
+
+        Set<Long> allSplitPoints = new TreeSet<>();
+        Set<Long> startPoints = offsetToEndpoint.keySet();
+        Collection<Long> endPoints = offsetToEndpoint.values();
+//        Set<Long> endPoints = offsetTo.values().stream()
+//                .flatMap(key -> Optional.ofNullable(keyToMaxOffset.apply(key)).stream())
+//                .collect(Collectors.toSet());
+
+        allSplitPoints.addAll(startPoints);
+        allSplitPoints.addAll(endPoints);
+
+        // TODO Add the range offsets too?
+
+        // Split all gaps by the executor offsets
+        // Then assign each chunk to one of the executors
+        RangeMap<Long, ?> gapRangeMap = RangeMapUtils.create(demandGaps.asRanges());
+
+
+        RangeMapUtils.split(gapRangeMap, allSplitPoints);
+
+
+        Set<Range<Long>> gapSet = gapRangeMap.asMapOfRanges().keySet();
+
+        long bestOffset = -1;
+        long bestMaxEnd = -1;
+        long bestCurEnd = -1;
+
+
+        for (Range<Long> gap : gapSet) {
+
+            ContiguousSet<Long> tmp = ContiguousSet.create(gap, DiscreteDomain.longs());
+            long gapStart = tmp.first();
+            long gapEnd = LongMath.saturatedAdd(tmp.last(), 1);
+
+            if (bestOffset >= 0) {
+                // The gap's end must be within the worker's range
+                if (gapEnd < bestMaxEnd) {
+                    // And the distance to the so far bestCurEnd must not exceed maxRedundantSize
+                    long d = gapStart - bestCurEnd;
+
+                    if (d <= maxRedundantSize) {
+                        bestCurEnd = gapEnd;
+                    } else {
+                        result.put(bestOffset, bestCurEnd);
+                        bestOffset = -1;
+                    }
+                } else {
+                    // The gap is outside of the worker range
+                    // 2 Options:
+                    // - Find another worker (with a lower offset) that covers the current range
+                    // - Finalize the current bestWorker assignment and find or create a new worker
+                    Long reallocateOffset = streamEnclosingRanges(offsetToEndpoint, bestOffset, gapEnd)
+                        .findFirst().orElse(null);
+
+                    if (reallocateOffset == null) {
+                        // Finalize the current best match (if there is one)
+                        if (bestOffset >= 0) {
+                            result.put(bestOffset, bestCurEnd);
+                        }
+
+                        bestOffset = -1;
+
+                    } else {
+                        bestOffset = reallocateOffset;
+                        bestMaxEnd = offsetToEndpoint.get(reallocateOffset);
+                        bestCurEnd = gapEnd;
+                    }
+
+                }
+            }
+
+            // Try to assign the gap to the current best worker
+            if (bestOffset < 0) {
+                Long candOffset = streamEnclosingRanges(offsetToEndpoint, gapStart, gapEnd)
+                        .findFirst().orElse(null);
+
+                if (candOffset != null) {
+                    bestOffset = candOffset;
+                    bestCurEnd = gapEnd;
+                    bestMaxEnd = offsetToEndpoint.get(candOffset);
+
+                } else {
+                    // Allocate a new worker based on the current gap
+                    // int maxRequestLength = 0;
+                    bestOffset = gapStart;
+                    bestCurEnd = gapEnd;
+                    bestMaxEnd = LongMath.saturatedAdd(gapStart, maxSupplierRange); // -1; //gapStart + maxRequestLength;
+                }
+            }
+        }
+
+
+        if (bestOffset >= 0) {
+            result.put(bestOffset, bestCurEnd);
+        }
+
+        return result;
+    }
+
+
+    /**
+     * Streams all enclosing ranges (if any) ordered by decreasing offset
+     * based on offsetToKey
+     *
+     * @param <K>
+     * @param offsetToKey
+     * @param keyToMaxOffset
+     * @param start
+     * @param end
+     * @return
+     */
+    public static Stream<Long> streamEnclosingRanges(
+            NavigableMap<Long, Long> offsetToEndpoint,
+            long start,
+            long end) {
+
+        NavigableMap<Long, Long> headMap = offsetToEndpoint
+                .headMap(start, true)
+                // .tailMap(end - maxDistance, true)
+                .descendingMap();
+
+
+        Stream<Long> result = headMap.entrySet().stream()
+            .filter(offsetAndEndpoint -> {
+                long supplyEnd = offsetAndEndpoint.getValue();
+
+                boolean isEnclosing = supplyEnd > end;
+                return isEnclosing;
+            })
+            .map(Entry::getKey);
+
+        return result;
     }
 
 }

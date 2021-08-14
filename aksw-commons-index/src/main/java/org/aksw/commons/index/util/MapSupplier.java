@@ -32,16 +32,16 @@ public interface MapSupplier {
     <K, V> Map<K, V> get();
 
 
-    public static MapSupplier forTreeMap(Comparator<?> cmp) {
-        return new MapSupplierTreeMap(cmp);
+    public static <T> MapSupplier forTreeMap(Comparator<T> cmp) {
+        return new MapSupplierTreeMap<T>(cmp);
     }
 
-    public static class MapSupplierTreeMap
+    public static class MapSupplierTreeMap<T>
         implements MapSupplier
     {
-        protected Comparator<?> cmp;
+        protected Comparator<T> cmp;
 
-        public MapSupplierTreeMap(Comparator<?> cmp) {
+        public MapSupplierTreeMap(Comparator<T> cmp) {
             super();
             this.cmp = cmp;
         }

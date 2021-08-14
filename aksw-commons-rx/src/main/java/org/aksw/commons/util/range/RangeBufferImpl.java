@@ -189,21 +189,27 @@ public class RangeBufferImpl<T>
         try {
             // Prevented overwrites do not increment the generation
             boolean preventOverwriteOfLoadedRanges = true;
+            Range<Integer> writeRange = Range.closedOpen(pageOffset, IntMath.saturatedAdd(pageOffset, arrLength))
+                    .canonical(DiscreteDomain.integers());
             if (preventOverwriteOfLoadedRanges) {
-                Range<Integer> writeRange = Range.closedOpen(arrOffset, IntMath.saturatedAdd(arrOffset, arrLength));
                 if (loadedRanges.encloses(writeRange)) {
                     return;
                 }
             }
 
             System.arraycopy(arrayWithItemsOfTypeT, arrOffset, buffer, pageOffset, arrLength);
-            loadedRanges.add(
-                    Range.closedOpen(pageOffset, pageOffset + arrLength).canonical(DiscreteDomain.integers()));
+            loadedRanges.add(writeRange);
 
             ++generation;
             logger.debug("PUT " + pageOffset + ":" + arrLength + ": " + loadedRanges + " Generation is now " + generation);
-        } finally {
+
+            // Upon reaching the capacity then set known size to capacity
+//            if (arrOffset + arrLength >= buffer.length) {
+//            	knownSize = buffer.length;
+//            }
+
             hasData.signalAll();
+        } finally {
             writeLock.unlock();
         }
     }
@@ -222,8 +228,8 @@ public class RangeBufferImpl<T>
             try {
                 this.knownSize = size;
                 ++this.generation;
-            } finally {
                 hasData.signalAll();
+            } finally {
                 writeLock.unlock();
             }
         } else {
