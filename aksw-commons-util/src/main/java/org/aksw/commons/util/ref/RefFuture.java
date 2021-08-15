@@ -2,6 +2,7 @@ package org.aksw.commons.util.ref;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 public interface RefFuture<T>
     extends RefDelegate<CompletableFuture<T>, Ref<CompletableFuture<T>>>
@@ -14,6 +15,19 @@ public interface RefFuture<T>
     RefFuture<T> acquire();
 
 
+    /** Create a sub-reference to a transformed value of the CompletableFuture */
+    default <U> RefFuture<U> acquireTransformed(Function<? super T, ? extends U> transform) {
+        RefFuture<T> acquired = this.acquire();
+        CompletableFuture<U> future = acquired.get().thenApply(transform);
+        RefFuture<U> result = new RefFutureImpl<>(RefImpl.create(future, getSynchronizer(), acquired::close));
+        return result;
+    }
+
+    default <U> RefFuture<U> acquireTransformedAndCloseThis(Function<? super T, ? extends U> transform) {
+        RefFuture<U> result = acquireTransformed(transform);
+        this.close();
+        return result;
+    }
 
 /*
 // Not sure whether viewing RefFuture<T> as CompletableFuture<Ref<T>> is really needed.

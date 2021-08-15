@@ -8,7 +8,9 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -21,6 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.aksw.commons.kyro.guava.RangeMapSerializer;
 import org.aksw.commons.kyro.guava.RangeSetSerializer;
@@ -116,16 +119,19 @@ public class SmartRangeCacheImpl<T>
 
 
 
-        this.pageCache = LocalOrderAsyncTest.syncedRangeBuffer(maxCachedPageCount, syncDelayDuration, objStore, () -> new RangeBufferImpl<T>(pageSize));
+        this.pageCache =
+                AsyncClaimingCacheWithTransformValue.create(
+                        syncedRangeBuffer(maxCachedPageCount, syncDelayDuration, objStore, () -> new RangeBufferImpl<T>(pageSize)),
+                        Entry::getKey);
 
 
-        this.countCache = AsyncClaimingCache.create(
+        this.countCache = AsyncClaimingCacheImpl.create(
                 syncDelayDuration,
 
                     // begin of level3 setup
                    Caffeine.newBuilder()
-                   .scheduler(Scheduler.systemScheduler())
-                   .maximumSize(1),
+                   //.scheduler(Scheduler.systemScheduler())
+                   .maximumSize(100),
                    key -> {
                        List<String> internalKey = Arrays.asList(key);
                        Range<Long> value;
@@ -463,4 +469,95 @@ public class SmartRangeCacheImpl<T>
     public PageRange<T> newPageRange() {
         return new PageRange<>(this);
     }
+
+
+
+    public static <V> AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> syncedRangeBuffer(
+            long maximumSize,
+            Duration syncDelayDuration,
+            KeyObjectStore store,
+            Supplier<RangeBuffer<V>> newValue) {
+
+        // A map that upon loading a page takes a snapshot of its generation attribute
+        // and treats it as the version
+        // A page is dirty if its generation differs from its version
+        // Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
+
+        AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> result = AsyncClaimingCacheImpl.create(
+                syncDelayDuration,
+
+                // begin of level3 setup
+                   Caffeine.newBuilder()
+                   // .scheduler(Scheduler.systemScheduler())
+                   .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
+                   key -> {
+                       List<String> internalKey = Arrays.asList(Long.toString(key));
+                       RangeBuffer<V> value;
+                       try {
+                           value = store.computeIfAbsent(internalKey, newValue::get);
+                       } catch (Exception e) {
+                           // logger.warn("Error", e);
+                           throw new RuntimeException(e);
+                          //  value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                       }
+
+//                       RangeBuffer<V> r = value;
+                       long generation = value.getGeneration();
+                       Entry<RangeBuffer<V>, Long> r = new SimpleEntry<>(value, generation);
+
+                       // keyToVersion.put(key, generation);
+
+    //                   Ref<V> r = RefImpl.create(v, null, () -> {
+    //                       // Sync the page upon closing it
+    //                       store.put(internalKey, v);
+    //                       logger.info("Synced " + internalKey);
+    //                       System.out.println("Synced" + internalKey);
+    //                   });
+    //
+                       return r;
+
+                   },
+                   (key, value, cause) -> {
+                       // keyToVersion.remove(key);
+                   },
+                // end of level3 setup
+
+                (key, value, cause) -> {
+                    RangeBuffer<V> buffer = value.getKey();
+                    Long version = value.getValue();
+
+                    List<String> internalKey = Arrays.asList(Long.toString(key));
+
+                    Lock readLock = buffer.getReadWriteLock().readLock();
+                    readLock.lock();
+
+                    // Long version = keyToVersion.get(key);
+
+                    if (version == null) {
+                        logger.error("Missing version for [" + key + "]");
+                    }
+
+                    long generation = buffer.getGeneration();
+
+                    try {
+                        if (generation != version) {
+                            logger.info("Syncing dirty buffer " + internalKey);
+                            // keyToVersion.put(key, generation);
+                            store.put(internalKey, value);
+                            value.setValue(version);
+                        } else {
+                            logger.info("Syncing not needed because of clean buffer " + internalKey);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
+            );
+
+        return result;
+    }
+
+
 }

@@ -1,16 +1,12 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
-import java.util.concurrent.locks.Lock;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -23,9 +19,6 @@ import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -65,82 +58,6 @@ public class LocalOrderAsyncTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalOrderAsyncTest.class);
 
-    public static <V> AsyncClaimingCache<Long, RangeBuffer<V>> syncedRangeBuffer(
-            long maximumSize,
-            Duration syncDelayDuration,
-            KeyObjectStore store,
-            Supplier<RangeBuffer<V>> newValue) {
-
-        Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
-
-        AsyncClaimingCache<Long, RangeBuffer<V>> result = AsyncClaimingCache.create(
-                syncDelayDuration,
-
-                // begin of level3 setup
-                   Caffeine.newBuilder()
-                   .scheduler(Scheduler.systemScheduler())
-                   .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
-                   key -> {
-                       List<String> internalKey = Arrays.asList(Long.toString(key));
-                       RangeBuffer<V> value;
-                       try {
-                           value = store.computeIfAbsent(internalKey, newValue::get);
-                       } catch (Exception e) {
-                           // logger.warn("Error", e);
-                           throw new RuntimeException(e);
-                          //  value = newValue.get(); //new RangeBufferImpl<V>(1024);
-                       }
-
-                       RangeBuffer<V> r = value;
-                       long generation = value.getGeneration();
-
-                       keyToVersion.put(key, generation);
-
-    //                   Ref<V> r = RefImpl.create(v, null, () -> {
-    //                       // Sync the page upon closing it
-    //                       store.put(internalKey, v);
-    //                       logger.info("Synced " + internalKey);
-    //                       System.out.println("Synced" + internalKey);
-    //                   });
-    //
-                       return r;
-
-                   },
-                   (key, value, cause) -> {
-                       keyToVersion.remove(key);
-                   },
-                // end of level3 setup
-
-                (key, value, cause) -> {
-                    List<String> internalKey = Arrays.asList(Long.toString(key));
-
-                    Lock readLock = value.getReadWriteLock().readLock();
-                    readLock.lock();
-
-                    long version = keyToVersion.get(key);
-
-                    long generation = value.getGeneration();
-
-                    try {
-                        if (generation != version) {
-                            logger.info("Syncing dirty buffer " + internalKey);
-                            keyToVersion.put(key, generation);
-                            store.put(internalKey, value);
-                        } else {
-                            logger.info("Syncing not needed because of clean buffer " + internalKey);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        readLock.unlock();
-                    }
-                }
-            );
-
-        return result;
-    }
-
-
 
     public static void main1() throws Exception {
         KeyObjectStore objStore = SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test/"), null);
@@ -158,7 +75,13 @@ public class LocalOrderAsyncTest {
 
 
 
-        AsyncClaimingCache<Long, RangeBuffer<String>> cache = syncedRangeBuffer(10, Duration.ofSeconds(1), objStore, () -> new RangeBufferImpl<String>(1024));
+        AsyncClaimingCache<Long, RangeBuffer<String>> cache = AsyncClaimingCacheWithTransformValue.create(
+                SmartRangeCacheImpl.syncedRangeBuffer(
+                    10,
+                    Duration.ofSeconds(1),
+                    objStore,
+                    () -> new RangeBufferImpl<String>(1024)),
+                Entry::getKey);
 
         // troll the system: Acquire a page which we want to load in a moment
         // and cancel its request

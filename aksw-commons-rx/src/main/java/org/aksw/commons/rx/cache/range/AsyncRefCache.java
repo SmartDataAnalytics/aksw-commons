@@ -36,7 +36,7 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
  * @param <V>
  */
 public class AsyncRefCache<K, V> {
-    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCache.class);
+    private static final Logger logger = LoggerFactory.getLogger(AsyncRefCache.class);
 
     /** The cache with the primary loader */
     protected AsyncLoadingCache<K, V> master;
@@ -69,12 +69,12 @@ public class AsyncRefCache<K, V> {
 
         this.master = cacheBuilder
             .evictionListener((K key, V value, RemovalCause cause) -> {
-                logger.debug("AsyncRefCache: Evicting " + key);
+                logger.debug("Evicting " + key);
                 removalListener.onRemoval(key, value, cause);
                 slave.remove(key);
             })
             .buildAsync((K key) -> {
-                logger.debug("AsyncRefCache: Loading: " + key);
+                logger.debug("Loading: " + key);
                 V value = cacheLoader.apply(key);
                 return value;
             });

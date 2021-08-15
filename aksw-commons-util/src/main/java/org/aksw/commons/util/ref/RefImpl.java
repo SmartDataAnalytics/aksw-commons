@@ -45,7 +45,7 @@ public class RefImpl<T>
     protected Object comment; // An attribute which can be used for debugging reference chains
     protected RefImpl<T> parent;
     protected boolean isReleased = false;
-    protected StackTraceElement[] aquisitionStackTrace;
+    protected StackTraceElement[] acquisitionStackTrace;
 
     //protected Map<Reference<T>, Object> childRefs = new IdentityHashMap<Reference<T>, Object>();
     protected Map<Ref<T>, Object> childRefs = new WeakHashMap<Ref<T>, Object>();
@@ -68,7 +68,7 @@ public class RefImpl<T>
 
         boolean traceAcquisitions = true;
         if(traceAcquisitions) {
-            this.aquisitionStackTrace = Thread.currentThread().getStackTrace();
+            this.acquisitionStackTrace = Thread.currentThread().getStackTrace();
         }
     }
 
@@ -210,16 +210,16 @@ public class RefImpl<T>
 
     @Override
     public StackTraceElement[] getAquisitionStackTrace() {
-        return aquisitionStackTrace;
+        return acquisitionStackTrace;
     }
 
     @Override
     public String toString() {
         String result = Stream.concat(
                 Stream.of("Reference [" + comment + "] aquired at "),
-                aquisitionStackTrace == null
+                acquisitionStackTrace == null
                     ? Stream.of("unknown location")
-                    : Arrays.asList(aquisitionStackTrace).stream().map(str -> "  " + Objects.toString(str)))
+                    : Arrays.asList(acquisitionStackTrace).stream().map(str -> "  " + Objects.toString(str)))
         .collect(Collectors.joining("\n"));
 
         return result;

@@ -18,7 +18,7 @@ public class AsyncClaimingCacheTests {
 
 
     public AsyncClaimingCache<String, String> createTestCache() {
-        AsyncClaimingCache<String, String> result = AsyncClaimingCache.create(
+        AsyncClaimingCache<String, String> result = AsyncClaimingCacheImpl.create(
                 Duration.ofSeconds(1),
 
                 Caffeine.newBuilder()
