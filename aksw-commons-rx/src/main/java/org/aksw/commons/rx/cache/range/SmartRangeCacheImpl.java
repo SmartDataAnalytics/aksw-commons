@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.aksw.commons.kyro.guava.EntrySerializer;
 import org.aksw.commons.kyro.guava.RangeMapSerializer;
 import org.aksw.commons.kyro.guava.RangeSetSerializer;
 import org.aksw.commons.rx.range.RangedSupplier;
@@ -422,9 +423,12 @@ public class SmartRangeCacheImpl<T>
                 Serializer<?> javaSerializer = new JavaSerializer();
                 Serializer<?> rangeSetSerializer = new RangeSetSerializer();
                 Serializer<?> rangeMapSerializer = new RangeMapSerializer();
+                Serializer<?> entrySerializer = new EntrySerializer();
+
                 kryo.register(TreeRangeSet.class, rangeSetSerializer);
                 kryo.register(TreeRangeMap.class, rangeMapSerializer);
                 kryo.register(Range.class, javaSerializer);
+                kryo.register(SimpleEntry.class, entrySerializer);
 
                 if (customRegistrator != null) {
                     customRegistrator.accept(kryo);
@@ -543,7 +547,7 @@ public class SmartRangeCacheImpl<T>
                         if (generation != version) {
                             logger.info("Syncing dirty buffer " + internalKey);
                             // keyToVersion.put(key, generation);
-                            store.put(internalKey, value);
+                            store.put(internalKey, buffer);
                             value.setValue(version);
                         } else {
                             logger.info("Syncing not needed because of clean buffer " + internalKey);

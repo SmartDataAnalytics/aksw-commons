@@ -2,6 +2,8 @@ package org.aksw.commons.store.object.key.impl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
@@ -33,6 +35,13 @@ public class KeyObjectStoreWithKeyTransform
     public <T> T get(Iterable<String> keySegments) throws IOException, ClassNotFoundException {
         Iterable<String> effectiveKey = keyTransformer.apply(keySegments);
         return super.get(effectiveKey);
+    }
+
+    @Override
+    public <T> T computeIfAbsent(Iterable<String> keySegments, Callable<T> initializer)
+            throws IOException, ClassNotFoundException, ExecutionException {
+        Iterable<String> effectiveKey = keyTransformer.apply(keySegments);
+        return super.computeIfAbsent(effectiveKey, initializer);
     }
 
     @Override
