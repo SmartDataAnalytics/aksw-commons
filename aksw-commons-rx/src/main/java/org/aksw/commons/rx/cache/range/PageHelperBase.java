@@ -1,11 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.Deque;
-
+import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 
 
 /**
@@ -24,6 +24,7 @@ public abstract class PageHelperBase<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
+    protected Slice<T> slice;
     protected PageRange<T> pageRange;
     protected boolean isAborted = false;
 
@@ -32,9 +33,10 @@ public abstract class PageHelperBase<T>
     protected long nextCheckpointOffset;
 
 
-    public PageHelperBase(PageRange<T> pageRange, long nextCheckpointOffset) {
+    public PageHelperBase(Slice<T> slice, long nextCheckpointOffset) {
         super();
-        this.pageRange = pageRange;
+        this.slice = slice;
+        this.pageRange = slice.newPageRange();
         this.nextCheckpointOffset = nextCheckpointOffset;
     }
 
@@ -54,26 +56,41 @@ public abstract class PageHelperBase<T>
      * scheduling requests to the backend
      *
      */
-    public void checkpoint(long n) throws Exception {
+    protected void checkpoint(long n) {
+      long start = nextCheckpointOffset;
+      long end = start + n;
 
-        long start = nextCheckpointOffset;
-        long end = start + n;
+        Range<Long> claimAheadRange = Range.closedOpen(start, end);
 
-        pageRange.claimByOffsetRange(start, end);
-                // Lock all pages
-        try {
-            pageRange.lock();
+        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+            SliceMetaData metaData = ref.await();
 
-            Deque<Range<Long>> gaps = pageRange.getGaps();
+            RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
             processGaps(gaps, start, end);
-        } finally {
-            pageRange.unlock();
 
-            nextCheckpointOffset += n;
+            nextCheckpointOffset = end;
         }
     }
+//    public void checkpoint(long n) throws Exception {
+//
+//        long start = nextCheckpointOffset;
+//        long end = start + n;
+//
+//        pageRange.claimByOffsetRange(start, end);
+//                // Lock all pages
+//        try {
+//            pageRange.lock();
+//
+//            Deque<Range<Long>> gaps = pageRange.getGaps();
+//            processGaps(gaps, start, end);
+//        } finally {
+//            pageRange.unlock();
+//
+//            nextCheckpointOffset += n;
+//        }
+//    }
 
-    protected abstract void processGaps(Deque<Range<Long>> gaps, long start, long end);
+    protected abstract void processGaps(RangeSet<Long> gaps, long start, long end);
 
     protected void closeActual() {
         pageRange.releaseAll();

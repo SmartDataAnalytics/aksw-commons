@@ -31,14 +31,14 @@ public class PageHelperForConsumer<T>
     protected SmartRangeCacheImpl<T> cache;
 
     public PageHelperForConsumer(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
-        super(cache.getSlice().newPageRange(), nextCheckpointOffset);
+        super(cache.getSlice(), nextCheckpointOffset);
         this.offsetSupplier = offsetSupplier;
         this.cache = cache;
     }
 
 
     @Override
-    public void checkpoint(long n) throws Exception {
+    public void checkpoint(long n) {
         clearPassedSlots();
         super.checkpoint(n);
     }
@@ -101,9 +101,9 @@ public class PageHelperForConsumer<T>
         }
     }
 
-    protected void processGaps(Deque<Range<Long>> gaps, long start, long end) {
-        RangeSet<Long> tmp = TreeRangeSet.create(gaps);
-        scheduleWorkerToGaps(tmp);
+    @Override
+    protected void processGaps(RangeSet<Long> gaps, long start, long end) {
+        scheduleWorkerToGaps(gaps);
     }
 
     @Override
