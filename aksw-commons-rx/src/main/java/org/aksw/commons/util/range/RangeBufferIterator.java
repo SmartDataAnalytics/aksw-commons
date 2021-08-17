@@ -4,10 +4,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
+import org.aksw.commons.collections.IteratorUtils;
+
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.Table.Cell;
 
 /**
  * An iterator over a range buffer that blocks if items are not loaded.
@@ -19,8 +22,8 @@ import com.google.common.collect.RangeSet;
 public class RangeBufferIterator<T>
     extends AbstractIterator<T>
 {
-    protected RangeBufferImpl<T> rangeBuffer;
-    protected int currentIndex;
+    protected RangeBuffer<T> rangeBuffer;
+    protected long currentIndex;
 
     /** Iterator over a range in the page starting at currentOffset */
     protected Iterator<T> rangeIterator = null;
@@ -28,7 +31,7 @@ public class RangeBufferIterator<T>
     /** Number of items read from rangeIterator */
     protected int readsFromCurrentRange = 0;
 
-    public RangeBufferIterator(RangeBufferImpl<T> page, int currentIndex) {
+    public RangeBufferIterator(RangeBuffer<T> page, long currentIndex) {
         super();
         this.rangeBuffer = page;
         this.currentIndex = currentIndex;
@@ -47,15 +50,15 @@ public class RangeBufferIterator<T>
             Lock readLock = rangeBuffer.getReadWriteLock().readLock();
             readLock.lock();
 
-            RangeSet<Integer> loadedRanges = rangeBuffer.getLoadedRanges();
-            RangeMap<Integer, List<Throwable>> failedRanges = rangeBuffer.getFailedRanges();
+            RangeSet<Long> loadedRanges = rangeBuffer.getLoadedRanges();
+            RangeMap<Long, List<Throwable>> failedRanges = rangeBuffer.getFailedRanges();
 
-            Range<Integer> entry = null;
+            Range<Long> entry = null;
             List<Throwable> failures = null;
 
             try {
                 // If the index is outside of the known size then abort
-                int knownSize = rangeBuffer.getKnownSize();
+                long knownSize = rangeBuffer.getKnownSize();
                 if (currentIndex >= rangeBuffer.getCapacity() || (knownSize >= 0 && currentIndex >= knownSize)) {
                     return endOfData();
                 } else {
@@ -98,9 +101,17 @@ public class RangeBufferIterator<T>
             if (entry == null) {
                 return endOfData();
             } else {
-                Range<Integer> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();
-                rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
-                        .iterator();
+                Range<Long> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();
+
+                long start = range.lowerEndpoint();
+                long end = range.upperEndpoint();
+                long length = end - start;
+                rangeIterator = IteratorUtils.limit(rangeBuffer.blockingIterator(start), length);
+
+
+
+//                rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
+//                        .iterator();
             }
             break;
         }

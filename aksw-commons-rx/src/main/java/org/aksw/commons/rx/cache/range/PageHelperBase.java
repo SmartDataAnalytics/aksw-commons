@@ -24,8 +24,8 @@ public abstract class PageHelperBase<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
-     protected PageRange<T> pageRange;
-     protected boolean isAborted = false;
+    protected PageRange<T> pageRange;
+    protected boolean isAborted = false;
 
 
     /** At a checkpoint the data fetching tasks for the next blocks are scheduled */

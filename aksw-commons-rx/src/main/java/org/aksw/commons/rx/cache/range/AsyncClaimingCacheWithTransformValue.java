@@ -23,7 +23,7 @@ public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
     }
 
     @Override
-    public RefFuture<V2> claim(K key) throws ExecutionException {
+    public RefFuture<V2> claim(K key) { // throws ExecutionException {
         RefFuture<V1> ref = delegate.claim(key);
         RefFuture<V2> result = ref.acquireTransformedAndCloseThis(transform);
         return result;

@@ -13,7 +13,7 @@ public interface AsyncClaimingCache<K, V> {
      * @return
      * @throws ExecutionException
      */
-    RefFuture<V> claim(K key) throws ExecutionException;
+    RefFuture<V> claim(K key); // throws ExecutionException;
 
     /** Cannot raise an ExecutionException because it does not trigger loading */
     RefFuture<V> claimIfPresent(K key);

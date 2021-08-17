@@ -15,8 +15,6 @@ import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -33,7 +31,7 @@ public class PageHelperForConsumer<T>
     protected SmartRangeCacheImpl<T> cache;
 
     public PageHelperForConsumer(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
-        super(cache.newPageRange(), nextCheckpointOffset);
+        super(cache.getSlice().newPageRange(), nextCheckpointOffset);
         this.offsetSupplier = offsetSupplier;
         this.cache = cache;
     }
@@ -57,76 +55,6 @@ public class PageHelperForConsumer<T>
                 it.remove();
             }
         }
-    }
-
-
-//    protected void createWorkersForGaps(Deque<Range<Long>> gaps, long start, long end) {
-//        while (!gaps.isEmpty()) {
-//
-//            Range<Long> gap = gaps.pollFirst();
-//
-//            // Check whether the gap could be added to any of the currently claimed slots
-//            // We need a slot's executor in order to query the executors max request range
-//
-//            long coveredOffset = start;
-//
-//            // The covered offset is the maximum of the slots
-//            for (Slot<Long> slot : workerToSlot.values()) {
-//                coveredOffset = Math.max(coveredOffset, slot.getSupplier().get());
-//            }
-//
-//            for (Entry<RangeRequestWorker<T>, Slot<Long>> e : workerToSlot.entrySet()) {
-//                RangeRequestWorker<T> worker = e.getKey();
-//                Slot<Long> slot = e.getValue();
-//
-//                long workerStartOffset = worker.getCurrentOffset();
-//
-//                // The worker must start before-or-at the gap
-//                if (workerStartOffset > coveredOffset) {
-//                    continue;
-//                }
-//
-//
-//                long workerEndOffset = worker.getEndOffset();
-//                long maxPossibleEndpoint = Math.min(workerEndOffset, end);
-//
-//
-//                // If it is not possible to cover the whole gap, then put back the remaining gap for
-//                // further analysis
-//                Range<Long> remainingGap = Range.closedOpen(maxPossibleEndpoint, gap.upperEndpoint());
-//                if (!remainingGap.isEmpty()) {
-//                    gaps.addFirst(remainingGap);
-//                }
-//
-//                if (maxPossibleEndpoint > coveredOffset) {
-//                    coveredOffset = maxPossibleEndpoint;
-//                    Long oldValue = slot.getSupplier().get();
-//                    slot.set(maxPossibleEndpoint);
-//
-//                    logger.debug("Updated slot " + oldValue + " -> " + slot.getSupplier().get());
-//
-//                }
-//            }
-//
-//            if (coveredOffset == start) {
-//                Entry<RangeRequestWorker<T>, Slot<Long>> workerAndSlot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
-//                workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
-//
-//                // Put the gap back because maybe it is too large to be covered by a single executor
-//                // and thus needs splitting
-//                gaps.addFirst(gap);
-//                // workerToSlot.entrySet().add(workerAndSlot);
-//            }
-//        }
-//    }
-
-
-    public static boolean canMerge(Range<Long> a, Range<Long> b, long maxGapSize) {
-        Range<Long> gap = a.gap(b);
-        long gapSize = ContiguousSet.create(gap, DiscreteDomain.longs()).size();
-
-        boolean result = gapSize <= maxGapSize;
-        return result;
     }
 
 
@@ -176,15 +104,6 @@ public class PageHelperForConsumer<T>
     protected void processGaps(Deque<Range<Long>> gaps, long start, long end) {
         RangeSet<Long> tmp = TreeRangeSet.create(gaps);
         scheduleWorkerToGaps(tmp);
-
-//        // candExecutors.addAll(cache.getExecutors());
-//
-//        boolean optimizeGaps = true;
-//        Deque<Range<Long>> effectiveGaps = optimizeGaps
-//                ? optimizeGaps(gaps, start, end)
-//                : gaps;
-//
-//        createWorkersForGaps(effectiveGaps, start, end);
     }
 
     @Override
@@ -196,3 +115,84 @@ public class PageHelperForConsumer<T>
         workerToSlot.clear();
     }
 }
+
+
+
+
+
+//protected void createWorkersForGaps(Deque<Range<Long>> gaps, long start, long end) {
+//  while (!gaps.isEmpty()) {
+//
+//      Range<Long> gap = gaps.pollFirst();
+//
+//      // Check whether the gap could be added to any of the currently claimed slots
+//      // We need a slot's executor in order to query the executors max request range
+//
+//      long coveredOffset = start;
+//
+//      // The covered offset is the maximum of the slots
+//      for (Slot<Long> slot : workerToSlot.values()) {
+//          coveredOffset = Math.max(coveredOffset, slot.getSupplier().get());
+//      }
+//
+//      for (Entry<RangeRequestWorker<T>, Slot<Long>> e : workerToSlot.entrySet()) {
+//          RangeRequestWorker<T> worker = e.getKey();
+//          Slot<Long> slot = e.getValue();
+//
+//          long workerStartOffset = worker.getCurrentOffset();
+//
+//          // The worker must start before-or-at the gap
+//          if (workerStartOffset > coveredOffset) {
+//              continue;
+//          }
+//
+//
+//          long workerEndOffset = worker.getEndOffset();
+//          long maxPossibleEndpoint = Math.min(workerEndOffset, end);
+//
+//
+//          // If it is not possible to cover the whole gap, then put back the remaining gap for
+//          // further analysis
+//          Range<Long> remainingGap = Range.closedOpen(maxPossibleEndpoint, gap.upperEndpoint());
+//          if (!remainingGap.isEmpty()) {
+//              gaps.addFirst(remainingGap);
+//          }
+//
+//          if (maxPossibleEndpoint > coveredOffset) {
+//              coveredOffset = maxPossibleEndpoint;
+//              Long oldValue = slot.getSupplier().get();
+//              slot.set(maxPossibleEndpoint);
+//
+//              logger.debug("Updated slot " + oldValue + " -> " + slot.getSupplier().get());
+//
+//          }
+//      }
+//
+//      if (coveredOffset == start) {
+//          Entry<RangeRequestWorker<T>, Slot<Long>> workerAndSlot = cache.newExecutor(gap.lowerEndpoint(), gap.upperEndpoint() - gap.lowerEndpoint());
+//          workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
+//
+//          // Put the gap back because maybe it is too large to be covered by a single executor
+//          // and thus needs splitting
+//          gaps.addFirst(gap);
+//          // workerToSlot.entrySet().add(workerAndSlot);
+//      }
+//  }
+//}
+
+//public static boolean canMerge(Range<Long> a, Range<Long> b, long maxGapSize) {
+//    Range<Long> gap = a.gap(b);
+//    long gapSize = ContiguousSet.create(gap, DiscreteDomain.longs()).size();
+//
+//    boolean result = gapSize <= maxGapSize;
+//    return result;
+//}
+
+//// candExecutors.addAll(cache.getExecutors());
+//
+//boolean optimizeGaps = true;
+//Deque<Range<Long>> effectiveGaps = optimizeGaps
+//      ? optimizeGaps(gaps, start, end)
+//      : gaps;
+//
+//createWorkersForGaps(effectiveGaps, start, end);

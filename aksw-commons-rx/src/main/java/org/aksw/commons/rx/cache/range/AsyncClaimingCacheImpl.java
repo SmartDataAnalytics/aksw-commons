@@ -252,7 +252,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
      * @throws ExecutionException
      */
     @Override
-	public RefFuture<V> claim(K key) throws ExecutionException {
+    public RefFuture<V> claim(K key) { // throws ExecutionException {
         Ref<RefFuture<V>> tmp = claimInternal(key);
         RefFuture<V> result = RefFutureImpl.wrap3(tmp);
         return result;
@@ -303,7 +303,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
     /** Cannot raise an ExecutionException because it does not trigger loading */
     @Override
-	public RefFuture<V> claimIfPresent(K key) {
+    public RefFuture<V> claimIfPresent(K key) {
         RefFuture<V> result = null;
         synchronized (level1) {
             if (level1.containsKey(key) || level2.getIfPresent(key) != null || level3.getIfPresent(key) != null) {
@@ -315,7 +315,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
     }
 
     @Override
-	public void invalidateAll() {
+    public void invalidateAll() {
         level3.invalidateAll();
         // level3.synchronous().invalidateAll();
     }

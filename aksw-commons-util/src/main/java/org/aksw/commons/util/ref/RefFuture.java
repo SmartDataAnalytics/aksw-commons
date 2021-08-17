@@ -7,8 +7,15 @@ import java.util.function.Function;
 public interface RefFuture<T>
     extends RefDelegate<CompletableFuture<T>, Ref<CompletableFuture<T>>>
 {
-    default T await() throws InterruptedException, ExecutionException {
-        return get().get();
+    default T await() {
+        CompletableFuture<T> cf = get();
+        T result;
+        try {
+            result = cf.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
     @Override

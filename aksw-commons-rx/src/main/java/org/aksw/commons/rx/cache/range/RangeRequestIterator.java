@@ -92,25 +92,31 @@ public class RangeRequestIterator<T>
 
         if (requestRange.contains(currentOffset)) {
             if (currentPageIt == null || !currentPageIt.hasNext()) {
-                // long pageId = cache.getPageIdForOffset(currentOffset);
-                RangeBuffer<T> currentPage;
-                try {
-                    long pageId = cache.getPageIdForOffset(currentOffset);
-                    ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = pageHelper.getPageRange().getClaimedPages();
-                    RefFuture<RangeBuffer<T>> pageRefFuture = claimedPages.get(pageId);
 
-                    if (pageRefFuture == null) {
-                        System.err.println("DEBUG POINT");
-                    }
+                currentPageIt = new SliceWithPagesIterator<>(cache.getSlice(), currentIndex);
 
-                    currentPage = pageRefFuture.await();
-                    // currentPage = claimedPages.pollFirstEntry().getValue().await();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
+//                // long pageId = cache.getPageIdForOffset(currentOffset);
+//                RangeBuffer<T> currentPage;
+//                try {
+//                    long pageId = cache.getSlice().getPageIdForOffset(currentOffset);
+//                    ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> claimedPages = pageHelper.getPageRange().getClaimedPages();
+//                    RefFuture<RangeBuffer<T>> pageRefFuture = claimedPages.get(pageId);
+//
+//                    if (pageRefFuture == null) {
+//                        System.err.println("DEBUG POINT");
+//                    }
+//
+//                    currentPage = pageRefFuture.await();
+//                    // currentPage = claimedPages.pollFirstEntry().getValue().await();
+//                } catch (InterruptedException | ExecutionException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//                currentIndex = cache.getSlice().getIndexInPageForOffset(currentOffset);
+//                currentPageIt = currentPage.blockingIterator(currentIndex);
 
-                currentIndex = cache.getIndexInPageForOffset(currentOffset);
-                currentPageIt = currentPage.blockingIterator(currentIndex);
+                // ISSUE A blocking iterator obtained this way is backed by its own redundant PageRange instance
+//                currentPageIt = cache.getSlice().blockingIterator(currentOffset);
             }
 
             if (currentPageIt.hasNext()) {

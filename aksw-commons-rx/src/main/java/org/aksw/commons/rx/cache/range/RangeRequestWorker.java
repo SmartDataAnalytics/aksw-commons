@@ -1,15 +1,10 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.security.DomainCombiner;
 import java.time.Duration;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.function.LongFunction;
 import java.util.function.LongUnaryOperator;
 
-import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.sink.BulkingSink;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
@@ -23,6 +18,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.google.common.math.LongMath;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -63,7 +59,10 @@ public class RangeRequestWorker<T>
     /** Whether processing is aborted */
     protected boolean isClosed = false;
 
-    /** The pages claimed by this worker */
+    /** The data slice */
+    protected Slice<T> slice;
+
+    /** The pages claimed by this worker; obtained from slice */
     protected PageRange<T> pageRange;
 
     protected long currentPageId = -1;
@@ -136,7 +135,11 @@ public class RangeRequestWorker<T>
 
 
 
-    public RangeRequestWorker(SmartRangeCacheImpl<T> cacheSystem, long requestOffset, long requestLimit, long terminationDelay) {
+    public RangeRequestWorker(
+            SmartRangeCacheImpl<T> cacheSystem,
+            long requestOffset,
+            long requestLimit,
+            long terminationDelay) {
         super();
         this.cacheSystem = cacheSystem;
         this.requestOffset = requestOffset;
@@ -144,7 +147,7 @@ public class RangeRequestWorker<T>
         this.requestLimit = requestLimit;
         this.terminationDelay = terminationDelay;
 
-        this.pageRange = cacheSystem.newPageRange();
+        this.pageRange = cacheSystem.getSlice().newPageRange();
 
         this.offsetToMaxAllowedRefetchCount = offset -> 5000;
 
@@ -247,24 +250,43 @@ public class RangeRequestWorker<T>
         long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
         long effectiveLimit = Math.min(maxAllowedRefetchCount, requestLimit);
 
-        pageRange.claimByOffsetRange(offset, offset + effectiveLimit);
-        pageRange.lock();
-        try {
+        Range<Long> claimAheadRange = Range.closedOpen(offset, offset + effectiveLimit);
 
+        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+            SliceMetaData metaData = ref.await();
 
-            Deque<Range<Long>> gaps = pageRange.getGaps();
+            RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
             if (gaps.isEmpty()) {
                 // Nothing todo; not updating the limits will cause the worker to terminate
             } else {
-                Range<Long> lastGap = gaps.getLast();
+                Range<Long> lastGap = gaps.asDescendingSetOfRanges().iterator().next();
                 long last = LongMath.saturatedAdd(ContiguousSet.create(lastGap, DiscreteDomain.longs()).last(), 1);
 
                 nextCheckpointOffset = last;
             }
-
-        } finally {
-            pageRange.unlock();
         }
+
+//
+//
+//        pageRange.claimByOffsetRange(offset, offset + effectiveLimit);
+//        pageRange.lock();
+//
+//        try {
+//            // Deque<Range<Long>> gaps = pageRange.getGaps();
+//            slice.getMetaData().await().getGaps(getWorkingRange());
+//
+//            if (gaps.isEmpty()) {
+//                // Nothing todo; not updating the limits will cause the worker to terminate
+//            } else {
+//                Range<Long> lastGap = gaps.getLast();
+//                long last = LongMath.saturatedAdd(ContiguousSet.create(lastGap, DiscreteDomain.longs()).last(), 1);
+//
+//                nextCheckpointOffset = last;
+//            }
+//
+//        } finally {
+//            pageRange.unlock();
+//        }
 
     }
 
@@ -330,8 +352,13 @@ public class RangeRequestWorker<T>
                 }
 
                 // If there are no more slots or we have reached to known size then terminate
-                if (cacheSystem.knownSize > 0 && offset >= cacheSystem.knownSize) {
-                    break;
+                try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+                    SliceMetaData metaData = ref.await();
+
+                    long knownSize = metaData.getSize();
+                    if (knownSize >= 0 && offset >= knownSize) {
+                        break;
+                    }
                 }
 
                 if (waitMode) {
@@ -376,26 +403,24 @@ public class RangeRequestWorker<T>
      */
     public void process(int n) throws Exception {
 
-        long pageId = cacheSystem.getPageIdForOffset(offset);
-        int offsetInPage = cacheSystem.getIndexInPageForOffset(offset);
-
-        RefFuture<RangeBuffer<T>> currentPageRef = pageRange.getClaimedPages().get(pageId);
-
-        RangeBuffer<T> rangeBuffer = currentPageRef.await();
+//        long pageId = cacheSystem.getPageIdForOffset(offset);
+//        int offsetInPage = cacheSystem.getIndexInPageForOffset(offset);
+//
+//        RefFuture<RangeBuffer<T>> currentPageRef = pageRange.getClaimedPages().get(pageId);
+//
+//        RangeBuffer<T> rangeBuffer = currentPageRef.await();
 
         BulkingSink<T> sink = new BulkingSink<>(bulkSize,
-                (arr, start, len) -> rangeBuffer.putAll(offsetInPage, arr, start, len));
+                (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
 
 
-        int numItemsUntilPageEnd = rangeBuffer.getCapacity() - offsetInPage;
-        int numItemsUntilPageKnownSize = rangeBuffer.getKnownSize() >= 0 ? rangeBuffer.getKnownSize() : rangeBuffer.getCapacity();
+//        int numItemsUntilPageEnd = rangeBuffer.getCapacity() - offsetInPage;
+//        int numItemsUntilPageKnownSize = rangeBuffer.getKnownSize() >= 0 ? rangeBuffer.getKnownSize() : rangeBuffer.getCapacity();
         // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
-        long limit = Math.min(Math.min(Math.min(
+        long limit = Math.min(
                 reportingInterval,
-                numItemsUntilPageEnd),
-                numItemsUntilPageKnownSize),
                 numItemsUntilNextCheckpoint);
 
 //        if (limit < reportingInterval) {
@@ -411,8 +436,9 @@ public class RangeRequestWorker<T>
 
         // Explicitly acquire the write lock in order to update the
         // buffer and possibly the known size in one operation
-        Lock writeLock = rangeBuffer.getReadWriteLock().writeLock();
-        writeLock.lock();
+//        Lock writeLock = rangeBuffer.getReadWriteLock().writeLock();
+//        writeLock.lock();
+        pageRange.lock();
         try {
 
             int i = 0;
@@ -429,25 +455,36 @@ public class RangeRequestWorker<T>
             numItemsProcessed += i;
             offset += i;
 
-            // If there is no further item although the request range has not been covered
-            // then we have detected the end
 
-            // Note: We may have also just hit the backend's result-set-limit
-            // This is the case if there is
-            // (1) a known result-set-limit value on the smart cache
-            // (2) a known higher offset in the smart cache or
-            // (3) another request with the same offset that yield results
+            try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+                SliceMetaData metaData = ref.await();
 
-            // TODO set the known size if the page is full
-            if (!hasNext && numItemsProcessed < requestLimit) {
-                if (rangeBuffer.getKnownSize() < 0) {
-                    int knownPageSize = offsetInPage + i;
-                    rangeBuffer.setKnownSize(knownPageSize);
-                    cacheSystem.setKnownSize(offset);
+                metaData.setMinimumKnownSize(offset);
+
+
+                // If there is no further item although the request range has not been covered
+                // then we have detected the end
+
+                // Note: We may have also just hit the backend's result-set-limit
+                // This is the case if there is
+                // (1) a known result-set-limit value on the smart cache
+                // (2) a known higher offset in the smart cache or
+                // (3) another request with the same offset that yield results
+
+                // TODO set the known size if the page is full
+                if (!hasNext && numItemsProcessed < requestLimit) {
+                    if (metaData.getSize() < 0) {
+                        // long knownPageSize = offsetInPage + i;
+                        // rangeBuffer.setKnownSize(knownPageSize);
+                        metaData.setMinimumKnownSize(offset + 1);
+                        metaData.setMaximumKnownSize(offset + 1);
+                        // cacheSystem.setKnownSize(offset);
+                    }
                 }
             }
         } finally {
-            writeLock.unlock();
+            //writeLock.unlock();
+            pageRange.unlock();
         }
     }
 

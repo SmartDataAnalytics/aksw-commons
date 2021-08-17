@@ -8,20 +8,16 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,10 +28,9 @@ import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
 import org.aksw.commons.store.object.key.impl.KeyObjectStoreImpl;
 import org.aksw.commons.store.object.path.impl.ObjectFileStoreKyro;
+import org.aksw.commons.util.range.BufferWithGeneration;
 import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.range.RangeBufferImpl;
 import org.aksw.commons.util.range.RangeUtils;
-import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.aksw.jena_sparql_api.lookup.ListPaginator;
 import org.slf4j.Logger;
@@ -47,7 +42,6 @@ import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Scheduler;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.Sets;
@@ -68,14 +62,18 @@ public class SmartRangeCacheImpl<T>
     /** The supplier for actually retrieving data from the backend */
     protected ListPaginator<T> backend;
 
-    protected int pageSize;
-    protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
+    protected SliceWithPages<T> slice;
+
+    // protected int pageSize;
+    // protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
     /**
      * Reuse of the caching infrastructure for a single entry for the count.
      * The infrastructure enables dealing with concurrent requests and synchronization
      */
-    protected AsyncClaimingCache<String, Range<Long>> countCache;
+    // protected AsyncClaimingCache<String, Range<Long>> countCache;
+
+    // protected AsyncClaimingCache<String, SliceMetaData> metadataCache;
 
 
     // protected AsyncClaimingCache<String, Object> metadataCache;
@@ -97,9 +95,9 @@ public class SmartRangeCacheImpl<T>
 
     protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
-    protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock(true);
+    // protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock(true);
 
-    protected volatile long knownSize = -1;
+    // protected volatile long knownSize = -1;
 
 
 
@@ -113,97 +111,29 @@ public class SmartRangeCacheImpl<T>
             long terminationDelayInMs) {
         this.backend = backend;
 
-        this.pageSize = pageSize;
+        this.slice = new SliceWithPagesImpl<>(
+                objStore,
+                pageSize,
+                maxCachedPageCount,
+                syncDelayDuration);
+
         this.requestLimit = requestLimit;
         this.terminationDelayInMs = terminationDelayInMs;
-
-
-
-
-        this.pageCache =
-                AsyncClaimingCacheWithTransformValue.create(
-                        syncedRangeBuffer(maxCachedPageCount, syncDelayDuration, objStore, () -> new RangeBufferImpl<T>(pageSize)),
-                        Entry::getKey);
-
-
-        this.countCache = AsyncClaimingCacheImpl.create(
-                syncDelayDuration,
-
-                    // begin of level3 setup
-                   Caffeine.newBuilder()
-                   //.scheduler(Scheduler.systemScheduler())
-                   .maximumSize(100),
-                   key -> {
-                       List<String> internalKey = Arrays.asList(key);
-                       Range<Long> value;
-                       // Long value;
-                       try {
-                           value = objStore.get(internalKey);
-                       } catch (Exception e) {
-                           value = backend.fetchCount(null,null).blockingGet(); // newValue.get(); //new RangeBufferImpl<V>(1024);
-                           // CountInfo countInfo = RangeUtils.toCountInfo(range);
-                           // value = countInfo.getCount();
-                       }
-
-                       return value;
-                   },
-                   (key, value, cause) -> {},
-                   // end of level3 setup
-
-                (key, value, cause) -> {
-                    List<String> internalKey = Arrays.asList(key);
-
-                    try {
-                        objStore.put(internalKey, value);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    logger.info("Synced " + internalKey);
-                    System.out.println("Synced" + internalKey);
-                }
-            );
-
-
-        // this.metadataCache = Caffeine.newBuilder()
-
-
-//        new ClaimingCache<>(
-//                CacheBuilder.newBuilder()
-//                    .maximumSize(1000)
-//                    .build(new CacheLoader<Long, RangeBufferImpl<T>>() {
-//                        @Override
-//                        public RangeBufferImpl<T> load(Long key) throws Exception {
-//                            RangeBufferImpl<T> result = new RangeBufferImpl<T>(pageSize);
-//                            onPageLoad(key, result);
-//                            return result;
-//                        }
-//                    }),
-//                new TreeMap<>()
-//        );
     }
 
     public RangedSupplier<Long, T> getBackend() {
         return backend;
     }
 
-    public void setKnownSize(long knownSize) {
-        this.knownSize = knownSize;
+//    public void setKnownSize(long knownSize) {
+//        this.knownSize = knownSize;
+//    }
+
+    public SliceWithPages<T> getSlice() {
+        return slice;
     }
 
-    public int getPageSize() {
-        return pageSize;
-    }
 
-
-    /**
-     * Listener on page loads that auto-claims pages to RequestIterators
-     * Note that the listener is invoked before the entry can be registered at the cache -
-     * cache lookups must not be performed in the listener's flow of control.
-     */
-    protected void onPageLoad(Long key, RangeBufferImpl<T> page) {
-
-    }
 
 
     public Set<RangeRequestWorker<T>> getExecutors() {
@@ -212,40 +142,41 @@ public class SmartRangeCacheImpl<T>
 
 
     Lock getExecutorCreationReadLock() {
-        return executorCreationLock.readLock();
+        return slice.getWorkerCreationLock();
+        // return executorCreationLock.readLock();
     }
 
 
-    public long getPageIdForOffset(long offset) {
-        long result = offset / pageSize;
-        return result;
-    }
-
-    /**
-     * This method should only be called by producers.
-     *
-     * This method triggers loads of non-loaded pages which in turn
-     *
-     *
-     * */
-    public RefFuture<RangeBuffer<T>> getPageForOffset(long offset) {
-        long pageId = getPageIdForOffset(offset);
-        return getPageForPageId(pageId);
-    }
-
-    public RefFuture<RangeBuffer<T>> getPageForPageId(long pageId) {
-        RefFuture<RangeBuffer<T>> result;
-        try {
-            result = pageCache.claim(pageId);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
-    }
-
-    public int getIndexInPageForOffset(long offset) {
-        return (int)(offset % (long)pageSize);
-    }
+//    public long getPageIdForOffset(long offset) {
+//        long result = offset / pageSize;
+//        return result;
+//    }
+//
+//    /**
+//     * This method should only be called by producers.
+//     *
+//     * This method triggers loads of non-loaded pages which in turn
+//     *
+//     *
+//     * */
+//    public RefFuture<RangeBuffer<T>> getPageForOffset(long offset) {
+//        long pageId = getPageIdForOffset(offset);
+//        return getPageForPageId(pageId);
+//    }
+//
+//    public RefFuture<RangeBuffer<T>> getPageForPageId(long pageId) {
+//        RefFuture<RangeBuffer<T>> result;
+//        try {
+//            result = pageCache.claim(pageId);
+//        } catch (ExecutionException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return result;
+//    }
+//
+//    public int getIndexInPageForOffset(long offset) {
+//        return (int)(offset % (long)pageSize);
+//    }
 
 
 
@@ -379,26 +310,27 @@ public class SmartRangeCacheImpl<T>
 
     @Override
     public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
+        throw new UnsupportedOperationException("fixme: count method should update the slice metadata as needed");
 
-        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
-                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
-                (ee, e) -> {
-                    try {
-                        if (!ee.getValue()) {
-                            Range<Long> range = ee.getKey().await();
-                            e.onNext(range);
-                            ee.setValue(true);
-                        } else {
-                            e.onComplete();
-                        }
-                    } catch (Exception x) {
-                        e.onError(x);
-                    }
-                },
-                ee -> ee.getKey().close())
-                .singleOrError();
-
-        return result;
+//        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
+//                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
+//                (ee, e) -> {
+//                    try {
+//                        if (!ee.getValue()) {
+//                            Range<Long> range = ee.getKey().await();
+//                            e.onNext(range);
+//                            ee.setValue(true);
+//                        } else {
+//                            e.onComplete();
+//                        }
+//                    } catch (Exception x) {
+//                        e.onError(x);
+//                    }
+//                },
+//                ee -> ee.getKey().close())
+//                .singleOrError();
+//
+//        return result;
 
 
         // If the size is known then return it - otherwise send at most one query to the backend for counting
@@ -470,10 +402,9 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-    public PageRange<T> newPageRange() {
-        return new PageRange<>(this);
-    }
-
+//    public PageRange<T> newPageRange() {
+//        return new PageRangeImpl<>(this);
+//    }
 
 
     public static <V> AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> syncedRangeBuffer(
@@ -528,6 +459,94 @@ public class SmartRangeCacheImpl<T>
 
                 (key, value, cause) -> {
                     RangeBuffer<V> buffer = value.getKey();
+                    Long version = value.getValue();
+
+                    List<String> internalKey = Arrays.asList(Long.toString(key));
+
+                    Lock readLock = buffer.getReadWriteLock().readLock();
+                    readLock.lock();
+
+                    // Long version = keyToVersion.get(key);
+
+                    if (version == null) {
+                        logger.error("Missing version for [" + key + "]");
+                    }
+
+                    long generation = buffer.getGeneration();
+
+                    try {
+                        if (generation != version) {
+                            logger.info("Syncing dirty buffer " + internalKey);
+                            // keyToVersion.put(key, generation);
+                            store.put(internalKey, buffer);
+                            value.setValue(version);
+                        } else {
+                            logger.info("Syncing not needed because of clean buffer " + internalKey);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        readLock.unlock();
+                    }
+                }
+            );
+
+        return result;
+    }
+
+
+    public static <V> AsyncClaimingCache<Long, Entry<BufferWithGeneration<V>, Long>> syncedBuffer(
+            long maximumSize,
+            Duration syncDelayDuration,
+            KeyObjectStore store,
+            Supplier<BufferWithGeneration<V>> newValue) {
+
+        // A map that upon loading a page takes a snapshot of its generation attribute
+        // and treats it as the version
+        // A page is dirty if its generation differs from its version
+        // Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
+
+        AsyncClaimingCache<Long, Entry<BufferWithGeneration<V>, Long>> result = AsyncClaimingCacheImpl.create(
+                syncDelayDuration,
+
+                // begin of level3 setup
+                   Caffeine.newBuilder()
+                   // .scheduler(Scheduler.systemScheduler())
+                   .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
+                   key -> {
+                       List<String> internalKey = Arrays.asList(Long.toString(key));
+                       BufferWithGeneration<V> value;
+                       try {
+                           value = store.computeIfAbsent(internalKey, newValue::get);
+                       } catch (Exception e) {
+                           // logger.warn("Error", e);
+                           throw new RuntimeException(e);
+                          //  value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                       }
+
+//                       RangeBuffer<V> r = value;
+                       long generation = value.getGeneration();
+                       Entry<BufferWithGeneration<V>, Long> r = new SimpleEntry<>(value, generation);
+
+                       // keyToVersion.put(key, generation);
+
+    //                   Ref<V> r = RefImpl.create(v, null, () -> {
+    //                       // Sync the page upon closing it
+    //                       store.put(internalKey, v);
+    //                       logger.info("Synced " + internalKey);
+    //                       System.out.println("Synced" + internalKey);
+    //                   });
+    //
+                       return r;
+
+                   },
+                   (key, value, cause) -> {
+                       // keyToVersion.remove(key);
+                   },
+                // end of level3 setup
+
+                (key, value, cause) -> {
+                    BufferWithGeneration<V> buffer = value.getKey();
                     Long version = value.getValue();
 
                     List<String> internalKey = Arrays.asList(Long.toString(key));
