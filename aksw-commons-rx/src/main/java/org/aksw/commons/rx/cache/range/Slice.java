@@ -13,7 +13,9 @@ import org.aksw.commons.util.ref.RefFuture;
  *
  * @param <T>
  */
-public interface Slice<T> {
+public interface Slice<T>
+    extends PutHelper
+{
     /**
      * Obtain a new reference to the metadata.
      * The reference must be closed after use in order

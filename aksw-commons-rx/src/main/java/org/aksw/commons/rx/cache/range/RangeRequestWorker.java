@@ -147,7 +147,8 @@ public class RangeRequestWorker<T>
         this.requestLimit = requestLimit;
         this.terminationDelay = terminationDelay;
 
-        this.pageRange = cacheSystem.getSlice().newPageRange();
+        this.slice = cacheSystem.getSlice();
+        this.pageRange = slice.newPageRange();
 
         this.offsetToMaxAllowedRefetchCount = offset -> 5000;
 

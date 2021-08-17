@@ -129,4 +129,15 @@ public class SliceWithPagesImpl<T>
         return pageCache.claim(pageId);
     }
 
+
+
+    @Override
+    public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+        try (PageRange<T> pageRange = newPageRange()) {
+            pageRange.claimByOffsetRange(offsetInBuffer, offsetInBuffer + arrLength);
+
+            pageRange.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+        }
+    }
+
 }
