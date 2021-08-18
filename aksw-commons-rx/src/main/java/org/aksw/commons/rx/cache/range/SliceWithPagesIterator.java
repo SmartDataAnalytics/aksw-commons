@@ -18,6 +18,10 @@ import com.google.common.primitives.Ints;
 /**
  * An iterator over a range buffer that blocks if items are not loaded.
  *
+ * The iterator MUST BE CLOSED in order for it to release claimed pages!
+ * It auto-closes upon consumption.
+ *
+ *
  * @author raven
  *
  * @param <T>

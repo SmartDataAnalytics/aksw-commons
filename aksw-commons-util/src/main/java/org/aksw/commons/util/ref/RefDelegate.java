@@ -42,8 +42,18 @@ public interface RefDelegate<T, R extends Ref<T>>
     }
 
     @Override
-    default StackTraceElement[] getAquisitionStackTrace() {
-        return getDelegate().getAquisitionStackTrace();
+    default StackTraceElement[] getAcquisitionStackTrace() {
+        return getDelegate().getAcquisitionStackTrace();
+    }
+
+    @Override
+    default StackTraceElement[] getCloseStackTrace() {
+        return getDelegate().getCloseStackTrace();
+    }
+
+    @Override
+    default StackTraceElement[] getCloseTriggerStackTrace() {
+        return getDelegate().getCloseTriggerStackTrace();
     }
 
 }

@@ -314,7 +314,7 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-    public static <V> ListPaginator<V> wrap(
+    public static <V> SmartRangeCacheImpl<V> wrap(
             ListPaginator<V> backend,
             KeyObjectStore store,
             int pageSize,
@@ -331,7 +331,7 @@ public class SmartRangeCacheImpl<T>
 
         Single<Range<Long>> result;
 
-        long knownSize = slice.computeFromMetaData(SliceMetaData::getKnownSize);
+        long knownSize = slice.computeFromMetaData(false, SliceMetaData::getKnownSize);
 
 
         if (knownSize >= 0) {

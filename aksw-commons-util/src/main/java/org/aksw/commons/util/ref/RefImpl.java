@@ -4,8 +4,12 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a {@link Ref}
@@ -20,6 +24,11 @@ import java.util.stream.Stream;
 public class RefImpl<T>
     implements Ref<T>
 {
+    private static final Logger logger = LoggerFactory.getLogger(RefImpl.class);
+
+    protected boolean traceAcquisitions = true;
+
+
     // private static final Logger logger = LoggerFactory.getLogger(ReferenceImpl.class);
 
     protected T value;
@@ -45,10 +54,22 @@ public class RefImpl<T>
     protected Object comment; // An attribute which can be used for debugging reference chains
     protected RefImpl<T> parent;
     protected boolean isReleased = false;
+
     protected StackTraceElement[] acquisitionStackTrace;
 
+
+    protected StackTraceElement[] closeStackTrace;
+
+    protected StackTraceElement[] closeTriggerStackTrace;
+
     //protected Map<Reference<T>, Object> childRefs = new IdentityHashMap<Reference<T>, Object>();
+
+    // A child ref is active as long as its close() method has not been called
+    // The WeakHashMap nature may 'hide' entries whose key is about to be GC'd.
+    // This can lead to the situation that childRefs.isEmpty() may true even
+    // if there are active child refs (whose close method has not yet been called)
     protected Map<Ref<T>, Object> childRefs = new WeakHashMap<Ref<T>, Object>();
+    protected AtomicInteger activeChildRefs = new AtomicInteger();
 
     public RefImpl(
             RefImpl<T> parent,
@@ -66,9 +87,8 @@ public class RefImpl<T>
         this.synchronizer = synchronizer == null ? this : synchronizer;
         this.comment = comment;
 
-        boolean traceAcquisitions = true;
-        if(traceAcquisitions) {
-            this.acquisitionStackTrace = Thread.currentThread().getStackTrace();
+        if (traceAcquisitions) {
+            acquisitionStackTrace = Thread.currentThread().getStackTrace();
         }
     }
 
@@ -78,7 +98,13 @@ public class RefImpl<T>
     @Override
     protected void finalize() throws Throwable {
         if (!isReleased) {
-            close();
+            synchronized (synchronizer) {
+                if (!isReleased) {
+                    logger.warn("Ref released by GC rather than user logic - indicates resource leak.");
+
+                    close();
+                }
+            }
         }
 
         super.finalize();
@@ -118,6 +144,7 @@ public class RefImpl<T>
             @SuppressWarnings("unchecked")
             Ref<T> result = (Ref<T>)tmp[0];
             childRefs.put(result, comment);
+            activeChildRefs.incrementAndGet();
             return result;
         }
     }
@@ -130,6 +157,7 @@ public class RefImpl<T>
             throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
         } else {
             childRefs.remove(childRef);
+            activeChildRefs.decrementAndGet();
         }
 
         checkRelease();
@@ -140,7 +168,10 @@ public class RefImpl<T>
     public boolean isAlive() {
         boolean result;
 //        synchronized (synchronizer) {
-            result = !isReleased || !childRefs.isEmpty();
+//            result = !isReleased || !childRefs.isEmpty();
+
+        result = !isReleased || activeChildRefs.get() != 0;
+
 //        }
         return result;
     }
@@ -150,6 +181,10 @@ public class RefImpl<T>
         synchronized (synchronizer) {
             if (isReleased) {
                 throw new RuntimeException("Reference was already released");
+            }
+
+            if (traceAcquisitions) {
+                closeStackTrace = Thread.currentThread().getStackTrace();
             }
 
             // logger.debug("Released reference " + comment + " to " + parent);
@@ -163,6 +198,10 @@ public class RefImpl<T>
     protected void checkRelease() {
 
         if (!isAlive()) {
+            if (traceAcquisitions) {
+                closeTriggerStackTrace = Thread.currentThread().getStackTrace();
+            }
+
             if (releaseAction != null) {
                 try {
                     releaseAction.close();
@@ -212,8 +251,18 @@ public class RefImpl<T>
     }
 
     @Override
-    public StackTraceElement[] getAquisitionStackTrace() {
+    public StackTraceElement[] getAcquisitionStackTrace() {
         return acquisitionStackTrace;
+    }
+
+    @Override
+    public StackTraceElement[] getCloseStackTrace() {
+        return closeStackTrace;
+    }
+
+    @Override
+    public StackTraceElement[] getCloseTriggerStackTrace() {
+        return closeTriggerStackTrace;
     }
 
     @Override

@@ -78,5 +78,11 @@ public interface Ref<T>
      *
      * @return
      */
-    StackTraceElement[] getAquisitionStackTrace();
+    StackTraceElement[] getAcquisitionStackTrace();
+
+
+    StackTraceElement[] getCloseStackTrace();
+
+    StackTraceElement[] getCloseTriggerStackTrace();
+
 }

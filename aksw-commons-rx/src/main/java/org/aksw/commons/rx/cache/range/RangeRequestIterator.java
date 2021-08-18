@@ -121,6 +121,10 @@ public class RangeRequestIterator<T>
 
             if (currentPageIt.hasNext()) {
                 result = currentPageIt.next();
+
+                // Assert non null here?
+                // A likely reason for null values is an inconsistency between (range-)metadata and (buffer-)content
+
                 // ++currentIndex;
                 ++currentOffset;
             } else {

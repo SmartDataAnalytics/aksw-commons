@@ -1,11 +1,16 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.RefFuture;
+
+import com.google.common.collect.Range;
 
 
 /**
@@ -27,17 +32,39 @@ public interface Slice<T>
     RefFuture<SliceMetaData> getMetaData();
 
 
+    default boolean isComplete() {
+        boolean result = computeFromMetaData(false, metaData -> {
+            long knownSize = metaData.getKnownSize();
+            Set<Range<Long>> ranges = metaData.getLoadedRanges().asRanges();
+
+            Range<Long> range = ranges.size() == 1 ? ranges.iterator().next() : null;
+
+            long endpoint = range != null ? range.upperEndpoint() : -1;
+
+            boolean r = knownSize >= 0 && endpoint >= 0 && knownSize == endpoint;
+            return r;
+        });
+
+        return result;
+    }
+
     default void mutateMetaData(Consumer<? super SliceMetaData> fn) {
-        computeFromMetaData(metaData -> { fn.accept(metaData); return null; });
+        computeFromMetaData(true, metaData -> { fn.accept(metaData); return null; });
     }
 
 
-    default <X> X computeFromMetaData(Function<? super SliceMetaData, X> fn) {
+    default <X> X computeFromMetaData(boolean isWrite, Function<? super SliceMetaData, X> fn) {
         X result;
         try (RefFuture<SliceMetaData> ref = getMetaData()) {
             SliceMetaData metaData = ref.await();
-
-            result = fn.apply(metaData);
+            ReadWriteLock rwl = metaData.getReadWriteLock();
+            Lock lock = isWrite ? rwl.writeLock() : rwl.readLock();
+            lock.lock();
+            try {
+                result = fn.apply(metaData);
+            } finally {
+                lock.unlock();
+            }
         }
 
         return result;

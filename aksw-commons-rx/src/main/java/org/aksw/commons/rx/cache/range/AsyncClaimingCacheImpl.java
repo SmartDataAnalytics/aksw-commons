@@ -241,7 +241,6 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             if (isFreshSecondaryRef[0]) {
                 secondaryRef.close();
             }
-
         }
 
         return result;
