@@ -9,6 +9,10 @@ public interface PutHelper {
         putAll(offset, new Object[]{ item });
     }
 
+    default void putAll(int offset, Object arrayWithItemsOfTypeT, int arrOffset) {
+        putAll(offset, arrayWithItemsOfTypeT, 0, Array.getLength(arrayWithItemsOfTypeT) - arrOffset);
+    }
+
     default void putAll(int offset, Object arrayWithItemsOfTypeT) {
         putAll(offset, arrayWithItemsOfTypeT, 0, Array.getLength(arrayWithItemsOfTypeT));
     }

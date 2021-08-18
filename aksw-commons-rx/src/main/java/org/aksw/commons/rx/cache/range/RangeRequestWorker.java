@@ -356,7 +356,7 @@ public class RangeRequestWorker<T>
                 try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
                     SliceMetaData metaData = ref.await();
 
-                    long knownSize = metaData.getSize();
+                    long knownSize = metaData.getKnownSize();
                     if (knownSize >= 0 && offset >= knownSize) {
                         break;
                     }
@@ -474,7 +474,7 @@ public class RangeRequestWorker<T>
 
                 // TODO set the known size if the page is full
                 if (!hasNext && numItemsProcessed < requestLimit) {
-                    if (metaData.getSize() < 0) {
+                    if (metaData.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
                         metaData.setMinimumKnownSize(offset + 1);

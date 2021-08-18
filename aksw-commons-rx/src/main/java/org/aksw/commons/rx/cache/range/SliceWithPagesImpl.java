@@ -81,7 +81,7 @@ public class SliceWithPagesImpl<T>
 
 
     @Override
-    public int getPageSize() {
+    public long getPageSize() {
         return pageSize;
     }
 

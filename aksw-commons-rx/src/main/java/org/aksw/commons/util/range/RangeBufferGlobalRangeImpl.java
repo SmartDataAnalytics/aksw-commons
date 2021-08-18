@@ -189,7 +189,7 @@ public class RangeBufferGlobalRangeImpl<T>
 
     @Override
     public long getKnownSize() {
-        long size = metaData.getSize();
+        long size = metaData.getKnownSize();
         int result = size < 0 ? -1 : Math.min(buffer.length, Ints.saturatedCast(size - globalOffset));
         return result;
     }

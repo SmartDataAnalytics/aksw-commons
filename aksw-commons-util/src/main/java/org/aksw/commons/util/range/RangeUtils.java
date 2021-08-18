@@ -25,6 +25,26 @@ import com.google.common.math.LongMath;
 
 public class RangeUtils {
     public static final Range<Long> rangeStartingWithZero = Range.atLeast(0l);
+    public static final Range<Long> RANGE_LONG = Range.closed(Long.MIN_VALUE, Long.MAX_VALUE);
+
+    public static long sizeLong(Range<Long> range) {
+        Range<Long> r = range
+                .intersection(RANGE_LONG)
+                .canonical(DiscreteDomain.longs());
+
+        long start = r.lowerEndpoint();
+        long end = r.upperEndpoint();
+
+        long result = DiscreteDomain.longs().distance(start, end);
+
+        return result;
+    }
+
+    public static int intLength(Range<Long> range) {
+        ContiguousSet<Long> set = ContiguousSet.create(range, DiscreteDomain.longs());
+        int result = set.size();
+        return result;
+    }
 
     public static <T> List<T> subList(List<T> list, Range<Integer> subRange) {
         // Subrange's offset must be equal-or-greater-than 0

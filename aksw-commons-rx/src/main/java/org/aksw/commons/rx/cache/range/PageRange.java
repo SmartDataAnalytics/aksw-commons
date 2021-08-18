@@ -1,5 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.concurrent.ConcurrentNavigableMap;
+
+import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.util.range.RangeBuffer;
+import org.aksw.commons.util.ref.RefFuture;
+
 /**
  * Abstraction over a sequence of pages to view their content as
  * consecutive items.
@@ -14,7 +20,7 @@ package org.aksw.commons.rx.cache.range;
 public interface PageRange<T>
     extends AutoCloseable
 {
-//     ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> getClaimedPages();
+     ConcurrentNavigableMap<Long, RefFuture<BufferWithGeneration<T>>> getClaimedPages();
 
 
     // Allow querying the page's range that contains offset?

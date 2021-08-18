@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import org.aksw.commons.util.range.RangeUtils;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -37,12 +38,21 @@ public interface SliceMetaData {
     SliceMetaData setMinimumKnownSize(long size);
     SliceMetaData setMaximumKnownSize(long size);
 
+    default SliceMetaData setKnownSize(long size) {
+        Preconditions.checkArgument(size >= 0, "Negative known size");
+
+        setMinimumKnownSize(size);
+        setMaximumKnownSize(size);
+
+        return this;
+    }
+
     /** A lock to control concurrent access to this object */
     ReadWriteLock getReadWriteLock();
     Condition getHasDataCondition();
 
     /** -1 If not exactly known */
-    default long getSize() {
+    default long getKnownSize() {
         boolean isExact = isExactSizeKnown();
         long result = isExact ? getMaximumKnownSize() : -1;
         return result;

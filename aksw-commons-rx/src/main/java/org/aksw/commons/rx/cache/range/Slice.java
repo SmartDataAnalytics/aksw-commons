@@ -2,12 +2,14 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.aksw.commons.util.ref.RefFuture;
 
 
 /**
- * A sequence of data with possibly unknown exact size.
+ * A concurrently accessible sequence of data of possibly unknown size.
  *
  * @author raven
  *
@@ -18,12 +20,28 @@ public interface Slice<T>
 {
     /**
      * Obtain a new reference to the metadata.
-     * The reference must be closed after use in order
-     * to allow sync to trigger
+     *
+     * The reference must be closed after use in order to allow sync to trigger
      * @return
      */
     RefFuture<SliceMetaData> getMetaData();
 
+
+    default void mutateMetaData(Consumer<? super SliceMetaData> fn) {
+        computeFromMetaData(metaData -> { fn.accept(metaData); return null; });
+    }
+
+
+    default <X> X computeFromMetaData(Function<? super SliceMetaData, X> fn) {
+        X result;
+        try (RefFuture<SliceMetaData> ref = getMetaData()) {
+            SliceMetaData metaData = ref.await();
+
+            result = fn.apply(metaData);
+        }
+
+        return result;
+    }
 
     /**
      * Return an iterator initialized at the given offset

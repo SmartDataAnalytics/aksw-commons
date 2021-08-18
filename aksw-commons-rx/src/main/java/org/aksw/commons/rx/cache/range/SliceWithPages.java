@@ -8,7 +8,7 @@ public interface SliceWithPages<T>
     extends Slice<T>, PageHelper
 {
     // ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> getClaimedPages();
-    int getPageSize();
+    long getPageSize();
 
     RefFuture<BufferWithGeneration<T>> getPageForPageId(long pageId);
 }

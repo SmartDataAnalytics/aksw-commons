@@ -6,6 +6,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import org.aksw.commons.util.range.BufferWithGeneration;
@@ -207,39 +208,50 @@ public class PageRangeImpl<T>
                 "Write range  " + totalWriteRange + " is not enclosed by claimed range " + offsetRange);
 
 
-        int remaining = arrLength;
-        while (remaining > 0) {
+        try (RefFuture<SliceMetaData> ref = cache.getMetaData()) {
+            SliceMetaData metaData = ref.await();
+            Lock writeLock = metaData.getReadWriteLock().writeLock();
+            writeLock.lock();
+            try {
 
-            long pageId = cache.getPageIdForOffset(offset);
-            int offsetInPage = cache.getIndexInPageForOffset(offset);
+                long knownSize = metaData.getKnownSize();
 
-            RefFuture<BufferWithGeneration<T>> currentPageRef = getClaimedPages().get(pageId);
+                int remaining = arrLength;
+                while (remaining > 0) {
 
-            BufferWithGeneration<T> buffer = currentPageRef.await();
+                    long pageId = cache.getPageIdForOffset(offset);
+                    long offsetInPage = cache.getIndexInPageForOffset(offset);
 
-//            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
-//                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
+                    RefFuture<BufferWithGeneration<T>> currentPageRef = getClaimedPages().get(pageId);
 
-            long numItemsUntilPageEnd = buffer.getCapacity() - offsetInPage;
-            // long numItemsUntilPageKnownSize = cache.getMetaData().getMaximumKnownSize(); // BufferWithGeneration.getKnownSize() >= 0 ? BufferWithGeneration.getKnownSize() : BufferWithGeneration.getCapacity();
+                    BufferWithGeneration<T> buffer = currentPageRef.await();
 
-            long knownSize;
-            try (RefFuture<SliceMetaData> ref = cache.getMetaData()) {
-                knownSize = ref.await().getSize();
+        //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
+        //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
+
+                    long numItemsUntilPageEnd = buffer.getCapacity() - offsetInPage;
+                    // long numItemsUntilPageKnownSize = cache.getMetaData().getMaximumKnownSize(); // BufferWithGeneration.getKnownSize() >= 0 ? BufferWithGeneration.getKnownSize() : BufferWithGeneration.getCapacity();
+
+                    long numItemsUntilPageKnownSize = knownSize < 0 ? Long.MAX_VALUE : knownSize - offset;
+
+                    // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
+
+                    int limit = Math.min(Ints.saturatedCast(Math.min(
+                            numItemsUntilPageEnd,
+                            numItemsUntilPageKnownSize)),
+                            remaining);
+
+                    buffer.putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
+                    remaining -= limit;
+                    offset += limit;
+                    arrOffset += limit;
+                }
+
+                metaData.getLoadedRanges().add(totalWriteRange);
+                metaData.getHasDataCondition().signalAll();
+            } finally {
+                writeLock.unlock();
             }
-
-            long numItemsUntilPageKnownSize = knownSize < 0 ? Long.MAX_VALUE : knownSize - offset;
-
-            // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
-
-            int limit = Math.min(Ints.saturatedCast(Math.min(
-                    numItemsUntilPageEnd,
-                    numItemsUntilPageKnownSize)),
-                    remaining);
-
-            buffer.putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
-            remaining -= limit;
-            offset += limit;
         }
 
     }

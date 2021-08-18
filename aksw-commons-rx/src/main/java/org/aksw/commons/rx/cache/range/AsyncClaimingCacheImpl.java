@@ -204,41 +204,44 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
     protected Ref<RefFuture<V>> claimInternal(K key) {
 
+        Ref<RefFuture<V>> result;
+        synchronized (level1) {
+            boolean[] isFreshSecondaryRef = { false };
+            Ref<RefFuture<V>> secondaryRef = level1.computeIfAbsent(key, k -> {
+                // Wrap the loaded reference such that closing the fully loaded reference adds it to level 2
 
-        boolean[] isFreshSecondaryRef = { false };
-        Ref<RefFuture<V>> secondaryRef = level1.computeIfAbsent(key, k -> {
-            // Wrap the loaded reference such that closing the fully loaded reference adds it to level 2
+                SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
+                RefFuture<V> tmpRefFuture = holder == null ? null : holder.get();
+                if (tmpRefFuture != null) {
+                    logger.debug("Claiming item [" + key + "] from level2");
+                    // Unset the value of the holder such that invalidation does not apply the close action
+                    holder.set(null);
+                    level2.invalidate(key);
+                } else {
+                    logger.debug("Claiming item [" + key + "] from level3");
+                    tmpRefFuture = level3.getAsRefFuture(key);
+                }
 
-            SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
-            RefFuture<V> tmpRefFuture = holder == null ? null : holder.get();
-            if (tmpRefFuture != null) {
-                logger.debug("Claiming item [" + key + "] from level2");
-                // Unset the value of the holder such that invalidation does not apply the close action
-                holder.set(null);
-                level2.invalidate(key);
-            } else {
-                logger.debug("Claiming item [" + key + "] from level3");
-                tmpRefFuture = level3.getAsRefFuture(key);
+                RefFuture<V> refFuture = tmpRefFuture;
+
+                Ref<RefFuture<V>> freshSecondaryRef =
+                        RefImpl.create(refFuture, level1, () -> {
+                            RefFutureImpl.closeAction(refFuture.get(), null);
+                            level1.remove(key);
+                            logger.debug("Item [" + key + "] was unclaimed. Transferring to level2.");
+                            level2.put(key, new SingleValuedAccessorDirect<>(refFuture));
+                        });
+                isFreshSecondaryRef[0] = true;
+
+                return freshSecondaryRef;
+            });
+
+
+            result = secondaryRef.acquire();
+            if (isFreshSecondaryRef[0]) {
+                secondaryRef.close();
             }
 
-            RefFuture<V> refFuture = tmpRefFuture;
-
-            Ref<RefFuture<V>> freshSecondaryRef =
-                    RefImpl.create(refFuture, level1, () -> {
-                        RefFutureImpl.closeAction(refFuture.get(), null);
-                        level1.remove(key);
-                        logger.debug("Item [" + key + "] was unclaimed. Transferring to level2.");
-                        level2.put(key, new SingleValuedAccessorDirect<>(refFuture));
-                    });
-            isFreshSecondaryRef[0] = true;
-
-            return freshSecondaryRef;
-        });
-
-
-        Ref<RefFuture<V>> result = secondaryRef.acquire();
-        if (isFreshSecondaryRef[0]) {
-            secondaryRef.close();
         }
 
         return result;
