@@ -10,10 +10,10 @@ public class TestSmartRangeCache
     extends RangeCacheTestSuite
 {
     @Override
-    protected <T> ListPaginator<T> wrapWithCache(ListPaginator<T> backend) {
+    protected <T> ListPaginator<T> wrapWithCache(String testId, ListPaginator<T> backend) {
 
 
         return SmartRangeCacheImpl.wrap(
-                backend, SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test"), SmartRangeCacheImpl.createKyroPool(null)), 1024, 10, Duration.ofSeconds(1), 10000, 1000);
+                backend, SmartRangeCacheImpl.createKeyObjectStore(Paths.get("/tmp/test/" + testId), SmartRangeCacheImpl.createKyroPool(null)), 1024, 10, Duration.ofSeconds(1), 10000, 1000);
     }
 }

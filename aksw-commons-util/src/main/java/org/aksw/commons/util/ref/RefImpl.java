@@ -113,7 +113,7 @@ public class RefImpl<T>
             // A bit of ugliness to allow the reference to release itself
             @SuppressWarnings("rawtypes")
             Ref[] tmp = new Ref[1];
-            tmp[0] = new RefImpl<T>(this, value, null, () -> release(tmp[0]), comment);
+            tmp[0] = new RefImpl<T>(this, value, synchronizer, () -> release(tmp[0]), comment);
 
             @SuppressWarnings("unchecked")
             Ref<T> result = (Ref<T>)tmp[0];
@@ -124,21 +124,24 @@ public class RefImpl<T>
 
 //	void release(Reference<T> childRef) {
     protected void release(Object childRef) {
-        synchronized (synchronizer) {
-            boolean isContained = childRefs.containsKey(childRef);
-            if (!isContained) {
-                throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
-            } else {
-                childRefs.remove(childRef);
-            }
-
-            checkRelease();
+//        synchronized (synchronizer) {
+        boolean isContained = childRefs.containsKey(childRef);
+        if (!isContained) {
+            throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
+        } else {
+            childRefs.remove(childRef);
         }
+
+        checkRelease();
+//        }
     }
 
     @Override
     public boolean isAlive() {
-        boolean result = !isReleased || !childRefs.isEmpty();
+        boolean result;
+//        synchronized (synchronizer) {
+            result = !isReleased || !childRefs.isEmpty();
+//        }
         return result;
     }
 

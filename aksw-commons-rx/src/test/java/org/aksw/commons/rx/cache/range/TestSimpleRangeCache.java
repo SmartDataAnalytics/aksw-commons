@@ -6,7 +6,7 @@ public class TestSimpleRangeCache
     extends RangeCacheTestSuite
 {
     @Override
-    protected <T> ListPaginator<T> wrapWithCache(ListPaginator<T> backend) {
+    protected <T> ListPaginator<T> wrapWithCache(String testId, ListPaginator<T> backend) {
         return SimpleRangeCache.wrap(backend);
     }
 }

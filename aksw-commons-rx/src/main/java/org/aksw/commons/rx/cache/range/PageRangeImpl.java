@@ -200,7 +200,9 @@ public class PageRangeImpl<T>
 
 
     @Override
-    public void putAll(long offset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+    public synchronized void putAll(long offset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+
+        ensureOpen();
 
         Range<Long> totalWriteRange = Range.closedOpen(offset, offset + arrLength);
         Preconditions.checkArgument(

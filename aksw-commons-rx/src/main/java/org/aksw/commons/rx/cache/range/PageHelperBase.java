@@ -1,5 +1,7 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.concurrent.locks.Lock;
+
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,9 +66,15 @@ public abstract class PageHelperBase<T>
 
         try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
             SliceMetaData metaData = ref.await();
+            Lock readLock = metaData.getReadWriteLock().readLock();
+            readLock.lock();
+            try {
+                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+                processGaps(gaps, start, end);
+            } finally {
+                readLock.unlock();
+            }
 
-            RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
-            processGaps(gaps, start, end);
 
             nextCheckpointOffset = end;
         }

@@ -15,7 +15,7 @@ import io.reactivex.rxjava3.core.Flowable;
 
 public abstract class RangeCacheTestSuite {
 
-    protected abstract <T> ListPaginator<T> wrapWithCache(ListPaginator<T> backend);
+    protected abstract <T> ListPaginator<T> wrapWithCache(String testId, ListPaginator<T> backend);
 
     @Test
     public void test() throws InterruptedException {
@@ -26,7 +26,7 @@ public abstract class RangeCacheTestSuite {
 
         ListPaginator<String> backend = ListPaginatorFromList.wrap(items);
 //        ListPaginator<String> frontend = backend;
-        ListPaginator<String> frontend = wrapWithCache(backend);
+        ListPaginator<String> frontend = wrapWithCache("test", backend);
 
 //        Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 20l));
         Flowable<String> flow = frontend.apply(Range.closedOpen(10l, 2000l));
@@ -38,7 +38,7 @@ public abstract class RangeCacheTestSuite {
 
         // flow.toList().blockingGet().forEach(System.out::println);
 
-        Thread.sleep(5000);
+        // Thread.sleep(5000);
         System.out.println("Done waiting");
     }
 
@@ -52,14 +52,14 @@ public abstract class RangeCacheTestSuite {
 
         ListPaginator<String> backend = ListPaginatorFromList.wrap(items);
         // ListPaginator<String> frontend = backend;
-        ListPaginator<String> frontend = wrapWithCache(backend);
+        ListPaginator<String> frontend = wrapWithCache("testCount", backend);
 
 
         Range<Long> range = frontend.fetchCount(null, null).blockingGet();
 
         System.out.println(range);
 
-        Thread.sleep(5000);
+        // Thread.sleep(5000);
         System.out.println("Done waiting");
     }
 

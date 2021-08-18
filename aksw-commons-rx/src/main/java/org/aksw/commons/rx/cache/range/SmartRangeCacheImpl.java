@@ -65,6 +65,9 @@ public class SmartRangeCacheImpl<T>
 
     protected SliceWithPages<T> slice;
 
+
+    protected Single<Range<Long>> countSingle;
+
     // protected int pageSize;
     // protected AsyncClaimingCache<Long, RangeBuffer<T>> pageCache;
 
@@ -120,6 +123,20 @@ public class SmartRangeCacheImpl<T>
 
         this.requestLimit = requestLimit;
         this.terminationDelayInMs = terminationDelayInMs;
+
+        this.countSingle = backend
+                .fetchCount(null, null)
+                .map(r -> {
+                    CountInfo countInfo = RangeUtils.toCountInfo(r);
+                    if (!countInfo.isHasMoreItems()) {
+                        long count = countInfo.getCount();
+
+                        slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
+                    }
+                    return r;
+                })
+                .cache();
+
     }
 
     public RangedSupplier<Long, T> getBackend() {
@@ -320,20 +337,21 @@ public class SmartRangeCacheImpl<T>
         if (knownSize >= 0) {
             result = Single.just(Range.singleton(knownSize));
         } else {
+            result = countSingle;
 
-            // FIXME Only fire the request once
+//            result = backend
+//                .fetchCount(null, null)
+//                .map(r -> {
+//                    CountInfo countInfo = RangeUtils.toCountInfo(r);
+//                    if (!countInfo.isHasMoreItems()) {
+//                        long count = countInfo.getCount();
+//
+//                        slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
+//                    }
+//                    return r;
+//                })
+//                .cache();
 
-            result = backend
-                .fetchCount(null, null)
-                .map(r -> {
-                    CountInfo countInfo = RangeUtils.toCountInfo(r);
-                    if (!countInfo.isHasMoreItems()) {
-                        long count = countInfo.getCount();
-
-                        slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
-                    }
-                    return r;
-                });
         }
 //        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
 //                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),

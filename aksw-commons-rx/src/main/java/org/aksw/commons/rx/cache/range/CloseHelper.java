@@ -3,7 +3,7 @@ package org.aksw.commons.rx.cache.range;
 public class CloseHelper
     implements AutoCloseable
 {
-    protected boolean isClosed = false;
+    protected volatile boolean isClosed = false;
 
     /**
      * To be called within synchronized functions

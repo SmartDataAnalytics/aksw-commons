@@ -69,9 +69,11 @@ public class AsyncRefCache<K, V> {
 
         this.master = cacheBuilder
             .evictionListener((K key, V value, RemovalCause cause) -> {
-                logger.debug("Evicting " + key);
-                removalListener.onRemoval(key, value, cause);
-                slave.remove(key);
+                synchronized (slave) {
+                    logger.debug("Evicting " + key);
+                    removalListener.onRemoval(key, value, cause);
+                    slave.remove(key);
+                }
             })
             .buildAsync((K key) -> {
                 logger.debug("Loading: " + key);

@@ -74,6 +74,7 @@ public class SliceWithPagesIterator<T>
                     // long knownSize = metaData.getSize();
                     long maximumSize = metaData.getMaximumKnownSize();
                     if (currentIndex >= maximumSize) {
+                        close();
                         return endOfData();
                     } else {
 
@@ -116,6 +117,7 @@ public class SliceWithPagesIterator<T>
                 }
 
                 if (entry == null) {
+                    close();
                     return endOfData();
                 } else {
                     Range<Long> range = Range.atLeast(currentIndex).intersection(entry); //  entry; //.getKey();

@@ -38,6 +38,32 @@ public interface SliceMetaData {
     SliceMetaData setMinimumKnownSize(long size);
     SliceMetaData setMaximumKnownSize(long size);
 
+
+    /** Updates the maximum known size iff the argument is less than the current known maximum */
+    default SliceMetaData updateMaximumKnownSize(long size) {
+        long current = getMaximumKnownSize();
+
+        if (size < current) {
+            setMaximumKnownSize(size);
+        }
+
+        return this;
+    }
+
+    /** Updates the minimum known size iff the argument is graeter than the current known minimum */
+    default SliceMetaData updateMinimumKnownSize(long size) {
+        long current = getMinimumKnownSize();
+
+        if (size > current) {
+            setMinimumKnownSize(size);
+        }
+
+        return this;
+    }
+
+
+
+
     default SliceMetaData setKnownSize(long size) {
         Preconditions.checkArgument(size >= 0, "Negative known size");
 

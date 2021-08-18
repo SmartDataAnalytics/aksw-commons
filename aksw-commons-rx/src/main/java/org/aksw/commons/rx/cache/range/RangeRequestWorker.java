@@ -33,6 +33,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
  * @param <T>
  */
 public class RangeRequestWorker<T>
+    extends CloseHelper
     implements Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(RangeRequestWorker.class);
@@ -56,9 +57,6 @@ public class RangeRequestWorker<T>
 
     /** The disposable of the data supplier */
     protected Disposable disposable;
-
-    /** Whether processing is aborted */
-    protected boolean isClosed = false;
 
     /** The data slice */
     protected Slice<T> slice;
@@ -197,18 +195,15 @@ public class RangeRequestWorker<T>
      * Stops processing of this executor and
      * also disposes the underlying data supplier (which is expected to terminate)
      */
-    public synchronized void close() {
-        if (!isClosed) {
-            isClosed = true;
-
-            // Cancel the backend process
-            if (disposable != null) {
-                disposable.dispose();
-            }
-
-            // Free claimed resources (pages)
-            pageRange.releaseAll();
+    @Override
+    protected void closeActual() {
+        // Cancel the backend process
+        if (disposable != null) {
+            disposable.dispose();
         }
+
+        // Free claimed resources (pages)
+        pageRange.releaseAll();
     }
 
 
