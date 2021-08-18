@@ -3,10 +3,9 @@ package org.aksw.commons.rx.cache.range;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
-import org.aksw.commons.collections.IteratorUtils;
 import org.aksw.commons.util.range.BufferWithGeneration;
-import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.AbstractIterator;
@@ -60,7 +59,8 @@ public class SliceWithPagesIterator<T>
             try (RefFuture<SliceMetaData> ref = rangeBuffer.getMetaData()) {
                 SliceMetaData metaData = ref.await();
 
-                Lock readLock = metaData.getReadWriteLock().readLock();
+                ReadWriteLock rwl = metaData.getReadWriteLock();
+                Lock readLock = rwl.readLock();
                 readLock.lock();
 
                 RangeSet<Long> loadedRanges = metaData.getLoadedRanges();
@@ -86,23 +86,23 @@ public class SliceWithPagesIterator<T>
                             // Wait for data to become available
                             // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
 
-                            Lock writeLock = metaData.getReadWriteLock().writeLock();
+                            Lock writeLock = rwl.writeLock();
                             readLock.unlock();
                             writeLock.lock();
 
                             try {
                                 long knownSize;
                                 while ((entry = loadedRanges.rangeContaining(currentIndex)) == null &&
-                                        ((knownSize = metaData.getKnownSize()) < 0 || currentIndex < knownSize)) {
+                                        ((knownSize = metaData.getMaximumKnownSize()) < 0 || currentIndex < knownSize)) {
                                     try {
                                         metaData.getHasDataCondition().await();
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
                                 }
-                                readLock.lock();
                             } finally {
                                 writeLock.unlock();
+                                readLock.lock();
                             }
                         }
                     }

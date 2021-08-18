@@ -247,6 +247,8 @@ public class PageRangeImpl<T>
                     arrOffset += limit;
                 }
 
+                long min = metaData.getMinimumKnownSize();
+                metaData.setMinimumKnownSize(Math.max(min, offset + arrLength));
                 metaData.getLoadedRanges().add(totalWriteRange);
                 metaData.getHasDataCondition().signalAll();
             } finally {

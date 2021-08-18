@@ -3,6 +3,7 @@ package org.aksw.commons.rx.cache.range;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.util.ref.RefFuture;
@@ -411,6 +412,8 @@ public class RangeRequestWorker<T>
 //
 //        RangeBuffer<T> rangeBuffer = currentPageRef.await();
 
+        pageRange.claimByOffsetRange(offset, offset + n);
+
         BulkingSink<T> sink = new BulkingSink<>(bulkSize,
                 (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
 
@@ -459,28 +462,33 @@ public class RangeRequestWorker<T>
 
             try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
                 SliceMetaData metaData = ref.await();
+                Lock writeLock = metaData.getReadWriteLock().writeLock();
+                writeLock.lock();
 
-                metaData.setMinimumKnownSize(offset);
+                try {
+                    metaData.setMinimumKnownSize(offset);
 
 
-                // If there is no further item although the request range has not been covered
-                // then we have detected the end
+                    // If there is no further item although the request range has not been covered
+                    // then we have detected the end
 
-                // Note: We may have also just hit the backend's result-set-limit
-                // This is the case if there is
-                // (1) a known result-set-limit value on the smart cache
-                // (2) a known higher offset in the smart cache or
-                // (3) another request with the same offset that yield results
+                    // Note: We may have also just hit the backend's result-set-limit
+                    // This is the case if there is
+                    // (1) a known result-set-limit value on the smart cache
+                    // (2) a known higher offset in the smart cache or
+                    // (3) another request with the same offset that yield results
 
-                // TODO set the known size if the page is full
-                if (!hasNext && numItemsProcessed < requestLimit) {
-                    if (metaData.getKnownSize() < 0) {
-                        // long knownPageSize = offsetInPage + i;
-                        // rangeBuffer.setKnownSize(knownPageSize);
-                        metaData.setMinimumKnownSize(offset + 1);
-                        metaData.setMaximumKnownSize(offset + 1);
-                        // cacheSystem.setKnownSize(offset);
+                    // TODO set the known size if the page is full
+                    if (!hasNext && numItemsProcessed < requestLimit) {
+                        if (metaData.getKnownSize() < 0) {
+                            // long knownPageSize = offsetInPage + i;
+                            // rangeBuffer.setKnownSize(knownPageSize);
+                            metaData.setKnownSize(offset);
+                        }
                     }
+                    metaData.getHasDataCondition().signalAll();
+                } finally {
+                    writeLock.unlock();
                 }
             }
         } finally {

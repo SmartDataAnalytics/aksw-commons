@@ -46,7 +46,7 @@ public class RangeRequestIterator<T>
 
     protected Iterator<T> currentPageIt = null;
 
-    protected int currentIndex = -1;
+    // protected int currentIndex = -1;
 
     /** The index of the next item to read */
     protected long currentOffset;
@@ -93,7 +93,7 @@ public class RangeRequestIterator<T>
         if (requestRange.contains(currentOffset)) {
             if (currentPageIt == null || !currentPageIt.hasNext()) {
 
-                currentPageIt = new SliceWithPagesIterator<>(cache.getSlice(), currentIndex);
+                currentPageIt = new SliceWithPagesIterator<>(cache.getSlice(), currentOffset);
 
 //                // long pageId = cache.getPageIdForOffset(currentOffset);
 //                RangeBuffer<T> currentPage;
@@ -121,7 +121,7 @@ public class RangeRequestIterator<T>
 
             if (currentPageIt.hasNext()) {
                 result = currentPageIt.next();
-                ++currentIndex;
+                // ++currentIndex;
                 ++currentOffset;
             } else {
                 close();

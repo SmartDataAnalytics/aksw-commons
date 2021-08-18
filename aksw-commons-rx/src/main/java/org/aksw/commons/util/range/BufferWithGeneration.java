@@ -17,6 +17,10 @@ public class BufferWithGeneration<T>
 
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
+    /** For serialization */
+    protected BufferWithGeneration() {
+    }
+
     public BufferWithGeneration(int size) {
         this(new Object[size], 0);
     }
