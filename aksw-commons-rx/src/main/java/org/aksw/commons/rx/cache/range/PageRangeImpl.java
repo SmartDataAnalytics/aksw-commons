@@ -210,8 +210,8 @@ public class PageRangeImpl<T>
 
         try (RefFuture<SliceMetaData> ref = cache.getMetaData()) {
             SliceMetaData metaData = ref.await();
-            Lock writeLock = metaData.getReadWriteLock().writeLock();
-            writeLock.lock();
+            Lock metaDataWriteLock = metaData.getReadWriteLock().writeLock();
+            metaDataWriteLock.lock();
             try {
 
                 long knownSize = metaData.getKnownSize();
@@ -241,7 +241,14 @@ public class PageRangeImpl<T>
                             numItemsUntilPageKnownSize)),
                             remaining);
 
-                    buffer.putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
+                    Lock contentWriteLock = buffer.getReadWriteLock().writeLock();
+                    contentWriteLock.lock();
+
+                    try {
+                        buffer.putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
+                    } finally {
+                        contentWriteLock.unlock();
+                    }
                     remaining -= limit;
                     offset += limit;
                     arrOffset += limit;
@@ -252,7 +259,7 @@ public class PageRangeImpl<T>
                 metaData.getLoadedRanges().add(totalWriteRange);
                 metaData.getHasDataCondition().signalAll();
             } finally {
-                writeLock.unlock();
+                metaDataWriteLock.unlock();
             }
         }
 

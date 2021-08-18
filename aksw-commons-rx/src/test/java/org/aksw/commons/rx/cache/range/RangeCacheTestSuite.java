@@ -34,6 +34,7 @@ public abstract class RangeCacheTestSuite {
         // System.out.println(flow.toList().blockingGet());
         List<String> actual = flow.toList().blockingGet();
 
+        System.out.println(actual);
 
         // flow.toList().blockingGet().forEach(System.out::println);
 

@@ -2,6 +2,7 @@ package org.aksw.commons.util.range;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -52,11 +53,20 @@ public class BufferWithGeneration<T>
 
     @Override
     public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
-        int o = Ints.checkedCast(offsetInBuffer);
 
-        System.arraycopy(arrayWithItemsOfTypeT, arrOffset, data, o, arrLength);
+//        Lock lock = readWriteLock.writeLock();
+//        lock.lock();
+//        try {
+//
+            int o = Ints.checkedCast(offsetInBuffer);
 
-        incrementGeneration();
+            incrementGeneration();
+
+
+            System.arraycopy(arrayWithItemsOfTypeT, arrOffset, data, o, arrLength);
+//        } finally {
+//            lock.unlock();
+//        }
     }
 
     public ReadWriteLock getReadWriteLock() {

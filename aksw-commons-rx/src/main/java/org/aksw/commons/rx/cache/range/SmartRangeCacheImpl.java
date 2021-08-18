@@ -29,6 +29,7 @@ import org.aksw.commons.store.object.key.api.KeyObjectStore;
 import org.aksw.commons.store.object.key.impl.KeyObjectStoreImpl;
 import org.aksw.commons.store.object.path.impl.ObjectFileStoreKyro;
 import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.util.range.CountInfo;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.slot.Slot;
@@ -310,8 +311,30 @@ public class SmartRangeCacheImpl<T>
 
     @Override
     public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
-        throw new UnsupportedOperationException("fixme: count method should update the slice metadata as needed");
 
+        Single<Range<Long>> result;
+
+        long knownSize = slice.computeFromMetaData(SliceMetaData::getKnownSize);
+
+
+        if (knownSize >= 0) {
+            result = Single.just(Range.singleton(knownSize));
+        } else {
+
+            // FIXME Only fire the request once
+
+            result = backend
+                .fetchCount(null, null)
+                .map(r -> {
+                    CountInfo countInfo = RangeUtils.toCountInfo(r);
+                    if (!countInfo.isHasMoreItems()) {
+                        long count = countInfo.getCount();
+
+                        slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
+                    }
+                    return r;
+                });
+        }
 //        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
 //                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
 //                (ee, e) -> {
@@ -343,6 +366,7 @@ public class SmartRangeCacheImpl<T>
 //			back
 //		}
 
+        return result;
     }
 
 
