@@ -25,8 +25,10 @@ public interface RefFuture<T>
     /** Create a sub-reference to a transformed value of the CompletableFuture */
     default <U> RefFuture<U> acquireTransformed(Function<? super T, ? extends U> transform) {
         RefFuture<T> acquired = this.acquire();
+        Object synchronizer = acquired.getSynchronizer();
+
         CompletableFuture<U> future = acquired.get().thenApply(transform);
-        RefFuture<U> result = new RefFutureImpl<>(RefImpl.create(future, getSynchronizer(), acquired::close));
+        RefFuture<U> result = RefFutureImpl.wrap(RefImpl.create(future, synchronizer, acquired::close));
         return result;
     }
 

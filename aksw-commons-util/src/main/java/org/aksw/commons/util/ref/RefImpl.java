@@ -53,7 +53,7 @@ public class RefImpl<T>
 
     protected Object comment; // An attribute which can be used for debugging reference chains
     protected RefImpl<T> parent;
-    protected boolean isReleased = false;
+    protected volatile boolean isReleased = false;
 
     protected StackTraceElement[] acquisitionStackTrace;
 
@@ -68,8 +68,12 @@ public class RefImpl<T>
     // The WeakHashMap nature may 'hide' entries whose key is about to be GC'd.
     // This can lead to the situation that childRefs.isEmpty() may true even
     // if there are active child refs (whose close method has not yet been called)
+
+    // TODO The map is only for debugging / reporting - remove?
     protected Map<Ref<T>, Object> childRefs = new WeakHashMap<Ref<T>, Object>();
-    protected AtomicInteger activeChildRefs = new AtomicInteger();
+
+
+    protected volatile int activeChildRefs = 0; // new AtomicInteger(0);
 
     public RefImpl(
             RefImpl<T> parent,
@@ -97,17 +101,24 @@ public class RefImpl<T>
      */
     @Override
     protected void finalize() throws Throwable {
-        if (!isReleased) {
-            synchronized (synchronizer) {
-                if (!isReleased) {
-                    logger.warn("Ref released by GC rather than user logic - indicates resource leak.");
+        try {
+            if (!isReleased) {
+                synchronized (synchronizer) {
+                    if (!isReleased) {
+                        String str = acquisitionStackTrace == null
+                                ? "(no stack trace available)"
+                                : Arrays.asList(acquisitionStackTrace).stream().map(s -> "  " + Objects.toString(s))
+                                    .collect(Collectors.joining("\n"));
 
-                    close();
+                        logger.warn("Ref released by GC rather than user logic - indicates resource leak. Acquired at " + str);
+
+                        close();
+                    }
                 }
             }
+        } finally {
+            super.finalize();
         }
-
-        super.finalize();
     }
 
 
@@ -144,7 +155,8 @@ public class RefImpl<T>
             @SuppressWarnings("unchecked")
             Ref<T> result = (Ref<T>)tmp[0];
             childRefs.put(result, comment);
-            activeChildRefs.incrementAndGet();
+            ++activeChildRefs;
+            //activeChildRefs.incrementAndGet();
             return result;
         }
     }
@@ -157,7 +169,8 @@ public class RefImpl<T>
             throw new RuntimeException("An unknown reference requested to release itself. Should not happen");
         } else {
             childRefs.remove(childRef);
-            activeChildRefs.decrementAndGet();
+            // activeChildRefs.decrementAndGet();
+            --activeChildRefs;
         }
 
         checkRelease();
@@ -170,7 +183,7 @@ public class RefImpl<T>
 //        synchronized (synchronizer) {
 //            result = !isReleased || !childRefs.isEmpty();
 
-        result = !isReleased || activeChildRefs.get() != 0;
+        result = !isReleased || activeChildRefs != 0;
 
 //        }
         return result;

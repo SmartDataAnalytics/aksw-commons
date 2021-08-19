@@ -1,6 +1,5 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -15,9 +14,7 @@ import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 
 
 public class PageHelperForConsumer<T>
@@ -29,6 +26,8 @@ public class PageHelperForConsumer<T>
 
     protected LongSupplier offsetSupplier;
     protected SmartRangeCacheImpl<T> cache;
+
+    protected long maxRedundantFetchSize = 1000;
 
     public PageHelperForConsumer(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         super(cache.getSlice(), nextCheckpointOffset);
@@ -77,7 +76,6 @@ public class PageHelperForConsumer<T>
             }
         }
 
-        long maxRedundantFetchSize = 1000;
         NavigableMap<Long, Long> workerSchedules = RangeUtils.scheduleRangeSupply(offsetToEndpoint, gaps, maxRedundantFetchSize, cache.requestLimit);
 
         for (Entry<Long, Long> schedule : workerSchedules.entrySet()) {
@@ -108,11 +106,11 @@ public class PageHelperForConsumer<T>
 
     @Override
     protected void closeActual() {
-        super.closeActual();
-
         logger.debug("Releasing slots: " + workerToSlot);
         workerToSlot.values().forEach(Slot::close);
         workerToSlot.clear();
+
+        super.closeActual();
     }
 }
 

@@ -1,6 +1,5 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import org.aksw.commons.util.ref.RefFuture;

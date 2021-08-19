@@ -23,12 +23,12 @@ import com.google.common.collect.RangeSet;
  * @param <T>
  */
 public abstract class PageHelperBase<T>
+    extends AutoCloseableWithLeakDetectionBase
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
     protected Slice<T> slice;
     protected PageRange<T> pageRange;
-    protected boolean isAborted = false;
 
 
     /** At a checkpoint the data fetching tasks for the next blocks are scheduled */
@@ -100,22 +100,9 @@ public abstract class PageHelperBase<T>
 
     protected abstract void processGaps(RangeSet<Long> gaps, long start, long end);
 
+    @Override
     protected void closeActual() {
-        pageRange.releaseAll();
-    }
-
-    /**
-     * Abort the request
-     */
-    public void close() {
-        // Prevent creating an action after this method is called
-        if (!isAborted) {
-            synchronized (this) {
-                if (!isAborted) {
-                    closeActual();
-                }
-            }
-        }
+        pageRange.close();
     }
 
 }

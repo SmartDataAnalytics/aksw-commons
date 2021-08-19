@@ -23,6 +23,19 @@ public class RefFutureImpl<T>
         return wrap(getDelegate().acquire());
     }
 
+    /**
+     * A simple wrapping of an instance of {@code Ref<CompletableFuture<T>>}
+     * as a more handy instance of {@code RefFuture<T>}.
+     * All methods of the returned RefFuture delegate to the original Ref.
+     *
+     * Note, that {@code RefFuture<T>} is a sub-interface of
+     * {@code Ref<CompletableFuture<T>>}.
+     *
+     *
+     * @param <T>
+     * @param delegate
+     * @return
+     */
     public static <T> RefFuture<T> wrap(Ref<CompletableFuture<T>> delegate) {
         return new RefFutureImpl<T>(delegate);
     }
@@ -78,8 +91,9 @@ public class RefFutureImpl<T>
     }
 
     public static <T> RefFuture<T> wrap3(Ref<? extends Ref<? extends CompletableFuture<T>>> delegate) {
+        Object synchronizer = delegate.getSynchronizer();
         CompletableFuture<T> x = delegate.get().get();
-        Ref<CompletableFuture<T>> newRef = RefImpl.create(x, delegate.getSynchronizer(), delegate::close);
+        Ref<CompletableFuture<T>> newRef = RefImpl.create(x, synchronizer, delegate::close);
         return RefFutureImpl.wrap(newRef);
     }
 

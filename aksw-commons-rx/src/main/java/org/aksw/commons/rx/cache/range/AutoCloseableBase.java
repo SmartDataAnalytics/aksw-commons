@@ -1,6 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
-public class CloseHelper
+public class AutoCloseableBase
     implements AutoCloseable
 {
     protected volatile boolean isClosed = false;
@@ -17,7 +17,7 @@ public class CloseHelper
     protected void closeActual() {}
 
     @Override
-    public synchronized void close() {
+    public final synchronized void close() {
         if (!isClosed) {
             isClosed = true;
             closeActual();

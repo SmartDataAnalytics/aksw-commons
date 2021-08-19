@@ -62,6 +62,10 @@ public interface Slice<T>
             lock.lock();
             try {
                 result = fn.apply(metaData);
+
+                if (isWrite) {
+                    metaData.getHasDataCondition().signalAll();
+                }
             } finally {
                 lock.unlock();
             }

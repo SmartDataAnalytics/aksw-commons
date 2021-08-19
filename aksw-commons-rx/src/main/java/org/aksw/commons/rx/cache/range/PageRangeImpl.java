@@ -28,7 +28,7 @@ import com.google.common.primitives.Ints;
  * @param <T>
  */
 public class PageRangeImpl<T>
-    extends CloseHelper
+    extends AutoCloseableWithLeakDetectionBase
     implements PageRange<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageRangeImpl.class);
@@ -95,6 +95,7 @@ public class PageRangeImpl<T>
 
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> {
+                logger.debug("Acquired page item [" + idx + "]");
                 RefFuture<BufferWithGeneration<T>> page = cache.getPageForPageId(idx);
 
 //                if (isLocked) {

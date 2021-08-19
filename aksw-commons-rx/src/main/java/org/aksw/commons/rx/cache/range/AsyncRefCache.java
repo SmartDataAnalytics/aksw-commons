@@ -24,8 +24,8 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
 
 /**
  * A wrapper around a cache that on each lookup returns a fresh CompletableFuture that
- * can be cancelled independently. Only if all futures are cancelled then the
- * actual future is cancelled.
+ * can be cancelled independently. Only if all 'slave' futures are cancelled then the
+ * 'master' future is cancelled.
  *
  * Once a master's future is loaded then the slave futures will close themselves
  * as the loading can no longer be interrupted.
@@ -42,7 +42,7 @@ public class AsyncRefCache<K, V> {
     protected AsyncLoadingCache<K, V> master;
 
     /** A 'slave' map that wraps the completable futures of the master as a ref
-     * The slave is synchronized with the master - it atomatically contains the same keys.
+     * The slave is synchronized with the master - it atomically contains the same keys.
      */
     protected Map<K, RefFuture<V>> slave;
 
@@ -129,6 +129,10 @@ public class AsyncRefCache<K, V> {
 
     public void put(K key, RefFuture<V> value) {
         synchronized (slave) {
+            if (!value.isAlive()) {
+                throw new RuntimeException("Cannot put a dead reference");
+            }
+
             master.put(key, value.get());
             slave.put(key, value);
         }
@@ -141,6 +145,11 @@ public class AsyncRefCache<K, V> {
      * @return
      */
     public RefFuture<V> getAsRefFuture(K key) {
+
+        RefFuture<V> result;
+
+        synchronized (slave) {
+
         boolean[] isNewRootRef = { false };
         RefFuture<V> rootRef = slave.computeIfAbsent(key, k -> {
             CompletableFuture<V> future = master.get(key);
@@ -148,7 +157,7 @@ public class AsyncRefCache<K, V> {
             isNewRootRef[0] = true;
 
 
-            Ref<CompletableFuture<V>> tmp = RefImpl.create(future, slave, () ->{
+            Ref<CompletableFuture<V>> tmp = RefImpl.create(future, slave, () -> {
                 RefFutureImpl.closeAction(future, null);
                 slave.remove(key);
             });
@@ -157,10 +166,12 @@ public class AsyncRefCache<K, V> {
             return r;
         });
 
-        RefFuture<V> result = rootRef.acquire();
+        result = rootRef.acquire();
 
         if (isNewRootRef[0]) {
             rootRef.close();
+        }
+
         }
 
         return result;

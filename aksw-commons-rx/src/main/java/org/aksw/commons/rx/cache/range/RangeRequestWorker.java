@@ -33,7 +33,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
  * @param <T>
  */
 public class RangeRequestWorker<T>
-    extends CloseHelper
+    extends AutoCloseableWithLeakDetectionBase
     implements Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(RangeRequestWorker.class);

@@ -1,11 +1,5 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ExecutionException;
-
-import org.aksw.commons.util.range.RangeBuffer;
-import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +38,7 @@ public class RangeRequestIterator<T>
      */
     protected Range<Long> requestRange;
 
-    protected Iterator<T> currentPageIt = null;
+    protected SliceWithPagesIterator<T> currentPageIt = null;
 
     // protected int currentIndex = -1;
 
@@ -92,6 +86,10 @@ public class RangeRequestIterator<T>
 
         if (requestRange.contains(currentOffset)) {
             if (currentPageIt == null || !currentPageIt.hasNext()) {
+
+                if (currentPageIt != null) {
+                    currentPageIt.close();
+                }
 
                 currentPageIt = new SliceWithPagesIterator<>(cache.getSlice(), currentOffset);
 
@@ -146,6 +144,11 @@ public class RangeRequestIterator<T>
      * Abort the request
      */
     public void close() {
+
+        if (currentPageIt != null) {
+            currentPageIt.close();
+        }
+
         pageHelper.close();
     }
 

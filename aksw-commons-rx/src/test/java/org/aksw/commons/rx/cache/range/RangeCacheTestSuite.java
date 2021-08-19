@@ -38,12 +38,17 @@ public abstract class RangeCacheTestSuite {
 
         // flow.toList().blockingGet().forEach(System.out::println);
 
-        // Thread.sleep(5000);
+        Thread.sleep(3000);
+
+        for (int i = 0; i < 3; ++i) {
+            System.gc();
+        }
+
         System.out.println("Done waiting");
     }
 
 
-    @Test
+    // @Test
     public void testCount() throws InterruptedException {
 
         List<String> items = LongStream.range(0, 10000)
@@ -59,7 +64,8 @@ public abstract class RangeCacheTestSuite {
 
         System.out.println(range);
 
-        // Thread.sleep(5000);
+        Thread.sleep(3000);
+        System.gc();
         System.out.println("Done waiting");
     }
 
