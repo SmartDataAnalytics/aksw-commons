@@ -17,14 +17,14 @@ import org.aksw.commons.util.ref.RefImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.github.benmanes.caffeine.cache.Scheduler;
 
+/* DO NOT USE BECAUSE OF DESIGN FLAW: level3 cache in this impl uses Refs - but who would close them?
+ * Level3 could close them upon eviction, but as this may never happen (or only very late) resources will be blocked indefinitely */
 
 /**
  * An extension of loading cache that allows for making explicit
@@ -46,15 +46,15 @@ import com.github.benmanes.caffeine.cache.Scheduler;
  * @param <K>
  * @param <V>
  */
-public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
+public class AsyncClaimingCacheImplOld<K, V> implements AsyncClaimingCache<K, V> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCacheImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCacheImplOld.class);
 
     /** The map of claimed items; the value is a reference to the RefFuture of level3
      * Once the outer reference gets closed (i.e. when there are no more claims),
      * the value is immediately added to level2.
      */
-    protected Map<K, RefFuture<V>> level1;
+    protected Map<K, Ref<RefFuture<V>>> level1;
 
     /** If the sync pool is non null, then eviction of an item from the active cache
      *  adds those items to this pool. There, items can be scheduled for syncing
@@ -69,11 +69,11 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
      *
      */
     // protected LoadingCache<K, Ref<CompletableFuture<Ref<V>>>> level2;
-    protected Cache<K, SingleValuedAccessor<CompletableFuture<V>>> level2;
+    protected Cache<K, SingleValuedAccessor<RefFuture<V>>> level2;
 
     /** The cache with the primary loader */
     // protected AsyncLoadingCache<K, Ref<V>> level3;
-    protected AsyncLoadingCache<K, V> level3;
+    protected AsyncRefCache<K, V> level3;
 
     /** The listener for when an item is removed from *all* levels of the cache */
     // protected RemovalListener<K, V> removalListener;
@@ -92,11 +92,11 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             RemovalListener<K, V> level3RemovalListener,
 
             RemovalListener<K, V> level2RemovalListener) {
-        return new AsyncClaimingCacheImpl<>(level3Master, level3CacheLoader, level3RemovalListener, level2RemovalListener, syncDelayDuration);
+        return new AsyncClaimingCacheImplOld<>(level3Master, level3CacheLoader, level3RemovalListener, level2RemovalListener, syncDelayDuration);
     }
 
 
-    public AsyncClaimingCacheImpl(
+    public AsyncClaimingCacheImplOld(
             Caffeine<Object, Object> level3Master,
             Function<K, V> level3CacheLoader,
             RemovalListener<K, V> level3RemovalListener,
@@ -108,10 +108,11 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                 .scheduler(Scheduler.systemScheduler())
                 // .expireAfterWrite(1, TimeUnit.SECONDS)
                 .expireAfterWrite(syncDelayDuration)
-                .evictionListener((K key, SingleValuedAccessor<CompletableFuture<V>> holder, RemovalCause removalCause) -> {
-                    CompletableFuture<V> future = holder.get();
-                    if (future != null) {
+                .evictionListener((K key, SingleValuedAccessor<RefFuture<V>> holder, RemovalCause removalCause) -> {
+                    RefFuture<V> refFuture = holder.get();
+                    if (refFuture != null) {
                         logger.debug("Level2 eviction action: Syncing & passing to level 3: " + key);
+                        CompletableFuture<V> future = refFuture.get();
                         if (future.isDone()) {
                             V value;
                             try {
@@ -122,7 +123,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                             level2RemovalListener.onRemoval(key, value, removalCause);
 
                             // RefFuture<V> tmpRef = refFuture.acquire();
-                            level3.put(key, future);
+                            level3.put(key, refFuture);
                             // tmpRef.close();
                         }
                     } else {
@@ -142,11 +143,12 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
         // Configure the level3 eviction listener such that the custom listener is only
         // invoked if a key is not present in any other levels of the cache
-
-        this.level3 = level3Master
-                .evictionListener((K key, V value, RemovalCause removalCause) -> {
+        this.level3 = new AsyncRefCache<>(
+                level3Master,
+                level3CacheLoader,
+                (key, value, removalCause) -> {
                     synchronized (level1) {
-                        SingleValuedAccessor<CompletableFuture<V>> holder = level2.getIfPresent(key);
+                        SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
                         boolean isKeyPresentInLevel1Or2 = level1.containsKey(key) || (holder != null && holder.get() != null);
 
                         if (!isKeyPresentInLevel1Or2) {
@@ -154,28 +156,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                             level3RemovalListener.onRemoval(key, value, removalCause);
                         }
                     }
-                })
-                .buildAsync((K key) -> {
-                    logger.debug("Loading: " + key);
-                    V value = level3CacheLoader.apply(key);
-                    return value;
                 });
-
-
-//        this.level3 = new AsyncRefCache<>(
-//                level3Master,
-//                level3CacheLoader,
-//                (K key, V value, RemovalCause removalCause) -> {
-//                    synchronized (level1) {
-//                        SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
-//                        boolean isKeyPresentInLevel1Or2 = level1.containsKey(key) || (holder != null && holder.get() != null);
-//
-//                        if (!isKeyPresentInLevel1Or2) {
-//                            logger.debug("Complete eviction of " + key + " is - no longer present in any other level");
-//                            level3RemovalListener.onRemoval(key, value, removalCause);
-//                        }
-//                    }
-//                });
 
 //
 //        this.level3 = cacheBuilder
@@ -224,16 +205,16 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
 
     /**
-     * Claim a reference to the key's entry.
+     * Internally, in a first step a key is resolved to a RefFuture<V> which
+     * represents the loading of value V. As soon as there is no more interest in
+     * RefFuture<V> then loading may be cancelled.
      *
      * @param key
      * @return
-     * @throws ExecutionException
      */
-    @Override
-    public RefFuture<V> claim(K key) {
+    protected Ref<RefFuture<V>> claimInternal(K key) {
 
-        RefFuture<V> result;
+        Ref<RefFuture<V>> result;
 
         // Probably we need this synchronized block because to avoid concurrency issue
         // with the close action of a Reference
@@ -245,11 +226,11 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
         // acquires a child ref of the root one and closes the root.
 
         boolean[] isFreshSecondaryRef = { false };
-        RefFuture<V> secondaryRef = level1.computeIfAbsent(key, k -> {
+        Ref<RefFuture<V>> secondaryRef = level1.computeIfAbsent(key, k -> {
             // Wrap the loaded reference such that closing the fully loaded reference adds it to level 2
 
-            SingleValuedAccessor<CompletableFuture<V>> holder = level2.getIfPresent(key);
-            CompletableFuture<V> tmpRefFuture = holder == null ? null : holder.get();
+            SingleValuedAccessor<RefFuture<V>> holder = level2.getIfPresent(key);
+            RefFuture<V> tmpRefFuture = holder == null ? null : holder.get();
             if (tmpRefFuture != null) {
                 logger.debug("Claiming item [" + key + "] from level2");
                 // Unset the value of the holder such that invalidation does not apply the close action
@@ -257,21 +238,21 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                 level2.invalidate(key);
             } else {
                 logger.debug("Claiming item [" + key + "] from level3");
-                tmpRefFuture = level3.get(key);
+                tmpRefFuture = level3.getAsRefFuture(key);
             }
 
+            RefFuture<V> refFuture = tmpRefFuture;
 
-            final CompletableFuture<V> refFuture = tmpRefFuture;
-            Ref<CompletableFuture<V>> freshSecondaryRef =
-                    RefImpl.create(tmpRefFuture, level1, () -> {
-                        RefFutureImpl.closeAction(refFuture, null);
+            Ref<RefFuture<V>> freshSecondaryRef =
+                    RefImpl.create(refFuture, level1, () -> {
+                        RefFutureImpl.closeAction(refFuture.get(), null);
                         level1.remove(key);
                         logger.debug("Item [" + key + "] was unclaimed. Transferring to level2.");
                         level2.put(key, new SingleValuedAccessorDirect<>(refFuture));
                     });
             isFreshSecondaryRef[0] = true;
 
-            return RefFutureImpl.wrap(freshSecondaryRef);
+            return freshSecondaryRef;
         });
 
         result = secondaryRef.acquire();
@@ -284,6 +265,19 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
         return result;
     }
 
+    /**
+     * Claim a reference to the key's entry.
+     *
+     * @param key
+     * @return
+     * @throws ExecutionException
+     */
+    @Override
+    public RefFuture<V> claim(K key) { // throws ExecutionException {
+        Ref<RefFuture<V>> tmp = claimInternal(key);
+        RefFuture<V> result = RefFutureImpl.wrap3(tmp);
+        return result;
+    }
 
 
     /**
@@ -343,7 +337,8 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
     @Override
     public void invalidateAll() {
-         level3.synchronous().invalidateAll();
+        level3.invalidateAll();
+        // level3.synchronous().invalidateAll();
     }
 
 

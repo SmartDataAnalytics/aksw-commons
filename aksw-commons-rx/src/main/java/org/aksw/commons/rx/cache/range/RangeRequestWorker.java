@@ -249,9 +249,7 @@ public class RangeRequestWorker<T>
 
         Range<Long> claimAheadRange = Range.closedOpen(offset, offset + effectiveLimit);
 
-        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
-            SliceMetaData metaData = ref.await();
-
+        slice.computeFromMetaData(false, metaData -> {
             RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
             if (gaps.isEmpty()) {
                 // Nothing todo; not updating the limits will cause the worker to terminate
@@ -261,7 +259,8 @@ public class RangeRequestWorker<T>
 
                 nextCheckpointOffset = last;
             }
-        }
+            return null;
+        });
 
 //
 //

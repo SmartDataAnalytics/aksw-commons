@@ -156,6 +156,7 @@ public class AsyncRefCache<K, V> {
 
             isNewRootRef[0] = true;
 
+            // RefFutureImpl.fromFuture(future, slave);
 
             Ref<CompletableFuture<V>> tmp = RefImpl.create(future, slave, () -> {
                 RefFutureImpl.closeAction(future, null);
