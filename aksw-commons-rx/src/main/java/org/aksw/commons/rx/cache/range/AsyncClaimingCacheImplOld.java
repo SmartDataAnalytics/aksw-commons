@@ -245,7 +245,7 @@ public class AsyncClaimingCacheImplOld<K, V> implements AsyncClaimingCache<K, V>
 
             Ref<RefFuture<V>> freshSecondaryRef =
                     RefImpl.create(refFuture, level1, () -> {
-                        RefFutureImpl.closeAction(refFuture.get(), null);
+                        RefFutureImpl.cancelFutureOrCloseValue(refFuture.get(), null);
                         level1.remove(key);
                         logger.debug("Item [" + key + "] was unclaimed. Transferring to level2.");
                         level2.put(key, new SingleValuedAccessorDirect<>(refFuture));

@@ -159,7 +159,7 @@ public class AsyncRefCache<K, V> {
             // RefFutureImpl.fromFuture(future, slave);
 
             Ref<CompletableFuture<V>> tmp = RefImpl.create(future, slave, () -> {
-                RefFutureImpl.closeAction(future, null);
+                RefFutureImpl.cancelFutureOrCloseValue(future, null);
                 slave.remove(key);
             });
             RefFuture<V> r = RefFutureImpl.wrap(tmp);

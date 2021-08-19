@@ -50,18 +50,18 @@ public class RefFutureImpl<T>
 
     /** Create a ref that upon close cancels the future or closes the ref when it is available s*/
     public static <T> RefFuture<T> fromFuture(CompletableFuture<Ref<T>> future, Object synchronizer) {
-      return wrap(RefImpl.create(future.thenApply(Ref::get), synchronizer, () -> closeAction(future), null));
+      return wrap(RefImpl.create(future.thenApply(Ref::get), synchronizer, () -> cancelFutureOrCloseRef(future), null));
     }
 
-    public static void closeAction(CompletableFuture<? extends Ref<?>> future) {
-        closeAction(future, Ref::close);
+    public static void cancelFutureOrCloseRef(CompletableFuture<? extends Ref<?>> future) {
+        cancelFutureOrCloseValue(future, Ref::close);
     }
 
 
-    public static <T> void closeAction(CompletableFuture<T> future, Consumer<? super T> valueCloseAction) {
+    public static <T> void cancelFutureOrCloseValue(CompletableFuture<T> future, Consumer<? super T> valueCloseAction) {
         try {
             boolean isCancelled = future.cancel(true);
-            logger.debug("isCancelled: " + isCancelled);
+            // logger.debug("isCancelled: " + isCancelled);
             if (!isCancelled) {
                 T value = future.get();
                 if (value != null && valueCloseAction != null) {

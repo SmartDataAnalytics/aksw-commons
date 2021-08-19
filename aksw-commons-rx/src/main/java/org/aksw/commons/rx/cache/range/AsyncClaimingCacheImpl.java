@@ -111,7 +111,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                 .evictionListener((K key, SingleValuedAccessor<CompletableFuture<V>> holder, RemovalCause removalCause) -> {
                     CompletableFuture<V> future = holder.get();
                     if (future != null) {
-                        logger.debug("Level2 eviction action: Syncing & passing to level 3: " + key);
+                        logger.trace("Level2 eviction action: Syncing & passing to level 3: " + key);
                         if (future.isDone()) {
                             V value;
                             try {
@@ -126,7 +126,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                             // tmpRef.close();
                         }
                     } else {
-                        logger.debug("Level2 eviction action: Reference was null - assuming re-claimed to level 1");
+                        logger.trace("Level2 eviction action: Reference was null - assuming re-claimed to level 1");
                     }
 
                     // RefFuture<V> refFuture = RefFutureImpl.fromRef(primaryRef);
@@ -251,12 +251,12 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             SingleValuedAccessor<CompletableFuture<V>> holder = level2.getIfPresent(key);
             CompletableFuture<V> tmpRefFuture = holder == null ? null : holder.get();
             if (tmpRefFuture != null) {
-                logger.debug("Claiming item [" + key + "] from level2");
+                logger.trace("Claiming item [" + key + "] from level2");
                 // Unset the value of the holder such that invalidation does not apply the close action
                 holder.set(null);
                 level2.invalidate(key);
             } else {
-                logger.debug("Claiming item [" + key + "] from level3");
+                logger.trace("Claiming item [" + key + "] from level3");
                 tmpRefFuture = level3.get(key);
             }
 
@@ -264,9 +264,9 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             final CompletableFuture<V> refFuture = tmpRefFuture;
             Ref<CompletableFuture<V>> freshSecondaryRef =
                     RefImpl.create(tmpRefFuture, level1, () -> {
-                        RefFutureImpl.closeAction(refFuture, null);
+                        RefFutureImpl.cancelFutureOrCloseValue(refFuture, null);
                         level1.remove(key);
-                        logger.debug("Item [" + key + "] was unclaimed. Transferring to level2.");
+                        logger.trace("Item [" + key + "] was unclaimed. Transferring to level2.");
                         level2.put(key, new SingleValuedAccessorDirect<>(refFuture));
                     });
             isFreshSecondaryRef[0] = true;
