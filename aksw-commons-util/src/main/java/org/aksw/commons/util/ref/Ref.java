@@ -8,7 +8,7 @@ package org.aksw.commons.util.ref;
  * in time when the last reference is released. The main use case is for memory paging
  * such that if several threads request the same page only one physical buffer is handed out
  * from a cache - conversely, as long as a page is still in used by a client, cache eviction
- * may be suppressed.
+ * and synchronization may be suppressed.
  *
  *
  * @author raven

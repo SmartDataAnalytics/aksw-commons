@@ -1,9 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import org.aksw.commons.util.ref.StackTraceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +21,7 @@ public class AutoCloseableWithLeakDetectionBase
 {
     private static final Logger logger = LoggerFactory.getLogger(AutoCloseableWithLeakDetectionBase.class);
 
-    protected final StackTraceElement[] instantiationStackTrace = Thread.currentThread().getStackTrace();
+    protected final StackTraceElement[] instantiationStackTrace = StackTraceUtils.getStackTraceIfEnabled();
 
     public StackTraceElement[] getInstantiationStackTrace() {
         return instantiationStackTrace;
@@ -34,12 +31,9 @@ public class AutoCloseableWithLeakDetectionBase
     protected void finalize() throws Throwable {
         try {
             if (!isClosed) {
-                String str = instantiationStackTrace == null
-                        ? "(no stack trace available)"
-                        : Arrays.asList(instantiationStackTrace).stream().map(s -> "  " + Objects.toString(s))
-                            .collect(Collectors.joining("\n"));
+                String str = StackTraceUtils.toString(instantiationStackTrace);
 
-                logger.warn("Ref released by GC rather than user logic - indicates resource leak. Acquired at " + str);
+                logger.warn("Close invoked via GC rather than user logic - indicates resource leak. Object constructed at " + str);
 
                 close();
             }

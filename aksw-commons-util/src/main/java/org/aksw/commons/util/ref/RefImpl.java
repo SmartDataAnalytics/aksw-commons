@@ -1,11 +1,8 @@
 package org.aksw.commons.util.ref;
 
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -93,17 +90,8 @@ public class RefImpl<T>
         this.comment = comment;
 
         if (traceAcquisitions) {
-            acquisitionStackTrace = Thread.currentThread().getStackTrace();
+            acquisitionStackTrace = StackTraceUtils.getStackTraceIfEnabled();
         }
-    }
-
-    public static String toString(StackTraceElement[] stackTrace) {
-        String result = stackTrace == null
-                ? "(no stack trace available)"
-                : Arrays.asList(stackTrace).stream().map(s -> "  " + Objects.toString(s))
-                    .collect(Collectors.joining("\n"));
-
-        return result;
     }
 
     /**
@@ -116,7 +104,7 @@ public class RefImpl<T>
                 synchronized (synchronizer) {
                     if (!isReleased) {
                         String msg = "Ref released by GC rather than user logic - indicates resource leak."
-                                + "Acquired at " + toString(acquisitionStackTrace);
+                                + "Acquired at " + StackTraceUtils.toString(acquisitionStackTrace);
                         logger.warn(msg);
 
                         close();
@@ -152,7 +140,7 @@ public class RefImpl<T>
         synchronized (synchronizer) {
             if (!isAlive()) {
                 String msg = "Cannot aquire from a reference with isAlive=false"
-                        + "\nClose triggered at: " + toString(closeTriggerStackTrace);
+                        + "\nClose triggered at: " + StackTraceUtils.toString(closeTriggerStackTrace);
                 throw new RuntimeException(msg);
             }
 
@@ -203,14 +191,14 @@ public class RefImpl<T>
         synchronized (synchronizer) {
             if (isReleased) {
                 String msg = "Reference was already released." +
-                        "\nReleased at: " + toString(closeStackTrace) +
-                        "\nAcquired at: " + toString(acquisitionStackTrace);
+                        "\nReleased at: " + StackTraceUtils.toString(closeStackTrace) +
+                        "\nAcquired at: " + StackTraceUtils.toString(acquisitionStackTrace);
 
                 throw new RuntimeException(msg);
             }
 
             if (traceAcquisitions) {
-                closeStackTrace = Thread.currentThread().getStackTrace();
+                closeStackTrace = StackTraceUtils.getStackTraceIfEnabled();
             }
 
             // logger.debug("Released reference " + comment + " to " + parent);
@@ -225,7 +213,7 @@ public class RefImpl<T>
 
         if (!isAlive()) {
             if (traceAcquisitions) {
-                closeTriggerStackTrace = Thread.currentThread().getStackTrace();
+                closeTriggerStackTrace = StackTraceUtils.getStackTraceIfEnabled();
             }
 
             if (releaseAction != null) {
@@ -293,7 +281,7 @@ public class RefImpl<T>
 
     @Override
     public String toString() {
-        String result = "Reference [" + comment + "] aquired at " + toString(acquisitionStackTrace);
+        String result = "Reference [" + comment + "] aquired at " + StackTraceUtils.toString(acquisitionStackTrace);
         return result;
     }
 }
