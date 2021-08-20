@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +97,15 @@ public class RefImpl<T>
         }
     }
 
+    public static String toString(StackTraceElement[] stackTrace) {
+        String result = stackTrace == null
+                ? "(no stack trace available)"
+                : Arrays.asList(stackTrace).stream().map(s -> "  " + Objects.toString(s))
+                    .collect(Collectors.joining("\n"));
+
+        return result;
+    }
+
     /**
      * TODO Switch to Java 9 Cleaner once we upgrade
      */
@@ -105,12 +115,9 @@ public class RefImpl<T>
             if (!isReleased) {
                 synchronized (synchronizer) {
                     if (!isReleased) {
-                        String str = acquisitionStackTrace == null
-                                ? "(no stack trace available)"
-                                : Arrays.asList(acquisitionStackTrace).stream().map(s -> "  " + Objects.toString(s))
-                                    .collect(Collectors.joining("\n"));
-
-                        logger.warn("Ref released by GC rather than user logic - indicates resource leak. Acquired at " + str);
+                        String msg = "Ref released by GC rather than user logic - indicates resource leak."
+                                + "Acquired at " + toString(acquisitionStackTrace);
+                        logger.warn(msg);
 
                         close();
                     }
@@ -144,7 +151,9 @@ public class RefImpl<T>
     public Ref<T> acquire(Object comment) {
         synchronized (synchronizer) {
             if (!isAlive()) {
-                throw new RuntimeException("Cannot aquire from a reference with isAlive=false");
+                String msg = "Cannot aquire from a reference with isAlive=false"
+                        + "\nClose triggered at: " + toString(closeTriggerStackTrace);
+                throw new RuntimeException(msg);
             }
 
             // A bit of ugliness to allow the reference to release itself
@@ -193,7 +202,11 @@ public class RefImpl<T>
     public void close() {
         synchronized (synchronizer) {
             if (isReleased) {
-                throw new RuntimeException("Reference was already released");
+                String msg = "Reference was already released." +
+                        "\nReleased at: " + toString(closeStackTrace) +
+                        "\nAcquired at: " + toString(acquisitionStackTrace);
+
+                throw new RuntimeException(msg);
             }
 
             if (traceAcquisitions) {
@@ -280,13 +293,7 @@ public class RefImpl<T>
 
     @Override
     public String toString() {
-        String result = Stream.concat(
-                Stream.of("Reference [" + comment + "] aquired at "),
-                acquisitionStackTrace == null
-                    ? Stream.of("unknown location")
-                    : Arrays.asList(acquisitionStackTrace).stream().map(str -> "  " + Objects.toString(str)))
-        .collect(Collectors.joining("\n"));
-
+        String result = "Reference [" + comment + "] aquired at " + toString(acquisitionStackTrace);
         return result;
     }
 }
