@@ -1,6 +1,6 @@
-package org.aksw.commons.rx.cache.range;
+package org.aksw.commons.util.closeable;
 
-import org.aksw.commons.util.ref.StackTraceUtils;
+import org.aksw.commons.util.stack_trace.StackTraceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.aksw.commons.util.ref;
+package org.aksw.commons.util.stack_trace;
 
 import java.util.Arrays;
 import java.util.Objects;

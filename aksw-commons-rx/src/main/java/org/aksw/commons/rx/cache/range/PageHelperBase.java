@@ -2,6 +2,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.concurrent.locks.Lock;
 
+import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

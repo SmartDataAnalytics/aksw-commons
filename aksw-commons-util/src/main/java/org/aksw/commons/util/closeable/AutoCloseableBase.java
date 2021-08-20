@@ -1,4 +1,4 @@
-package org.aksw.commons.rx.cache.range;
+package org.aksw.commons.util.closeable;
 
 public class AutoCloseableBase
     implements AutoCloseable
