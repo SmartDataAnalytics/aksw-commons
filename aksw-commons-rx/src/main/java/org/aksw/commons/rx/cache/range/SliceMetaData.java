@@ -85,8 +85,13 @@ public interface SliceMetaData {
     }
 
     default RangeSet<Long> getGaps(Range<Long> requestRange) {
+        long maxKnownSize = getMaximumKnownSize();
+        Range<Long> maxKnownRange = Range.closedOpen(0l, maxKnownSize);
+
+        Range<Long> effectiveRequestRange = requestRange.intersection(maxKnownRange);
+
         RangeSet<Long> loadedRanges = getLoadedRanges();
-        RangeSet<Long> result = RangeUtils.gaps(requestRange, loadedRanges);
+        RangeSet<Long> result = RangeUtils.gaps(effectiveRequestRange, loadedRanges);
         return result;
     }
 

@@ -609,7 +609,7 @@ public class SmartRangeCacheImpl<T>
                             logger.info("Syncing dirty buffer " + internalKey);
                             // keyToVersion.put(key, generation);
                             store.put(internalKey, buffer);
-                            value.setValue(version);
+                            value.setValue(generation);
                         } else {
                             logger.info("Syncing not needed because of clean buffer " + internalKey);
                         }
