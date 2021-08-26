@@ -1,5 +1,6 @@
 package org.aksw.commons.rx.util;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -9,10 +10,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Streams;
 
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
@@ -29,6 +33,25 @@ import io.reactivex.rxjava3.internal.queue.SpscArrayQueue;
 
 public class RxUtils {
     private static final Logger logger = LoggerFactory.getLogger(RxUtils.class);
+
+    /**
+     * Create a stream that <b>must eventually be closed</b> from a Flowable.
+     * If closing cannot be ensured then it is most likely preferrable to use
+     * {@code flowable.toList().blockingGet().stream()}.
+     *
+     * Example Usage:
+     * <pre>
+     * try (Stream<T> stream : RxUtils.stream(flowable)) {
+     *    ...
+     * }
+     * </pre>
+     **/
+    public static <T> Stream<T> stream(Flowable<T> flowable) {
+        Iterator<T> it = flowable.blockingIterable().iterator();
+        Disposable disposable = (Disposable) it;
+        Stream<T> result = Streams.stream(it).onClose(disposable::dispose);
+        return result;
+    }
 
     /**
      * If something goes wrong when running the wrapped action
