@@ -2,6 +2,7 @@ package org.aksw.commons.util.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,33 +22,68 @@ public class ClassUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ClassUtils.class);
 
+    @SuppressWarnings("unchecked")
+    public static <T> T getFieldValueChecked(Class<?> clazz, String fieldName, Object obj)
+            throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        Field field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        Object result = field.get(obj);
+        return (T)result;
+    }
+
+    public static <T> T getFieldValue(Class<?> clazz, String fieldName, Object obj) {
+        try {
+            T result = getFieldValue(clazz, fieldName, obj);
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T getFieldValue(Object obj, String fieldName) {
+        return getFieldValue(obj.getClass(), fieldName, obj);
+    }
+
+    public static void setFieldValueChecked(
+            Class<?> clazz,
+            String fieldName,
+            Object obj,
+            Object value)
+                throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+        Field field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+
+        if ((field.getModifiers() & Modifier.FINAL) != 0) {
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        }
+
+        field.set(obj, value);
+    }
+
+    public static void setFieldValue(
+            Class<?> clazz,
+            String fieldName,
+            Object obj,
+            Object value) {
+        try {
+            setFieldValueChecked(clazz, fieldName, obj, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void setFieldValue(
+            Object obj,
+            String fieldName,
+            Object value) {
+        setFieldValue(obj.getClass(), fieldName, value);
+    }
+
     public static Object forceInvoke(Method m, Object[] args)
     {
         return forceInvoke(null, m, args);
-    }
-
-    public static <T> T forceGet(Object o, String declaredFieldName) {
-        return forceGet(o, o.getClass(), declaredFieldName);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T forceGet(Object o, Class<?> clazz, String declaredFieldName) {
-        T result;
-        Field field;
-        try {
-
-            field = clazz.getDeclaredField(declaredFieldName);
-            boolean isAccessible = field.isAccessible();
-            field.setAccessible(true);
-
-            Object tmp = field.get(o);
-            result = (T)tmp;
-            field.setAccessible(isAccessible);
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-
-        return result;
     }
 
     public static Object forceInvoke(Object o, Method m, Object[] args)
