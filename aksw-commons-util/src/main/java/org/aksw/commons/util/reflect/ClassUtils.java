@@ -33,7 +33,7 @@ public class ClassUtils {
 
     public static <T> T getFieldValue(Class<?> clazz, String fieldName, Object obj) {
         try {
-            T result = getFieldValue(clazz, fieldName, obj);
+            T result = getFieldValueChecked(clazz, fieldName, obj);
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);
