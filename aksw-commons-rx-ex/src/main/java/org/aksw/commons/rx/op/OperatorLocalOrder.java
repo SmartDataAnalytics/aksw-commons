@@ -1,6 +1,9 @@
 package org.aksw.commons.rx.op;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -17,6 +20,7 @@ import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.FlowableOperator;
 import io.reactivex.rxjava3.core.FlowableSubscriber;
 import io.reactivex.rxjava3.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.rxjava3.internal.util.BackpressureHelper;
 
 public final class OperatorLocalOrder<T, S>
     extends LocalOrderBase<T, S>
@@ -49,9 +53,10 @@ public final class OperatorLocalOrder<T, S>
     {
         protected Subscriber<? super T> downstream;
         protected Subscription upstream;
+        protected volatile boolean isUpstreamComplete = false;
+
 
         protected S expectedSeqId = initialExpectedSeqId;
-        protected boolean isComplete = false;
 
         protected ConcurrentNavigableMap<S, T> seqIdToValue = new ConcurrentSkipListMap<>((a, b) -> distanceFn.apply(a, b).intValue());
 
@@ -81,20 +86,20 @@ public final class OperatorLocalOrder<T, S>
 
 //          System.err.println("ENCOUNTERED CONTRIB " + seqId + " WITH QUEUE size " + seqIdToValue.keySet().size());
             // If complete, the seqId must not be higher than the latest seen one
-            if (isComplete) {
-                if (seqIdToValue.isEmpty()) {
-                    downstream.onError(new RuntimeException(
-                            "Sanity check failed: Call to onNext encountered after completion."));
-                }
-
-                S highestSeqId = seqIdToValue.descendingKeySet().first();
-
-                if (distanceFn.apply(seqId, highestSeqId).intValue() > 0) {
-                    downstream.onError(new RuntimeException(
-                            "Sequence was marked as complete with id " + highestSeqId
-                            + " but a higher id was encountered " + seqId));
-                }
-            }
+//            if (isUpstreamComplete) {
+//                if (seqIdToValue.isEmpty()) {
+//                    downstream.onError(new RuntimeException(
+//                            "Sanity check failed: Call to onNext encountered after completion."));
+//                }
+//
+//                S highestSeqId = seqIdToValue.descendingKeySet().first();
+//
+//                if (distanceFn.apply(seqId, highestSeqId).intValue() > 0) {
+//                    downstream.onError(new RuntimeException(
+//                            "Sequence was marked as complete with id " + highestSeqId
+//                            + " but a higher id was encountered " + seqId));
+//                }
+//            }
 
             boolean checkForExistingKeys = true;
             if (checkForExistingKeys) {
@@ -103,15 +108,60 @@ public final class OperatorLocalOrder<T, S>
                 }
             }
 
-            // Add item to the map
-            seqIdToValue.put(seqId, value);
+            // Add item to the map and drain
+            drain(true, () -> seqIdToValue.put(seqId, value));
+        }
 
-            // Consume consecutive items from the map
+        protected void drain() {
+            drain(false, null);
+        }
+
+        protected void drain(boolean isCalledFromOnNext, Runnable action) {
+            List<T> buffer = new ArrayList<>();
+            synchronized (seqIdToValue) {
+                if (action != null) {
+                    action.run();
+                }
+                drainTo(buffer);
+            }
+            for (T item : buffer) {
+                downstream.onNext(item);
+            }
+
+            postDrainRequests(isCalledFromOnNext);
+        }
+
+        public void postDrainRequests(boolean isCalledFromOnNext) {
+            if (pending.get() > 0) {
+
+                // If after a drain the upstream is complete and there is still
+                // downstream demand then
+                // trigger the onComplete event on downstream
+                if (isUpstreamComplete) {
+                    downstream.onComplete();
+
+                    // Check for out-of-order items
+                    if (!seqIdToValue.isEmpty()) {
+                        int size = seqIdToValue.size();
+                        String msg = "Upstream completed but " + size + " out of order items still queued";
+                        logger.warn(msg);
+                        throw new RuntimeException(msg);
+                    }
+                } else {
+                    if (isCalledFromOnNext) {
+//                        System.out.println("Requesting another item - demand is " + pending.get() + " queue size is " + seqIdToValue.size());
+                        upstream.request(1);
+                    }
+                }
+            }
+        }
+        protected void drainTo(Collection<T> buffer) {
+
             Iterator<Entry<S, T>> it = seqIdToValue.entrySet().iterator();
             while (it.hasNext() && pending.get() > 0) {
-//                  if(delegate.isCancelled()) {
-//                      throw new RuntimeException("Downstream cancelled");
-//                  }
+//                    if(delegate.isCancelled()) {
+//                        throw new RuntimeException("Downstream cancelled");
+//                    }
 
                 Entry<S, T> e = it.next();
                 S s = e.getKey();
@@ -121,7 +171,7 @@ public final class OperatorLocalOrder<T, S>
                 if (d == 0) {
                     it.remove();
                     pending.decrementAndGet();
-                    downstream.onNext(v);
+                    buffer.add(v);
                     expectedSeqId = incrementSeqId.apply(expectedSeqId);
                     // this.notifyAll();
                     // System.out.println("expecting seq id " + expectedSeqId);
@@ -133,44 +183,43 @@ public final class OperatorLocalOrder<T, S>
                     it.remove();
                 } else { // if d > 0
                     // Wait for the next sequence id
-                    logger.trace("Received id " + s + " but first need to wait for expected id " + expectedSeqId);
+                      logger.trace("Next id in queue is " + s + " but first need to wait for expected id " + expectedSeqId);
+//                    System.out.println("Next id in queue is " + s + " but first need to wait for expected id " + expectedSeqId);
                     break;
                 }
             }
 
-            // If the completion mark was set and all items have been emitted, we are done
-            if (isComplete && seqIdToValue.isEmpty()) {
-                downstream.onComplete();
-            } else {
-                // If there are pending items in the seqIdToValue queue we need
-                // to fetch more items from upstream
-                if (pending.get() > 0) {
-                    upstream.request(1);
-                }
-            }
+//            System.out.println("Drain complete - pending " + pending.get() + " queue size is " + seqIdToValue.size());
         }
+
+
         @Override
         public void onError(Throwable t) {
             downstream.onError(t);
         }
 
         public void onComplete() {
-            isComplete = true;
+            isUpstreamComplete = true;
 
-            // If there are no more entries in the map, complete the downstreaem immediately
-            if(seqIdToValue.isEmpty()) {
-                downstream.onComplete();
-            }
-
-            // otherwise, the onNext method has to handle completion
+            // Calling drain after setting isUpstreamComplete to true
+            // will trigger a warning / exception if there are
+            // out of order items
+            drain();
         }
 
         @Override
         public void request(long n) {
             if (SubscriptionHelper.validate(n)) {
-                pending.addAndGet(n);
-                upstream.request(1);
+                long before = BackpressureHelper.add(pending, n);
+
+                if (before == 0) {
+                    upstream.request(1);
+                }
             }
+
+            // If the upstream is already complete then the request may yet
+            // be served from our queue
+            drain();
         }
 
         @Override

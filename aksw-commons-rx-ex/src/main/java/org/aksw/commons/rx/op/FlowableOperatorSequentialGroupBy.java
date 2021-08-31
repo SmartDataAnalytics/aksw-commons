@@ -26,10 +26,10 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  *
  * The constructor lambda for accumulators receives the count of so far created accumulators (starting with 0) and the group key.
  * The count can be used to 'skip' accumulation of a certain number of groups.
- * 
+ *
  * The accumulator constructor function can be null - in which case the accAdd lambda is not invoked.
  * For each group key with a null accumulator a pair (groupKey, null) is emitted.
- * 
+ *
  * <pre>
  * long skipCount = 5;
  * flow
@@ -40,7 +40,7 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  *   .skip(skipCount)
  *   .map(Entry::getValue)
  * <pre>
- * 
+ *
  *
  *
  * The items' group keys are expected to arrive in order, hence only a single accumulator is active at a time.
@@ -62,15 +62,15 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
 public final class FlowableOperatorSequentialGroupBy<T, K, V>
     implements FlowableOperator<Entry<K, V>, T> {
 
-	/* Function to derive a group key from an item in the flow */
+    /* Function to derive a group key from an item in the flow */
     protected Function<? super T, ? extends K> getGroupKey;
-    
+
     /* Comparision whether two group keys are equal */
     protected BiPredicate<? super K, ? super K> groupKeyCompare;
-    
+
     /* Constructor function for accumulators. Function argument is the group key */
     protected BiFunction<? super Long, ? super K, ? extends V> accCtor;
-    
+
     /* Add an item to the accumulator */
     protected BiConsumer<? super V, ? super T> accAdd;
 
@@ -88,7 +88,7 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
         return create(getGroupKey, Objects::equals, groupKey -> accCtor.get(), accAdd);
     }
 
-    
+
     /**
      * Create method with the following characteristics:
      * <ul>
@@ -165,16 +165,16 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
         protected Subscription upstream;
 
         protected K priorKey;
-        
+
         protected K currentKey;
 
         // Number of created accumulators; incremented after accCtor invocation
         protected long accNum = 0;
         protected V currentAcc = null;
 
-        protected boolean upstreamCompleted = false;
-        protected boolean lastItemSent = false;
-        
+        protected volatile boolean isUpstreamComplete = false;
+        protected volatile boolean lastItemSent = false;
+
         protected AtomicLong pending = new AtomicLong();
 
         public SubscriberImpl(Subscriber<? super Entry<K, V>> downstream) {
@@ -200,13 +200,13 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
 //                throw new RuntimeException("Received item without any pending requests");
 //            }
             currentKey = getGroupKey.apply(item);
-            
+
             boolean needMore = true;
             if (accNum == 0) {
-                // First time init            	
+                // First time init
                 priorKey = currentKey;
                 currentAcc = accCtor.apply(accNum, currentKey);
-                
+
                 // Objects.requireNonNull(currentAcc, "Got null for an accumulator");
                 ++accNum;
             } else if(!groupKeyCompare.test(priorKey, currentKey)) {
@@ -220,49 +220,49 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
                 // Objects.requireNonNull(currentAcc, "Got null for an accumulator");
                 ++accNum;
             }
-            
+
             if (currentAcc != null) {
-            	accAdd.accept(currentAcc, item);
+                accAdd.accept(currentAcc, item);
             }
 
             priorKey = currentKey;
 
             // Whether we need more items from upstream in order to complete the current group
             if (needMore) {
-            	// Requesting an additional item eventually triggers either onNext() or onComplete()
+                // Requesting an additional item eventually triggers either onNext() or onComplete()
                 upstream.request(1);
             }
         }
 
-        /** 
+        /**
          * If there is a remaining request upon onComplete then the last item can be sent out at that time.
          * Otherwise we have to wait for additional requests.
          */
         protected void trySendLastItem() {
-        	if (upstreamCompleted && !lastItemSent) {
-        		
-            	// If we saw any items
-            	if (accNum != 0) {
+            if (isUpstreamComplete && !lastItemSent) {
+
+                // If we saw any items
+                if (accNum != 0) {
                     if (pending.get() > 0) {
-                    	// System.out.println("EMITTED ITEM ON COMPLETE");
-                    	lastItemSent = true;
-                    	downstream.onNext(new SimpleEntry<>(currentKey, currentAcc));
-                		downstream.onComplete();
+                        // System.out.println("EMITTED ITEM ON COMPLETE");
+                        lastItemSent = true;
+                        downstream.onNext(new SimpleEntry<>(currentKey, currentAcc));
+                        downstream.onComplete();
                     }
                 } else {
-                	// If there were no items to send then we have no more pending last item
-            		lastItemSent = true;
+                    // If there were no items to send then we have no more pending last item
+                    lastItemSent = true;
                     downstream.onComplete();
                 }
-        	}
+            }
         }
-        
+
         /** Called when the upstream completes */
         @Override
         public void onComplete() {
-        	upstreamCompleted = true;
+            isUpstreamComplete = true;
 
-        	trySendLastItem();
+            trySendLastItem();
         }
 
         @Override
@@ -277,13 +277,13 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
 //                pending.addAndGet(n);
 //                System.out.println("BEFORE REQUESTED " + n + " total pending " + pending.get() + " " + Thread.currentThread());
 
-                
+
                 if (before == 0) {
-                	upstream.request(1);
+                    upstream.request(1);
                 }
 //                System.out.println("AFTER REQUESTED " + n + " total pending " + pending.get() + " " + Thread.currentThread());
             }
-            
+
             trySendLastItem();
         }
 
