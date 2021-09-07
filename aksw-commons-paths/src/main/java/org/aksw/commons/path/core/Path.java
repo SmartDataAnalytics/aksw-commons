@@ -32,11 +32,11 @@ public interface Path<T>
     boolean endsWith(Path<T> other);
 
     Path<T> normalize();
-    Path<T> resolve(String other);
+    Path<T> resolveStr(String other);
     Path<T> resolve(T other);
     Path<T> resolve(Path<T> other);
 
-    Path<T> resolveSibling(String other);
+    Path<T> resolveSiblingStr(String other);
     Path<T> resolveSibling(T other);
     Path<T> resolveSibling(Path<T> other);
 

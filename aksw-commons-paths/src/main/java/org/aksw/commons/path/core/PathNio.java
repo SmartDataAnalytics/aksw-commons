@@ -94,6 +94,11 @@ public class PathNio implements Path<String>
 
     @Override
     public Path<String> resolve(String other) {
+        return resolveStr(other);
+    }
+
+    @Override
+    public Path<String> resolveStr(String other) {
         return wrapInternal(getDelegate().resolve(other));
     }
 
@@ -104,6 +109,11 @@ public class PathNio implements Path<String>
 
     @Override
     public Path<String> resolveSibling(String other) {
+        return resolveSiblingStr(other);
+    }
+
+    @Override
+    public Path<String> resolveSiblingStr(String other) {
         return wrapInternal(getDelegate().resolveSibling(other));
     }
 
