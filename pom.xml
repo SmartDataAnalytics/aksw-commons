@@ -69,6 +69,7 @@
 		<module>aksw-commons-jgit-utils</module>
 		<module>aksw-commons-tuples</module>
 		<module>aksw-commons-index</module>
+		<module>aksw-commons-paths</module>
 
 		<module>aksw-commons-legacy</module>
 	</modules>
@@ -245,6 +246,14 @@
 				<artifactId>aksw-commons-index</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
+                        <dependency>
+                                <groupId>org.aksw.commons</groupId>
+                                <artifactId>aksw-commons-paths</artifactId>
+                                <version>${project.version}</version>
+                        </dependency>
+
+
 
 			<!-- <dependency> <groupId>org.aksw.commons</groupId> <artifactId>aksw-commons-sparql</artifactId> 
 				<version>${project.version}</version> </dependency> -->

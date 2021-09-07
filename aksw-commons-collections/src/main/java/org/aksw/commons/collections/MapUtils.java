@@ -285,7 +285,10 @@ public class MapUtils {
      * For all keys k, if either map contains a value for k, the returned map contains that value. If both maps
      * contain a value for the same key, the conflict is resolved with the provided function.
      */
-    public static <K, V> Map<K, V> union(Map<K, ? extends V> a, Map<K, ? extends V> b, BinaryOperator<V> conflictHandler) {
+    public static <K, V> Map<K, V> union(
+            Map<K, ? extends V> a,
+            Map<K, ? extends V> b,
+            BinaryOperator<V> conflictHandler) {
         return Maps.asMap(Sets.union(a.keySet(), b.keySet()),
                 (K k) -> {
                     V r;
@@ -300,6 +303,15 @@ public class MapUtils {
                     }
                     return r;
                 });
+    }
+
+    /**
+     * Returns a view of the map where all keys present in 'deletions' are hidden
+     */
+    public static <K, V> Map<K, V> difference(
+            Map<K, ? extends V> map,
+            Set<? super K> deletions) {
+        return Maps.asMap(Sets.difference(map.keySet(), deletions), map::get);
     }
 
 }
