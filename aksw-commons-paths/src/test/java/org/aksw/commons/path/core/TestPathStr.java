@@ -18,5 +18,11 @@ public class TestPathStr {
         String bStr = b.toString();
 
         Assert.assertEquals(aStr, bStr);
+
+
+        Assert.assertEquals("/test/foo", a.resolve("/test/foo").toString());
+        Assert.assertEquals("/hell\\//o/world/test/foo", a.resolve("test/foo").toString());
+
+        Assert.assertEquals("/test/foo", a.resolve("/test/foo/////").toString());
     }
 }
