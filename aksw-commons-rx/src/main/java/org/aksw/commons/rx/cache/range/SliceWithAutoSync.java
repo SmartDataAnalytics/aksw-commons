@@ -7,7 +7,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.Range;
@@ -16,12 +15,19 @@ import com.google.common.collect.Range;
 /**
  * A concurrently accessible sequence of data of possibly unknown size.
  *
+ * The interface is meant to support auto-syncing as follows:
+ * References to metadata and content can be made.
+ * Once all references are released a sync-task can be scheduled the persists
+ * the updated state. Implementations may delay syncing if within a certain time
+ * window another content/metadata block is referenced.
+ *
+ *
  * @author raven
  *
  * @param <T>
  */
-public interface Slice<T>
-    extends PutHelper
+public interface SliceWithAutoSync<T>
+    extends Puttable
 {
     /**
      * Obtain a new reference to the metadata.
@@ -95,7 +101,11 @@ public interface Slice<T>
 
     /**
      * A lock that when held prevents creation of workers that put data into the slice.
-     * This might not be the best place for the lock because it
+     * This allows for analyzing all existing workers when having to decide whether
+     * a new worker needs to be created.
+     *
+     *
+     * Note: This might not be the best place for the lock because it
      * seems better to have that lock on a data producer system (e.g. the SmartRangeCache impl).
      * The slice itself is no data producer but rather a data collection.
      *

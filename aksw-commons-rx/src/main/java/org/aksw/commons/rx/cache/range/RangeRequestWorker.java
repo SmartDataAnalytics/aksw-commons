@@ -60,7 +60,7 @@ public class RangeRequestWorker<T>
     protected Disposable disposable;
 
     /** The data slice */
-    protected Slice<T> slice;
+    protected SliceWithAutoSync<T> slice;
 
     /** The pages claimed by this worker; obtained from slice */
     protected PageRange<T> pageRange;

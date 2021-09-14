@@ -214,51 +214,6 @@ public class PathBase<T, P extends Path<T>>
         return newPath(false, relativize(this.segments, toList(other), getPathOps().getParentToken()));
     }
 
-    // @Override
-    public int compareTo(Path<T> other) {
-        int result;
-        if (other instanceof PathBase) {
-            @SuppressWarnings("unchecked")
-            PathBase<T, ?> o = (PathBase<T, ?>)other;
-
-            Comparator<T> comparator = getPathOps().getComparator();
-
-            // Sort absolute paths first
-            result = (o.isAbsolute ? 0 : 1) - (isAbsolute ? 0 : 1);
-            if (result == 0) {
-                result = compareLists(segments, o.segments, comparator);
-            }
-        } else {
-            result = -1;
-        }
-        return result;
-    }
-
-    public static <T> int compareLists(List<T> a, List<T> b, Comparator<T> comparator) {
-        int result = 0;
-        int as = a.size();
-        int bs = b.size();
-        int n = Math.min(a.size(), b.size());
-
-        for (int i = 0; i < n; ++i) {
-            T ai = a.get(i);
-            T bi = b.get(i);
-
-            //result = comparator.compare(ai, bi);
-            result = comparator.compare(ai, bi);
-
-            if (result != 0) {
-                break;
-            }
-        }
-
-        // If elements were equal then compare by length, shorter first
-        result = result != 0
-            ? result
-            : bs - as;
-
-        return result;
-    }
 
 //    public String relativeString() {
 //        String sep = getFileSystem().getSeparator();
@@ -335,4 +290,75 @@ public class PathBase<T, P extends Path<T>>
                 .map(item -> (Path<T>)item)
                 .iterator();
     }
+
+
+    // @Override
+    public int compareTo(Path<T> other) {
+        int result;
+        if (other instanceof PathBase) {
+            @SuppressWarnings("unchecked")
+            PathBase<T, ?> o = (PathBase<T, ?>)other;
+
+            Comparator<T> comparator = getPathOps().getComparator();
+
+            // Sort absolute paths first
+            result = (o.isAbsolute ? 0 : 1) - (isAbsolute ? 0 : 1);
+            if (result == 0) {
+                result = compareLists(segments, o.segments, comparator);
+            }
+        } else {
+            result = -1;
+        }
+        return result;
+    }
+
+    public static <T> int compareLists(List<T> a, List<T> b, Comparator<T> comparator) {
+        int result = 0;
+        int as = a.size();
+        int bs = b.size();
+        int n = Math.min(a.size(), b.size());
+
+        for (int i = 0; i < n; ++i) {
+            T ai = a.get(i);
+            T bi = b.get(i);
+
+            //result = comparator.compare(ai, bi);
+            result = comparator.compare(ai, bi);
+
+            if (result != 0) {
+                break;
+            }
+        }
+
+        // If elements were equal then compare by length, shorter first
+        result = result != 0
+            ? result
+            : bs - as;
+
+        return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+
+        @SuppressWarnings("unchecked")
+        int cmp = compareTo((Path<T>)obj);
+        return cmp == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (isAbsolute ? 1231 : 1237);
+        result = prime * result + ((pathOps == null) ? 0 : pathOps.hashCode());
+        result = prime * result + ((segments == null) ? 0 : segments.hashCode());
+        return result;
+    }
+
 }

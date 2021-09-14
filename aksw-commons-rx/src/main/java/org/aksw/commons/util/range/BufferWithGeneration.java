@@ -6,12 +6,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.aksw.commons.rx.cache.range.PutHelper;
+import org.aksw.commons.rx.cache.range.Puttable;
 
 import com.google.common.primitives.Ints;
 
 public class BufferWithGeneration<T>
-    implements PutHelper
+    implements Puttable
 {
     protected Object[] data;
     protected int generation;

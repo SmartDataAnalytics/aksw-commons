@@ -28,7 +28,7 @@ public abstract class PageHelperBase<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
-    protected Slice<T> slice;
+    protected SliceWithAutoSync<T> slice;
     protected PageRange<T> pageRange;
 
 
@@ -36,7 +36,7 @@ public abstract class PageHelperBase<T>
     protected long nextCheckpointOffset;
 
 
-    public PageHelperBase(Slice<T> slice, long nextCheckpointOffset) {
+    public PageHelperBase(SliceWithAutoSync<T> slice, long nextCheckpointOffset) {
         super();
         this.slice = slice;
         this.pageRange = slice.newPageRange();

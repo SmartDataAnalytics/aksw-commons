@@ -2,7 +2,8 @@ package org.aksw.commons.rx.cache.range;
 
 import java.lang.reflect.Array;
 
-public interface PutHelper {
+/** Interface for putting an array of items into a sequence at a certain offset */
+public interface Puttable {
     void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength);
 
     default void put(int offset, Object item) {

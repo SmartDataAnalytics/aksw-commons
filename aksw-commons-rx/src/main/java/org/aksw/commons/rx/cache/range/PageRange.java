@@ -3,7 +3,6 @@ package org.aksw.commons.rx.cache.range;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.aksw.commons.util.range.BufferWithGeneration;
-import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.ref.RefFuture;
 
 /**
@@ -41,6 +40,12 @@ public interface PageRange<T>
 
     void unlock();
 
+
+    /**
+     * Releases all currently held pages.
+     * Future requests via {@link #claimByOffsetRange(long, long)} are allowed.
+     *
+     */
     void releaseAll();
 
     // TODO Implement close such that further claims are prevented

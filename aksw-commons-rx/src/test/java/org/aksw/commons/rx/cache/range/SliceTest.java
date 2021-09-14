@@ -27,7 +27,7 @@ public class SliceTest {
 
         KeyObjectStore keyObjectStore = new KeyObjectStoreFromMap();
 
-        Slice<String> buffer = new SliceWithPagesImpl<>(
+        SliceWithAutoSync<String> buffer = new SliceWithPagesImpl<>(
                 keyObjectStore, 1, 10, Duration.ofSeconds(1));
 
         int totalSize = 7;
