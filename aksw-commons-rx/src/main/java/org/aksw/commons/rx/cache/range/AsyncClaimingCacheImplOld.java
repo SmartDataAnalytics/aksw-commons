@@ -359,6 +359,18 @@ public class AsyncClaimingCacheImplOld<K, V> implements AsyncClaimingCache<K, V>
         return hideInnerRef(refToRef, level1);
     }
 
+
+    @Override
+    public void sync(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public void syncAll() {
+        throw new UnsupportedOperationException();
+    }
+
 }
 
 

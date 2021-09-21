@@ -39,7 +39,12 @@ public class SliceWithPagesImpl<T>
 
         this.pageCache =
                 AsyncClaimingCacheWithTransformValue.create(
-                        SmartRangeCacheImpl.syncedBuffer(maxCachedPageCount, syncDelayDuration, objStore, () -> new BufferWithGeneration<T>(pageSize)),
+                        SmartRangeCacheImpl.syncedBuffer(
+                                maxCachedPageCount,
+                                syncDelayDuration,
+                                objStore,
+                                () -> new BufferWithGeneration<T>(pageSize),
+                                () -> metadataCache.syncAll()),
                         Entry::getKey);
 
         this.metadataCache = AsyncClaimingCacheImpl.create(

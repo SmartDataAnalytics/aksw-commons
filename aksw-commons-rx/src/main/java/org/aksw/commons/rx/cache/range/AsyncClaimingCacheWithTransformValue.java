@@ -39,4 +39,14 @@ public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
     public void invalidateAll() {
         delegate.invalidateAll();
     }
+
+    @Override
+    public void sync(K key) {
+        delegate.sync(key);
+    }
+
+    @Override
+    public void syncAll() {
+        delegate.syncAll();
+    }
 }

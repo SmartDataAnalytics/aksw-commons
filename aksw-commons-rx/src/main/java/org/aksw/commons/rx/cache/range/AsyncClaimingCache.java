@@ -20,4 +20,7 @@ public interface AsyncClaimingCache<K, V> {
 
     void invalidateAll();
 
+
+    void sync(K key);
+    void syncAll();
 }

@@ -39,11 +39,11 @@ import com.google.common.collect.Maps;
  * @param <K>
  * @param <V>
  */
-abstract class StorageNodeMapBase<D, C, K, V>
-    extends StorageNodeBase<D, C, Map<K, V>>
-    implements StorageNodeMutable<D, C, Map<K, V>>
+abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
+    extends StorageNodeBase<D, C, M>
+    implements StorageNodeMutable<D, C, M>
 {
-    protected MapSupplier mapSupplier;
+    protected MapSupplier<M> mapSupplier;
     // protected TupleToKey<? extends K, C> keyFunction;
     protected TupleValueFunction<C, K> keyFunction;
 
@@ -65,7 +65,7 @@ abstract class StorageNodeMapBase<D, C, K, V>
     public StorageNodeMapBase(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            MapSupplier mapSupplier,
+            MapSupplier<M> mapSupplier,
             //TupleToKey<? extends K, C> keyFunction
             //Function<? super D, ? extends K> keyFunction
             TupleValueFunction<C, K> keyFunction,
@@ -83,18 +83,18 @@ abstract class StorageNodeMapBase<D, C, K, V>
     }
 
     @Override
-    public Map<?, ?> getStoreAsMap(Object store) {
-        return (Map<?, ?>)store;
+    public M getStoreAsMap(Object store) {
+        return (M)store;
     }
 
     @Override
-    public Map<K, V> newStore() {
-        return mapSupplier.get();
+    public M newStore() {
+        return (M)mapSupplier.get();
     }
 
 
     @Override
-    public boolean isEmpty(Map<K, V> map) {
+    public boolean isEmpty(M map) {
         boolean result = map.isEmpty();
         return result;
     }
@@ -115,11 +115,11 @@ abstract class StorageNodeMapBase<D, C, K, V>
     }
 
 
-    public <T> Streamer<Map<K, V>, K> streamerForKeysUnderConstraints(
+    public <T> Streamer<M, K> streamerForKeysUnderConstraints(
             T tupleLike,
             TupleAccessorCore<? super T, ? extends C> tupleAccessor)
     {
-        Streamer<Map<K, V>, K> result;
+        Streamer<M, K> result;
 
         Object[] keyComponents = projectTupleToArray(tupleIdxs, tupleLike, tupleAccessor);
         if (keyComponents != null) {
@@ -137,11 +137,11 @@ abstract class StorageNodeMapBase<D, C, K, V>
     }
 
 
-    public <T> Streamer<Map<K, V>, V> streamerForValuesUnderConstraints(
+    public <T> Streamer<M, V> streamerForValuesUnderConstraints(
             T tupleLike,
             TupleAccessorCore<? super T, ? extends C> tupleAccessor)
     {
-        Streamer<Map<K, V>, V> result;
+        Streamer<M, V> result;
 
         Object[] keyComponents = projectTupleToArray(tupleIdxs, tupleLike, tupleAccessor);
         if (keyComponents != null) {
@@ -159,7 +159,7 @@ abstract class StorageNodeMapBase<D, C, K, V>
 
 
 
-    public <T> Streamer<Map<K, V>, Entry<K, V>> streamerForEntriesUnderConstraints(
+    public <T> Streamer<M, Entry<K, V>> streamerForEntriesUnderConstraints(
             T tupleLike,
             TupleAccessorCore<? super T, ? extends C> tupleAccessor)
     {
@@ -174,7 +174,7 @@ abstract class StorageNodeMapBase<D, C, K, V>
             tmp[i] = componentValue;
         }
 
-        Streamer<Map<K, V>, Entry<K, V>> result;
+        Streamer<M, Entry<K, V>> result;
 
         if (eligibleAsKey) {
             K key = keyFunction.map(tmp, (x, i) -> (C)x[i]);
@@ -191,18 +191,18 @@ abstract class StorageNodeMapBase<D, C, K, V>
 
 
     @Override
-    public <T> Streamer<Map<K, V>, C> streamerForKeysAsComponent(
+    public <T> Streamer<M, C> streamerForKeysAsComponent(
             T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
 
-        Streamer<Map<K, V>, K> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
+        Streamer<M, K> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
         // FIXME Ensure that the keys can be cast as components!
         return argMap -> baseStreamer.stream(argMap).map(key -> (C)key);
     }
 
 
     @Override
-    public <T> Streamer<Map<K, V>, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<M, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
         return streamerForValuesUnderConstraints(pattern, accessor);
 //        Streamer<Map<K, V>, K> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
 //
@@ -218,20 +218,20 @@ abstract class StorageNodeMapBase<D, C, K, V>
 
 
     @Override
-    public <T> Streamer<Map<K, V>, List<C>> streamerForKeysAsTuples(
+    public <T> Streamer<M, List<C>> streamerForKeysAsTuples(
             T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
         return null;
     }
 
     @Override
-    public <T> Streamer<Map<K, V>, K> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<M, K> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
         return streamerForKeysUnderConstraints(pattern, accessor);
     }
 
 
     @Override
-    public <T> Streamer<Map<K, V>, Entry<K, V>> streamerForKeyAndSubStoreAlts(
+    public <T> Streamer<M, Entry<K, V>> streamerForKeyAndSubStoreAlts(
             T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
         // TODO Assert that altIdx == 0
@@ -251,7 +251,7 @@ abstract class StorageNodeMapBase<D, C, K, V>
 
 
     @Override
-    public Object chooseSubStore(Map<K, V> store, int subStoreIdx) {
+    public Object chooseSubStore(M store, int subStoreIdx) {
         if (subStoreIdx != 0) {
             throw new IndexOutOfBoundsException("Index must be 0 for inner maps");
         }

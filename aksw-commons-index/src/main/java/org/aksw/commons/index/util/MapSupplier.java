@@ -17,9 +17,8 @@
 
 package org.aksw.commons.index.util;
 
-import java.util.Comparator;
 import java.util.Map;
-import java.util.TreeMap;
+
 
 /**
  * Helper interface for creating new map instances with automatically inferred types
@@ -28,28 +27,6 @@ import java.util.TreeMap;
  *
  */
 @FunctionalInterface
-public interface MapSupplier {
-    <K, V> Map<K, V> get();
-
-
-    public static <T> MapSupplier forTreeMap(Comparator<T> cmp) {
-        return new MapSupplierTreeMap<T>(cmp);
-    }
-
-    public static class MapSupplierTreeMap<T>
-        implements MapSupplier
-    {
-        protected Comparator<T> cmp;
-
-        public MapSupplierTreeMap(Comparator<T> cmp) {
-            super();
-            this.cmp = cmp;
-        }
-
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        @Override
-        public <K, V> Map<K, V> get() {
-           return new TreeMap<K, V>((Comparator)cmp);
-        }
-    }
+public interface MapSupplier<M extends Map<?, ?>> {
+    <K, V> M get();
 }

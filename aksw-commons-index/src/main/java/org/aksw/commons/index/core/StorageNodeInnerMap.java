@@ -40,8 +40,8 @@ import org.aksw.commons.tuple.TupleAccessorCore;
  * @param <K> The key type of the map; depends on one or more components
  * @param <V> The value type of the map which is
  */
-public class StorageNodeInnerMap<D, C, K, V>
-    extends StorageNodeMapBase<D, C, K, V>
+public class StorageNodeInnerMap<D, C, K, V, M extends Map<K, V>>
+    extends StorageNodeMapBase<D, C, K, V, M>
 {
     protected StorageNodeMutable<D, C, V> child;
 
@@ -49,7 +49,7 @@ public class StorageNodeInnerMap<D, C, K, V>
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
             StorageNodeMutable<D, C, V> child,
-            MapSupplier mapSupplier,
+            MapSupplier<M> mapSupplier,
             TupleValueFunction<C, K> keyFunction,
             TupleAccessorCore<? super K, ? extends C> keyToComponent) {
         super(tupleIdxs, tupleAccessor, mapSupplier, keyFunction, keyToComponent);
@@ -63,14 +63,14 @@ public class StorageNodeInnerMap<D, C, K, V>
     }
 
     @Override
-    public Map<K, V> newStore() {
+    public M newStore() {
         return mapSupplier.get();
     }
 
     // @Override
 
     @Override
-    public boolean add(Map<K, V> map, D tupleLike) {
+    public boolean add(M map, D tupleLike) {
         K key = tupleToKey(tupleLike);
 
         V v = map.get(key);
@@ -86,7 +86,7 @@ public class StorageNodeInnerMap<D, C, K, V>
     }
 
     @Override
-    public boolean remove(Map<K, V> map, D tupleLike) {
+    public boolean remove(M map, D tupleLike) {
         K key = tupleToKey(tupleLike);
 
         boolean result = false;
@@ -102,7 +102,7 @@ public class StorageNodeInnerMap<D, C, K, V>
     }
 
     @Override
-    public void clear(Map<K, V> store) {
+    public void clear(M store) {
         for (V subStoreAlts : store.values()) {
             child.clear(subStoreAlts);
         }
@@ -119,7 +119,7 @@ public class StorageNodeInnerMap<D, C, K, V>
 
 
     @Override
-    public <T> Stream<Entry<K, ?>> streamEntries(Map<K, V> map, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<Entry<K, ?>> streamEntries(M map, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
 
         // Check whether the components of the given tuple are all non-null such that we can
         // create a key from them

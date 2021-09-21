@@ -3,6 +3,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -29,6 +29,14 @@ import com.github.benmanes.caffeine.cache.Scheduler;
 /**
  * An extension of loading cache that allows for making explicit
  * references to cached entries such that they won't be evicted.
+ *
+ * Internally 3 levels of caching are used:
+ *
+ * level1: This is the map of claimed items. Unclaimed items are moved to level2.
+ * level2: A caffeine cache that acts as the sync queue.
+ *         After a configurable amount of time a custom action is applied and the items are moven to level3.
+ * level3: A caffeine cache that acts as a conventional cache. Items evicted from level2 are added here.
+ *
  *
  * Uses 'smart' references.
  *
@@ -82,6 +90,8 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
      *  if false, the future returned by level3 will not be cancelled */
     // protected boolean cancelUnclaimedIncompleteTasks;
 
+    protected RemovalListener<K, V> level2RemovalListener;
+
     public static <K, V> AsyncClaimingCache<K, V> create(
             Duration syncDelayDuration,
             // Caffeine<Object, Object> cacheBuilder,
@@ -103,6 +113,8 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             RemovalListener<K, V> level2RemovalListener,
             Duration syncDelayDuration
             ) {
+
+        this.level2RemovalListener = level2RemovalListener;
 
         this.level2 = Caffeine.newBuilder()
                 .scheduler(Scheduler.systemScheduler())
@@ -211,6 +223,64 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 //            });
 
         level1 = new ConcurrentHashMap<>();
+    }
+
+
+    /**
+     * Attempts to run the level2 removal action on the entry with the given key.
+     * The action is only run under the following conditions:
+     *
+     * <ul>
+     *   <li>If the entry is in level1 <i>and</i> the future is loaded</li>
+     *   <li>If the entry is in level2 then the entry is simply evicted which
+     *       implicitly runs the action (and adds the entry to level3)</li>
+     * </ul>
+     *
+     *
+     * @param key
+     */
+    public void sync(K key) {
+        synchronized (level1) {
+            RefFuture<V> ref;
+
+            if ((ref = level1.get(key)) != null) {
+                CompletableFuture<V> future = ref.get();
+                if (ref.get().isDone()) {
+                    V value;
+                    try {
+                        value = future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException();
+                    }
+                    level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
+                }
+            } else {
+                level2.invalidate(key);
+            }
+        }
+    }
+
+    public void syncAll() {
+        synchronized (level1) {
+
+            level2.invalidateAll();
+
+            for (Entry<K, RefFuture<V>> entry : level1.entrySet()) {
+                K key = entry.getKey();
+                RefFuture<V> ref = entry.getValue();
+
+                CompletableFuture<V> future = ref.get();
+                if (ref.get().isDone()) {
+                    V value;
+                    try {
+                        value = future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException();
+                    }
+                    level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
+                }
+            }
+        }
     }
 
 

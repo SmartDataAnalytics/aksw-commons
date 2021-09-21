@@ -66,6 +66,7 @@ public class SmartRangeCacheImpl<T>
     protected SliceWithPages<T> slice;
 
 
+    /** The task for counting wrapped as a single - can be started on the demand */
     protected Single<Range<Long>> countSingle;
 
     // protected int pageSize;
@@ -448,7 +449,7 @@ public class SmartRangeCacheImpl<T>
 //        return new PageRangeImpl<>(this);
 //    }
 
-
+/*
     public static <V> AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> syncedRangeBuffer(
             long maximumSize,
             Duration syncDelayDuration,
@@ -535,13 +536,14 @@ public class SmartRangeCacheImpl<T>
 
         return result;
     }
-
+*/
 
     public static <V> AsyncClaimingCache<Long, Entry<BufferWithGeneration<V>, Long>> syncedBuffer(
             long maximumSize,
             Duration syncDelayDuration,
             KeyObjectStore store,
-            Supplier<BufferWithGeneration<V>> newValue) {
+            Supplier<BufferWithGeneration<V>> newValue,
+            Runnable preSyncAction) {
 
         // A map that upon loading a page takes a snapshot of its generation attribute
         // and treats it as the version
@@ -606,6 +608,9 @@ public class SmartRangeCacheImpl<T>
 
                     try {
                         if (generation != version) {
+                            System.out.println("Syncing metadata");
+                            preSyncAction.run();
+
                             logger.info("Syncing dirty buffer " + internalKey);
                             // keyToVersion.put(key, generation);
                             store.put(internalKey, buffer);

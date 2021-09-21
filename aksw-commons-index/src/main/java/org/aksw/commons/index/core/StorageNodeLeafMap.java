@@ -39,15 +39,15 @@ import org.aksw.commons.tuple.TupleAccessorCore;
  * @param <K>
  * @param <V>
  */
-public class StorageNodeLeafMap<D, C, K, V>
-    extends StorageNodeMapBase<D, C, K, V>
+public class StorageNodeLeafMap<D, C, K, V, M extends Map<K, V>>
+    extends StorageNodeMapBase<D, C, K, V, M>
 {
     protected TupleValueFunction<C, V> valueFunction;
 
     public StorageNodeLeafMap(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            MapSupplier mapSupplier,
+            MapSupplier<M> mapSupplier,
             TupleValueFunction<C, K> keyFunction,
             TupleAccessorCore<? super K, ? extends C> keyToComponent,
             TupleValueFunction<C, V> valueFunction
@@ -72,7 +72,7 @@ public class StorageNodeLeafMap<D, C, K, V>
 //    }
 
     @Override
-    public boolean add(Map<K, V> map, D tupleLike) {
+    public boolean add(M map, D tupleLike) {
         K key = tupleToKey(tupleLike);
         V newValue = valueFunction.map(tupleLike, tupleAccessor);
 
@@ -89,7 +89,7 @@ public class StorageNodeLeafMap<D, C, K, V>
     }
 
     @Override
-    public boolean remove(Map<K, V> map, D tupleLike) {
+    public boolean remove(M map, D tupleLike) {
         K key = tupleToKey(tupleLike);
         boolean result = map.containsKey(key);
         if (result) {
@@ -100,7 +100,7 @@ public class StorageNodeLeafMap<D, C, K, V>
     }
 
     @Override
-    public void clear(Map<K, V> store) {
+    public void clear(M store) {
         store.clear();
     }
 
@@ -111,7 +111,7 @@ public class StorageNodeLeafMap<D, C, K, V>
     }
 
     @Override
-    public <T> Stream<Entry<K, ?>> streamEntries(Map<K, V> map, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<Entry<K, ?>> streamEntries(M map, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
         // Check whether the components of the given tuple are all non-null such that we can
         // create a key from them
         Object[] tmp = new Object[tupleIdxs.length];

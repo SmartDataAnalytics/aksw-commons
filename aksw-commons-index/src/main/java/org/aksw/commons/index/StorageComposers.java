@@ -53,8 +53,8 @@ import com.google.common.collect.HashBiMap;
  */
 public class StorageComposers {
 
-    public static <D, C> StorageNodeMutable<D, C, Set<D>> leafSet(
-            SetSupplier setSupplier,
+    public static <D, C, S extends Set<D>> StorageNodeMutable<D, C, Set<D>> leafSet(
+            SetSupplier<S> setSupplier,
             TupleAccessor<D, C> tupleAccessor) {
         return new StorageNodeLeafDomainSet<D, C, D>(
                 tupleAccessor,
@@ -90,11 +90,11 @@ public class StorageComposers {
                 );
     }
 
-    public static <D, C> StorageNodeMutable<D, C, Map<C, D>> leafMap(
+    public static <D, C, M extends Map<C, D>> StorageNodeMutable<D, C, M> leafMap(
             int tupleIdx,
-            MapSupplier mapSupplier,
+            MapSupplier<M> mapSupplier,
             TupleAccessor<D, C> tupleAccessor) {
-        return new StorageNodeLeafMap<D, C, C, D>(
+        return new StorageNodeLeafMap<D, C, C, D, M>(
                 new int[] {tupleIdx},
                 tupleAccessor,
                 mapSupplier,
@@ -106,15 +106,15 @@ public class StorageComposers {
     }
 
 
-    public static <D, C, V> StorageNodeMutable<D, C, Map<C, V>> innerMap(
+    public static <D, C, V, M extends Map<C, V>> StorageNodeMutable<D, C, M> innerMap(
             int tupleIdx,
-            MapSupplier mapSupplier,
+            MapSupplier<M> mapSupplier,
             StorageNodeMutable<D, C, V> child
             ) {
 
         TupleAccessor<D, C> tupleAccessor = child.getTupleAccessor();
 
-        return new StorageNodeInnerMap<D, C, C, V>(
+        return new StorageNodeInnerMap<D, C, C, V, M>(
                 new int[] {tupleIdx},
                 tupleAccessor,
                 child,
