@@ -30,23 +30,23 @@ import org.aksw.commons.tuple.TupleAccessor;
  * @param <C>
  * @param <V>
  */
-abstract class StorageNodeSetBase<D, C, V>
-    extends StorageNodeBase<D, C, Set<V>>
-    implements StorageNodeMutable<D, C, Set<V>>
+abstract class StorageNodeSetBase<D, C, V, S extends Set<V>>
+    extends StorageNodeBase<D, C, S>
+    implements StorageNodeMutable<D, C, S>
 {
-    protected SetSupplier setSupplier;
+    protected SetSupplier<S> setSupplier;
 
     public StorageNodeSetBase(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            SetSupplier setSupplier
+            SetSupplier<S> setSupplier
         ) {
         super(tupleIdxs, tupleAccessor);
         this.setSupplier = setSupplier;
     }
 
     @Override
-    public Set<V> newStore() {
+    public S newStore() {
         return setSupplier.get();
     }
 
@@ -59,9 +59,9 @@ abstract class StorageNodeSetBase<D, C, V>
     public Set<?> getStoreAsSet(Object store) {
         return (Set<?>)store;
     }
-    
+
     @Override
-    public boolean isEmpty(Set<V> store) {
+    public boolean isEmpty(S store) {
         boolean result = store.isEmpty();
         return result;
     }

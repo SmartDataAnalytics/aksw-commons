@@ -53,10 +53,10 @@ import com.google.common.collect.HashBiMap;
  */
 public class StorageComposers {
 
-    public static <D, C, S extends Set<D>> StorageNodeMutable<D, C, Set<D>> leafSet(
+    public static <D, C, S extends Set<D>> StorageNodeMutable<D, C, S> leafSet(
             SetSupplier<S> setSupplier,
             TupleAccessor<D, C> tupleAccessor) {
-        return new StorageNodeLeafDomainSet<D, C, D>(
+        return new StorageNodeLeafDomainSet<D, C, D, S>(
                 tupleAccessor,
                 setSupplier,
                 // Ugly identity mapping of domain tuples to themselves as values - can we do better?
@@ -75,11 +75,11 @@ public class StorageComposers {
                 );
     }
 
-    public static <D, C> StorageNodeMutable<D, C, Set<C>> leafComponentSet(
+    public static <D, C, S extends Set<C>> StorageNodeMutable<D, C, S> leafComponentSet(
             int tupleIdx,
-            SetSupplier setSupplier,
+            SetSupplier<S> setSupplier,
             TupleAccessor<D, C> tupleAccessor) {
-        return new StorageNodeLeafComponentSet<D, C, C>(
+        return new StorageNodeLeafComponentSet<D, C, C, S>(
                 new int[] {tupleIdx},
                 tupleAccessor,
                 setSupplier,

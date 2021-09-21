@@ -43,14 +43,14 @@ import com.google.common.collect.Maps;
  * @param <C>
  * @param <V>
  */
-public class StorageNodeLeafDomainSet<D, C, V>
-    extends StorageNodeSetBase<D, C, V>
+public class StorageNodeLeafDomainSet<D, C, V, S extends Set<V>>
+    extends StorageNodeSetBase<D, C, V, S>
 {
     protected TupleValueFunction<C, V> valueFunction;
 
     public StorageNodeLeafDomainSet(
             TupleAccessor<D, C> tupleAccessor,
-            SetSupplier setSupplier,
+            SetSupplier<S> setSupplier,
             TupleValueFunction<C, V> valueFunction
             ) {
         super(new int[] {}, tupleAccessor, setSupplier);
@@ -86,7 +86,7 @@ public class StorageNodeLeafDomainSet<D, C, V>
     }
 
     @Override
-    public boolean add(Set<V> set, D tupleLike) {
+    public boolean add(S set, D tupleLike) {
         V newValue = tupleToValue(tupleLike);
 
         // TODO We should use a separate type that explicitly allows null placeholders
@@ -98,14 +98,14 @@ public class StorageNodeLeafDomainSet<D, C, V>
     }
 
     @Override
-    public boolean remove(Set<V> set, D tupleLike) {
+    public boolean remove(S set, D tupleLike) {
         V newValue = tupleToValue(tupleLike);
         boolean result = set.remove(newValue);
         return result;
     }
 
     @Override
-    public void clear(Set<V> store) {
+    public void clear(S store) {
         store.clear();
     }
 
@@ -115,19 +115,19 @@ public class StorageNodeLeafDomainSet<D, C, V>
     }
 
     @Override
-    public <T> Streamer<Set<V>, C> streamerForKeysAsComponent(T pattern,
+    public <T> Streamer<S, C> streamerForKeysAsComponent(T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
         throw new UnsupportedOperationException("Cannot stream keys as components if there are no keys");
     }
 
     @Override
-    public <T> Streamer<Set<V>, List<C>> streamerForKeysAsTuples(T pattern,
+    public <T> Streamer<S, List<C>> streamerForKeysAsTuples(T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
         return argStore -> Stream.of(Collections.emptyList());
     }
 
     @Override
-    public <T> Streamer<Set<V>, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
         return argSet -> argSet.stream();
     }
 
@@ -138,7 +138,7 @@ public class StorageNodeLeafDomainSet<D, C, V>
 
 
     @Override
-    public <T> Streamer<Set<V>, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
+    public <T> Streamer<S, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
 //            int altIdx,
             T pattern,
             TupleAccessorCore<? super T, ? extends C> accessor) {
@@ -148,13 +148,13 @@ public class StorageNodeLeafDomainSet<D, C, V>
     }
 
     @Override
-    public <T> Stream<V> streamEntries(Set<V> set, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<V> streamEntries(S set, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
         // FIXME We need to filter the result stream by the components of the tuple like!
         return set.stream();
     }
 
     @Override
-    public <T> Streamer<Set<V>, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -170,7 +170,7 @@ public class StorageNodeLeafDomainSet<D, C, V>
 //    }
 
     @Override
-    public Object chooseSubStore(Set<V> store, int subStoreIdx) {
+    public Object chooseSubStore(S store, int subStoreIdx) {
         if (subStoreIdx != 0) {
             throw new IndexOutOfBoundsException("Index must be 0 for leaf maps");
         }
