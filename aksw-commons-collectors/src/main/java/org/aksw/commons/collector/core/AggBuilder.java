@@ -201,7 +201,7 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
     }
 
     public static <T> AggFromCollector<T, SerializableLongSummaryStatistics, SerializableLongSummaryStatistics>
-        summarizingInt(SerializableToLongFunction<T> mapper)
+        summarizingLong(SerializableToLongFunction<T> mapper)
     {
         return fromCollector(
                 SerializableLongSummaryStatistics::new,
