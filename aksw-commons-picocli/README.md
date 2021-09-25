@@ -41,6 +41,11 @@ my-app.build.timestamp=${timestamp}
 ```xml
 <!-- pom.xml -->
 
+<properties>
+  <timestamp>${maven.build.timestamp}</timestamp>
+  <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+</properties>
+
 <build>
   <resources>
     <resource>
