@@ -1,9 +1,13 @@
 package org.aksw.commons.collector.core;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 
 import org.aksw.commons.collector.core.AggInputFilter.AccInputFilter;
 import org.aksw.commons.collector.core.AggInputSplit.AccInputSplit;
@@ -19,6 +23,12 @@ import org.aksw.commons.lambda.serializable.SerializableCollector;
 import org.aksw.commons.lambda.serializable.SerializableFunction;
 import org.aksw.commons.lambda.serializable.SerializablePredicate;
 import org.aksw.commons.lambda.serializable.SerializableSupplier;
+import org.aksw.commons.lambda.serializable.SerializableToDoubleFunction;
+import org.aksw.commons.lambda.serializable.SerializableToIntFunction;
+import org.aksw.commons.lambda.serializable.SerializableToLongFunction;
+import org.aksw.commons.util.serializable.SerializableDoubleSummaryStatistics;
+import org.aksw.commons.util.serializable.SerializableIntSummaryStatistics;
+import org.aksw.commons.util.serializable.SerializableLongSummaryStatistics;
 
 /**
  * Builder for parallel aggregators.
@@ -142,8 +152,18 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
             SerializableBiConsumer<A, T> accumulator,
             SerializableBinaryOperator<A> combiner,
             SerializableFunction<A, R> finisher) {
+        return fromCollector(supplier, accumulator, combiner, finisher, Collections.emptySet());
+    }
 
-        SerializableCollector<T, A, R> collector = SerializableCollectorImpl.create(supplier, accumulator, combiner, finisher);
+    public static <T, R, A> AggFromCollector<T, R, A> fromCollector(
+            SerializableSupplier<A> supplier,
+            SerializableBiConsumer<A, T> accumulator,
+            SerializableBinaryOperator<A> combiner,
+            SerializableFunction<A, R> finisher,
+            Set<Collector.Characteristics> characteristics
+            ) {
+
+        SerializableCollector<T, A, R> collector = SerializableCollectorImpl.create(supplier, accumulator, combiner, finisher, characteristics);
         return fromCollector(collector);
     }
 
@@ -165,6 +185,42 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
         return fold(() -> 0, Math::max);
     }
 
+
+    static final Set<Characteristics> CH_ID = Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH));
+
+
+    public static <T> AggFromCollector<T, SerializableIntSummaryStatistics, SerializableIntSummaryStatistics>
+        summarizingInt(SerializableToIntFunction<T> mapper)
+    {
+        return fromCollector(
+                SerializableIntSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsInt(t)),
+                (l, r) -> { l.combine(r); return l; },
+                x -> x,
+                CH_ID);
+    }
+
+    public static <T> AggFromCollector<T, SerializableLongSummaryStatistics, SerializableLongSummaryStatistics>
+        summarizingInt(SerializableToLongFunction<T> mapper)
+    {
+        return fromCollector(
+                SerializableLongSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsLong(t)),
+                (l, r) -> { l.combine(r); return l; },
+                x -> x,
+                CH_ID);
+    }
+
+    public static <T> AggFromCollector<T, SerializableDoubleSummaryStatistics, SerializableDoubleSummaryStatistics>
+        summarizingDouble(SerializableToDoubleFunction<T> mapper)
+    {
+        return fromCollector(
+                SerializableDoubleSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsDouble(t)),
+                (l, r) -> { l.combine(r); return l; },
+                x -> x,
+                CH_ID);
+    }
 
 
     /*
