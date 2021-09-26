@@ -2,11 +2,8 @@ package org.aksw.commons.util.ref;
 
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 import org.aksw.commons.util.stack_trace.StackTraceUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -228,6 +225,10 @@ public class RefImpl<T>
 //				parent.release(this);
 //			}
         }
+    }
+
+    public static <T extends AutoCloseable> Ref<T> fromCloseable(T value) {
+        return create(value, (Object)null, value);
     }
 
     public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
