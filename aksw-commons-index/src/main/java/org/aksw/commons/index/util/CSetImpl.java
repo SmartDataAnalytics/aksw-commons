@@ -5,25 +5,25 @@ import java.util.Set;
 
 import com.google.common.collect.ForwardingSet;
 
-public class CSetImpl<T>
+public class CSetImpl<T, X>
     extends ForwardingSet<T>
-    implements CSet<T>
+    implements CSet<T, X>
 {
     protected Set<T> delegate;
-    protected boolean isComplete;
+    protected X data;
 
     public CSetImpl() {
         this(new HashSet<T>());
     }
 
     public CSetImpl(Set<T> delegate) {
-        this(delegate, false);
+        this(delegate, null);
     }
 
-    public CSetImpl(Set<T> delegate, boolean isKeySetComplete) {
+    public CSetImpl(Set<T> delegate, X data) {
         super();
         this.delegate = delegate;
-        this.isComplete = isKeySetComplete;
+        this.data = data;
     }
 
     @Override
@@ -32,13 +32,18 @@ public class CSetImpl<T>
     }
 
     @Override
-    public boolean isComplete() {
-        return isComplete;
+    public X getData() {
+        return data;
     }
 
     @Override
-    public void setComplete(boolean status) {
-        this.isComplete = status;
+    public CSet<T, X> setData(X data) {
+        this.data = data;
+        return this;
     }
 
+    @Override
+    public String toString() {
+        return "CSet[" + delegate + ", " + data + "]";
+    }
 }

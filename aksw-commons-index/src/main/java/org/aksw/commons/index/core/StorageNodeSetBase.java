@@ -34,12 +34,12 @@ abstract class StorageNodeSetBase<D, C, V, S extends Set<V>>
     extends StorageNodeBase<D, C, S>
     implements StorageNodeMutable<D, C, S>
 {
-    protected SetSupplier<S> setSupplier;
+    protected SetSupplier setSupplier;
 
     public StorageNodeSetBase(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            SetSupplier<S> setSupplier
+            SetSupplier setSupplier
         ) {
         super(tupleIdxs, tupleAccessor);
         this.setSupplier = setSupplier;
@@ -47,7 +47,7 @@ abstract class StorageNodeSetBase<D, C, V, S extends Set<V>>
 
     @Override
     public S newStore() {
-        return setSupplier.get();
+        return (S)setSupplier.get();
     }
 
     @Override

@@ -18,6 +18,7 @@
 package org.aksw.commons.index.util;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Helper interface for creating new set instances with automatically inferred
@@ -26,6 +27,22 @@ import java.util.Set;
  * @author Claus Stadler 11/09/2020
  *
  */
-public interface SetSupplier<S extends Set<?>> {
-    <T> S get();
+public interface SetSupplier {
+    <T> Set<T> get();
+
+//    @SuppressWarnings("unchecked")
+//    default <X extends Set<?>> SetSupplier<X> cast() {
+//        return (SetSupplier<X>)this;
+//    }
+
+
+    /**
+     * Wrap this map supplier such that any supplied map becomes wrapped
+     * as a cmap.
+     *
+     * @return
+     */
+    default <X> CSetSupplier<X> wrapAsCSet(Supplier<X> valueSupplier) {
+        return SetSuppliers.wrapAsCSet(this, valueSupplier);
+    }
 }

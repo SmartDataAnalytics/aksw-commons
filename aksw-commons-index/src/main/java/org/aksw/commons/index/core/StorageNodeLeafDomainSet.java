@@ -50,7 +50,7 @@ public class StorageNodeLeafDomainSet<D, C, V, S extends Set<V>>
 
     public StorageNodeLeafDomainSet(
             TupleAccessor<D, C> tupleAccessor,
-            SetSupplier<S> setSupplier,
+            SetSupplier setSupplier,
             TupleValueFunction<C, V> valueFunction
             ) {
         super(new int[] {}, tupleAccessor, setSupplier);

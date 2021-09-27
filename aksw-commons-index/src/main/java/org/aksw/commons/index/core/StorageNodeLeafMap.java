@@ -47,7 +47,7 @@ public class StorageNodeLeafMap<D, C, K, V, M extends Map<K, V>>
     public StorageNodeLeafMap(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            MapSupplier<M> mapSupplier,
+            MapSupplier mapSupplier,
             TupleValueFunction<C, K> keyFunction,
             TupleAccessorCore<? super K, ? extends C> keyToComponent,
             TupleValueFunction<C, V> valueFunction

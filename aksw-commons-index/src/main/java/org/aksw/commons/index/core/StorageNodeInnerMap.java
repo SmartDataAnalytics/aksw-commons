@@ -49,7 +49,7 @@ public class StorageNodeInnerMap<D, C, K, V, M extends Map<K, V>>
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
             StorageNodeMutable<D, C, V> child,
-            MapSupplier<M> mapSupplier,
+            MapSupplier mapSupplier,
             TupleValueFunction<C, K> keyFunction,
             TupleAccessorCore<? super K, ? extends C> keyToComponent) {
         super(tupleIdxs, tupleAccessor, mapSupplier, keyFunction, keyToComponent);
@@ -64,7 +64,7 @@ public class StorageNodeInnerMap<D, C, K, V, M extends Map<K, V>>
 
     @Override
     public M newStore() {
-        return mapSupplier.get();
+        return (M)mapSupplier.get();
     }
 
     // @Override

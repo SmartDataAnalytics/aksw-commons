@@ -17,26 +17,23 @@
 
 package org.aksw.commons.index.util;
 
-import java.util.Map;
-import java.util.function.Supplier;
-
+import java.util.Set;
 
 /**
- * Helper interface for creating new map instances with automatically inferred types
+ * Helper interface for creating new set instances with automatically inferred
+ * types
  *
  * @author Claus Stadler 11/09/2020
  *
  */
-@FunctionalInterface
-public interface MapSupplier {
-    <K, V> Map<K, V> get();
+public interface CSetSupplier<X>
+    extends SetSupplier
+{
+    @Override
+    <T> CSet<T, X> get();
 
-    default <X> CMapSupplier<X> wrapAsCMap(Supplier<X> valueSupplier) {
-        return MapSuppliers.wrapAsCMap(this, valueSupplier);
+    @SuppressWarnings("unchecked")
+    default <X extends Set<?>> CSetSupplier<X> cast() {
+        return (CSetSupplier<X>)this;
     }
-
-//    @SuppressWarnings("unchecked")
-//    default <X extends Map<?, ?>> MapSupplier<X> cast() {
-//        return (MapSupplier<X>)this;
-//    }
 }

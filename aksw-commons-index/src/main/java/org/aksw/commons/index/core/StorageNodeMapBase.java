@@ -43,7 +43,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     extends StorageNodeBase<D, C, M>
     implements StorageNodeMutable<D, C, M>
 {
-    protected MapSupplier<M> mapSupplier;
+    protected MapSupplier mapSupplier;
     // protected TupleToKey<? extends K, C> keyFunction;
     protected TupleValueFunction<C, K> keyFunction;
 
@@ -65,7 +65,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     public StorageNodeMapBase(
             int[] tupleIdxs,
             TupleAccessor<D, C> tupleAccessor,
-            MapSupplier<M> mapSupplier,
+            MapSupplier mapSupplier,
             //TupleToKey<? extends K, C> keyFunction
             //Function<? super D, ? extends K> keyFunction
             TupleValueFunction<C, K> keyFunction,

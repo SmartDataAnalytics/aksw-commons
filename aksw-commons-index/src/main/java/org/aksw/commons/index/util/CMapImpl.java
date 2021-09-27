@@ -10,25 +10,25 @@ import com.google.common.collect.ForwardingMap;
  * w.r.t. some use case context such as caching.
  *
  */
-public class CMapImpl<K, V>
+public class CMapImpl<K, V, X>
     extends ForwardingMap<K, V>
-    implements CMap<K, V>
+    implements CMap<K, V, X>
 {
     protected Map<K, V> delegate;
-    protected boolean isKeySetComplete;
+    protected X data;
 
     public CMapImpl() {
         this(new HashMap<K, V>());
     }
 
     public CMapImpl(Map<K, V> delegate) {
-        this(delegate, false);
+        this(delegate, null);
     }
 
-    public CMapImpl(Map<K, V> delegate, boolean isKeySetComplete) {
+    public CMapImpl(Map<K, V> delegate, X data) {
         super();
         this.delegate = delegate;
-        this.isKeySetComplete = isKeySetComplete;
+        this.data = data;
     }
 
     @Override
@@ -37,12 +37,18 @@ public class CMapImpl<K, V>
     }
 
     @Override
-    public boolean isComplete() {
-        return isKeySetComplete;
+    public X getData() {
+        return data;
     }
 
     @Override
-    public void setComplete(boolean status) {
-        this.isKeySetComplete = status;
+    public CMap<K, V, X> setData(X data) {
+        this.data = data;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "CMap[" + delegate + ", " + data + "]";
     }
 }

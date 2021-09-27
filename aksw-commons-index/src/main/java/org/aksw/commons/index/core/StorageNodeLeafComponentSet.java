@@ -64,7 +64,7 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
     public StorageNodeLeafComponentSet(
             int tupleIdxs[],
             TupleAccessor<D, C> tupleAccessor,
-            SetSupplier<S> setSupplier,
+            SetSupplier setSupplier,
             TupleValueFunction<C, V> valueFunction,
             TupleAccessorCore<? super V, ? extends C> keyToComponent
             ) {

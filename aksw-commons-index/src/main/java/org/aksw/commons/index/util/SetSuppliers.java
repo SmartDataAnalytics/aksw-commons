@@ -7,6 +7,16 @@ import java.util.function.Supplier;
 
 public class SetSuppliers {
 
+    public static <X> CSetSupplier<X> wrapAsCSet(SetSupplier setSupplier, Supplier<X> valueSupplier) {
+        return new CSetSupplier<X>() {
+            @Override
+            public <T> CSet<T, X> get() {
+                Set<T> tmp = setSupplier.<T>get();
+                return new CSetImpl<>(tmp, valueSupplier.get());
+            }
+        };
+    }
+
     /**
      * A supplier that supplies null instead of set instances. In nested structures
      * such null values may act as placeholders that are replaced in a
@@ -14,8 +24,8 @@ public class SetSuppliers {
      *
      * @return 'null' casted to the appropriate type.
      */
-    public static SetSupplierStd none() {
-        return new SetSupplierStd() {
+    public static SetSupplier none() {
+        return new SetSupplier() {
             @Override
             public <V> Set<V> get() {
                 return (Set<V>) null;
@@ -31,8 +41,8 @@ public class SetSuppliers {
      * @param setSupplier
      * @return
      */
-    public static SetSupplierStd forceCast(Supplier<Set<?>> setSupplier) {
-        return new SetSupplierStd() {
+    public static SetSupplier forceCast(Supplier<Set<?>> setSupplier) {
+        return new SetSupplier() {
             @SuppressWarnings("unchecked")
             @Override
             public <V> Set<V> get() {
@@ -41,11 +51,11 @@ public class SetSuppliers {
         };
     }
 
-    public static <X> SetSupplierStd forTreeSet(Comparator<X> cmp) {
+    public static <X> SetSupplier forTreeSet(Comparator<X> cmp) {
         return new SetSupplierTreeSet<X>(cmp);
     }
 
-    public static class SetSupplierTreeSet<X> implements SetSupplierStd {
+    public static class SetSupplierTreeSet<X> implements SetSupplier {
         protected Comparator<X> cmp;
 
         public SetSupplierTreeSet(Comparator<X> cmp) {

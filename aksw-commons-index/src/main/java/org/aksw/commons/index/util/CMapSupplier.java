@@ -18,7 +18,6 @@
 package org.aksw.commons.index.util;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 
 /**
@@ -28,15 +27,14 @@ import java.util.function.Supplier;
  *
  */
 @FunctionalInterface
-public interface MapSupplier {
-    <K, V> Map<K, V> get();
+public interface CMapSupplier<X>
+    extends MapSupplier
+{
+    @Override
+    <K, V> CMap<K, V, X> get();
 
-    default <X> CMapSupplier<X> wrapAsCMap(Supplier<X> valueSupplier) {
-        return MapSuppliers.wrapAsCMap(this, valueSupplier);
+    @SuppressWarnings("unchecked")
+    default <X extends Map<?, ?>> CMapSupplier<X> cast() {
+        return (CMapSupplier<X>)this;
     }
-
-//    @SuppressWarnings("unchecked")
-//    default <X extends Map<?, ?>> MapSupplier<X> cast() {
-//        return (MapSupplier<X>)this;
-//    }
 }

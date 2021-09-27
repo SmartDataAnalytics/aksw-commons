@@ -41,6 +41,7 @@ import org.aksw.commons.index.util.MapSupplier;
 import org.aksw.commons.index.util.SetSupplier;
 import org.aksw.commons.index.util.TupleValueFunction;
 import org.aksw.commons.tuple.TupleAccessor;
+import org.checkerframework.checker.units.qual.C;
 
 import com.google.common.collect.HashBiMap;
 
@@ -53,14 +54,30 @@ import com.google.common.collect.HashBiMap;
  */
 public class StorageComposers {
 
+
     public static <D, C, S extends Set<D>> StorageNodeMutable<D, C, S> leafSet(
-            SetSupplier<S> setSupplier,
+            SetSupplier setSupplier,
             TupleAccessor<D, C> tupleAccessor) {
         return new StorageNodeLeafDomainSet<D, C, D, S>(
                 tupleAccessor,
                 setSupplier,
                 // Ugly identity mapping of domain tuples to themselves as values - can we do better?
                 TupleValueFunction.newIdentity()
+                );
+    }
+
+    public static <D, C, S extends Set<C>> StorageNodeMutable<D, C, S> leafComponentSet(
+            int tupleIdx,
+            SetSupplier setSupplier,
+            TupleAccessor<D, C> tupleAccessor) {
+        return new StorageNodeLeafComponentSet<D, C, C, S>(
+                new int[] {tupleIdx},
+                tupleAccessor,
+                setSupplier,
+                // TupleValueFunction that returns the tuple's component based on the first indexe in the tupleIdx array;
+                // i.e. tuple[tupleIdx[0]]
+                TupleValueFunction::component0,
+                (key, idx) -> key // TODO Ensure that only component 0 is requested
                 );
     }
 
@@ -75,26 +92,13 @@ public class StorageComposers {
                 );
     }
 
-    public static <D, C, S extends Set<C>> StorageNodeMutable<D, C, S> leafComponentSet(
-            int tupleIdx,
-            SetSupplier<S> setSupplier,
-            TupleAccessor<D, C> tupleAccessor) {
-        return new StorageNodeLeafComponentSet<D, C, C, S>(
-                new int[] {tupleIdx},
-                tupleAccessor,
-                setSupplier,
-                // TupleValueFunction that returns the tuple's component based on the first indexe in the tupleIdx array;
-                // i.e. tuple[tupleIdx[0]]
-                TupleValueFunction::component0,
-                (key, idx) -> key // TODO Ensure that only component 0 is requested
-                );
-    }
 
-    public static <D, C, M extends Map<C, D>> StorageNodeMutable<D, C, M> leafMap(
+
+    public static <D, C, S extends Map<C, D>> StorageNodeMutable<D, C, S> leafMap(
             int tupleIdx,
-            MapSupplier<M> mapSupplier,
+            MapSupplier mapSupplier,
             TupleAccessor<D, C> tupleAccessor) {
-        return new StorageNodeLeafMap<D, C, C, D, M>(
+        return new StorageNodeLeafMap<D, C, C, D, S>(
                 new int[] {tupleIdx},
                 tupleAccessor,
                 mapSupplier,
@@ -106,15 +110,16 @@ public class StorageComposers {
     }
 
 
-    public static <D, C, V, M extends Map<C, V>> StorageNodeMutable<D, C, M> innerMap(
+
+    public static <D, C, V, S extends Map<C, V>> StorageNodeMutable<D, C, S> innerMap(
             int tupleIdx,
-            MapSupplier<M> mapSupplier,
+            MapSupplier mapSupplier,
             StorageNodeMutable<D, C, V> child
             ) {
 
         TupleAccessor<D, C> tupleAccessor = child.getTupleAccessor();
 
-        return new StorageNodeInnerMap<D, C, C, V, M>(
+        return new StorageNodeInnerMap<D, C, C, V, S>(
                 new int[] {tupleIdx},
                 tupleAccessor,
                 child,
