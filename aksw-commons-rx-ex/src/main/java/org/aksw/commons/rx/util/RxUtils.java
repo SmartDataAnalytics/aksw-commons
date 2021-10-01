@@ -12,6 +12,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.aksw.commons.lambda.throwing.ThrowingConsumer;
+import org.aksw.commons.lambda.throwing.ThrowingSupplier;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,38 @@ import io.reactivex.rxjava3.internal.queue.SpscArrayQueue;
 
 public class RxUtils {
     private static final Logger logger = LoggerFactory.getLogger(RxUtils.class);
+
+
+    /** Create a flowable from a supplier of iterators */
+    public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplier(
+            ThrowingSupplier<I> itSupp) {
+        return fromIteratorSupplier(itSupp, null);
+    }
+
+
+    /** Create a flowable from a supplier of (closeable) iterator */
+    public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplier(
+            ThrowingSupplier<I> itSupp,
+            ThrowingConsumer<? super I> closer) {
+
+        ThrowingConsumer<? super I> closeAction = closer == null ? it -> {} : closer;
+
+        return Flowable.<T, I>generate(
+            itSupp::get,
+            (it, e) -> {
+                try {
+                    if (it.hasNext()) {
+                        T item = it.next();
+                        e.onNext(item);
+                    } else {
+                        e.onComplete();
+                    }
+                } catch (Exception x) {
+                    e.onError(x);
+                }
+            },
+            closeAction::accept);
+    }
 
     /**
      * Create a stream that <b>must eventually be closed</b> from a Flowable.

@@ -33,5 +33,5 @@ public interface PathOps<T, P extends Path<T>> {
     String toString(P path);
 
     /** Deserialize a string into a path */
-    Path<T> fromString(String str);
+    P fromString(String str);
 }

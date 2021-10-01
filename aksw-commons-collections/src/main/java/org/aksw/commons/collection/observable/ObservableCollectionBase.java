@@ -62,13 +62,9 @@ public class ObservableCollectionBase<T, C extends Collection<T>>
                 Collection<T> oldValue = CollectionOps.smartDifference(backend, newItem);
                 Collection<T> newValue = this;
 
-                try {
-                    vcs.fireVetoableChange(new CollectionChangedEventImpl<>(
-                            this, oldValue, newValue,
-                            newItem, Collections.emptySet(), Collections.emptySet()));
-                } catch (PropertyVetoException e) {
-                    throw new RuntimeException(e);
-                }
+                pcs.firePropertyChange(new CollectionChangedEventImpl<>(
+                        this, oldValue, newValue,
+                        newItem, Collections.emptySet(), Collections.emptySet()));
             }
 
         }

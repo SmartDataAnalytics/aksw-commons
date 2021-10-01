@@ -15,6 +15,11 @@
 	<dependencies>
 
 		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-lambdas-throwing</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>io.reactivex.rxjava3</groupId>
 			<artifactId>rxjava</artifactId>
 		</dependency>
