@@ -6,6 +6,13 @@ import org.junit.Test;
 public class TestPathStr {
 
     @Test
+    public void testTrailingSlashes() {
+        Path<String> a = PathOpsStr.create("/hello/world/");
+        Path<String> b = a.resolve("/hello/world");
+        Assert.assertEquals(a, b);
+    }
+
+    @Test
     public void testEscaping() {
         String str = "/hell\\//o/world/";
         Path<String> a = PathOpsStr.create(str);
