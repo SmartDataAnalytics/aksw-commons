@@ -8,15 +8,15 @@ for which `parent` and `children` functions are defined.
 
 The main classes introduced by this module are:
 
-* [Path](../../aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
-* [PathBase](../../aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathBase.java) is a base implementation that eventually delegates all methods to a `PathOps` instance.
-* [PathOps](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathOps.java) bundles common functionality for paths, namely path construction, string de-/serialization, comparison and self/parent token declarations (such as `.` and `..`).
+* [Path](https://github.com/SmartDataAnalytics/aksw-commons/tree/develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
+* [PathBase](https://github.com/SmartDataAnalytics/aksw-commons/tree/develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathBase.java) is a base implementation that eventually delegates all methods to a `PathOps` instance.
+* [PathOps](https://github.com/SmartDataAnalytics/aksw-commons/tree/develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathOps.java) bundles common functionality for paths, namely path construction, string de-/serialization, comparison and self/parent token declarations (such as `.` and `..`).
 
 
 The following default implementations are provided which also serve as an example for custom implementations:
 
-* [PathNio](develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathNio.java) is a wrapper for `java.nio.Path`. It enables passing nio paths to any function expecting a `Path<String>` type.
-* [PathStr](develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathStr.java) is an implementation based on conventional strings. In constrast to `java.nio.Path` there is no dependency on file system specifics.
+* [PathNio](https://github.com/SmartDataAnalytics/aksw-commons/tree/develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathNio.java) is a wrapper for `java.nio.Path`. It enables passing nio paths to any function expecting a `Path<String>` type.
+* [PathStr](https://github.com/SmartDataAnalytics/aksw-commons/tree/develop/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathStr.java) is an implementation based on conventional strings. In constrast to `java.nio.Path` there is no dependency on file system specifics.
 
 
 This module only serves as a framework for more powerful path implementations, such as where segments are predicate expressions which filter columns of tables to matching rows.
