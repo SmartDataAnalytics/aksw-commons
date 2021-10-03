@@ -8,8 +8,8 @@ for which `parent` and `children` functions are defined.
 
 The main classes introduced by this module are:
 
-* [Path](/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
-* [PathBase](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathBase.java) is a base implementation that eventually delegates all methods to a `PathOps` instance.
+* [Path](../../aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
+* [PathBase](../../aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathBase.java) is a base implementation that eventually delegates all methods to a `PathOps` instance.
 * [PathOps](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathOps.java) bundles common functionality for paths, namely path construction, string de-/serialization, comparison and self/parent token declarations (such as `.` and `..`).
 
 
