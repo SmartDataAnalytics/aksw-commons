@@ -3,12 +3,12 @@
 ## Essentials
 
 In order to reference an arbitrary piece of data it is necessary to have representation for such a reference.
-Paths are somewhere between simple identifiers and query languages. The essence of paths is that they are sequences of segments
-for which `parent` and `children` function are defined.
+Paths are somewhere between simple identifiers and query languages. Foremost, a fundamental aspect of paths is that they are sequences of segments
+for which `parent` and `children` functions are defined.
 
 The main classes introduced by this module are:
 
-* [Path](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
+* [Path](/aksw-commons-paths/src/main/java/org/aksw/commons/path/core/Path.java) which provides all the non-filesystem-specific methods of `java.nio.Path` generalized to an arbitary segment type `<T>`.
 * [PathBase](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathBase.java) is a base implementation that eventually delegates all methods to a `PathOps` instance.
 * [PathOps](aksw-commons-paths/src/main/java/org/aksw/commons/path/core/PathOps.java) bundles common functionality for paths, namely path construction, string de-/serialization, comparison and self/parent token declarations (such as `.` and `..`).
 
@@ -21,7 +21,7 @@ The following default implementations are provided which also serve as an exampl
 
 This module only serves as a framework for more powerful path implementations, such as where segments are predicate expressions which filter columns of tables to matching rows.
 
-Essential features of Paths are both the string **de-/serialization** which makes them suitable in distributed computing as well as the **comparison** which allows for testing whether two references are equal and thus point to the same entity. Any implementation for a custom segment type should therefore pay attention to these aspects.
+Essential features of this path framework are both the string **de-/serialization** which makes paths suitable in distributed computing as well as the **comparison** which allows for testing whether two references are equal and thus point to the same entity. Any implementation for a custom segment type should therefore pay attention to these aspects.
 
 ## Examples
 
