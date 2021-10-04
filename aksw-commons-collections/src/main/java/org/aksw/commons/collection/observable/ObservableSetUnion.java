@@ -3,6 +3,7 @@ package org.aksw.commons.collection.observable;
 import java.beans.PropertyChangeListener;
 import java.beans.VetoableChangeListener;
 import java.util.AbstractSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -24,6 +25,11 @@ public class ObservableSetUnion<T>
         this.lhs = lhs;
         this.rhs = rhs;
         this.effectiveSet = Sets.union(lhs, rhs);
+    }
+
+    @Override
+    public boolean delta(Collection<? extends T> additions, Collection<?> removals) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

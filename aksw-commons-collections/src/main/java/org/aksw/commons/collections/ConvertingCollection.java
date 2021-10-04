@@ -3,6 +3,7 @@ package org.aksw.commons.collections;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import com.google.common.base.Converter;
 
@@ -89,6 +90,26 @@ public class ConvertingCollection<F, B, C extends Collection<B>>
         Collection<B> safeBackend = MutableCollectionViews.filteringCollection(backend, converter);
         Collection<F> result = new ConvertingCollection<>(safeBackend, converter);
         return result;
+    }
+
+    public static <O> Stream<O> convertRaw(Collection<?> c, Converter<?, O> converter) {
+        @SuppressWarnings("rawtypes")
+        Converter raw = converter;
+
+        Stream<O> itemStream = c.stream().flatMap(item -> {
+            Stream<O> r;
+            try {
+                @SuppressWarnings("unchecked")
+                O b = (O)raw.convert(item);
+                r = Stream.of(b);
+            } catch (ClassCastException e) {
+                r = Stream.empty();
+            }
+            return r;
+        })
+        .map(x -> (O)x);
+
+        return itemStream;
     }
 }
 

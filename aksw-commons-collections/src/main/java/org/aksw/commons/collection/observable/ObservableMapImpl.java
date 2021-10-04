@@ -292,6 +292,12 @@ public class ObservableMapImpl<K, V>
                 }
             });
         }
+
+
+        @Override
+        public boolean delta(Collection<? extends K> additions, Collection<?> removals) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
