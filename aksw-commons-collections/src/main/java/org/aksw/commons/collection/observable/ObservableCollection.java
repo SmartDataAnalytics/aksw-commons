@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 import com.google.common.base.Converter;
 
 public interface ObservableCollection<T>
-    extends Collection<T>
+    extends DeltaCollection<T>
 {
     /** Whether to notify listeners */
 //    void setEnableEvents(boolean onOrOff);
@@ -23,14 +23,6 @@ public interface ObservableCollection<T>
 
     /** Replace the content of this collection thereby firing only a single event */
 //    boolean replace(Collection<? extends T> newValues);
-
-    default boolean replace(Collection<? extends T> newValues) {
-        return delta(newValues, this);
-    }
-
-    /** Apply a delta thereby firing only a single event */
-    boolean delta(Collection<? extends T> additions, Collection<?> removals);
-
 
 
 

@@ -26,7 +26,7 @@ public class FilteredObservableCollection<T>
         Collection<T> filteredRemovals = StreamOps.<T>filter(rawRemovals.stream(), predicate).collect(Collectors.toSet());
         Collection<T> filteredAdditions = rawAdditions.stream().filter(predicate).collect(Collectors.toSet());
 
-        return delta(filteredAdditions, filteredRemovals);
+        return backend.delta(filteredAdditions, filteredRemovals);
     }
 
 //	@Override
