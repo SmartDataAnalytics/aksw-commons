@@ -48,22 +48,16 @@ public class FlowableEx {
     }
 
 
-
-    private static class State<R, C, I> {
-        R resource;
-        C iterable;
-        I iterator;
-
-        public State(R resource) {
-            this.resource = resource;
-        }
-    }
-
-
     /**
-     * Create a flowable from a supplier of resources with a subsequent processing.
+     * Create a flowable from a supplier of resources with a subsequent processing into an iterator.
      *
-     * For example, supply an input stream, create a commons CSV parser from it and
+     * It is important to understand that resource acquisition happens during state
+     * initialization, whereas iterable initialization is done in the generator.
+     * This gives control over when exception handling: During state initialization there is
+     * no emitter and therefore exceptions cannot be passed downstream. Conversely, exceptions ocurring
+     * in the generator are always forwarded.
+     *
+     * Example use case: supply an input stream, create a commons CSV parser from it and
      * then yield items from its iterator.
      *
      * @param <T> The item type
@@ -83,9 +77,9 @@ public class FlowableEx {
             ThrowingFunction<C, I> toIterator,
             ThrowingBiConsumer<R, C> closer) {
 
-        Flowable<T> result = Flowable.<T, State<R, C, I>>generate(
+        Flowable<T> result = Flowable.<T, IterableResourceState<R, C, I>>generate(
                 () -> {
-                    return new State<>(resourceSupplier.get());
+                    return new IterableResourceState<>(resourceSupplier.get());
                 },
                 (state, emitter) -> {
                     try {
@@ -108,5 +102,22 @@ public class FlowableEx {
                 state -> closer.accept(state.resource, state.iterable));
         return result;
     }
+
+    /**
+     * Helper class used with {@link FlowableEx#fromIterableResource(ThrowingSupplier, ThrowingFunction, ThrowingFunction, ThrowingBiConsumer)}
+     */
+    private static class IterableResourceState<R, C, I> {
+        R resource;
+        C iterable;
+        I iterator;
+
+        public IterableResourceState(R resource) {
+            this.resource = resource;
+        }
+    }
+
+
+
+
 
 }
