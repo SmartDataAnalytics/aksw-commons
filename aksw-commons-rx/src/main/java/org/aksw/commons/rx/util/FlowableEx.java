@@ -17,11 +17,12 @@ import io.reactivex.rxjava3.core.Flowable;
  */
 public class FlowableEx {
 
-    /** Create a flowable from a supplier of iterators */
-    public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplier(
-            ThrowingSupplier<I> itSupp) {
-        return FlowableEx.fromIteratorSupplier(itSupp, null);
-    }
+    /** REMOVED: Create a flowable from a supplier of iterators */
+    /** REASON: Just use Flowable.fromIterable(() -> it); */
+//    public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplier(
+//            ThrowingSupplier<I> itSupp) {
+//        return FlowableEx.fromIteratorSupplier(itSupp, null);
+//    }
 
     /** Create a flowable from a supplier of (closeable) iterator */
     public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplier(
@@ -71,19 +72,17 @@ public class FlowableEx {
      * @param closer
      * @return
      */
-    public static <T, R, C, I extends Iterator<T>> Flowable<T> fromIterableResource(
+    public static <T, R, C> Flowable<T> fromIterableResource(
             ThrowingSupplier<R> resourceSupplier,
-            ThrowingFunction<R, C> toIterable,
-            ThrowingFunction<C, I> toIterator,
-            ThrowingBiConsumer<R, C> closer) {
+            ThrowingFunction<? super R, C> toIterable,
+            ThrowingFunction<? super C, ? extends Iterator<T>> toIterator,
+            ThrowingBiConsumer<? super R, ? super C> closer) {
 
-        Flowable<T> result = Flowable.<T, IterableResourceState<R, C, I>>generate(
-                () -> {
-                    return new IterableResourceState<>(resourceSupplier.get());
-                },
+        Flowable<T> result = Flowable.<T, IterableResourceState<R, C, T>>generate(
+                () -> new IterableResourceState<>(resourceSupplier.get()),
                 (state, emitter) -> {
                     try {
-                        I iterator;
+                        Iterator<T> iterator;
                         if ((iterator = state.iterator) == null) {
                             C iterable = toIterable.apply(state.resource);
                             iterator = state.iterator = toIterator.apply(iterable);
@@ -106,10 +105,10 @@ public class FlowableEx {
     /**
      * Helper class used with {@link FlowableEx#fromIterableResource(ThrowingSupplier, ThrowingFunction, ThrowingFunction, ThrowingBiConsumer)}
      */
-    private static class IterableResourceState<R, C, I> {
+    private static class IterableResourceState<R, C, T> {
         R resource;
         C iterable;
-        I iterator;
+        Iterator<T> iterator;
 
         public IterableResourceState(R resource) {
             this.resource = resource;

@@ -1,6 +1,7 @@
 package org.aksw.commons.rx.op;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.LongStream;
@@ -11,6 +12,15 @@ import io.reactivex.rxjava3.parallel.ParallelTransformer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class RxOps {
+
+    /** Transform an iterator using a flowable transformer */
+    public static <I, O> Iterator<O> transform(Iterator<I> it, FlowableTransformer<? super I, O> transformer) {
+        return Flowable.fromIterable(() -> it)
+            .compose(transformer)
+            .blockingIterable()
+            .iterator();
+    }
+
 
     /**
      * Factory method for yielding a FlowableTransformer that applies a given parallelTransformer
