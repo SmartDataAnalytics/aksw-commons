@@ -5,6 +5,7 @@ import java.util.Iterator;
 import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
+import org.aksw.commons.lambda.throwing.ThrowingPredicate;
 import org.aksw.commons.lambda.throwing.ThrowingSupplier;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -101,6 +102,50 @@ public class FlowableEx {
                 state -> closer.accept(state.resource, state.iterable));
         return result;
     }
+
+    /**
+     * Similar to {@link #fromIterableResource(ThrowingSupplier, ThrowingFunction, ThrowingFunction, ThrowingBiConsumer)}.
+     * Instead of an iterator there is just a 'nextRecord' method. Typicall a result of null
+     * indicates the end of data.
+     *
+     * @param <T>
+     * @param <R>
+     * @param <E>
+     * @param resourceSupplier
+     * @param toEnumerable
+     * @param nextRecord
+     * @param closer
+     * @return
+     */
+    public static <T, R, E> Flowable<T> fromEnumerableResource(
+            ThrowingSupplier<R> resourceSupplier,
+            ThrowingFunction<? super R, E> toEnumerable,
+            ThrowingFunction<? super E, T> nextRecord,
+            ThrowingBiConsumer<? super R, ? super E> closer) {
+
+        Flowable<T> result = Flowable.<T, IterableResourceState<R, E, T>>generate(
+                () -> new IterableResourceState<>(resourceSupplier.get()),
+                (state, emitter) -> {
+                    try {
+                        E enumerable = state.iterable;
+                        if (enumerable == null) {
+                            enumerable = state.iterable = toEnumerable.apply(state.resource);
+                        }
+
+                        T record;
+                        if ((record = nextRecord.apply(enumerable)) != null) {
+                            emitter.onNext(record);
+                        } else {
+                            emitter.onComplete();
+                        }
+                    } catch(Exception e) {
+                        emitter.onError(e);
+                    }
+                },
+                state -> closer.accept(state.resource, state.iterable));
+        return result;
+    }
+
 
     /**
      * Helper class used with {@link FlowableEx#fromIterableResource(ThrowingSupplier, ThrowingFunction, ThrowingFunction, ThrowingBiConsumer)}
