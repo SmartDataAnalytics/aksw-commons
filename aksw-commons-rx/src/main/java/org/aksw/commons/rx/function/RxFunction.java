@@ -2,11 +2,11 @@ package org.aksw.commons.rx.function;
 
 import java.io.Serializable;
 
+import org.aksw.commons.lambda.serializable.SerializableFunction;
 import org.reactivestreams.Publisher;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableTransformer;
-import io.reactivex.rxjava3.functions.Function;
 
 /** A FlowableTransformer with support for method chaining */
 @FunctionalInterface
@@ -37,18 +37,18 @@ public interface RxFunction<I, O>
      * @param mapper
      * @return
      */
-    default <X> RxFunction<I, X> andThenMap(Function<? super O, X> mapper) {
+    default <X> RxFunction<I, X> andThenMap(SerializableFunction<? super O, X> mapper) {
         return in -> {
             Publisher<O> o = this.apply(in);
-            Publisher<X> r = Flowable.fromPublisher(o).map(mapper);
+            Publisher<X> r = Flowable.fromPublisher(o).map(mapper::apply);
             return r;
         };
     }
 
-    default <X> RxFunction<I, X> andThenFlatMapIterable(Function<? super O, ? extends Iterable<X>> mapper) {
+    default <X> RxFunction<I, X> andThenFlatMapIterable(SerializableFunction<? super O, ? extends Iterable<X>> mapper) {
         return in -> {
             Publisher<O> o = this.apply(in);
-            Publisher<X> r = Flowable.fromPublisher(o).flatMapIterable(mapper);
+            Publisher<X> r = Flowable.fromPublisher(o).flatMapIterable(mapper::apply);
             return r;
         };
     }

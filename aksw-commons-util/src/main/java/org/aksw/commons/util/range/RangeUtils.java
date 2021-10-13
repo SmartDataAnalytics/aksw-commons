@@ -63,6 +63,26 @@ public class RangeUtils {
         return Optional.ofNullable(isSingleton ? range.lowerEndpoint() : null);
     }
 
+
+    /** True iff all ranges are singletons */
+    public static boolean isDiscrete(RangeSet<?> rangeSet) {
+        return isDiscrete(rangeSet.asRanges());
+    }
+
+    public static boolean isDiscrete(Collection<? extends Range<?>> ranges) {
+        boolean result = ranges.stream().allMatch(RangeUtils::isSingleton);
+        return result;
+    }
+
+    public static boolean isSingleton(RangeSet<?> rangeSet) {
+        return isSingleton(rangeSet.asRanges());
+    }
+
+    public static boolean isSingleton(Collection<? extends Range<?>> ranges) {
+        boolean result = ranges.size() == 1 && isSingleton(ranges.iterator().next());
+        return result;
+    }
+
     public static boolean isSingleton(Range<?> range) {
         boolean result =
                 range.hasLowerBound() &&
