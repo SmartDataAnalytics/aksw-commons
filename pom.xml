@@ -70,6 +70,7 @@
 		<module>aksw-commons-tuples</module>
 		<module>aksw-commons-index</module>
 		<module>aksw-commons-paths</module>
+		<module>aksw-commons-txn</module>
 
 		<module>aksw-commons-picocli</module>
 		<module>aksw-commons-legacy</module>
