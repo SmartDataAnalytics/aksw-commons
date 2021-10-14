@@ -105,6 +105,11 @@ public class PolaritySet<T>
     }
 
 
+    public void clear() {
+        this.values.clear();
+        this.isPositive = true;
+    }
+
     @Override
     public String toString() {
         String polarity = (isPositive) ? "+" : "-";
