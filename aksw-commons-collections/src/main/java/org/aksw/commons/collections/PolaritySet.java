@@ -1,8 +1,11 @@
 package org.aksw.commons.collections;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
 
 /**
  * A set of values with positive or negative polarity
@@ -13,6 +16,7 @@ import java.util.Set;
  * @param <T>
  */
 public class PolaritySet<T>
+    implements Cloneable
 {
     private Set<T> values;
     private boolean isPositive;
@@ -25,6 +29,12 @@ public class PolaritySet<T>
     public PolaritySet(boolean isPositive, Set<T> values) {
         this.values = values;
         this.isPositive = isPositive;
+    }
+
+
+    @Override
+    protected PolaritySet<T> clone() {
+        return new PolaritySet<>(isPositive, new LinkedHashSet<T>(values));
     }
 
     /*
@@ -42,103 +52,18 @@ public class PolaritySet<T>
         return result;
     }
 
-    /**
-     * case: positive - positive
-     *     Simply take the intersection
-     *
-     * case: positive - negative
-     *     {1, 2, 3} intersect {not {2}}: -> {1, 3} (positive.removeAll(negative))
-     *
-     * case: negative - positive
-     *     Same as above
-     *
-     * case: negative - negative
-     *     Simply take the union
-     *
-     *
-     * @param other
-     * @return
-     */
-    public PolaritySet<T> intersect(PolaritySet<T> that) {
-        Set<T> set = new LinkedHashSet<T>();
-        boolean isPos = true;
 
-        if(isPositive) {
-            if(that.isPositive) {
-                set.addAll(this.values);
-                set.retainAll(that.values);
-
-            } else {
-
-                set.addAll(this.values);
-                set.removeAll(that.values);
-            }
-        } else {
-            if(that.isPositive) {
-
-                set.addAll(that.values);
-                set.removeAll(this.values);
-            } else {
-
-                set.addAll(this.values);
-                set.addAll(that.values);
-                isPos = false;
-            }
-        }
-
-        PolaritySet<T> result = new PolaritySet<T>(isPos, set);
-        return result;
-    }
-
-
-    /**
-     * case: positive - positive
-     *     Simply take the union
-     *
-     * case: positive - negative
-     *     {1, 2, 3} intersect {not {1, 4}}: -> {4} (negative.removeAll(positive))
-     *
-     * case: negative - positive
-     *     Same as above
-     *
-     * case: negative - negative
-     *     Simply take the intersection
-     *
-     * @param that
-     * @return
-     */
+    /** Immutable union; returns a view */
     public PolaritySet<T> union(PolaritySet<T> that) {
-        Set<T> set = new LinkedHashSet<T>();
-        boolean isPos = true;
-
-        if(isPositive) {
-            if(that.isPositive) {
-                set.addAll(this.values);
-                set.addAll(that.values);
-
-            } else {
-
-                set.addAll(that.values);
-                set.removeAll(this.values);
-                isPos = false;
-            }
-        } else {
-            if(that.isPositive) {
-
-                set.addAll(this.values);
-                set.removeAll(that.values);
-                isPos = false;
-            } else {
-
-                set.addAll(this.values);
-                set.retainAll(that.values);
-            }
-        }
-
-        PolaritySet<T> result = new PolaritySet<T>(isPos, set);
-        return result;
+        return createUnionView(this, that);
     }
 
+    /** Immutable union; returns a view */
+    public PolaritySet<T> intersect(PolaritySet<T> that) {
+        return createIntersectionView(this, that);
+    }
+
+    /** Immutable negate; returns a view */
     public PolaritySet<T> negate() {
         PolaritySet<T> result = new PolaritySet<T>(!isPositive, values);
         return result;
@@ -162,6 +87,17 @@ public class PolaritySet<T>
 
     public boolean isPositive() {
         return isPositive;
+    }
+
+    /**
+     * Set the polarity
+     * @param isPositive the new value for the polarity; true = positive
+     * @return The old polarity befor setting the new one.
+     */
+    public boolean setPolarity(boolean isPositive) {
+        boolean result = isPositive;
+        this.isPositive = isPositive;
+        return result;
     }
 
     public Set<T> getValue() {
@@ -203,4 +139,135 @@ public class PolaritySet<T>
             return false;
         return true;
     }
+
+
+    /** Mutating intersection */
+    public PolaritySet<T> stateIntersect(PolaritySet<T> that) {
+        if(isPositive) {
+            if(that.isPositive) {
+                values.retainAll(that.values);
+            } else {
+                values.removeAll(that.values);
+            }
+        } else {
+            if(that.isPositive) {
+                values = new HashSet<>(Sets.difference(that.values, values));
+                isPositive = true;
+            } else {
+                values.addAll(that.values);
+            }
+        }
+
+        return this;
+    }
+
+
+    /** Mutating union */
+    public PolaritySet<T> stateUnion(PolaritySet<T> that) {
+        if(isPositive) {
+            if(that.isPositive) {
+                values.addAll(that.values);
+            } else {
+                values = new HashSet<>(Sets.difference(that.values, values));
+                isPositive = false;
+            }
+        } else {
+            if(that.isPositive) {
+                values.removeAll(that.values);
+                isPositive = false;
+            } else {
+                values.retainAll(that.values);
+            }
+        }
+
+        return this;
+    }
+
+    /** Mutates this by flipping the polarity */
+    public PolaritySet<T> stateNegate() {
+        isPositive = !isPositive;
+        return this;
+    }
+
+
+    /**
+     * case: positive - positive
+     *     Simply take the intersection
+     *
+     * case: positive - negative
+     *     {1, 2, 3} intersect {not {2}}: -> {1, 3} (positive.removeAll(negative))
+     *
+     * case: negative - positive
+     *     Same as above
+     *
+     * case: negative - negative
+     *     Simply take the union
+     *
+     *
+     * @param other
+     * @return
+     */
+    public static <T> PolaritySet<T> createIntersectionView(PolaritySet<T> self, PolaritySet<T> that) {
+        Set<T> set;
+        boolean isPos = true;
+
+        if(self.isPositive) {
+            if(that.isPositive) {
+                set = Sets.intersection(self.values, that.values);
+            } else {
+                set = Sets.difference(self.values, that.values);
+            }
+        } else {
+            if(that.isPositive) {
+                set = Sets.difference(that.values, self.values);
+            } else {
+                set = Sets.union(self.values, that.values);
+                isPos = false;
+            }
+        }
+
+        PolaritySet<T> result = new PolaritySet<T>(isPos, set);
+        return result;
+    }
+
+    /**
+     * case: positive - positive
+     *     Simply take the union
+     *
+     * case: positive - negative
+     *     {1, 2, 3} intersect {not {1, 4}}: -> {4} (negative.removeAll(positive))
+     *
+     * case: negative - positive
+     *     Same as above
+     *
+     * case: negative - negative
+     *     Simply take the intersection
+     *
+     * @param that
+     * @return
+     */
+    public static <T> PolaritySet<T> createUnionView(PolaritySet<T> self, PolaritySet<T> that) {
+        Set<T> set;
+        boolean isPos = true;
+
+        if(self.isPositive) {
+            if(that.isPositive) {
+                set = Sets.union(self.values, that.values);
+            } else {
+                set = Sets.difference(that.values, self.values);
+                isPos = false;
+            }
+        } else {
+            if(that.isPositive) {
+                set = Sets.difference(self.values, that.values);
+                isPos = false;
+            } else {
+                set = Sets.intersection(self.values, that.values);
+            }
+        }
+
+        PolaritySet<T> result = new PolaritySet<T>(isPos, set);
+        return result;
+    }
 }
+
