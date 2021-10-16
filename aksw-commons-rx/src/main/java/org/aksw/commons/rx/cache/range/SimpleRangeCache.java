@@ -47,7 +47,7 @@ public class SimpleRangeCache<T>
     @Override
     public Flowable<T> apply(Range<Long> range) {
         // Convert the range to integer
-        Range<Integer> r = RangeUtils.transform(range, Ints::checkedCast);
+        Range<Integer> r = RangeUtils.map(range, Ints::checkedCast);
 
         return cache
                 .map(list -> RangeUtils.subList(list, r))

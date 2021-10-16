@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import junit.framework.Assert;
 
-public class PolaritySetTests {
+public abstract class PolaritySetTests {
 
     interface PolaritySetBinaryOp<T>
         extends BinaryOperator<PolaritySet<T>> {}

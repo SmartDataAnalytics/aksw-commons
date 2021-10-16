@@ -216,7 +216,7 @@ public class RangeUtils {
             V value,
         BiFunction<? super I, ? super V, ? extends O> op)
     {
-        Range<O> result = transform(range, endpoint -> op.apply(endpoint, value));
+        Range<O> result = map(range, endpoint -> op.apply(endpoint, value));
 
         return result;
     }
@@ -224,25 +224,24 @@ public class RangeUtils {
     /**
      * Return a new range with each concrete endpoint of the input range passed through a transformation function
      */
-    public static <I extends Comparable<I>, O extends Comparable<O>> Range<O> transform(
+    public static <I extends Comparable<I>, O extends Comparable<O>> Range<O> map(
             Range<I> range,
-            Function<? super I, ? extends O> fn)
+            Function<? super I, ? extends O> mapper)
     {
         Range<O> result;
 
-        if(range.hasLowerBound()) {
-            if(range.hasUpperBound()) {
-                result = Range.closedOpen(fn.apply(range.lowerEndpoint()), fn.apply(range.upperEndpoint()));
+        if (range.hasLowerBound()) {
+            if (range.hasUpperBound()) {
+                result = Range.range(mapper.apply(range.lowerEndpoint()), range.lowerBoundType(), mapper.apply(range.upperEndpoint()), range.upperBoundType());
             } else {
-                result = Range.atLeast(fn.apply(range.lowerEndpoint()));
+                result = Range.downTo(mapper.apply(range.lowerEndpoint()), range.lowerBoundType());
             }
         } else {
-            if(range.hasUpperBound()) {
-                result = Range.lessThan(fn.apply(range.upperEndpoint()));
+            if (range.hasUpperBound()) {
+                result = Range.upTo(mapper.apply(range.upperEndpoint()), range.upperBoundType());
             } else {
                 result = Range.all();
             }
-
         }
 
         return result;

@@ -3,6 +3,7 @@ package org.aksw.commons.collector.core;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -101,8 +102,20 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
         return new AggOutputTransform<>(state, outputTransform);
     }
 
+    public static <T>
+        ParallelAggregator<T, Set<T>, Accumulator<T, Set<T>>> hashSetSupplier()
+    {
+        return collectionSupplier(HashSet<T>::new);
+    }
+
+    public static <T>
+        ParallelAggregator<T, Set<T>, Accumulator<T, Set<T>>> setSupplier(SerializableSupplier<? extends Set<T>> setSupplier)
+    {
+        return collectionSupplier(setSupplier);
+    }
+
     public static <T, C extends Collection<T>>
-        ParallelAggregator<T, C, Accumulator<T, C>> collectionSupplier(SerializableSupplier<C> colSupplier)
+        ParallelAggregator<T, C, Accumulator<T, C>> collectionSupplier(SerializableSupplier<? extends C> colSupplier)
     {
         return naturalAccumulator(() -> new AccCollection<>(colSupplier.get()));
     }
