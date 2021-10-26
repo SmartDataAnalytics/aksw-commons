@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.function.Function;
 
 import org.aksw.commons.io.util.UriToPathUtils;
-import org.aksw.commons.util.strings.StringUtils;
+import org.aksw.commons.util.string.StringUtils;
 
 public class ResourceRepoImpl
     implements ResourceRepository<String>

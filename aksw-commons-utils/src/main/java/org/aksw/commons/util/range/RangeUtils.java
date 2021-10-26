@@ -478,4 +478,18 @@ public class RangeUtils {
         return result;
     }
 
+    /** Create a range from limit and offset. Either or both may be null. */
+    public static Range<Long> createRange(Long limit, Long offset) {
+        long beginIndex = offset == null ? 0 : offset;
+        Long endIndex = limit == null ? null : beginIndex + limit;
+
+        Range<Long> result = endIndex == null
+                ? Range.atLeast(beginIndex)
+                : Range.closedOpen(beginIndex, endIndex)
+                ;
+
+        return result;
+    }
+
+
 }

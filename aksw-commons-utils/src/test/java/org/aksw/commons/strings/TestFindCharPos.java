@@ -1,6 +1,6 @@
 package org.aksw.commons.strings;
 
-import org.aksw.commons.util.strings.StringUtils;
+import org.aksw.commons.util.string.StringUtils;
 import org.junit.Test;
 
 import junit.framework.Assert;

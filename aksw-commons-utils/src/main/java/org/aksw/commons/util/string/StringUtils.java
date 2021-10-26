@@ -1,4 +1,4 @@
-package org.aksw.commons.util.strings;
+package org.aksw.commons.util.string;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -15,101 +15,101 @@ import java.util.SortedMap;
 import java.util.TreeSet;
 
 public class StringUtils
-{	
-	/**
-	 * Return the number of end-of-line characters at the current position - if any.
-	 * For non-eol positions the result is 0
-	 * 
-	 * @param str
-	 * @param charPos
-	 * @return
-	 */
-	public static int getEolCharCount(String str, int charPos) {
-		int result = 0;
-		boolean newLineEncountered = false;
-		for(int i = charPos; i < str.length(); ++i) {
-			char c = str.charAt(i);
-    		if(c == '\n') {
-    			if(newLineEncountered) {
-    				break;
-    			} else {
-        			++result;
-    				newLineEncountered = true;
-    			}
-    		} else if(c == '\r') {
-    			++result;
-    		} else {
-    			break;
-    		}
-		}
-		
-		return result;
-	}
-	
-	/**
-	 * Convert line and column index to the char position
-	 * line and column indexes are 1-based.
-	 * Using 0 for either argument yields -1
-	 * 
-	 * @param str
-	 * @param line
-	 * @param col the column
-	 * @return the char pos or -1 if there was none w.r.t. line and col
-	 */
+{
+    /**
+     * Return the number of end-of-line characters at the current position - if any.
+     * For non-eol positions the result is 0
+     *
+     * @param str
+     * @param charPos
+     * @return
+     */
+    public static int getEolCharCount(String str, int charPos) {
+        int result = 0;
+        boolean newLineEncountered = false;
+        for(int i = charPos; i < str.length(); ++i) {
+            char c = str.charAt(i);
+            if(c == '\n') {
+                if(newLineEncountered) {
+                    break;
+                } else {
+                    ++result;
+                    newLineEncountered = true;
+                }
+            } else if(c == '\r') {
+                ++result;
+            } else {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Convert line and column index to the char position
+     * line and column indexes are 1-based.
+     * Using 0 for either argument yields -1
+     *
+     * @param str
+     * @param line
+     * @param col the column
+     * @return the char pos or -1 if there was none w.r.t. line and col
+     */
     public static int findCharPos(String str, int line, int col) {
-    	int result = -1;
+        int result = -1;
 
-    	if(col > 0 && line > 0) {
-        	int charPos = 0;
-        	int x = 0;
-        	int y = 1;
-        	for(charPos = 0; charPos < str.length(); ++charPos) {
-        		char c = str.charAt(charPos);
-        		//int eolCharCount = getEolCharCount(str, charPos);
-        		++x;
+        if(col > 0 && line > 0) {
+            int charPos = 0;
+            int x = 0;
+            int y = 1;
+            for(charPos = 0; charPos < str.length(); ++charPos) {
+                char c = str.charAt(charPos);
+                //int eolCharCount = getEolCharCount(str, charPos);
+                ++x;
 
-        		if(y == line && x == col) {
-        			result = charPos;
+                if(y == line && x == col) {
+                    result = charPos;
 //        			if(eolCharCount > 0) {
 //        				--result;
 //        			}
-        			break;
-        		}
+                    break;
+                }
 
-        		if(c == '\n') {
-        			++y;
-        			x = 0;
-        		} else if(c == '\r') {
-        			x = 0;
-        		}        		
-        	}    		
-    	}
-    	
-    	return result;
+                if(c == '\n') {
+                    ++y;
+                    x = 0;
+                } else if(c == '\r') {
+                    x = 0;
+                }
+            }
+        }
+
+        return result;
     }
 
-	
-	public static <T> String itemPerLine(T[] array) {
-		return itemPerLine(Arrays.asList(array));
-	}
 
-	public static <T> String itemPerLine(Iterable<T> iterable) {
-		String result = "";
-		Iterator<T> it = iterable.iterator();
-		int i = 0;
-		while(it.hasNext()) {
-			T item = it.next();
-			result += "[" + (++i) + "] " + item;
-			
-			if(it.hasNext()) {
-				result += "\n";
-			}
-		}
-		
-		return result;
-	}
-	
-	
+    public static <T> String itemPerLine(T[] array) {
+        return itemPerLine(Arrays.asList(array));
+    }
+
+    public static <T> String itemPerLine(Iterable<T> iterable) {
+        String result = "";
+        Iterator<T> it = iterable.iterator();
+        int i = 0;
+        while(it.hasNext()) {
+            T item = it.next();
+            result += "[" + (++i) + "] " + item;
+
+            if(it.hasNext()) {
+                result += "\n";
+            }
+        }
+
+        return result;
+    }
+
+
     /**
      * Removes prefixes that are also suffixes from a given string
      * e.g. strip('Hi', ') -> Hi
@@ -118,18 +118,18 @@ public class StringUtils
      * @param chars
      * @return
      */
-	public static String strip(String str, String ... chars)
-	{
-		for(String c : chars) {
-			if(str.length() < 2)
-				return str;
+    public static String strip(String str, String ... chars)
+    {
+        for(String c : chars) {
+            if(str.length() < 2)
+                return str;
 
-			if(str.startsWith(c) && str.endsWith(c))
-				str = str.substring(1, str.length() - 1);
-		}
+            if(str.startsWith(c) && str.endsWith(c))
+                str = str.substring(1, str.length() - 1);
+        }
 
-		return str;
-	}
+        return str;
+    }
 
 
     /**
@@ -139,30 +139,30 @@ public class StringUtils
      * @param <T>
      * @return
      */
-	public static <T> T coalesce(T ...args)
-	{
-		for(T arg : args) {
-			if(arg != null) {
-				return arg;
-			}
-		}
+    public static <T> T coalesce(T ...args)
+    {
+        for(T arg : args) {
+            if(arg != null) {
+                return arg;
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public static String ucFirst(String str)
-	{
-		return str.isEmpty()
-			? ""
-			: str.substring(0,1).toUpperCase() + str.substring(1);
-	}
+    public static String ucFirst(String str)
+    {
+        return str.isEmpty()
+            ? ""
+            : str.substring(0,1).toUpperCase() + str.substring(1);
+    }
 
-	public static String lcFirst(String str)
-	{
-		return str.isEmpty()
-			? ""
-			: str.substring(0,1).toLowerCase() + str.substring(1);
-	}
+    public static String lcFirst(String str)
+    {
+        return str.isEmpty()
+            ? ""
+            : str.substring(0,1).toLowerCase() + str.substring(1);
+    }
 
     public static String toLowerCamelCase(String s)
     {
@@ -174,8 +174,8 @@ public class StringUtils
         return toCamelCase(s, true);
     }
 
-	public static String toCamelCase(String s, boolean upper)
-	{
+    public static String toCamelCase(String s, boolean upper)
+    {
         String result = "";
         for(String part : s.split("_")) {
             result += ucFirst(part);
@@ -185,22 +185,22 @@ public class StringUtils
 
         return result;
         /*
-		int offset = 0;
-		String result = "";
-		for(;;) {
-			int newOffset = s.indexOf('_', offset);
-			if(newOffset == -1) {
-				result += ucFirst(s.substring(offset));
-				break;
-			}
+        int offset = 0;
+        String result = "";
+        for(;;) {
+            int newOffset = s.indexOf('_', offset);
+            if(newOffset == -1) {
+                result += ucFirst(s.substring(offset));
+                break;
+            }
 
-			result += ucFirst(s.substring(offset + 1));
-			offset = newOffset;
-		}
+            result += ucFirst(s.substring(offset + 1));
+            offset = newOffset;
+        }
 
-		return result;
-		*/
-	}
+        return result;
+        */
+    }
 
     /**
      * Cuts a string after nMax bytes - unless the remaining bytes are less
@@ -287,20 +287,20 @@ public class StringUtils
             }
 
             if(current.equals(candidate)) {
-            	if(inclusive) {
-            		return candidate;
-            	} else {
-            		if(current.equals(lookup)) {
-            			current = StringUtils.commonPrefix(current, candidate, true);
+                if(inclusive) {
+                    return candidate;
+                } else {
+                    if(current.equals(lookup)) {
+                        current = StringUtils.commonPrefix(current, candidate, true);
                         if(current == null) {
                             return null;
                         }
-            		} else {
-            			return candidate;
-            		}
-            	}
+                    } else {
+                        return candidate;
+                    }
+                }
             } else {
-            	current = StringUtils.commonPrefix(current, candidate, false);
+                current = StringUtils.commonPrefix(current, candidate, false);
             }
         }
     }
@@ -427,7 +427,7 @@ public class StringUtils
 
     /**
      * Looks up an element in the given map that is the longest prefix of the given lookup key.
-     * 
+     *
      * @param lookup
      * @param prefixMap
      * @return
@@ -446,20 +446,20 @@ public class StringUtils
             String key = candidate.getKey();
 
             if(current.equals(key)) {
-            	if(inclusive) {
-            		return candidate;
-            	} else {
-            		if(current.equals(lookup)) {
-            			current = StringUtils.commonPrefix(current, key, true);
+                if(inclusive) {
+                    return candidate;
+                } else {
+                    if(current.equals(lookup)) {
+                        current = StringUtils.commonPrefix(current, key, true);
                         if(current == null) {
                             return null;
                         }
-            		} else {
-            			return candidate;
-            		}
-            	}
+                    } else {
+                        return candidate;
+                    }
+                }
             } else {
-            	current = StringUtils.commonPrefix(current, key, false);
+                current = StringUtils.commonPrefix(current, key, false);
             }
         }
     }
@@ -477,20 +477,20 @@ public class StringUtils
             String key = candidate.getKey();
 
             if(current.equals(key)) {
-            	if(inclusive) {
-            		return candidate;
-            	} else {
-            		if(current.equals(lookup)) {
-            			current = StringUtils.commonPrefix(current, key, true);
+                if(inclusive) {
+                    return candidate;
+                } else {
+                    if(current.equals(lookup)) {
+                        current = StringUtils.commonPrefix(current, key, true);
                         if(current == null) {
                             return null;
                         }
-            		} else {
-            			return candidate;
-            		}
-            	}
+                    } else {
+                        return candidate;
+                    }
+                }
             } else {
-            	current = StringUtils.commonPrefix(current, key, false);
+                current = StringUtils.commonPrefix(current, key, false);
             }
         }
     }
@@ -588,7 +588,7 @@ public class StringUtils
 
     /**
      * calculate md5 hash of the string
-     * 
+     *
      * @param bytes
      * @return
      */

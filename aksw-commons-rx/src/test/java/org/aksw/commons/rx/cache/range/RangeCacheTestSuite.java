@@ -4,13 +4,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import org.aksw.jena_sparql_api.lookup.ListPaginator;
-import org.aksw.jena_sparql_api.lookup.ListPaginatorFromList;
+import org.aksw.commons.rx.lookup.ListPaginator;
+import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.junit.Test;
 
 import com.google.common.collect.Range;
 
-import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Flowable;
 
 public abstract class RangeCacheTestSuite {

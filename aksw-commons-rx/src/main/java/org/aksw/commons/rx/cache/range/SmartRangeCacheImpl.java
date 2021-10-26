@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import org.aksw.commons.kyro.guava.EntrySerializer;
 import org.aksw.commons.kyro.guava.RangeMapSerializer;
 import org.aksw.commons.kyro.guava.RangeSetSerializer;
+import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
 import org.aksw.commons.store.object.key.impl.KeyObjectStoreImpl;
@@ -33,7 +34,6 @@ import org.aksw.commons.util.range.CountInfo;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeUtils;
 import org.aksw.commons.util.slot.Slot;
-import org.aksw.jena_sparql_api.lookup.ListPaginator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

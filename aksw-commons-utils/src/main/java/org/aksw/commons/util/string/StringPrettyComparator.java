@@ -1,4 +1,4 @@
-package org.aksw.commons.util.strings;
+package org.aksw.commons.util.string;
 
 /**
  * @author Claus Stadler

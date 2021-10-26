@@ -3,7 +3,7 @@ package org.aksw.commons.rx.cache.range;
 import java.nio.file.Paths;
 import java.time.Duration;
 
-import org.aksw.jena_sparql_api.lookup.ListPaginator;
+import org.aksw.commons.rx.lookup.ListPaginator;
 
 // @Ignore
 public class TestSmartRangeCache

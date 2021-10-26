@@ -1,10 +1,13 @@
 package org.aksw.commons.collections;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.common.base.Objects;
@@ -312,6 +315,25 @@ public class MapUtils {
             Map<K, ? extends V> map,
             Set<? super K> deletions) {
         return Maps.asMap(Sets.difference(map.keySet(), deletions), map::get);
+    }
+
+
+    public static <K, V> Map<K, V> index(Collection<? extends K> keys, Function<K, V> fn) {
+        Map<K, V> result = index(keys, fn, new HashMap<>());
+        return result;
+    }
+
+    public static <K, V> Map<K, V> indexIdentity(Collection<? extends K> keys, Function<K, V> fn) {
+        Map<K, V> result = index(keys, fn, new IdentityHashMap<>());
+        return result;
+    }
+
+    public static <K, V> Map<K, V> index(Collection<? extends K> keys, Function<K, V> fn, Map<K, V> result) {
+        for(K key : keys) {
+            V value = fn.apply(key);
+            result.put(key, value);
+        }
+        return result;
     }
 
 }

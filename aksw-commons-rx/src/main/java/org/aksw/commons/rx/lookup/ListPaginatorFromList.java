@@ -1,4 +1,4 @@
-package org.aksw.jena_sparql_api.lookup;
+package org.aksw.commons.rx.lookup;
 
 import java.util.List;
 

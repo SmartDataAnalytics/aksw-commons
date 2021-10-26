@@ -22,20 +22,20 @@ public class LazyRef<T>
     private static final long serialVersionUID = 1L;
 
     protected Supplier<Ref<T>> rootRefFactory;
+    protected long closeDelayInMs;
 
     protected transient volatile Ref<T> rawRef = null;
     protected transient volatile Ref<T> rootRef = null;
-    protected long delayInMs;
 
 //    public LazyRef() {
 //        System.out.println("ctor " + this);
 //    }
 
-    public LazyRef(Supplier<Ref<T>> rootRefFactory, long delayInMs) {
+    public LazyRef(Supplier<Ref<T>> rootRefFactory, long closeDelayInMs) {
         super();
 //        System.out.println("init " + this);
         this.rootRefFactory = rootRefFactory;
-        this.delayInMs = delayInMs;
+        this.closeDelayInMs = closeDelayInMs;
     }
 
     public static <T> LazyRef<T> create(Supplier<Ref<T>> rootRefFactory, long delayInMs) {
@@ -63,21 +63,29 @@ public class LazyRef<T>
             if (rootRef == null || !rootRef.isAlive()) {
                 rootRef = RefImpl.create(rawRef.get(), this, () -> {
                     if (timer == null) {
-//                        System.out.println("Scheduling close");
-                        timer = new Timer();
-
-                        TimerTask timerTask = new TimerTask() {
-                            @Override
-                            public void run() {
-                                synchronized (this) {
-                                    rawRef.close();
-                                    rawRef = null;
-                                    rootRef = null;
-                                }
+                        Runnable closeAction = () -> {
+                            synchronized (this) {
+                                rawRef.close();
+                                rawRef = null;
+                                rootRef = null;
                             }
                         };
 
-                        timer.schedule(timerTask, delayInMs);
+                        if (closeDelayInMs == 0) {
+                            closeAction.run();
+                        } else {
+    //                        System.out.println("Scheduling close");
+                            timer = new Timer();
+
+                            TimerTask timerTask = new TimerTask() {
+                                @Override
+                                public void run() {
+                                    closeAction.run();
+                                }
+                            };
+
+                            timer.schedule(timerTask, closeDelayInMs);
+                        }
                     }
                 });
 

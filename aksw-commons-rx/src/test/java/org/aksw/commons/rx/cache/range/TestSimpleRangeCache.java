@@ -1,6 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
-import org.aksw.jena_sparql_api.lookup.ListPaginator;
+import org.aksw.commons.rx.lookup.ListPaginator;
 
 public class TestSimpleRangeCache
     extends RangeCacheTestSuite

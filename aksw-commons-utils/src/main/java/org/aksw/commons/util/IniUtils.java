@@ -1,7 +1,5 @@
 package org.aksw.commons.util;
 
-import org.aksw.commons.util.strings.StringUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -12,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.aksw.commons.util.string.StringUtils;
 
 /**
  * Loads all key-value pairs from a given file.

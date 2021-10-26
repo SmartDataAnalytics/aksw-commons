@@ -2,10 +2,10 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.List;
 
+import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.rx.range.RangedSupplierDelegated;
 import org.aksw.commons.util.range.RangeUtils;
-import org.aksw.jena_sparql_api.lookup.ListPaginator;
 
 import com.google.common.collect.Range;
 import com.google.common.primitives.Ints;
