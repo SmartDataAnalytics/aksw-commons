@@ -21,7 +21,7 @@ public class LazyRef<T>
 {
     private static final long serialVersionUID = 1L;
 
-    protected Supplier<Ref<T>> rootRefFactory;
+    protected Supplier<? extends Ref<T>> rootRefFactory;
     protected long closeDelayInMs;
 
     protected transient volatile Ref<T> rawRef = null;
@@ -31,14 +31,14 @@ public class LazyRef<T>
 //        System.out.println("ctor " + this);
 //    }
 
-    public LazyRef(Supplier<Ref<T>> rootRefFactory, long closeDelayInMs) {
+    public LazyRef(Supplier<? extends Ref<T>> rootRefFactory, long closeDelayInMs) {
         super();
 //        System.out.println("init " + this);
         this.rootRefFactory = rootRefFactory;
         this.closeDelayInMs = closeDelayInMs;
     }
 
-    public static <T> LazyRef<T> create(Supplier<Ref<T>> rootRefFactory, long delayInMs) {
+    public static <T> LazyRef<T> create(Supplier<? extends Ref<T>> rootRefFactory, long delayInMs) {
         return new LazyRef<>(rootRefFactory, delayInMs);
     }
 
