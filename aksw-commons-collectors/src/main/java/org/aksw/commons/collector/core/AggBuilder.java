@@ -1,9 +1,11 @@
 package org.aksw.commons.collector.core;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -85,6 +87,17 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
         return new AggInputSplit<>(state, fixedKeys, considerNewKeys, keyMapper, valueMapper);
     }
 
+    /** Simple input split: Partition input by a key derived from it */
+    public static <I, K, O,
+        ACC extends Accumulator<I, O>,
+        AGG extends ParallelAggregator<I, O, ACC>> AggInputSplit<I, K, I, O, ACC, AGG>
+    inputSplit(
+            SerializableFunction<? super I, ? extends K> keyMapper, AGG state) {
+        return new AggInputSplit<>(state, in -> Collections.singleton(keyMapper.apply(in)), (in, key) -> in);
+    }
+
+
+
 //	public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggInputFilter<I, O, ACC, AGG>
 //	inputFilter(SerializablePredicate<? super I> inputFilter, AGG state) {
 //	 return new AggInputFilter<>(state, inputFilter);
@@ -107,6 +120,13 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
     {
         return collectionSupplier(HashSet<T>::new);
     }
+
+    public static <T>
+    ParallelAggregator<T, List<T>, Accumulator<T, List<T>>> arrayListSupplier()
+    {
+        return collectionSupplier(ArrayList<T>::new);
+    }
+
 
     public static <T>
         ParallelAggregator<T, Set<T>, Accumulator<T, Set<T>>> setSupplier(SerializableSupplier<? extends Set<T>> setSupplier)

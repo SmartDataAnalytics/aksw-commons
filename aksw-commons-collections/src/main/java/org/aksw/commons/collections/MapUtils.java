@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -333,6 +334,23 @@ public class MapUtils {
             V value = fn.apply(key);
             result.put(key, value);
         }
+        return result;
+    }
+
+    public static <K, V> Map<K, V> transformKeys(Map<K, V> original,
+            Function<? super K, ? extends K> map) {
+        Map<K, V> result = new HashMap<>();
+
+        for (Entry<K, V> entry : original.entrySet()) {
+            K i = entry.getKey();
+            K o = map.apply(i);
+            if (o == null) {
+                o = i;
+            }
+
+            result.put(o, entry.getValue());
+        }
+
         return result;
     }
 
