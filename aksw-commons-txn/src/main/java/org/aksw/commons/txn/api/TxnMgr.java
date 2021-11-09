@@ -30,7 +30,11 @@ public interface TxnMgr
     /** Stream all existing transactions */
     Stream<Txn> streamTxns() throws IOException;
 
-    /** Method mainly for testing; should delete folders and such */
+    /**
+     *  Method mainly (or rather only) for testing:
+     *  Clears all locks and transactions regardless of any concurrent access.
+     *  Resets the txn manager's state to a clean slate.
+     */
     void deleteResources() throws IOException;
 
     TemporalAmount getHeartbeatDuration();
