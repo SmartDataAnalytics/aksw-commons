@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
+import org.aksw.commons.lambda.throwing.ThrowingBiFunction;
 
 public class SymLinkUtils {
     /**
@@ -35,30 +36,30 @@ public class SymLinkUtils {
     /**
      * Given a path that is considered a symlink and its target, return the absolute path
      * obtained by resolving the target (which may be a relative path) against the symlink.
-     * 
+     *
      * This method allows resolving a relative symlinkTgt of a different file system (e.g. UNIX) against
      * a symLinkSrc (e.g. WebDAV)
-     * 
+     *
      * @param symLinkSrc
      * @param symLinkTgt
      * @return
      */
     public static Path resolveSymLinkAbsolute(Path symLinkSrc, Path symLinkTgt) {
-    	// resolveSibling instead of getParent.resolve?
-    	
-    	Path result;
-    	if (symLinkTgt.isAbsolute()) {
-    		result = symLinkTgt;
-    	} else {
-    		String[] tgtSegments = PathUtils.getPathSegments(symLinkTgt);
-    		result = PathUtils.resolve(symLinkSrc.getParent(), tgtSegments).normalize().toAbsolutePath();
-    	}
+        // resolveSibling instead of getParent.resolve?
+
+        Path result;
+        if (symLinkTgt.isAbsolute()) {
+            result = symLinkTgt;
+        } else {
+            String[] tgtSegments = PathUtils.getPathSegments(symLinkTgt);
+            result = PathUtils.resolve(symLinkSrc.getParent(), tgtSegments).normalize().toAbsolutePath();
+        }
         return result;
     }
 
     /**
      * Within 'folder' create a link to 'file' with name 'baseName' if it does not yet exist.
-     * Return the new link or or all prior existing link(s)
+     * Return the new link or all prior existing link(s)
      *
      * @param file
      * @param folder
@@ -67,11 +68,29 @@ public class SymLinkUtils {
      * @throws IOException
      */
     public static Collection<Path> allocateSymbolicLink(
-    		SymbolicLinkStrategy symlinkStrategy,
-    		Path rawTarget,
-    		Path rawSourceFolder,
-    		String prefix,
-    		String suffix) throws IOException {
+            SymbolicLinkStrategy symlinkStrategy,
+            Path rawTarget,
+            Path rawSourceFolder,
+            String prefix,
+            String suffix
+            ) throws Exception {
+
+        return allocateSymbolicLink(symlinkStrategy, rawTarget, rawSourceFolder, prefix, suffix,
+                (file, tgt) -> {
+                    symlinkStrategy.createSymbolicLink(file, tgt);
+                    return file;
+                });
+    }
+
+
+    public static Collection<Path> allocateSymbolicLink(
+            SymbolicLinkStrategy symlinkStrategy,
+            Path rawTarget,
+            Path rawSourceFolder,
+            String prefix,
+            String suffix,
+            ThrowingBiFunction<Path, Path, Path> tgtAndContentToFile // Called when a new symlink is allocated
+            ) throws Exception {
         Path sourceFolder = rawSourceFolder.normalize();
         Path target = rawTarget.normalize();
 
@@ -119,9 +138,10 @@ public class SymLinkUtils {
                 //Path relTgt = c.relativize(target);
 
                 if (!Files.exists(c, LinkOption.NOFOLLOW_LINKS)) {
-                	symlinkStrategy.createSymbolicLink(c, relTgt);
+                    Path tmp = tgtAndContentToFile.apply(c, relTgt);
+                    // symlinkStrategy.createSymbolicLink(c, relTgt);
                     // Files.createSymbolicLink(c, relTgt);
-                    result = Collections.singleton(c);
+                    result = Collections.singleton(tmp);
                     break;
                 }
             }
@@ -129,13 +149,13 @@ public class SymLinkUtils {
 
         return result;
     }
-    
-    
+
+
     public static Stream<Entry<Path, Path>> streamSymbolicLinks(
-    		SymbolicLinkStrategy symlinkStrategy,
-    		Path sourceFolder,
-    		String prefix,
-    		String suffix) throws IOException {
+            SymbolicLinkStrategy symlinkStrategy,
+            Path sourceFolder,
+            String prefix,
+            String suffix) throws IOException {
 
         Stream<Entry<Path, Path>> result = Files.list(sourceFolder)
             .filter(symlinkStrategy::isSymbolicLink)
@@ -160,7 +180,7 @@ public class SymLinkUtils {
 
         return result;
     }
- 
+
 
     /**
      * Within 'sourceFolder' read all symbolic links with the pattern 'baseName${number}' and return a map
@@ -172,14 +192,14 @@ public class SymLinkUtils {
      * @throws IOException
      */
     public static Map<Path, Path> readSymbolicLinks(
-    		SymbolicLinkStrategy symlinkStrategy,
-    		Path sourceFolder,
-    		String prefix,
-    		String suffix) throws IOException {
+            SymbolicLinkStrategy symlinkStrategy,
+            Path sourceFolder,
+            String prefix,
+            String suffix) throws IOException {
         try (Stream<Entry<Path, Path>> stream = streamSymbolicLinks(symlinkStrategy, sourceFolder, prefix, suffix)) {
-	    	Map<Path, Path> result = stream
-	                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-	        return result;
+            Map<Path, Path> result = stream
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            return result;
         }
     }
 

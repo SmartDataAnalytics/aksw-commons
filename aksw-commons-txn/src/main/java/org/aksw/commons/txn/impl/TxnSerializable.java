@@ -263,7 +263,7 @@ public class TxnSerializable
                         try {
                             Files.deleteIfExists(ownerFile);
                         } finally {
-                            FileUtilsX.deleteEmptyFolders(txnFolder, txnMgr.txnBasePath);
+                            FileUtilsExtra.deleteEmptyFolders(txnFolder, txnMgr.txnBasePath);
                         }
                     }
                 }

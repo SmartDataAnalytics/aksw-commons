@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.function.Function;
 
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
-import org.aksw.commons.txn.impl.FileUtilsX;
+import org.aksw.commons.txn.impl.FileUtilsExtra;
 
 public class LockFromLink
 //	The semantic of this class is not that of a lock but of a DAO - it adds/removes lock entries to the store
@@ -60,7 +60,7 @@ public class LockFromLink
 
         // Try to create the lock file
         try {
-            FileUtilsX.ensureParentFolderExists(path, p -> {
+            FileUtilsExtra.ensureParentFolderExists(path, p -> {
                 Path targetPath = ownerKeyToTarget.apply(ownerKey);
                 try {
                     linkStrategy.createSymbolicLink(p, targetPath);
@@ -98,7 +98,7 @@ public class LockFromLink
     // Returns true if an unlock occurred
     public boolean forceUnlock() {
         try {
-            boolean result = FileUtilsX.deleteFileIfExistsAndThenDeleteEmptyFolders(path, cleanupAncestorPath);
+            boolean result = FileUtilsExtra.deleteFileIfExistsAndThenDeleteEmptyFolders(path, cleanupAncestorPath);
             // boolean result = Files.deleteIfExists(path);
             return result;
         } catch (Exception e) {

@@ -3,10 +3,24 @@ package org.aksw.commons.txn.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import org.aksw.commons.lambda.throwing.ThrowingConsumer;
 
-public class FileUtilsX {
+/**
+ * Eventually these file utils should be consolidated with those in aksw-commons-io.
+ * However, my feel is that first there should be a little framework that allows for
+ * modeling actions that have multiple prerequisites such as the existence of certain folders.
+ * These utils here only allow for a single prerequisite.
+ *
+ */
+public class FileUtilsExtra {
+
+
+    public static Stream<Path> streamFilenames(Path folder) throws IOException {
+        return Files.list(folder)
+            .map(path -> path.resolveSibling(FileSyncImpl.getBaseName(path.getFileName().toString())));
+    }
 
     public static void ensureParentFolderExists(Path childPath, ThrowingConsumer<Path> action) throws IOException {
         Path parentPath = childPath.getParent();

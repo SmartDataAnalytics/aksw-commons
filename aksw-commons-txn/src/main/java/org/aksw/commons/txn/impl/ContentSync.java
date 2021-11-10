@@ -10,10 +10,26 @@ public interface ContentSync
     extends TxnComponent
 {
 
+    /**
+     * Read the most recent content (maybe open the original file).
+     * Beware that calling {@link #newOutputStreamToNewTmpContent()} may practically invalidate the returned input stream. */
     InputStream openCurrentContent() throws IOException;
 
-    OutputStream newOutputStreamToNewTmpContent() throws IOException;
+    /**
+     * Open an output stream to the tmp content.
+     * If the new content is currently a symlink then it gets deleted and replaced with a regular file
+     */
+    OutputStream newOutputStreamToNewTmpContent(boolean truncate) throws IOException;
 
+
+    /** Replaces the new tmp content with a symlink */
+//    void setNewTmpContentToSymlink(Path target) throws IOException;
+
+//    boolean isCurrentContentASymLink();
+//    Path readSymlinkFromCurrentContent() throws IOException;
+
+
+    /** Returns true iff there is at least one backing resource with the old or new state */
     boolean exists();
 
     Instant getLastModifiedTime() throws IOException;
@@ -29,14 +45,8 @@ public interface ContentSync
 
     void recoverPreCommit() throws IOException;
 
-    /**
-     * Replace the new content with the current temporary content
-     * @throws IOException
-     */
-    void preCommit() throws IOException;
-
-    void finalizeCommit() throws IOException;
-
-    void rollback() throws IOException;
+    default void markForDeletion() throws IOException {
+        try (OutputStream out = newOutputStreamToNewTmpContent(true)) { }
+    }
 
 }

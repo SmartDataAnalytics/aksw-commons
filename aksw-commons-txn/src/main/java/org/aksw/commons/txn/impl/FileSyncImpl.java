@@ -5,13 +5,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import org.aksw.commons.io.util.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 
 /**
@@ -20,13 +23,19 @@ import org.aksw.commons.io.util.FileUtils;
  *
  */
 public class FileSyncImpl
-    implements ContentSync
+    implements FileSync
 {
     protected Path targetFile;
+
+    // The existence of the newContentFile indicates that writing of new content has completed and
+    // the system is ready to overwrite the prior content
     protected Path newContentFile;
     protected Path newContentTmpFile;
+
+    // Backup of the targetFile; used when overwriting the target with new content
     protected Path oldContentFile;
-    protected Path oldContentTmpFile;
+
+//    protected Path oldContentTmpFile;
 
     /** Whether to delete 'targetFile' if the new content is empty */
     protected boolean deleteTargetFileOnUpdateWithEmptyContent;
@@ -38,8 +47,8 @@ public class FileSyncImpl
         this.newContentFile = newContentFile;
         this.oldContentFile = oldContentFile;
 
-        this.oldContentTmpFile = oldContentFile.resolveSibling(oldContentFile.getFileName().toString() + ".tmp");
-        this.newContentTmpFile = newContentFile.resolveSibling(newContentFile.getFileName().toString() + ".tmp");
+//        this.oldContentTmpFile = oldContentFile.resolveSibling(oldContentFile.getFileName().toString() + ".tmp");
+        this.newContentTmpFile = newContentFile.resolveSibling(newContentFile.getFileName().toString() + ".sync.tmp");
 
         this.deleteTargetFileOnUpdateWithEmptyContent = deleteTargetFileOnUpdateWithEmptyContent;
     }
@@ -55,11 +64,35 @@ public class FileSyncImpl
                 deleteTargetFileOnUpdateWithEmptyContent);
     }
 
+
+    public static final Pattern TO_BASENAME = Pattern.compile("(\\.sync\\.(tmp|old|new))$");
+
+    /**
+     * Return the base name for a file name that is has special meaning w.r.t. syncing.
+     * For example, getBaseName("myfile.sync.old") yields "myfile".
+     *
+     * Useful for iterating directory content and getting the view of "effective"
+     * file names with those special sync files hidden.
+     *
+     */
+    public static String getBaseName(String str) {
+        return TO_BASENAME.matcher(str).replaceAll("");
+    }
+
+//    public static void main(String[] args) {
+//        System.out.println(getBaseName("test.sync.tmp"));
+//        System.out.println(getBaseName("test.sync.new"));
+//        System.out.println(getBaseName("test.sync.old"));
+//        System.out.println(getBaseName("test.sync"));
+//        System.out.println(getBaseName("test"));
+//    }
+
 //	public void createBackup() throws IOException {
 //		Files.
 //		Files.copy(targetFile, oldContentTmpFile, StandardCopyOption.REPLACE_EXISTING);
 //	}
 
+    @Override
     public Path getTargetFile() {
         return targetFile;
     }
@@ -89,11 +122,29 @@ public class FileSyncImpl
     }
 
     @Override
-    public OutputStream newOutputStreamToNewTmpContent() throws IOException {
+    public OutputStream newOutputStreamToNewTmpContent(boolean truncate) throws IOException {
+        if (Files.isSymbolicLink(newContentFile)) {
+            Files.deleteIfExists(newContentFile);
+        }
+
+        OpenOption[] openOptions = new OpenOption[] {StandardOpenOption.CREATE, StandardOpenOption.WRITE};
+
+        if (truncate) {
+            openOptions = ArrayUtils.add(openOptions, StandardOpenOption.TRUNCATE_EXISTING);
+        }
+
         Files.createDirectories(newContentTmpFile.getParent());
-        OutputStream result = Files.newOutputStream(newContentTmpFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        OutputStream result = Files.newOutputStream(newContentTmpFile, openOptions);
         return result;
     }
+
+//    @Override
+//    public void setNewTmpContentToSymlink(Path target) throws IOException {
+//        Files.deleteIfExists(newContentFile);
+//
+//        Files.createDirectories(newContentTmpFile.getParent());
+//        Files.createSymbolicLink(newContentFile, target);
+//    }
 
     @Override
     public boolean exists() {
@@ -126,7 +177,7 @@ public class FileSyncImpl
     public void putContent(Consumer<OutputStream> outputStreamSupplier) throws IOException {
         // Delete a possibly prior written newContentFile
         Files.deleteIfExists(newContentFile);
-        try (OutputStream out = newOutputStreamToNewTmpContent()) {
+        try (OutputStream out = newOutputStreamToNewTmpContent(true)) {
             outputStreamSupplier.accept(out);
             FileUtils.moveAtomic(newContentTmpFile, newContentFile);
         }
@@ -186,7 +237,7 @@ public class FileSyncImpl
 
     @Override
     public void finalizeCommit() throws IOException {
-        Files.deleteIfExists(oldContentTmpFile);
+//        Files.deleteIfExists(oldContentTmpFile);
         Files.deleteIfExists(oldContentFile);
 
         long size = Files.size(targetFile);
@@ -205,4 +256,25 @@ public class FileSyncImpl
             FileUtils.moveAtomic(oldContentFile, targetFile);
         }
     }
+
+    @Override
+    public Path getNewContentTmpFile() {
+        return newContentTmpFile;
+    }
+
+
+//    @Override
+//    public boolean isCurrentContentASymLink() {
+//        Path currentPath = getCurrentPath();
+//        boolean result = Files.isSymbolicLink(currentPath);
+//        return result;
+//    }
+//
+//
+//    @Override
+//    public Path readSymlinkFromCurrentContent() throws IOException {
+//        Path currentPath = getCurrentPath();
+//        Path result = Files.readSymbolicLink(currentPath);
+//        return result;
+//    }
 }

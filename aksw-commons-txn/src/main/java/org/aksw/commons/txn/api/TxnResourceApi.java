@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 
 import org.aksw.commons.lock.db.api.ReadWriteLockWithOwnership;
-import org.aksw.commons.txn.impl.FileSyncImpl;
+import org.aksw.commons.txn.impl.FileSync;
 import org.aksw.commons.txn.impl.TxnComponent;
 
 
@@ -28,7 +28,10 @@ public interface TxnResourceApi
     /** The timestamp of the most recent modificaton to the resource */
     Instant getLastModifiedDate() throws IOException;
 
+    /** Declare that the txn accessed the resource. Upon recovery the resource will be checked for any uncommitted changes. */
     void declareAccess();
+
+    /** Remove access declaration from the txn to this resource. Recovery related to this txn will not consider the resource. */
     void undeclareAccess();
 
     /** Whether the resource is visible to the transaction */
@@ -40,7 +43,7 @@ public interface TxnResourceApi
      * Once the transaction completes the old content will be replaced with the new one.
      * On rollback, the new-but-uncommitted content will by discarded
      */
-    FileSyncImpl getFileSync();
+    FileSync getFileSync();
 
     /** Convenience short hand to lock the resource for this transaction */
     default void lock(boolean write) {
@@ -60,7 +63,6 @@ public interface TxnResourceApi
         txnResourceLock.readLock().unlock();
         txnResourceLock.writeLock().unlock();
     }
-
 }
 
 //public interface TxnResourceApi {

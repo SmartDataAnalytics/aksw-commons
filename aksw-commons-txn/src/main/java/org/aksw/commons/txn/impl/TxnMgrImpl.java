@@ -66,6 +66,7 @@ public class TxnMgrImpl
     protected LockStore<String[], String> lockStore;
 
 
+    /** Allows for virtual 'symlinks' that are actually regular files; symlinks typically don't work with webdav */
     protected SymbolicLinkStrategy symlinkStrategy;
 
     /**
