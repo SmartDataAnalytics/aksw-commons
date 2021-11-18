@@ -44,22 +44,31 @@ public class SingletonLazyRef<T>
         return create(id, refSupp);
     }
 
+    /**
+     * Every call to .get() returns a fresh reference that must eventually be released!
+     *
+     */
     @Override
     public Ref<T> get() {
         Ref<T> result;
         synchronized (activeSingletons) {
+            @SuppressWarnings("unchecked")
             Ref<T> activeRef = (Ref<T>)activeSingletons.get(instanceId);
 
             if (activeRef == null) {
                 Ref<T> delegateRef = refSupplier.get();
 
                 activeRef = RefImpl.create(delegateRef.get(), activeSingletons, () -> {
+                    delegateRef.close();
+
                     activeSingletons.remove(instanceId);
 
-                    delegateRef.close();
+                    // assert !activeSingletons.containsKey(instanceId);
                 });
 
-                activeSingletons.put(instanceId, delegateRef);
+                // There can be multiple SingletonLazyRef instances that share the same instanceId
+                // and refSupplier. Only one delegate instance is ever created though
+                activeSingletons.put(instanceId, activeRef);
 
                 result = activeRef;
             } else {

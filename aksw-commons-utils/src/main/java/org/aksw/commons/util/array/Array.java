@@ -1,5 +1,6 @@
 package org.aksw.commons.util.array;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -8,41 +9,45 @@ import java.util.List;
  * The main difference to {@link Arrays#asList(Object...)} is that the underlying array
  * can be obtained from instances of this class directly. Note that {@link List#toArray()}
  * does not support generics.
- * 
+ *
  */
-public class Array<T> {
-	protected T[] array;
+public class Array<T>
+    implements Serializable
+{
+    private static final long serialVersionUID = 1L;
 
-	public Array(T[] array) {
-		super();
-		this.array = array;
-	}
-	
-	public static <T> Array<T> wrap(T[] array) {
-		return new Array<>(array);
-	}
-	
-	public T[] getArray() {
-		return array;
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		boolean result = false;
-		if (obj instanceof Array) {
-			Object[] that = ((Array<?>) obj).getArray();
-			result = Arrays.equals(array, that);
-		}
-		return result;
-	}
-	
-	@Override
-	public int hashCode() {
-		return Arrays.hashCode(array);
-	}
-	
-	@Override
-	public String toString() {
-		return Arrays.toString(array);
-	}
+    protected T[] array;
+
+    public Array(T[] array) {
+        super();
+        this.array = array;
+    }
+
+    public static <T> Array<T> wrap(T[] array) {
+        return new Array<>(array);
+    }
+
+    public T[] getArray() {
+        return array;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        boolean result = false;
+        if (obj instanceof Array) {
+            Object[] that = ((Array<?>) obj).getArray();
+            result = Arrays.equals(array, that);
+        }
+        return result;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(array);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(array);
+    }
 }

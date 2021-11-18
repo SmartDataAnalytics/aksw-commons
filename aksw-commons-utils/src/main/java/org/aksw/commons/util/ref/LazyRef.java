@@ -5,6 +5,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A supplier for a ref backed by a root ref.
  *
@@ -21,28 +24,37 @@ public class LazyRef<T>
 {
     private static final long serialVersionUID = 1L;
 
+    private static final Logger logger = LoggerFactory.getLogger(LazyRef.class);
+
+    // A label used in log messages about deferred closing of the underlying resource
+    protected String label;
+
     protected Supplier<? extends Ref<T>> rootRefFactory;
     protected long closeDelayInMs;
 
     protected transient volatile Ref<T> rawRef = null;
     protected transient volatile Ref<T> rootRef = null;
 
+    protected LazyRef() {
+    }
+
 //    public LazyRef() {
 //        System.out.println("ctor " + this);
 //    }
 
-    public LazyRef(Supplier<? extends Ref<T>> rootRefFactory, long closeDelayInMs) {
+    public LazyRef(String label, Supplier<? extends Ref<T>> rootRefFactory, long closeDelayInMs) {
         super();
 //        System.out.println("init " + this);
+        this.label = label;
         this.rootRefFactory = rootRefFactory;
         this.closeDelayInMs = closeDelayInMs;
     }
 
-    public static <T> LazyRef<T> create(Supplier<? extends Ref<T>> rootRefFactory, long delayInMs) {
-        return new LazyRef<>(rootRefFactory, delayInMs);
+    public static <T> LazyRef<T> create(String label, Supplier<? extends Ref<T>> rootRefFactory, long delayInMs) {
+        return new LazyRef<>(label, rootRefFactory, delayInMs);
     }
 
-    protected transient Timer timer = null;
+    protected volatile transient Timer timer = null;
     //protected transient TimerTask timerTask;
 
     @Override
@@ -65,6 +77,10 @@ public class LazyRef<T>
                     if (timer == null) {
                         Runnable closeAction = () -> {
                             synchronized (this) {
+                                timer.cancel();
+                                timer = null;
+
+                                logger.debug(String.format("Closing resource [%s]", label));
                                 rawRef.close();
                                 rawRef = null;
                                 rootRef = null;
@@ -84,6 +100,7 @@ public class LazyRef<T>
                                 }
                             };
 
+                            logger.debug(String.format("Deferring close of resource [%s] by " + closeDelayInMs + " ms", label));
                             timer.schedule(timerTask, closeDelayInMs);
                         }
                     }

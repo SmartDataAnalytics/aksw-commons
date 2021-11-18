@@ -137,7 +137,7 @@ public class RefImpl<T>
     public Ref<T> acquire(Object comment) {
         synchronized (synchronizer) {
             if (!isAlive()) {
-                String msg = "Cannot aquire from a reference with isAlive=false"
+                String msg = "Cannot acquire from a reference with status 'isAlive=false'"
                         + "\nClose triggered at: " + StackTraceUtils.toString(closeTriggerStackTrace);
                 throw new RuntimeException(msg);
             }

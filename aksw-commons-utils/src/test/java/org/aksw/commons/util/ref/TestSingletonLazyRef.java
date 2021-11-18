@@ -17,22 +17,24 @@ public class TestSingletonLazyRef {
         // Wrapping as a singleton should now always yield the same instant - even after a serialization roundtrip
         SingletonLazyRef<Instant> singleton = SingletonLazyRef.create(refSupp);
 
-        Ref<Instant> ref = singleton.get();
-        Instant expected = ref.get();
+        Ref<Instant> ref1 = singleton.get();
+        Instant expected = ref1.get();
 
-        Instant actual1 = singleton.get().get();
-        Assert.assertEquals(expected, actual1);
+        try (Ref<Instant> ref2 = singleton.get()) {
+            Instant actual2 = ref2.get();
+            Assert.assertEquals(expected, actual2);
+        }
 
         SingletonLazyRef<Instant> newSingleton = SerializationUtils.roundtrip(singleton);
 
-        try (Ref<Instant> ref2 = newSingleton.get()) {
-            Instant actual2 = singleton.get().get();
-            Assert.assertEquals(expected, actual2);
+        try (Ref<Instant> ref3 = newSingleton.get()) {
+            Instant actual3 = ref3.get();
+            Assert.assertEquals(expected, actual3);
         }
 
 
         // Closing the primary ref should cause the next request to refSupp to create a ref with a fresh value
-        ref.close();
+        ref1.close();
         Thread.sleep(1);
 
         try (Ref<Instant> newRef = newSingleton.get()) {
