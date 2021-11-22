@@ -1,5 +1,7 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.Objects;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +121,8 @@ public class RangeRequestIterator<T>
 
             if (currentPageIt.hasNext()) {
                 result = currentPageIt.next();
+
+                Objects.requireNonNull(result, "Null item encountered; possible cache corruption");
 
                 // Assert non null here?
                 // A likely reason for null values is an inconsistency between (range-)metadata and (buffer-)content

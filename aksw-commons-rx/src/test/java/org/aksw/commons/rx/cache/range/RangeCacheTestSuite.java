@@ -7,12 +7,16 @@ import java.util.stream.LongStream;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Range;
 
 import io.reactivex.rxjava3.core.Flowable;
 
 public abstract class RangeCacheTestSuite {
+
+    private static final Logger logger = LoggerFactory.getLogger(RangeCacheTestSuite.class);
 
     protected abstract <T> ListPaginator<T> wrapWithCache(String testId, ListPaginator<T> backend);
 
@@ -43,7 +47,7 @@ public abstract class RangeCacheTestSuite {
             System.gc();
         }
 
-        System.out.println("Done waiting");
+        logger.info("Done waiting");
     }
 
 
@@ -65,7 +69,7 @@ public abstract class RangeCacheTestSuite {
 
         Thread.sleep(3000);
         System.gc();
-        System.out.println("Done waiting");
+        logger.info("Done waiting");
     }
 
 

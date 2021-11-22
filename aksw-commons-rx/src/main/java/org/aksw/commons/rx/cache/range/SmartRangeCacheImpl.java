@@ -608,7 +608,7 @@ public class SmartRangeCacheImpl<T>
 
                     try {
                         if (generation != version) {
-                            System.out.println("Syncing metadata");
+                            logger.info("Syncing metadata");
                             preSyncAction.run();
 
                             logger.info("Syncing dirty buffer " + internalKey);
