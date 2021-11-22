@@ -3,22 +3,26 @@ package org.aksw.commons.lock;
 import java.util.concurrent.TimeUnit;
 
 public abstract class LockBaseRepeat
-	extends LockBase
+    extends LockBase
 {
-	@Override
-	public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-		long ms = unit.toMillis(time);
-		long retryIntervalInMs = 100;
-		long retryCount = (ms / retryIntervalInMs) + (ms % retryIntervalInMs == 0 ? 0 : 1);
-		
-		boolean result = RetryUtils.simpleRetry(retryCount, retryIntervalInMs, () -> {
-			boolean r = singleLockAttempt();
-			return r;
-		});
-		
-		return result;
-	}
+    @Override
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        return tryLockActual(time, unit);
+    }
 
-	protected boolean runLockAttempt() { return false; }
-	protected abstract boolean singleLockAttempt() throws InterruptedException;
+    protected boolean tryLockActual(long time, TimeUnit unit) throws InterruptedException {
+        long ms = unit.toMillis(time);
+        long retryIntervalInMs = 100;
+        long retryCount = (ms / retryIntervalInMs) + (ms % retryIntervalInMs == 0 ? 0 : 1);
+
+        boolean result = RetryUtils.simpleRetry(retryCount, retryIntervalInMs, () -> {
+            boolean r = singleLockAttempt();
+            return r;
+        });
+
+        return result;
+    }
+
+    // protected boolean runLockAttempt() { return false; }
+    protected abstract boolean singleLockAttempt() throws InterruptedException;
 }

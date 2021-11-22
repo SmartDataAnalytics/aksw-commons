@@ -48,7 +48,7 @@ public class FileSyncImpl
         this.oldContentFile = oldContentFile;
 
 //        this.oldContentTmpFile = oldContentFile.resolveSibling(oldContentFile.getFileName().toString() + ".tmp");
-        this.newContentTmpFile = newContentFile.resolveSibling(newContentFile.getFileName().toString() + ".sync.tmp");
+        this.newContentTmpFile = newContentFile.resolveSibling(targetFile.getFileName().toString() + ".sync.tmp");
 
         this.deleteTargetFileOnUpdateWithEmptyContent = deleteTargetFileOnUpdateWithEmptyContent;
     }

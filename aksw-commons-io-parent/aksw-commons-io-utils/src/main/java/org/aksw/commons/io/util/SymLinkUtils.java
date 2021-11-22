@@ -4,16 +4,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 import org.aksw.commons.lambda.throwing.ThrowingBiFunction;
+
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
+import com.google.common.collect.Tables;
 
 public class SymLinkUtils {
     /**
@@ -71,11 +74,12 @@ public class SymLinkUtils {
             SymbolicLinkStrategy symlinkStrategy,
             Path rawTarget,
             Path rawSourceFolder,
+            Function<String, String> fileNameNormalizer,
             String prefix,
             String suffix
             ) throws Exception {
 
-        return allocateSymbolicLink(symlinkStrategy, rawTarget, rawSourceFolder, prefix, suffix,
+        return allocateSymbolicLink(symlinkStrategy, rawTarget, rawSourceFolder, fileNameNormalizer, prefix, suffix,
                 (file, tgt) -> {
                     symlinkStrategy.createSymbolicLink(file, tgt);
                     return file;
@@ -87,6 +91,7 @@ public class SymLinkUtils {
             SymbolicLinkStrategy symlinkStrategy,
             Path rawTarget,
             Path rawSourceFolder,
+            Function<String, String> fileNameNormalizer,
             String prefix,
             String suffix,
             ThrowingBiFunction<Path, Path, Path> tgtAndContentToFile // Called when a new symlink is allocated
@@ -102,15 +107,15 @@ public class SymLinkUtils {
 
         //System.out.println("Realtivation: " + file.relativize(folder));
 
-        Map<Path, Path> existingSymLinks = readSymbolicLinks(symlinkStrategy, rawSourceFolder, prefix, suffix);
+        Table<String, Path, Path> existingSymLinks = readSymbolicLinks(symlinkStrategy, rawSourceFolder, fileNameNormalizer, prefix, suffix);
 
-        Collection<Path> result = existingSymLinks.entrySet().stream()
+        Collection<Path> result = existingSymLinks.cellSet().stream()
                 .filter(e -> {
-                    Path absCand = resolveSymLinkAbsolute(e.getKey(), e.getValue()); //e.getKey().getParent().resolve(e.getValue()).normalize().toAbsolutePath();
+                    Path absCand = resolveSymLinkAbsolute(e.getColumnKey(), e.getValue()); //e.getKey().getParent().resolve(e.getValue()).normalize().toAbsolutePath();
                     boolean r = absCand.equals(absTarget);
                     return r;
                 })
-                .map(Entry::getKey)
+                .map(Cell::getColumnKey)
                 .collect(Collectors.toSet());
 
         // Check all symlinks in the folder whether any points to target
@@ -150,35 +155,35 @@ public class SymLinkUtils {
         return result;
     }
 
-
-    public static Stream<Entry<Path, Path>> streamSymbolicLinks(
+    public static Function<Stream<Path>, Stream<Cell<String, Path, Path>>> streamSymbolicLinks(
             SymbolicLinkStrategy symlinkStrategy,
-            Path sourceFolder,
+            Function<String, String> fileNameHarmonizer,
             String prefix,
             String suffix) throws IOException {
 
-        Stream<Entry<Path, Path>> result = Files.list(sourceFolder)
+        return pathStream -> pathStream
             .filter(symlinkStrategy::isSymbolicLink)
-            .filter(path -> {
-                String fileName = path.getFileName().toString();
-
-                boolean r = fileName.startsWith(prefix) && fileName.endsWith(suffix);
-                // TODO Check that the string between prefix and suffix is either an empty string
-                // or corresponds to a number
-                return r;
-            })
             .flatMap(path -> {
-                Stream<Entry<Path, Path>> r;
-                try {
-                    r = Stream.of(new SimpleEntry<>(path, symlinkStrategy.readSymbolicLink(path)));
-                } catch (IOException e) {
-                    // logger.warn("Error reading symoblic link; skipping", e);
+                String rawFileName = path.getFileName().toString();
+                String fileName = fileNameHarmonizer.apply(rawFileName);
+
+                boolean isAccepted = fileName.startsWith(prefix) && fileName.endsWith(suffix);
+
+
+                Stream<Cell<String, Path, Path>> r;
+                if (isAccepted) {
+                    try {
+                        r = Stream.of(Tables.immutableCell(fileName, path, symlinkStrategy.readSymbolicLink(path)));
+                    } catch (Exception e) {
+                        // logger.warn("Failed to read a (virtual) symlink", e);
+                        r = Stream.empty();
+                    }
+                } else {
                     r = Stream.empty();
                 }
+
                 return r;
             });
-
-        return result;
     }
 
 
@@ -191,16 +196,22 @@ public class SymLinkUtils {
      * @return
      * @throws IOException
      */
-    public static Map<Path, Path> readSymbolicLinks(
+    public static Table<String, Path, Path> readSymbolicLinks(
             SymbolicLinkStrategy symlinkStrategy,
             Path sourceFolder,
+            Function<String, String> filenameNormalizer,
             String prefix,
             String suffix) throws IOException {
-        try (Stream<Entry<Path, Path>> stream = streamSymbolicLinks(symlinkStrategy, sourceFolder, prefix, suffix)) {
-            Map<Path, Path> result = stream
-                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-            return result;
+        Table<String, Path, Path> result = HashBasedTable.create();
+
+        try (Stream<Path> stream = Files.list(sourceFolder)) {
+            streamSymbolicLinks(symlinkStrategy, filenameNormalizer, prefix, suffix)
+                .apply(stream)
+                .forEach(cell -> result.put(cell.getRowKey(), cell.getColumnKey(), cell.getValue()));
+
         }
+
+        return result;
     }
 
 }

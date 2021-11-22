@@ -11,11 +11,8 @@ import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.util.PathUtils;
@@ -30,6 +27,10 @@ public class TxnSerializable
     extends TxnReadUncommitted
 {
     private static final Logger logger = LoggerFactory.getLogger(TxnSerializable.class);
+
+    // Time to live for management locks
+    protected Duration mgmtLockTtl = Duration.ofSeconds(10);
+
 
     protected TxnMgrImpl txnMgr;
     protected String txnId;
@@ -53,7 +54,7 @@ public class TxnSerializable
     protected String mgmtLockFilename = "mgmt.lock";
     protected transient Path mgmtLockFile;
 
-    protected transient Lock mgmtLock;
+    protected transient LockFromFile mgmtLock;
 
     @Override
     public String getId() {
@@ -331,7 +332,7 @@ public class TxnSerializable
         try {
             Path txnToRes = txnMgr.symlinkStrategy.readSymbolicLink(txnPath);
             Path resAbsPath = txnPath.resolveSibling(txnToRes).normalize();
-            Path resRelPath = txnMgr.resRepo.getRootPath().relativize(resAbsPath);
+            Path resRelPath = txnMgr.getRootPath().relativize(resAbsPath);
             String[] result = PathUtils.getPathSegments(resRelPath);
             return result;
         } catch (IOException e) {
@@ -447,10 +448,15 @@ public class TxnSerializable
 
     protected <T> T runWithMgmtLock(Callable<T> action) {
 
-        T result = LockUtils.repeatWithLock(10, 100, () -> mgmtLock, () -> {
+        T result = LockUtils.runWithMgmtLock(mgmtLock, LockFromFile::unlock, mgmtLockTtl, () -> {
             T r = action.call();
             return r;
         });
+//
+//        T result = LockUtils.repeatWithLock(10, 100, () -> mgmtLock, () -> {
+//            T r = action.call();
+//            return r;
+//        });
 
         return result;
     }

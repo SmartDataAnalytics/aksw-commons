@@ -2,17 +2,18 @@ package org.aksw.commons.lock.db.impl;
 
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.function.Function;
 
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
+import org.aksw.commons.lock.LockBaseRepeat;
 import org.aksw.commons.txn.impl.FileUtilsExtra;
 
 public class LockFromLink
 //	The semantic of this class is not that of a lock but of a DAO - it adds/removes lock entries to the store
     // extends LockBase
+    extends LockBaseRepeat
 {
     protected SymbolicLinkStrategy linkStrategy;
     protected Path path;
@@ -55,6 +56,7 @@ public class LockFromLink
 //		return result;
 //	}
 
+    @Override
     public boolean singleLockAttempt() {
         boolean result[] = {false};
 
@@ -127,6 +129,13 @@ public class LockFromLink
         boolean result = ownerKey.equals(currentOwnerKey);
         return result;
     }
+
+
+    @Override
+    public String toString() {
+        return "LockFromLink [path=" + path + "]";
+    }
+
 
 //	public boolean isOwnedElsewhere() {
 //		String currentOwnerKey = readOwnerKey();

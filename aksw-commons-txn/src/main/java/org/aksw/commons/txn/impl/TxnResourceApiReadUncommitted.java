@@ -43,10 +43,12 @@ public class TxnResourceApiReadUncommitted<T extends TxnReadUncommitted>
 
         // String readLockFileName = "txn-" + txnId + "read.lock";
 
-        resFileAbsPath = PathUtils.resolve(txn.txnMgr.resRepo.getRootPath(), resKey);
+        resFileAbsPath = PathUtils.resolve(txn.txnMgr.getRootPath(), resKey).normalize();
 
         // FIXME HACK - the data.trig should probably come from elsewhere
-        fileSync = FileSyncImpl.create(resFileAbsPath.resolve("data.trig"), true);
+        // fileSync = FileSyncImpl.create(resFileAbsPath.resolve("data.trig"), true);
+
+        fileSync = FileSyncImpl.create(resFileAbsPath, true);
     }
 
     @Override

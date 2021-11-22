@@ -58,6 +58,8 @@ public class TxnMgrImpl
 {
     private static final Logger logger = LoggerFactory.getLogger(TxnMgrImpl.class);
 
+    protected Path rootPath;
+
     protected LockManager<Path> lockMgr;
     protected Path txnBasePath;
     protected ResourceRepository<String> resRepo;
@@ -80,6 +82,7 @@ public class TxnMgrImpl
 
     public TxnMgrImpl(
             String txnMgrId,
+            Path rootPath,
             TemporalAmount heartbeatDuration,
             LockManager<Path> lockMgr,
             Path txnBasePath,
@@ -88,6 +91,7 @@ public class TxnMgrImpl
             SymbolicLinkStrategy symlinkStrategy) {
         super();
         this.txnMgrId = txnMgrId;
+        this.rootPath = rootPath;
         this.heartbeatDuration = heartbeatDuration;
         this.lockMgr = lockMgr;
         this.txnBasePath = txnBasePath;
@@ -96,6 +100,11 @@ public class TxnMgrImpl
         this.symlinkStrategy = symlinkStrategy;
 
         lockStore = new LockStoreImpl(symlinkStrategy, lockRepo, resRepo, txnId -> txnBasePath.resolve(txnId));
+    }
+
+    @Override
+    public Path getRootPath() {
+        return rootPath;
     }
 
     @Override

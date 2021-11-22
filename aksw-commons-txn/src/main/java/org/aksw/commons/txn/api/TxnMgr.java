@@ -1,6 +1,7 @@
 package org.aksw.commons.txn.api;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.temporal.TemporalAmount;
 import java.util.stream.Stream;
 
@@ -14,6 +15,8 @@ public interface TxnMgr
     LockStore<String[], String> getLockStore();
 
     ResourceRepository<String> getResRepo();
+
+    Path getRootPath();
 
     /** Create a new transaction. If the id is null then an id will be allocated.
      *  If a txn with the given id already exists an exception in raised. */
