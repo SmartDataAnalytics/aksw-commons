@@ -173,7 +173,8 @@ public class SymLinkUtils {
                 Stream<Cell<String, Path, Path>> r;
                 if (isAccepted) {
                     try {
-                        r = Stream.of(Tables.immutableCell(fileName, path, symlinkStrategy.readSymbolicLink(path)));
+                        Path linkTarget = symlinkStrategy.readSymbolicLink(path);
+                        r = Stream.of(Tables.immutableCell(fileName, path, linkTarget));
                     } catch (Exception e) {
                         // logger.warn("Failed to read a (virtual) symlink", e);
                         r = Stream.empty();

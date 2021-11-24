@@ -84,22 +84,24 @@ public class TxnReadUncommitted
 
 
     @Override
-    public Stream<TxnResourceApi> listVisibleFiles() {
+    public Stream<TxnResourceApi> listVisibleFiles(Iterable<String> prefix) {
 
         // TODO This pure listing of file resources should probably go to the repository
-        PathMatcher pathMatcher = txnMgr.getResRepo().getRootPath().getFileSystem().getPathMatcher("glob:**/*.trig");
+        Path rootPath = txnMgr.getRootPath();
+        PathMatcher pathMatcher = rootPath.getFileSystem().getPathMatcher("glob:**/*.trig");
+                // txnMgr.getResRepo().getRootPath().getFileSystem().getPathMatcher("glob:**/*.trig");
 
         // The root path may not exist if the store is empty
-        Path rootPath = txnMgr.getResRepo().getRootPath();
+        Path basePath = PathUtils.resolve(rootPath, prefix);
 
         // isVisible filters out graphs that were created after the transaction start
         Stream<TxnResourceApi> result;
         try {
-            result = Files.exists(rootPath)
-                    ? Files.walk(rootPath)
+            result = Files.exists(basePath)
+                    ? Files.walk(basePath)
                         .filter(pathMatcher::matches)
-                        // We are interested in the folder - not the file itself: Get the parent
-                        .map(Path::getParent)
+                        // No longer valid: We are interested in the folder - not the file itself: Get the parent
+                        // .map(Path::getParent)
                         .map(path -> rootPath.relativize(path))
                         .map(PathUtils::getPathSegments)
                         .map(this::getResourceApi)
