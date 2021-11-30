@@ -30,12 +30,19 @@ public class RefImpl<T>
     protected T value;
 
     /**
-     * The release action differs for references:
+     * The release action is run once immediately when the isAlive() state changes to false.
+     * The release action cannot 'revive' a reference as the reference is already 'dead'.
+     *
+     * The release action differs depending on how a reference was created:
      * On the root reference, the releaseAction releases the wrapped resource
-     * On a child reference, the releaseAction releases itself from the parent
+     * On a child reference, the releaseAction releases itself (the child) from the parent one.
      *
      */
     protected AutoCloseable releaseAction;
+
+    // TODO Would it be worthwhile to add a pre-release action that is run immediately before
+    //      a ref would become dead?
+    // protected AutoCloseable preReleaseAction;
 
     /**
      * Object on which to synchronize on before any change of state of this reference.
@@ -283,7 +290,8 @@ public class RefImpl<T>
 
     @Override
     public String toString() {
-        String result = "Reference [" + comment + "] aquired at " + StackTraceUtils.toString(acquisitionStackTrace);
+        String result = String.format("Ref %s, active(self, #children)=(%b, %d), aquired at %s",
+                comment, !isReleased, activeChildRefs, StackTraceUtils.toString(acquisitionStackTrace));
         return result;
     }
 }

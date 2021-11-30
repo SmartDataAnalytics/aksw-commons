@@ -4,6 +4,15 @@ import java.util.concurrent.ExecutionException;
 
 import org.aksw.commons.util.ref.RefFuture;
 
+/**
+ * Interface for an async cache that allows "claiming" (= making explicit references) to entries.
+ * As long as an entry is claimed it will not be evicted.
+ *
+ * @author raven
+ *
+ * @param <K>
+ * @param <V>
+ */
 public interface AsyncClaimingCache<K, V> {
 
     /**
