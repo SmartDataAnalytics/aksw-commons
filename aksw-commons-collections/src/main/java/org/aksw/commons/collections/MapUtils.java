@@ -354,4 +354,16 @@ public class MapUtils {
         return result;
     }
 
+    /** Put a key value pair. Removes the key if the value is null. Returns the prior value (null if there was none). */
+    public static <K, V> V putWithRemoveOnNull(Map<K, V> map, K key, V value) {
+        V result;
+        if (value == null) {
+            result = map.get(key);
+            map.remove(key);
+        } else {
+            result = map.put(key, value);
+        }
+        return result;
+    }
+
 }
