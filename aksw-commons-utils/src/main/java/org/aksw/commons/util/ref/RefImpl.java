@@ -2,6 +2,7 @@ package org.aksw.commons.util.ref;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
 
 import org.aksw.commons.util.stack_trace.StackTraceUtils;
 import org.slf4j.Logger;
@@ -241,6 +242,11 @@ public class RefImpl<T>
     public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
         // return new ReferenceImpl<T>(null, value, releaseAction, comment);
         return create(value, null, releaseAction, comment);
+    }
+
+    public static <T> Ref<T> create(T value, Object synchronizer, Consumer<? super T> closer) {
+        // return new ReferenceImpl<T>(null, value, releaseAction, comment);
+        return create(value, synchronizer, () -> closer.accept(value), null);
     }
 
     public static <T> Ref<T> create(T value, Object synchronizer, AutoCloseable releaseAction) {
