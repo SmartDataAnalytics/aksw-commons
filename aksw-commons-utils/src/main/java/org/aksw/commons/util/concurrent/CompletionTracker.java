@@ -1,5 +1,6 @@
 package org.aksw.commons.util.concurrent;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -12,8 +13,8 @@ public class CompletionTracker
     protected Executor executor;
 
     protected long counter = 0;
-    protected Map<Long, CompletableFuture<?>> pending;
-    protected boolean isClosed = false;
+    protected Map<Long, CompletableFuture<?>> pending = new HashMap<>();
+    protected boolean isShutDown = false;
 
     // Use locks?
 //    protected Lock lock = new ReentrantLock();
@@ -30,15 +31,15 @@ public class CompletionTracker
 
     public void shutdown() {
         synchronized (this) {
-            this.isClosed = true;
+            this.isShutDown = true;
 
-            checkTerminatedCondition();
+            checkTerminationCondition();
         }
     }
 
     public void execute(Runnable runnable) {
         synchronized (this) {
-            if (isClosed) {
+            if (isShutDown) {
                 throw new RejectedExecutionException("New task rejected because completionTracker was already shut down");
             }
         }
@@ -49,7 +50,7 @@ public class CompletionTracker
             future.whenComplete((x, y) -> {
                 synchronized (this) {
                     pending.remove(counter);
-                    checkTerminatedCondition();
+                    checkTerminationCondition();
                 }
             });
             ++counter;
@@ -57,10 +58,10 @@ public class CompletionTracker
     }
 
     public boolean isTerminated() {
-        return isClosed && pending.isEmpty();
+        return isShutDown && pending.isEmpty();
     }
 
-    protected void checkTerminatedCondition() {
+    protected void checkTerminationCondition() {
         if (isTerminated()) {
             this.notifyAll();
             // terminated.signal();
