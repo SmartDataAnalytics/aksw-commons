@@ -235,16 +235,17 @@ public class RefImpl<T>
         }
     }
 
-    public static <T extends AutoCloseable> Ref<T> fromCloseable(T value) {
-        return create(value, (Object)null, value);
+    public static <T extends AutoCloseable> Ref<T> fromCloseable(T value, Object synchronizer) {
+        return create(value, synchronizer, value);
     }
 
-    public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
-        // return new ReferenceImpl<T>(null, value, releaseAction, comment);
-        return create(value, null, releaseAction, comment);
-    }
+//    public static <T> Ref<T> create(T value, AutoCloseable releaseAction, Object comment) {
+//        // return new ReferenceImpl<T>(null, value, releaseAction, comment);
+//        return create(value, null, releaseAction, comment);
+//    }
 
-    public static <T> Ref<T> create(T value, Object synchronizer, Consumer<? super T> closer) {
+    /** Create method where the close action is created from a provided lambda that accepts the value */
+    public static <T> Ref<T> create2(T value, Object synchronizer, Consumer<? super T> closer) {
         // return new ReferenceImpl<T>(null, value, releaseAction, comment);
         return create(value, synchronizer, () -> closer.accept(value), null);
     }

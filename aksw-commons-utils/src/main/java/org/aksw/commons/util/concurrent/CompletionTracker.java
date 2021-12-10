@@ -25,7 +25,7 @@ public class CompletionTracker
         this.executor = executor;
     }
 
-    public CompletionTracker create(Executor executor) {
+    public static CompletionTracker from(Executor executor) {
         return new CompletionTracker(executor);
     }
 
@@ -57,7 +57,7 @@ public class CompletionTracker
         }
     }
 
-    public boolean isTerminated() {
+    protected boolean isTerminated() {
         return isShutDown && pending.isEmpty();
     }
 

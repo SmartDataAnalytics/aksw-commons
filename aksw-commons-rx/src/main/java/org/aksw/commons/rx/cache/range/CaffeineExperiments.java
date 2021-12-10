@@ -30,7 +30,7 @@ public class CaffeineExperiments {
                 System.out.println("Loading: " + key);
                 Thread.sleep(1000);
                 System.out.println("Loaded: " + key);
-                r = RefImpl.create(key, () -> {
+                r = RefImpl.create(key, null, () -> {
                     System.out.println("Released: " + key);
                 }, null);
             //} catch (CancellationException | InterruptedException e) {

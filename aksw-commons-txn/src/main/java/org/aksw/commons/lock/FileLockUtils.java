@@ -83,7 +83,7 @@ public class FileLockUtils {
 
         State s = state;
         Ref<FileChannel> result = RefImpl.create(
-                s.fileChannel, () -> {
+                s.fileChannel, null, () -> {
                     synchronized(pathToState) {
                         logger.info("Released locks for: " + path);
                         s.processLock.close();
