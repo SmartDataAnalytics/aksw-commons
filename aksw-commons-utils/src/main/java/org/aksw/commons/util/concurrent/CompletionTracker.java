@@ -12,9 +12,9 @@ public class CompletionTracker
 {
     protected Executor executor;
 
-    protected long counter = 0;
+    protected volatile long counter = 0;
     protected Map<Long, CompletableFuture<?>> pending = new HashMap<>();
-    protected boolean isShutDown = false;
+    protected volatile boolean isShutDown = false;
 
     // Use locks?
 //    protected Lock lock = new ReentrantLock();
@@ -42,23 +42,25 @@ public class CompletionTracker
             if (isShutDown) {
                 throw new RejectedExecutionException("New task rejected because completionTracker was already shut down");
             }
-        }
+//        }
 
-        CompletableFuture<?> future = CompletableFuture.runAsync(runnable, executor);
-        synchronized (this) {
-            pending.put(counter, future);
+            CompletableFuture<?> future = CompletableFuture.runAsync(runnable, executor);
+//        synchronized (this) {
+            long id = counter++;
+            pending.put(id, future);
             future.whenComplete((x, y) -> {
                 synchronized (this) {
-                    pending.remove(counter);
+                    pending.remove(id);
                     checkTerminationCondition();
                 }
             });
-            ++counter;
         }
     }
 
     protected boolean isTerminated() {
-        return isShutDown && pending.isEmpty();
+        boolean result = isShutDown && pending.isEmpty();
+        // System.out.println("result: " + result);
+        return result;
     }
 
     protected void checkTerminationCondition() {
