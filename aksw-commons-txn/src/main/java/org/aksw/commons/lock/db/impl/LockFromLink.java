@@ -6,6 +6,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.function.Function;
 
+import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 import org.aksw.commons.lock.LockBaseRepeat;
 import org.aksw.commons.txn.impl.FileUtilsExtra;
@@ -100,7 +101,7 @@ public class LockFromLink
     // Returns true if an unlock occurred
     public boolean forceUnlock() {
         try {
-            boolean result = FileUtilsExtra.deleteFileIfExistsAndThenDeleteEmptyFolders(path, cleanupAncestorPath);
+            boolean result = FileUtils.deleteFileIfExistsAndThenDeleteEmptyFolders(path, cleanupAncestorPath, true);
             // boolean result = Files.deleteIfExists(path);
             return result;
         } catch (Exception e) {

@@ -15,11 +15,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.io.util.PathUtils;
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.lock.db.impl.LockFromFile;
 import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.util.array.Array;
+import org.aksw.commons.util.exception.FinallyAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,27 +251,14 @@ public class TxnSerializable
 //    		}
 //    	}
 
-        try {
-            Files.deleteIfExists(commitFile);
-        } finally {
-            try {
-                Files.deleteIfExists(finalizeFile);
-            } finally {
-                try {
-                    Files.deleteIfExists(rollbackFile);
-                } finally {
-                    try {
-                        Files.deleteIfExists(txnFolder.resolve("write"));
-                    } finally {
-                        try {
-                            Files.deleteIfExists(ownerFile);
-                        } finally {
-                            FileUtilsExtra.deleteEmptyFolders(txnFolder, txnMgr.txnBasePath);
-                        }
-                    }
-                }
-            }
-        }
+        FinallyAll.run(
+            () -> Files.deleteIfExists(commitFile),
+            () -> Files.deleteIfExists(finalizeFile),
+            () -> Files.deleteIfExists(rollbackFile),
+            () -> Files.deleteIfExists(txnFolder.resolve("write")),
+            () -> Files.deleteIfExists(ownerFile),
+            () -> FileUtils.deleteEmptyFolders(txnFolder, txnMgr.txnBasePath, true)
+        );
     }
 
     public void addCommit() throws IOException {

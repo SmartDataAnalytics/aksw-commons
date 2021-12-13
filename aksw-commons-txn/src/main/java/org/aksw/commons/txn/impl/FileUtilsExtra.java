@@ -69,39 +69,5 @@ public class FileUtilsExtra {
         }
     }
 
-    /**
-     * Delete a specific path and then - regardless of deletion outcom e -try to delete all empty directories up to a given baseFolder.
-     * Empty folders are only deleted if their path starts with the baseFolder
-     *
-     * The result is the same as of {@link Files#deleteIfExists(Path)}.
-     */
-    public static boolean deleteFileIfExistsAndThenDeleteEmptyFolders(Path path, Path baseFolder) throws IOException {
-        boolean result = Files.deleteIfExists(path);
-        path = path.getParent();
-        if (path != null) {
-            deleteEmptyFolders(path, baseFolder);
-        }
-
-        return result;
-    }
-
-    /** Delete parent folders of 'path' that are descendants of baseFolder (inclusive) */
-    public static void deleteEmptyFolders(Path path, Path baseFolder) {
-        while (path.startsWith(baseFolder)) {
-            if (Files.exists(path)) {
-                if (!Files.isDirectory(path)) {
-                    throw new IllegalArgumentException("Path must be a directory: " + path);
-                }
-
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    // Ignore
-                    break;
-                }
-            }
-            path = path.getParent();
-        }
-    }
 
 }

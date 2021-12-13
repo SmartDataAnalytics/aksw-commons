@@ -97,9 +97,9 @@ public class ExceptionUtilsAksw {
     /**
      * Forward the root cause message of the throwable 't' to 'handler' unless any of the 'predicates' evaluates
      * to true. Useful to e.g. silently suppress broken pipe exceptions in shell scripting pipes.
-     * 
+     *
      * The handler is typically something like logger::warn or logger::error.
-     *  
+     *
      */
     @SafeVarargs
     public static <T extends Throwable> void forwardRootCauseMessageUnless(T t, Consumer<? super String> handler, Predicate<? super T> ... predicates) {
@@ -116,7 +116,7 @@ public class ExceptionUtilsAksw {
     /** Check the stack trace for whether it contains an instance of any of the given exceptions
         classes and return that instance. Arguments are checked in order. */
     @SafeVarargs
-	public static Optional<Throwable> unwrap(Throwable given, Class<? extends Throwable>... priorities) {
+    public static Optional<Throwable> unwrap(Throwable given, Class<? extends Throwable>... priorities) {
         Optional<Throwable> result = unwrap(given, Arrays.asList(priorities));
         return result;
     }
@@ -132,7 +132,7 @@ public class ExceptionUtilsAksw {
 
         return result;
     }
-    
+
     public static boolean isClosedChannelException(Throwable t) {
         boolean result = t instanceof ClosedChannelException;
         return result;

@@ -11,11 +11,68 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 
 public class FileUtils {
+
+    public static void deleteRecursivelyIfExists(Path path, RecursiveDeleteOption ... options) throws IOException {
+        if (Files.exists(path)) {
+            MoreFiles.deleteRecursively(path, options);
+        }
+    }
+
+    /** Return the first ancestor of a path that exists.
+     *  May be the path itself or one if its transitive parents.
+     *  Returns null on null input.
+     *  Use {@link Path#relativize(Path)} to obtain the folders that would
+     *  have to be created.
+     */
+    public static Path getFirstExistingAncestor(Path path) {
+        Path result = path == null
+                    ? null
+                    : Files.exists(path)
+                        ? path
+                        : getFirstExistingAncestor(path.getParent());
+        return result;
+    }
+
+    /**
+     * Delete a specific path and then - regardless of deletion outcom e -try to delete all empty directories up to a given baseFolder.
+     * Empty folders are only deleted if their path starts with the baseFolder
+     *
+     * The result is the same as of {@link Files#deleteIfExists(Path)}.
+     */
+    public static boolean deleteFileIfExistsAndThenDeleteEmptyFolders(Path path, Path baseFolder, boolean alsoDeleteBaseFolder) throws IOException {
+        boolean result = Files.deleteIfExists(path);
+        path = path.getParent();
+        if (path != null) {
+            deleteEmptyFolders(path, baseFolder, alsoDeleteBaseFolder);
+        }
+
+        return result;
+    }
+
+    /** Delete parent folders of 'path' that are descendants of baseFolder (depending on the flag inclusive or exclusive) */
+    public static void deleteEmptyFolders(Path path, Path baseFolder, boolean alsoDeleteBase) {
+        while (path.startsWith(baseFolder) && (alsoDeleteBase || !path.equals(baseFolder))) {
+            if (Files.exists(path)) {
+                if (!Files.isDirectory(path)) {
+                    throw new IllegalArgumentException("Path must be a directory: " + path);
+                }
+
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    // Ignore
+                    break;
+                }
+            }
+            path = path.getParent();
+        }
+    }
 
     /** Best-effort moveAtomic */
     public static void moveAtomic(Path srcFile, Path tgtPath) throws IOException {
@@ -23,8 +80,8 @@ public class FileUtils {
             Files.move(srcFile, tgtPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException e) {
             try (
-                    FileChannel srcChannel = FileChannel.open(srcFile, StandardOpenOption.READ);
-                    FileChannel tgtChannel = FileChannel.open(tgtPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+                FileChannel srcChannel = FileChannel.open(srcFile, StandardOpenOption.READ);
+                FileChannel tgtChannel = FileChannel.open(tgtPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
                 long n = srcChannel.size();
                 FileChannelUtils.transferFromFully(tgtChannel, srcChannel, 0, n, null);
                 tgtChannel.force(true);
