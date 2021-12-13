@@ -179,8 +179,8 @@ public class FileSyncImpl
         Files.deleteIfExists(newContentFile);
         try (OutputStream out = newOutputStreamToNewTmpContent(true)) {
             outputStreamSupplier.accept(out);
-            FileUtils.moveAtomic(newContentTmpFile, newContentFile);
         }
+        FileUtils.moveAtomic(newContentTmpFile, newContentFile);
     }
 
     @Override
