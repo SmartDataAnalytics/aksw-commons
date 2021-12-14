@@ -49,7 +49,12 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
 
-		<junit.version>4.8.1</junit.version>
+		<guava.version>31.0.1-jre</guava.version>
+		<junit.version>4.13.2</junit.version>
+		<xstream.version>1.4.16</xstream.version>
+		<compress.version>1.21</compress.version>
+		<picocli.version>4.4.0</picocli.version>
+		
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<slf4j.version>1.8.0-beta4</slf4j.version>
 		<log4j.version>2.15.0</log4j.version>
@@ -261,8 +266,7 @@
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
-				<version>4.7</version>
-				<!-- <scope>test</scope> -->
+				<version>${junit.version}</version>
 			</dependency>
 
 			<dependency>
@@ -311,8 +315,7 @@
 			<dependency>
 				<groupId>com.thoughtworks.xstream</groupId>
 				<artifactId>xstream</artifactId>
-				<version>1.4.16</version>
-				<type>jar</type>
+				<version>${xstream.version}</version>
 			</dependency>
 
 			<dependency>
@@ -332,7 +335,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>27.0.1-jre</version>
+				<version>${guava.version}</version>
 			</dependency>
 
 			<dependency>
@@ -350,7 +353,7 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-compress</artifactId>
-				<version>1.20</version>
+				<version>${compress.version}</version>
 			</dependency>
 
 			<dependency>
@@ -362,7 +365,7 @@
 			<dependency>
 				<groupId>info.picocli</groupId>
 				<artifactId>picocli</artifactId>
-				<version>4.4.0</version>
+				<version>${picocli.version}</version>
 			</dependency>
 
 		</dependencies>
