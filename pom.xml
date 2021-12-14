@@ -50,8 +50,8 @@
 		<gpg.keyname>AKSW</gpg.keyname>
 
 		<junit.version>4.8.1</junit.version>
-		<slf4j.version>1.8.0-beta4</slf4j.version>
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
+		<slf4j.version>1.8.0-beta4</slf4j.version>
 		<log4j.version>2.15.0</log4j.version>
 	</properties>
 
@@ -266,32 +266,27 @@
 			</dependency>
 
 			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-
-			<!-- <dependency> -->
-			<!-- <groupId>org.slf4j</groupId> -->
-			<!-- <artifactId>slf4j-log4j12</artifactId> -->
-			<!-- <version>${slf4j.version}</version> -->
-			<!-- </dependency> -->
-			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
 				<artifactId>log4j-slf4j18-impl</artifactId>
 				<version>${log4j.version}</version>
 			</dependency>
 
 			<dependency>
-				<groupId>javax.xml.bind</groupId>
-				<artifactId>jaxb-api</artifactId>
-				<version>2.3.1</version>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
 			</dependency>
 
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-ext</artifactId>
 				<version>${slf4j.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>javax.xml.bind</groupId>
+				<artifactId>jaxb-api</artifactId>
+				<version>2.3.1</version>
 			</dependency>
 
 			<!-- Usually we depend on slf4j, but for testing we depend on a concrete 
