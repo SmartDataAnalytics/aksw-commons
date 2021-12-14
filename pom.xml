@@ -52,7 +52,7 @@
 		<guava.version>31.0.1-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
 		<xstream.version>1.4.16</xstream.version>
-		<compress.version>1.21</compress.version>
+		<commons-compress.version>1.21</commons-compress.version>
 		<picocli.version>4.4.0</picocli.version>
 		
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
@@ -353,7 +353,7 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-compress</artifactId>
-				<version>${compress.version}</version>
+				<version>${commons-compress.version}</version>
 			</dependency>
 
 			<dependency>
