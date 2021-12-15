@@ -38,23 +38,38 @@ public class CompletionTracker
     }
 
     public void execute(Runnable runnable) {
+        long id;
+        CompletableFutureDelegate<Object> exposedFuture;
+
         synchronized (this) {
             if (isShutDown) {
                 throw new RejectedExecutionException("New task rejected because completionTracker was already shut down");
             }
-//        }
 
-            CompletableFuture<?> future = CompletableFuture.runAsync(runnable, executor);
-//        synchronized (this) {
-            long id = counter++;
-            pending.put(id, future);
-            future.whenComplete((x, y) -> {
-                synchronized (this) {
-                    pending.remove(id);
-                    checkTerminationCondition();
-                }
-            });
+            // Register a completable future in this synchronized block
+            // in order to make it immediately visible to any concurrent lookup
+            // (especially for whether everything has completed)
+            // but start the actual execution only outside of this block
+            id = counter++;
+            exposedFuture = new CompletableFutureDelegate<>();
+            pending.put(id, exposedFuture);
         }
+
+        CompletableFuture<?> internalFuture = CompletableFuture.runAsync(runnable, executor);
+        exposedFuture.setDelegate(internalFuture);
+        internalFuture.whenComplete((value, throwable) -> {
+            synchronized (this) {
+                pending.remove(id);
+                checkTerminationCondition();
+            }
+
+            if (throwable != null) {
+                exposedFuture.completeExceptionally(throwable);
+            } else {
+                exposedFuture.complete(value);
+            }
+        });
+
     }
 
     protected boolean isTerminated() {
