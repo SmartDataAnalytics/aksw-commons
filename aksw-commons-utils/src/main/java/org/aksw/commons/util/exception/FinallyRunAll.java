@@ -33,20 +33,20 @@ import org.aksw.commons.util.function.ThrowingRunnable;
  * </pre>
  *
  */
-public class FinallyAll
+public class FinallyRunAll
     implements Runnable
 {
     protected List<ThrowingRunnable> actions;
 
-    public static FinallyAll create() {
-        return new FinallyAll();
+    public static FinallyRunAll create() {
+        return new FinallyRunAll();
     }
 
-    public FinallyAll() {
+    public FinallyRunAll() {
         this(new ArrayList<>());
     }
 
-    public FinallyAll(List<ThrowingRunnable> actions) {
+    public FinallyRunAll(List<ThrowingRunnable> actions) {
         super();
         this.actions = actions;
     }
@@ -82,6 +82,6 @@ public class FinallyAll
     }
 
     public static void run(ThrowingRunnable ... actions) {
-        new FinallyAll(Arrays.asList(actions)).run();
+        new FinallyRunAll(Arrays.asList(actions)).run();
     }
 }

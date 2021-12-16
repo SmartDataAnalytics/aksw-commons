@@ -21,7 +21,7 @@ import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.lock.db.impl.LockFromFile;
 import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.util.array.Array;
-import org.aksw.commons.util.exception.FinallyAll;
+import org.aksw.commons.util.exception.FinallyRunAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -251,7 +251,7 @@ public class TxnSerializable
 //    		}
 //    	}
 
-        FinallyAll.run(
+        FinallyRunAll.run(
             () -> Files.deleteIfExists(commitFile),
             () -> Files.deleteIfExists(finalizeFile),
             () -> Files.deleteIfExists(rollbackFile),
