@@ -38,6 +38,9 @@ public class FinallyAll
 {
     protected List<ThrowingRunnable> actions;
 
+    public static FinallyAll create() {
+        return new FinallyAll();
+    }
 
     public FinallyAll() {
         this(new ArrayList<>());
