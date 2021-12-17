@@ -6,11 +6,17 @@ import java.io.ObjectOutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.MoreFiles;
@@ -141,6 +147,52 @@ public class FileUtils {
             out.writeObject(obj);
             out.flush();
         }
+    }
+
+
+    /**
+     * A java.nio variant of apache commons-io FileUtils.sizeOfDirectory.
+     *
+     * @param dirPath
+     * @return
+     * @throws IOException
+     */
+    public static long sizeOfDirectory(Path dirPath) throws IOException {
+        return sizeOfDirectory(dirPath, null);
+    }
+
+
+    /**
+     * A java.nio variant of apache commons-io FileUtils.sizeOfDirectory.
+     *
+     * @param dirPath
+     * @param fileMatcher Predicate to test whether to take a certain file's size into account for the total sum
+     *   null will match any file.
+     * @return
+     * @throws IOException
+     */
+    public static long sizeOfDirectory(Path dirPath, PathMatcher fileMatcher) throws IOException {
+        final AtomicLong totalSize = new AtomicLong(0L);
+
+        Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                boolean isAccepted = fileMatcher == null || fileMatcher.matches(file);
+                if (isAccepted) {
+                    long contrib = attrs.size();
+                    // System.out.println("Path: " + file + " size: " + contrib);
+                    totalSize.addAndGet(contrib);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
+        return totalSize.get();
     }
 
 }

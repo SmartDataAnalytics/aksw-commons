@@ -53,6 +53,10 @@ public class LockUtils {
         return result;
     }
 
+    public static void runWithLock(Lock lock, Runnable action) {
+        runWithLock(lock, () -> { action.run(); return null; });
+    }
+
     /**
      * Run this action with a short-lived locked. If the lock cannot be acquired
      * within the given time it is considered stale and forcibly unlocked.
