@@ -45,6 +45,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-resources-test-config</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
 		<!-- Url validation -->
 		<!-- <dependency> -->
 		<!-- <groupId>commons-validator</groupId> -->

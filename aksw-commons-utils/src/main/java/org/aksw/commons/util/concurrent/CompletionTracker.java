@@ -1,6 +1,10 @@
 package org.aksw.commons.util.concurrent;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -15,6 +19,8 @@ public class CompletionTracker
     protected volatile long counter = 0;
     protected Map<Long, CompletableFuture<?>> pending = new HashMap<>();
     protected volatile boolean isShutDown = false;
+
+    protected List<Throwable> raisedExceptions = Collections.synchronizedList(new ArrayList<>());
 
     // Use locks?
 //    protected Lock lock = new ReentrantLock();
@@ -58,12 +64,24 @@ public class CompletionTracker
         CompletableFuture<?> internalFuture = CompletableFuture.runAsync(runnable, executor);
         exposedFuture.setDelegate(internalFuture);
         internalFuture.whenComplete((value, throwable) -> {
+
+            Map<Long, CompletableFuture<?>> cancelMap = null;
             synchronized (this) {
                 pending.remove(id);
                 checkTerminationCondition();
+
+                if (throwable != null) {
+                    raisedExceptions.add(throwable);
+                    // Reject any further tasks
+                    shutdown();
+
+                    cancelMap = new LinkedHashMap<>(pending);
+                }
             }
 
             if (throwable != null) {
+                cancelMap.values().forEach(future -> future.cancel(true));
+
                 exposedFuture.completeExceptionally(throwable);
             } else {
                 exposedFuture.complete(value);
@@ -85,6 +103,10 @@ public class CompletionTracker
         }
     }
 
+    public List<Throwable> getRaisedExceptions() {
+        return raisedExceptions;
+    }
+
     public synchronized void awaitTermination() throws InterruptedException {
         //terminated.await();
         synchronized (this) {
@@ -95,6 +117,10 @@ public class CompletionTracker
     //                throw new RuntimeException(e);
     //            }
             }
+        }
+
+        if (!raisedExceptions.isEmpty()) {
+            throw new RuntimeException(raisedExceptions.get(0));
         }
     }
 }
