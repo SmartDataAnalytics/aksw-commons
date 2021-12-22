@@ -88,7 +88,7 @@ public class TxnReadUncommitted
 
         // TODO This pure listing of file resources should probably go to the repository
         Path rootPath = txnMgr.getRootPath();
-        PathMatcher pathMatcher = rootPath.getFileSystem().getPathMatcher("glob:**/*.trig");
+        PathMatcher pathMatcher = txnMgr.getPathMatcher(); // rootPath.getFileSystem().getPathMatcher("glob:**/*.trig");
                 // txnMgr.getResRepo().getRootPath().getFileSystem().getPathMatcher("glob:**/*.trig");
 
         // The root path may not exist if the store is empty

@@ -14,9 +14,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.PosixFileAttributes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.MoreFiles;
@@ -193,6 +193,33 @@ public class FileUtils {
         });
 
         return totalSize.get();
+    }
+
+    public static Stream<Path> ancestors(Path start, boolean reflexive) {
+        Stream<Path> r = ancestors(start);
+        if (!reflexive) {
+            r = r.skip(1);
+        }
+        return r;
+    }
+
+    public static Stream<Path> ancestors(Path start) {
+        return Stream.iterate(start, node -> node.getParent() != null, Path::getParent);
+    }
+
+    /**
+     * Look for a file among all ancestor folders
+     *
+     * @param start
+     * @param fileName
+     * @return
+     */
+    public static Path findInAncestors(Path start, String fileName) {
+        return ancestors(start)
+            .filter(folder -> Files.exists(folder.resolve(fileName)))
+            .map(folder -> folder.resolve(fileName))
+            .findFirst()
+            .orElse(null);
     }
 
 }

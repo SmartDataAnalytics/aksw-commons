@@ -3,6 +3,7 @@ package org.aksw.commons.txn.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.time.temporal.TemporalAmount;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -80,9 +81,13 @@ public class TxnMgrImpl
 
     protected TemporalAmount heartbeatDuration;
 
+    protected PathMatcher pathMatcher;
+
+
     public TxnMgrImpl(
             String txnMgrId,
             Path rootPath,
+            PathMatcher pathMatcher,
             TemporalAmount heartbeatDuration,
             LockManager<Path> lockMgr,
             Path txnBasePath,
@@ -92,6 +97,7 @@ public class TxnMgrImpl
         super();
         this.txnMgrId = txnMgrId;
         this.rootPath = rootPath;
+        this.pathMatcher = pathMatcher;
         this.heartbeatDuration = heartbeatDuration;
         this.lockMgr = lockMgr;
         this.txnBasePath = txnBasePath;
@@ -105,6 +111,10 @@ public class TxnMgrImpl
     @Override
     public Path getRootPath() {
         return rootPath;
+    }
+
+    public PathMatcher getPathMatcher() {
+        return pathMatcher;
     }
 
     @Override
