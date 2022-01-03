@@ -1,5 +1,6 @@
 package org.aksw.commons.util.string;
 
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +16,7 @@ public class Envsubst {
     /** Regex for matching strings such as '${varname}'
      * variable names cannot include the '}' symbol
      */
-    public static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
+    public static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$(\\{(?<name1>[^}]*)\\}|(?<name2>[a-zA-Z_]\\w*))");
 
     /**
      * Perform substitution of placeholders of form "${name}"
@@ -33,7 +34,7 @@ public class Envsubst {
         Matcher m = PLACEHOLDER_PATTERN.matcher(input);
         while (m.find()) {
 
-            String placeholderName = m.group(1);
+            String placeholderName = Optional.ofNullable(m.group("name1")).orElse(m.group("name2"));
             String replacement = getReplacement.apply(placeholderName);
 
             // Leave unmapped placeholders (they may get substituted in a separate pass)
