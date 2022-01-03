@@ -4,6 +4,12 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 
 public class ObjectUtils {
+
+    /** Return an object's class - returns null for a null argument */
+    public static Class<?> getClass(Object object) {
+        return object == null ? null : object.getClass();
+    }
+
     /** For a given object derive a string of the form className@identityHashCode */
     public static String toStringWithIdentityHashCode(Object obj) {
         return toStringWithIdentityHashCode(obj, "(null)");

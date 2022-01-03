@@ -5,11 +5,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.aksw.commons.util.traverse.BreadthFirstSearchLib;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +25,20 @@ import org.slf4j.LoggerFactory;
 public class ClassUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ClassUtils.class);
+
+    public static Stream<Class<?>> getDirectSuperclassAndInterfaces(Class<?> cls) {
+        return Stream.concat(
+                Optional.ofNullable(cls.getSuperclass()).stream(),
+                Stream.of(cls.getInterfaces()));
+    }
+
+    /** Stream a classes super class and interfaces as lists of breadths */
+    public static Stream<List<Class<?>>> bfsStream(Class<?> start) {
+        return BreadthFirstSearchLib.stream(
+                Collections.singletonList(start),
+                ClassUtils::getDirectSuperclassAndInterfaces,
+                () -> Collectors.toList());
+    }
 
     @SuppressWarnings("unchecked")
     public static <T> T getFieldValueChecked(Class<?> clazz, String fieldName, Object obj)
