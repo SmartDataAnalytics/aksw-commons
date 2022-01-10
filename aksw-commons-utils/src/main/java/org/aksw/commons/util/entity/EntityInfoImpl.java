@@ -20,6 +20,8 @@ public class EntityInfoImpl
     protected Set<String> languageTags;
     protected Set<String> conformsTo;
 
+    protected Long byteSize;
+    protected Long uncompressedByteSize;
 
     public EntityInfoImpl(String contentType) {
         this(Collections.emptyList(), contentType);
@@ -72,21 +74,40 @@ public class EntityInfoImpl
         return conformsTo;
     }
 
+    public Long getByteSize() {
+        return byteSize;
+    }
+
+    public void setByteSize(Long byteSize) {
+        this.byteSize = byteSize;
+    }
+
+    public Long getUncompressedByteSize() {
+        return uncompressedByteSize;
+    }
+
+    public void setUncompressedByteSize(Long uncompressedByteSize) {
+        this.uncompressedByteSize = uncompressedByteSize;
+    }
+
     @Override
     public String toString() {
         return "EntityInfoImpl [contentEncodings=" + contentEncodings + ", contentType=" + contentType + ", charset="
-                + charset + ", languageTags=" + languageTags + ", conformsTo=" + conformsTo + "]";
+                + charset + ", languageTags=" + languageTags + ", conformsTo=" + conformsTo + ", byteSize=" + byteSize
+                + ", uncompressedByteSize=" + uncompressedByteSize + "]";
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((byteSize == null) ? 0 : byteSize.hashCode());
         result = prime * result + ((charset == null) ? 0 : charset.hashCode());
         result = prime * result + ((conformsTo == null) ? 0 : conformsTo.hashCode());
         result = prime * result + ((contentEncodings == null) ? 0 : contentEncodings.hashCode());
         result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
         result = prime * result + ((languageTags == null) ? 0 : languageTags.hashCode());
+        result = prime * result + ((uncompressedByteSize == null) ? 0 : uncompressedByteSize.hashCode());
         return result;
     }
 
@@ -99,6 +120,11 @@ public class EntityInfoImpl
         if (getClass() != obj.getClass())
             return false;
         EntityInfoImpl other = (EntityInfoImpl) obj;
+        if (byteSize == null) {
+            if (other.byteSize != null)
+                return false;
+        } else if (!byteSize.equals(other.byteSize))
+            return false;
         if (charset == null) {
             if (other.charset != null)
                 return false;
@@ -123,6 +149,11 @@ public class EntityInfoImpl
             if (other.languageTags != null)
                 return false;
         } else if (!languageTags.equals(other.languageTags))
+            return false;
+        if (uncompressedByteSize == null) {
+            if (other.uncompressedByteSize != null)
+                return false;
+        } else if (!uncompressedByteSize.equals(other.uncompressedByteSize))
             return false;
         return true;
     }

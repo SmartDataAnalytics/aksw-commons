@@ -37,6 +37,9 @@ public interface EntityInfo {
      */
     Set<String> getConformsTo();
 
+    Long getByteSize();
+    Long getUncompressedByteSize();
+
     /**
      * Convenience method
      *
