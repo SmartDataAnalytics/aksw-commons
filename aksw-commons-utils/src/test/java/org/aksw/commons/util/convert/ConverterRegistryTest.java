@@ -15,8 +15,8 @@ public class ConverterRegistryTest {
 		ConverterRegistryImpl reg = new ConverterRegistryImpl();
 		reg.register(ConverterRegistryTest.class.getMethod("conv", int.class));
 
-		Converter conv = reg.getConverter(int.class, String.class);
-		Object r = conv.getFunction().apply(1);
+		ConvertFunctionRaw conv = reg.getConverter(int.class, String.class);
+		Object r = conv.getRawFunction().apply(1);
 		String actual = (String)r;		
 		Assert.assertEquals("hello 1", actual);
 	}
@@ -27,8 +27,8 @@ public class ConverterRegistryTest {
 		reg.register(ConverterRegistryTest.class.getMethod("conv", A.class));
 
 		// Lookup a converter using B - this should find the converter that accepts A
-		Converter conv = reg.getConverter(B.class, String.class);
-		Object r = conv.getFunction().apply(new B());
+		ConvertFunctionRaw conv = reg.getConverter(B.class, String.class);
+		Object r = conv.getRawFunction().apply(new B());
 		String actual = (String)r;		
 		Assert.assertEquals("hello b", actual);
 	}
@@ -39,8 +39,8 @@ public class ConverterRegistryTest {
 		reg.register(ConverterRegistryTest.class.getMethod("toB", int.class));
 
 		// Lookup a converter that returns A - this should find the converter that returns B
-		Converter conv = reg.getConverter(int.class, A.class);
-		Object r = conv.getFunction().apply(1);
+		ConvertFunctionRaw conv = reg.getConverter(int.class, A.class);
+		Object r = conv.getRawFunction().apply(1);
 		B actual = (B)r;		
 		Assert.assertEquals("b", actual.get());
 	}

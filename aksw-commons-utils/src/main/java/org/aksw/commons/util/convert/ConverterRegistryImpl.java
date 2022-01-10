@@ -13,19 +13,19 @@ import org.aksw.commons.util.reflect.ClassUtils;
 public class ConverterRegistryImpl
     implements ConverterRegistry
 {
-    protected List<Converter> converters = new ArrayList<>();
+    protected List<ConvertFunctionRaw> converters = new ArrayList<>();
 
-    protected MemoizedBiFunction<Class<?>, Class<?>, Converter> cachedFind = MemoizedBiFunctionImpl.create(this::findUncached);
+    protected MemoizedBiFunction<Class<?>, Class<?>, ConvertFunctionRaw> cachedFind = MemoizedBiFunctionImpl.create(this::findUncached);
 
-    public synchronized void register(Converter converter) {
+    public synchronized void register(ConvertFunctionRaw converter) {
         cachedFind.clearCache();
         converters.add(converter);
     }
 
-    protected Converter findUncached(Class<?> src, Class<?> tgt) {
-        List<Converter> converters = findMatches(src, tgt);
+    protected ConvertFunctionRaw findUncached(Class<?> src, Class<?> tgt) {
+        List<ConvertFunctionRaw> converters = findMatches(src, tgt);
 
-        Converter result;
+        ConvertFunctionRaw result;
         if (converters.size() > 1) {
             throw new RuntimeException(String.format("Multiple converters found for (%s -> %s): %s", src, tgt, converters));
         } else if (converters.isEmpty()) {
@@ -36,16 +36,16 @@ public class ConverterRegistryImpl
         return result;
     }
 
-    protected List<Converter> findMatches(Class<?> src, Class<?> tgt) {
+    protected List<ConvertFunctionRaw> findMatches(Class<?> src, Class<?> tgt) {
 
-        List<Converter> cands = converters.stream()
+        List<ConvertFunctionRaw> cands = converters.stream()
             .map(c -> new SimpleEntry<>(c, ClassUtils.getDistance(src, c.getFrom())))
             .filter(e -> e.getValue() != null)
             .sorted((a, b) -> a.getValue().compareTo(b.getValue()))
             .map(Entry::getKey)
             .collect(Collectors.toList());
 
-        List<Converter> matches = cands.stream()
+        List<ConvertFunctionRaw> matches = cands.stream()
             .map(c -> new SimpleEntry<>(c, ClassUtils.getDistance(c.getTo(), tgt)))
             .filter(e -> e.getValue() != null)
             .sorted((a, b) -> a.getValue().compareTo(b.getValue()))
@@ -56,7 +56,7 @@ public class ConverterRegistryImpl
     }
 
     @Override
-    public Converter getConverter(Class<?> from, Class<?> to) {
+    public ConvertFunctionRaw getConverter(Class<?> from, Class<?> to) {
         return cachedFind.apply(from, to);
     }
 }

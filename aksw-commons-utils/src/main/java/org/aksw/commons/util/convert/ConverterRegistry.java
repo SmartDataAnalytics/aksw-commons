@@ -5,14 +5,14 @@ import java.util.function.Function;
 
 public interface ConverterRegistry {
 
-    Converter getConverter(Class<?> from, Class<?> to);
-    void register(Converter converter);
+    ConvertFunctionRaw getConverter(Class<?> from, Class<?> to);
+    void register(ConvertFunctionRaw converter);
 
     default <R, J> ConverterRegistry register(
             Class<R> src,
             Class<J> tgt,
             Function<? super R, ? extends J> srcToTgt) {
-        Converter converter = ConverterImpl.create(src, tgt, srcToTgt);
+        ConvertFunctionRaw converter = ConvertFunctionRawImpl.create(src, tgt, srcToTgt);
         register(converter);
 
         return this;
@@ -30,7 +30,7 @@ public interface ConverterRegistry {
     }
 
     default ConverterRegistry register(Method method) {
-        Converter converter = ConverterImpl.create(method);
+        ConvertFunctionRaw converter = ConvertFunctionRawImpl.create(method);
         register(converter);
 
         return this;
