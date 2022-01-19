@@ -19,7 +19,7 @@ public class UriToPathUtils {
 		
 		String host = uri.getHost();
 		if (host != null) {
-			parts.addAll(Arrays.asList(javafyHostnameSegments(host)));
+			parts.addAll(Arrays.asList(javaifyHostnameSegments(host)));
 		}
 		
 		int port = uri.getPort();
@@ -61,15 +61,15 @@ public class UriToPathUtils {
 	 * @param hostName
 	 * @return
 	 */
-	public static String[] javafyHostnameSegments(String hostName) {
+	public static String[] javaifyHostnameSegments(String hostName) {
 		String[] result = hostName.split("\\.+"); // Treat consecutive dots as one 
 		ArrayUtils.reverse(result);
 		return result;
 	}
 
 	
-	public static String javafyHostname(String hostName) {
-		String[] parts = javafyHostnameSegments(hostName);
+	public static String javaifyHostname(String hostName) {
+		String[] parts = javaifyHostnameSegments(hostName);
 		String result = Arrays.asList(parts).stream().collect(Collectors.joining("/"));
 		return result;
 	}
@@ -88,7 +88,7 @@ public class UriToPathUtils {
 	 */
 	@Deprecated // Use toPathSegments
 	public static Path resolvePath(URI uri) {
-		String a = Optional.ofNullable(uri.getHost()).map(UriToPathUtils::javafyHostname).orElse("");
+		String a = Optional.ofNullable(uri.getHost()).map(UriToPathUtils::javaifyHostname).orElse("");
 		String b = uri.getPort() == -1 ? "" : Integer.toString(uri.getPort());
 		
 		// Replace ~ (tilde) with _ because otherwise jena IRI validation will fail
