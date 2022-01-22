@@ -2,6 +2,7 @@ package org.aksw.commons.collection.observable;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.VetoableChangeListener;
 import java.util.Objects;
 
 import com.google.common.base.Converter;
@@ -45,4 +46,10 @@ public class ObservableConvertingValue<F, B>
             }
         });
     }
+    
+    @Override
+    public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
+    	throw new UnsupportedOperationException();
+    }
+
 }

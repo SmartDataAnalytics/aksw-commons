@@ -76,6 +76,11 @@ public interface ObservableMap<K, V>
 
                 });
             }
+            
+            @Override
+            public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
+            	throw new UnsupportedOperationException();
+            }
         };
     }
 }

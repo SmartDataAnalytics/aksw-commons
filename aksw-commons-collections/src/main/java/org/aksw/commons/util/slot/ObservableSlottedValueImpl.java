@@ -1,6 +1,7 @@
 package org.aksw.commons.util.slot;
 
 import java.beans.PropertyChangeListener;
+import java.beans.VetoableChangeListener;
 import java.util.function.Supplier;
 
 import org.aksw.commons.collection.observable.ObservableValue;
@@ -57,4 +58,9 @@ public class ObservableSlottedValueImpl<W, P>
     public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
         return cachedValue.addPropertyChangeListener(listener);
     }
+
+	@Override
+	public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
+        return cachedValue.addVetoableChangeListener(listener);
+	}
 }

@@ -93,7 +93,7 @@ public class TxnReadUncommitted
 
         // The root path may not exist if the store is empty
         Path basePath = PathUtils.resolve(rootPath, prefix);
-
+        
         // isVisible filters out graphs that were created after the transaction start
         Stream<TxnResourceApi> result;
         try {

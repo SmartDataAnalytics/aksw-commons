@@ -2,6 +2,7 @@ package org.aksw.commons.collection.observable;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.VetoableChangeListener;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
@@ -103,6 +104,11 @@ public class ObservableValueFromObservableCollection<T, U>
     @Override
     public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
         return delegate.addPropertyChangeListener(wrapListener(this, listener, xform));
+    }
+
+    @Override
+    public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
+    	throw new UnsupportedOperationException();
     }
 
     public static <T> ObservableValue<T> decorate(ObservableCollection<T> delegate) {
