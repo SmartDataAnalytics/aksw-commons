@@ -13,7 +13,7 @@ public abstract class ForwardingDeltaCollectionBase<T, C extends Collection<T>>
         this.backend = backend;
     }
 
-    public Collection<T> getBackend() {
+    public C getBackend() {
         return backend;
     }
 
