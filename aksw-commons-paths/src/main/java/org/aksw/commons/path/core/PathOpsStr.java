@@ -95,6 +95,10 @@ public class PathOpsStr
     }
 
 
+    @Override
+    public String toStringRaw(Object path) {
+    	return toString((PathStr)path);
+    }
 
     @Override
     public String toString(PathStr path) {

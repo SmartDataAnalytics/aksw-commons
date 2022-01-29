@@ -17,6 +17,13 @@ public class ConvertingList<F, B, C extends List<B>>
     }
 
     @Override
+    public boolean addAll(Collection<? extends F> c) {
+        Collection<B> transformed = c.stream().map(item -> converter.reverse().convert(item)).collect(Collectors.toList());
+        boolean result = backend.addAll(transformed);
+        return result;
+    }
+    
+    @Override
     public boolean addAll(int index, Collection<? extends F> c) {
         Collection<B> transformed = c.stream().map(item -> converter.reverse().convert(item)).collect(Collectors.toList());
         boolean result = backend.addAll(index, transformed);

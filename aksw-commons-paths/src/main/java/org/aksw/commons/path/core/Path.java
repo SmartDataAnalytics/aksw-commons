@@ -1,5 +1,6 @@
 package org.aksw.commons.path.core;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ import java.util.List;
  * @param <T> The types of segments in the path
  */
 public interface Path<T>
-    extends Iterable<Path<T>>
+    extends Iterable<Path<T>>, Serializable
 {
     Path<T> toAbsolutePath();
     boolean isAbsolute();

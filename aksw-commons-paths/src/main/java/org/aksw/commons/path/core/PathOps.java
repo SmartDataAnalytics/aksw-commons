@@ -32,6 +32,8 @@ public interface PathOps<T, P extends Path<T>> {
     /** Serialize a path as a string */
     String toString(P path);
 
+    String toStringRaw(Object path);
+    
     /** Deserialize a string into a path */
     P fromString(String str);
 }

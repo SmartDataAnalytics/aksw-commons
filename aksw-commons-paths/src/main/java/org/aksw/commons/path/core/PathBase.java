@@ -1,5 +1,8 @@
 package org.aksw.commons.path.core;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -50,7 +53,30 @@ public class PathBase<T, P extends Path<T>>
 
     protected PathOps<T, P> pathOps;
 
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException 
+    {
+    	this.pathOps = (PathOps<T, P>)in.readObject();
+    	String str = in.readUTF();
+    	
+    	PathBase<T, P> tmp = (PathBase<T, P>)pathOps.fromString(str);
+    	
+    	this.isAbsolute = tmp.isAbsolute;
+    	this.segments = tmp.segments;
+    	this.segmentsView = Collections.unmodifiableList(segments);
+    }
+    
+ 
+    private void writeObject(ObjectOutputStream out) throws IOException 
+    {
+    	out.writeObject(pathOps);
+        out.writeUTF(pathOps.toStringRaw(this));
+    }
+    
 
+    public PathBase() {
+    	
+    }
+    
     public PathBase(PathOps<T, P> pathOps, boolean isAbsolute, List<T> segments) {
         super();
         this.pathOps = pathOps;
