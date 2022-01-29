@@ -14,7 +14,7 @@ public interface FileName {
 
 	
 	/** The concatenation of contentPart and encoding parts (joined with dot) without a preceding dot */
-	String getExtension(boolean precedingDotIfNotEmpty);
+	String getExtension(boolean precedeWithDotIfNotEmpty);
 	// Future extensions:
 	// List<String> getAllParts();
 	// List<String> getBaseNameParts();

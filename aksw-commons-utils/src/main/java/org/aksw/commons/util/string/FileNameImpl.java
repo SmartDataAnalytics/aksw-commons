@@ -40,13 +40,10 @@ public class FileNameImpl
 	}
 
 	@Override
-	public String getExtension(boolean precedingDotIfNotEmpty) {
+	public String getExtension(boolean precedeWithDotIfNotEmpty) {
 		String result = FileNameUtils.construct(Iterables.concat(Collections.singletonList(contentPart), encodingParts));
-		
-		if (precedingDotIfNotEmpty && !result.isEmpty()) {
-			result = "." + result;
-		}
-		
+        result = precedeWithDotIfNotEmpty && !result.isEmpty() ? "." + result : result;
+
 		return result;
 	}
 	
