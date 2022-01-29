@@ -187,6 +187,12 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-collectors</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-io-utils</artifactId>
 				<version>${project.version}</version>
 			</dependency>

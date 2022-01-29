@@ -1,5 +1,6 @@
 package org.aksw.commons.path.core;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.StreamSupport;
@@ -135,5 +136,10 @@ public class PathNio implements Path<String>
             .map(item -> (Path<String>)item)
             .iterator();
     }
+
+	@Override
+	public int compareTo(Path<String> that) {
+		return Comparator.nullsFirst((x, y) -> x.toString().compareTo(y.toString())).compare(this, that);
+	}
 
 }

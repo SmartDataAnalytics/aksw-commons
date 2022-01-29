@@ -3,6 +3,7 @@ package org.aksw.commons.path.core;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,11 +46,13 @@ import java.util.Objects;
  * @param <P>
  */
 public class PathBase<T, P extends Path<T>>
-    implements Path<T>
+    implements Path<T>, Serializable
 {
-    protected boolean isAbsolute;
-    protected List<T> segments;
-    protected List<T> segmentsView;
+	private static final long serialVersionUID = 1L;
+	
+	protected boolean isAbsolute;
+    protected transient List<T> segments;
+    protected transient List<T> segmentsView;
 
     protected PathOps<T, P> pathOps;
 
@@ -72,8 +75,8 @@ public class PathBase<T, P extends Path<T>>
         out.writeUTF(pathOps.toStringRaw(this));
     }
     
-
-    public PathBase() {
+    /* For (de)serialization */
+    PathBase() {
     	
     }
     
@@ -318,7 +321,7 @@ public class PathBase<T, P extends Path<T>>
     }
 
 
-    // @Override
+    @Override
     public int compareTo(Path<T> other) {
         int result;
         if (other instanceof PathBase) {
