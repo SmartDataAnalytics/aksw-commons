@@ -4,6 +4,9 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.aksw.commons.collector.core.AggFinish;
+import org.aksw.commons.lambda.serializable.SerializableFunction;
+
 /**
 *
 * @author raven
@@ -15,6 +18,12 @@ import java.util.stream.Stream;
 @FunctionalInterface
 public interface Aggregator<B, T> {
    Accumulator<B, T> createAccumulator();
+
+   
+   /** Transform the final value of an aggregation */
+   default <U> Aggregator<B, U> finish(SerializableFunction<T, U> transform) {
+	   return AggFinish.create(this, transform);
+   }
    
    /**
     * Convenience function to sequentially accumulate a given stream. Closes the stream when done.
