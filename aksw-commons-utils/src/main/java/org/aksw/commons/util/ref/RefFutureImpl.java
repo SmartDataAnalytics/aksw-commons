@@ -3,6 +3,8 @@ package org.aksw.commons.util.ref;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -59,14 +61,32 @@ public class RefFutureImpl<T>
 
 
     public static <T> void cancelFutureOrCloseValue(CompletableFuture<T> future, Consumer<? super T> valueCloseAction) {
+    	
+    	AtomicBoolean closeActionRun = new AtomicBoolean(false);
+    	
+    	BiConsumer<T, Throwable> closeAction = (value, t) -> {
+    		// Beware of short circuit evaluation of getAndSet!
+    		if (!closeActionRun.getAndSet(true) && value != null && valueCloseAction != null) {
+                valueCloseAction.accept(value);    			
+    		}
+    		
+    		if (t != null) {
+                logger.warn("Exception encountered during close", t);    			
+    		}
+    	};
+    	
+    	future.whenComplete(closeAction);
+    	
         try {
             boolean isCancelled = future.cancel(true);
             // logger.debug("isCancelled: " + isCancelled);
             if (!isCancelled) {
+            	
+            	// This should trigger the close action if it hasn't done so already
                 T value = future.get();
-                if (value != null && valueCloseAction != null) {
-                    valueCloseAction.accept(value);
-                }
+//                if (value != null && valueCloseAction != null) {
+//                    valueCloseAction.accept(value);
+//                }
             }
         } catch (CancellationException | InterruptedException | ExecutionException e) {
             logger.warn("Exception raised during close", e);

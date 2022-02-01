@@ -135,7 +135,14 @@ public class RefImpl<T>
     @Override
     public T get() {
         if (isReleased) {
-            throw new RuntimeException("Cannot get value of a released reference");
+        	
+            String msg = "Cannot get value of a closed reference:\n"
+                    + "Acquired at " + StackTraceUtils.toString(acquisitionStackTrace) + "\n"
+            		+ "Closed at " + StackTraceUtils.toString(closeStackTrace) + "\n"
+    				+ "Close Triggered at " + StackTraceUtils.toString(closeTriggerStackTrace);
+            logger.warn(msg);
+
+            throw new RuntimeException("Cannot get value of a closed reference");
         }
 
         return value;

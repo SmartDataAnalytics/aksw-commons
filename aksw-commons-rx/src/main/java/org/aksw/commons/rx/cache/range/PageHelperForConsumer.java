@@ -49,7 +49,7 @@ public class PageHelperForConsumer<T>
             Long value = slot.getSupplier().get();
             long currentOffset = offsetSupplier.getAsLong();
             if (value < currentOffset) {
-                logger.info("Clearing slot with value " + slot.getSupplier().get() + " because offset " + currentOffset + "is higher ");
+                logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher ");
                 slot.close();
                 it.remove();
             }

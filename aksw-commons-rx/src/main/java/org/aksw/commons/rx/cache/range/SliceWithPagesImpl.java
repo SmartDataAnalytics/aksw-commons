@@ -78,7 +78,6 @@ public class SliceWithPagesImpl<T>
                     }
 
                     logger.info("Synced " + internalKey);
-                    System.out.println("Synced" + internalKey);
                 }
             );
     }
