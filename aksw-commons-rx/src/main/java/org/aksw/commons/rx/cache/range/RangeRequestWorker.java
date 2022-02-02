@@ -244,9 +244,9 @@ public class RangeRequestWorker<T>
 
         // A demand overrides the worker's maxAllowedRefetchCount
         // Demands should take refetching of ranges into account
-
+    	long remainingAllowedItems = requestLimit - numItemsProcessed;
         long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
-        long effectiveLimit = Math.min(maxAllowedRefetchCount, requestLimit);
+        long effectiveLimit = Math.min(maxAllowedRefetchCount, remainingAllowedItems);
 
         Range<Long> claimAheadRange = Range.closedOpen(offset, offset + effectiveLimit);
 
@@ -383,6 +383,7 @@ public class RangeRequestWorker<T>
     }
 
 
+    /** The offset of the first item that won't be served by this worker */
     public long getEndOffset() {
         return 	LongMath.saturatedAdd(requestOffset, requestLimit);
     }
@@ -481,6 +482,7 @@ public class RangeRequestWorker<T>
                             metaData.setKnownSize(offset);
                         }
                     }
+                    logger.info("Signalling data condition to clients - " + hasNext + " - " + numItemsProcessed + " " + requestLimit);
                     metaData.getHasDataCondition().signalAll();
                 } finally {
                     writeLock.unlock();
@@ -494,7 +496,9 @@ public class RangeRequestWorker<T>
 
 
     public Slot<Long> getEndpointSlot() {
-        return endpointDemands.newSlot();
+    	synchronized (endpointDemands) {
+    		return endpointDemands.newSlot();
+    	}
     }
 }
 

@@ -65,20 +65,39 @@ public abstract class PageHelperBase<T>
 
         Range<Long> claimAheadRange = Range.closedOpen(start, end);
 
-        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
-            SliceMetaData metaData = ref.await();
-            Lock readLock = metaData.getReadWriteLock().readLock();
-            readLock.lock();
-            try {
-                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
-                processGaps(gaps, start, end);
-            } finally {
-                readLock.unlock();
-            }
-
-
-            nextCheckpointOffset = end;
-        }
+    	Lock workerCreationLock = slice.getWorkerCreationLock();
+    	workerCreationLock.lock();
+    	try {
+	        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+	            SliceMetaData metaData = ref.await();
+	            Lock readLock = metaData.getReadWriteLock().readLock();
+	            readLock.lock();
+	            try {
+	//            	Locking workerCreationLock here creates a deadlock
+	//            	// Prevent spawning new workers while we check whether any of the existing ones
+	//            	// can satisfy our demand
+	//            	Lock workerCreationLock = slice.getWorkerCreationLock();
+	//            	workerCreationLock.lock();
+	//            	try {
+//	            	if (start > 9500) {
+//	            		System.out.println("here");
+//	            	}
+		                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+		                processGaps(gaps, start, end);
+	//            	} finally {
+	//            		workerCreationLock.unlock();
+	//            	}
+	            	
+	            } finally {
+	                readLock.unlock();
+	            }
+	
+	
+	            nextCheckpointOffset = end;
+	        }
+    	} finally {
+    		workerCreationLock.unlock();
+    	}
     }
 //    public void checkpoint(long n) throws Exception {
 //

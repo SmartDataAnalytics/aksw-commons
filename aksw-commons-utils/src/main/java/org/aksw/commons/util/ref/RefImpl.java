@@ -1,6 +1,7 @@
 package org.aksw.commons.util.ref;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
@@ -57,7 +58,7 @@ public class RefImpl<T>
 
     protected Object comment; // An attribute which can be used for debugging reference chains
     protected RefImpl<T> parent;
-    protected volatile boolean isReleased = false;
+    protected volatile boolean isClosed = false;
 
     protected StackTraceElement[] acquisitionStackTrace;
 
@@ -86,7 +87,7 @@ public class RefImpl<T>
             AutoCloseable releaseAction,
             Object comment) {
         super();
-
+        
         // logger.debug("Acquired reference " + comment + " from " + parent);
 
         this.parent = parent;
@@ -94,6 +95,10 @@ public class RefImpl<T>
         this.releaseAction = releaseAction;
         this.synchronizer = synchronizer == null ? this : synchronizer;
         this.comment = comment;
+
+//        if (Objects.toString(synchronizer).contains("Ref")) {
+//        	System.out.println("DEBUG POINT");
+//        }
 
         if (traceAcquisitions) {
             acquisitionStackTrace = StackTraceUtils.getStackTraceIfEnabled();
@@ -106,9 +111,9 @@ public class RefImpl<T>
     @Override
     protected void finalize() throws Throwable {
         try {
-            if (!isReleased) {
+            if (!isClosed) {
                 synchronized (synchronizer) {
-                    if (!isReleased) {
+                    if (!isClosed) {
                         String msg = "Ref released by GC rather than user logic - indicates resource leak."
                                 + "Acquired at " + StackTraceUtils.toString(acquisitionStackTrace);
                         logger.warn(msg);
@@ -134,7 +139,7 @@ public class RefImpl<T>
 
     @Override
     public T get() {
-        if (isReleased) {
+        if (isClosed) {
         	
             String msg = "Cannot get value of a closed reference:\n"
                     + "Acquired at " + StackTraceUtils.toString(acquisitionStackTrace) + "\n"
@@ -193,7 +198,7 @@ public class RefImpl<T>
 //        synchronized (synchronizer) {
 //            result = !isReleased || !childRefs.isEmpty();
 
-        result = !isReleased || activeChildRefs != 0;
+        result = !isClosed || activeChildRefs != 0;
 
 //        }
         return result;
@@ -202,8 +207,11 @@ public class RefImpl<T>
     @Override
     public void close() {
         synchronized (synchronizer) {
-            if (isReleased) {
-                String msg = "Reference was already released." +
+        	
+//        	System.out.println("Closing with synchronizer: " + synchronizer);
+
+        	if (isClosed) {
+                String msg = "Reference was already closed." +
                         "\nReleased at: " + StackTraceUtils.toString(closeStackTrace) +
                         "\nAcquired at: " + StackTraceUtils.toString(acquisitionStackTrace);
 
@@ -216,7 +224,7 @@ public class RefImpl<T>
 
             // logger.debug("Released reference " + comment + " to " + parent);
 
-            isReleased = true;
+            isClosed = true;
 
             checkRelease();
         }
@@ -268,13 +276,13 @@ public class RefImpl<T>
 
     public static <T> Ref<T> createClosed() {
         RefImpl<T> result = new RefImpl<T>(null, null, null, null, null);
-        result.isReleased = true;
+        result.isClosed = true;
         return result;
     }
 
     @Override
     public boolean isClosed() {
-        return isReleased;
+        return isClosed;
     }
 
     @SuppressWarnings("resource")
@@ -305,7 +313,7 @@ public class RefImpl<T>
     @Override
     public String toString() {
         String result = String.format("Ref %s, active(self, #children)=(%b, %d), aquired at %s",
-                comment, !isReleased, activeChildRefs, StackTraceUtils.toString(acquisitionStackTrace));
+                comment, !isClosed, activeChildRefs, StackTraceUtils.toString(acquisitionStackTrace));
         return result;
     }
 }

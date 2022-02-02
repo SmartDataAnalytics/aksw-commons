@@ -11,6 +11,14 @@ package org.aksw.commons.util.ref;
  * and synchronization may be suppressed.
  *
  *
+ * Terminology:
+ * A reference is <b>closed</b> when {@link #close()} was called; <b>open</> otherwise.
+ * A reference is <b>alive</b> when it is <b>open</b> and/or any of the child refs acquired from it are still <b>alive</b>.
+ * A reference is <b>released</b> (dead) as soon it is no longer alive. This immediately triggers its release action.
+ *   Implementation note: At present the alive-check and release action are assumed to run synchronously. As such there
+ *   is no transition phase ('dying' or 'releasing'). This could be added in the future.
+ * 
+ *
  * @author raven
  *
  * @param <T>
@@ -24,7 +32,11 @@ public interface Ref<T>
     Ref<T> getRootRef();
 
     /**
-     * Get the referent
+     * Get the referent only iff this ref instance has not yet been closed.
+     * This method fails for closed alive refs.
+     * A closed reference is alive if it has unclosed child references.
+     *
+     * For most use cases the referent should be accessed using this method.
      *
      * @return The referent
      */
@@ -51,17 +63,21 @@ public interface Ref<T>
         return acquire(null);
     }
 
+//    default Ref<T> acquireAlive() {
+//        return acquireAlive(null);
+//    }
+
 
 
     /**
-     * A reference may itself be released, but references to it may keep it alive
+     * A reference may itself be closed, but references to it may keep it alive
      *
      * @return true iff either this reference is not closed or there exists any acquired reference.
      */
     boolean isAlive();
 
     /**
-     * Check whether this reference is closed / released
+     * Check whether this reference is closed
      */
     boolean isClosed();
 

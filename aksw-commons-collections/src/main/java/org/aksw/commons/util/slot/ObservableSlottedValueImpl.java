@@ -63,4 +63,9 @@ public class ObservableSlottedValueImpl<W, P>
 	public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
         return cachedValue.addVetoableChangeListener(listener);
 	}
+	
+	@Override
+	public String toString() {
+		return cachedValue.toString();
+	}
 }

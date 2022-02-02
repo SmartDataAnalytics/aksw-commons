@@ -269,15 +269,20 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
                 K key = entry.getKey();
                 RefFuture<V> ref = entry.getValue();
 
-                CompletableFuture<V> future = ref.get();
-                if (ref.get().isDone()) {
-                    V value;
-                    try {
-                        value = future.get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        throw new RuntimeException();
-                    }
-                    level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
+                // We need to acquire the ref because the level1 map only holds closed alive refs
+                // And get() failes for closed refs
+                try (RefFuture<V> tmp = ref.acquire()) {
+	                
+	                CompletableFuture<V> future = tmp.get();
+	                if (future.isDone()) {
+	                    V value;
+	                    try {
+	                        value = future.get();
+	                    } catch (InterruptedException | ExecutionException e) {
+	                        throw new RuntimeException();
+	                    }
+	                    level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
+	                }
                 }
             }
         }
@@ -347,14 +352,14 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 	        // If a key was freshly claimed then just return the fresh reference
 	        // otherwise acquire it
 	        
-	        result = isFreshSecondaryRef[0]
-	        		? secondaryRef
-	        		: secondaryRef.acquire();
+//	        result = isFreshSecondaryRef[0]
+//	        		? secondaryRef
+//	        		: secondaryRef.acquire();
 	        
-//	        result = secondaryRef.acquire();
-//	        if (isFreshSecondaryRef[0]) {
-//	            secondaryRef.close();
-//	        }
+	        result = secondaryRef.acquire();
+	        if (isFreshSecondaryRef[0]) {
+	            secondaryRef.close();
+	        }
 
         }
 

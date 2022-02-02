@@ -61,4 +61,9 @@ public class ObservableValueImpl<T>
     public static <T> ObservableValue<T> create(T initialValue) {
     	return new ObservableValueImpl<>(new SingleValuedAccessorDirect<>(initialValue));
     }
+    
+    @Override
+	public String toString() {
+    	return delegate.toString();
+	}
 }

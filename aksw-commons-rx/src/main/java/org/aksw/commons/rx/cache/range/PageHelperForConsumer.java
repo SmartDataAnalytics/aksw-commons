@@ -22,6 +22,7 @@ public class PageHelperForConsumer<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(PageHelperForConsumer.class);
 
+    // This map holds a single client's requested slots across all tasked workers
     protected Map<RangeRequestWorker<T>, Slot<Long>> workerToSlot = new IdentityHashMap<>();
 
     protected LongSupplier offsetSupplier;
@@ -65,14 +66,22 @@ public class PageHelperForConsumer<T>
         Map<Long, RangeRequestWorker<T>> offsetToWorker = new HashMap<>();
         NavigableMap<Long, Long> offsetToEndpoint = new TreeMap<>();
 
-        for (RangeRequestWorker<T> e : workerToSlot.keySet()) {
+        
+        
+        // for (RangeRequestWorker<T> e : workerToSlot.keySet()) {
+        for (RangeRequestWorker<T> e : cache.getExecutors()) {
             long workerStart = e.getCurrentOffset();
             long workerEnd = e.getEndOffset();
 
-            Long priorEndpoint = offsetToEndpoint.get(workerStart);
-            if (priorEndpoint == null || priorEndpoint < workerEnd) {
-                offsetToWorker.put(workerStart, e);
-                offsetToEndpoint.put(workerStart, workerEnd);
+            // Skip workers that have reached their end of their data retrieval range
+            // because we cannot ask those for additional data
+            if (workerStart != workerEnd) {
+	            
+	            Long priorEndpoint = offsetToEndpoint.get(workerStart);
+	            if (priorEndpoint == null || priorEndpoint < workerEnd) {
+	                offsetToWorker.put(workerStart, e);
+	                offsetToEndpoint.put(workerStart, workerEnd);
+	            }
             }
         }
 
@@ -84,7 +93,7 @@ public class PageHelperForConsumer<T>
             long length = end - start;
 
             RangeRequestWorker<T> worker = offsetToWorker.get(start);
-
+            
             // If there is no worker with that offset then create one
             // Otherwise update its slot
             if (worker == null) {
@@ -92,6 +101,13 @@ public class PageHelperForConsumer<T>
                 workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
             } else {
                 Slot<Long> slot = workerToSlot.get(worker);
+                
+                if (slot == null) {
+                	// We are reusing an existing worker; allocate a new slot on it
+                	slot = worker.getEndpointSlot();
+                	workerToSlot.put(worker, slot);
+                }
+                
                 slot.set(end);
             }
 

@@ -60,6 +60,7 @@ public class RefFutureImpl<T>
     }
 
 
+    /** Registers a whenComplete action that closes the value if loaded. Then immediately attempts to cancel the future. */
     public static <T> void cancelFutureOrCloseValue(CompletableFuture<T> future, Consumer<? super T> valueCloseAction) {
     	
     	AtomicBoolean closeActionRun = new AtomicBoolean(false);
@@ -75,19 +76,23 @@ public class RefFutureImpl<T>
     		}
     	};
     	
-    	future.whenComplete(closeAction);
+    	CompletableFuture<T> derived = future.whenComplete(closeAction);
     	
         try {
-            boolean isCancelled = future.cancel(true);
-            // logger.debug("isCancelled: " + isCancelled);
-            if (!isCancelled) {
-            	
-            	// This should trigger the close action if it hasn't done so already
-                T value = future.get();
-//                if (value != null && valueCloseAction != null) {
-//                    valueCloseAction.accept(value);
-//                }
-            }
+        	if (!derived.isDone()) {
+	            boolean isCancelled = future.cancel(true);
+	            // logger.debug("isCancelled: " + isCancelled);
+	            if (!isCancelled) {
+	            	
+	            	// This should trigger the close action if it hasn't done so already
+//	                T value = future.get();
+	//                if (value != null && valueCloseAction != null) {
+	//                    valueCloseAction.accept(value);
+	//                }
+	            }
+	            
+	            derived.get();   
+        	}
         } catch (CancellationException | InterruptedException | ExecutionException e) {
             logger.warn("Exception raised during close", e);
         }
