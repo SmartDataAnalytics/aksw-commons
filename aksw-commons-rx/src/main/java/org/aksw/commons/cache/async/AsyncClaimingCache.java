@@ -1,5 +1,6 @@
-package org.aksw.commons.rx.cache.range;
+package org.aksw.commons.cache.async;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.aksw.commons.util.ref.RefFuture;
@@ -27,9 +28,11 @@ public interface AsyncClaimingCache<K, V> {
     /** Cannot raise an ExecutionException because it does not trigger loading */
     RefFuture<V> claimIfPresent(K key);
 
+    /**
+     * Get a resource without claiming it. Its cache entry may get evicted any time such that
+     * a later invocation of {@link #get(Object)} returns a fresh future
+     */
+    // CompletableFuture<V> get(K key);
+    
     void invalidateAll();
-
-
-    void sync(K key);
-    void syncAll();
 }

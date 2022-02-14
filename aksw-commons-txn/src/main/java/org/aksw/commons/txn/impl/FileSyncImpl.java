@@ -97,6 +97,7 @@ public class FileSyncImpl
         return targetFile;
     }
 
+    @Override
     public Path getOldContentPath() {
         Path result = Files.exists(oldContentFile)
             ? oldContentFile
@@ -105,6 +106,7 @@ public class FileSyncImpl
         return result;
     }
 
+    @Override
     public Path getCurrentPath() {
         Path result = Files.exists(newContentFile)
             ? newContentFile
@@ -174,7 +176,7 @@ public class FileSyncImpl
      * @throws IOException
      */
     @Override
-    public void putContent(Consumer<OutputStream> outputStreamSupplier) throws IOException {
+    public synchronized void putContent(Consumer<OutputStream> outputStreamSupplier) throws IOException {
         // Delete a possibly prior written newContentFile
         Files.deleteIfExists(newContentFile);
         try (OutputStream out = newOutputStreamToNewTmpContent(true)) {
@@ -183,6 +185,7 @@ public class FileSyncImpl
         FileUtils.moveAtomic(newContentTmpFile, newContentFile);
     }
 
+    /*
     @Override
     public void recoverPreCommit() throws IOException {
         // If there is no newContent but a newContentTmp then we reached an inconsistent state:
@@ -202,6 +205,7 @@ public class FileSyncImpl
             FileUtils.moveAtomic(targetFile, oldContentFile);
         }
     }
+    */
 
 
     /**
@@ -240,9 +244,11 @@ public class FileSyncImpl
 //        Files.deleteIfExists(oldContentTmpFile);
         Files.deleteIfExists(oldContentFile);
 
-        long size = Files.size(targetFile);
-        if (size == 0 && deleteTargetFileOnUpdateWithEmptyContent) {
-            Files.deleteIfExists(targetFile);
+        if (Files.exists(targetFile)) {
+	        long size = Files.size(targetFile);
+	        if (size == 0 && deleteTargetFileOnUpdateWithEmptyContent) {
+	            Files.deleteIfExists(targetFile);
+	        }
         }
     }
 
@@ -263,6 +269,42 @@ public class FileSyncImpl
     }
 
 
+    public static Instant getLastModifiedTimeAsInstant(Path path) {
+        Instant result = null;
+        try {
+            if (Files.exists(path)) {
+                FileTime timestamp = Files.getLastModifiedTime(path);
+                if (timestamp == null) {
+                    timestamp = FileTime.fromMillis(0l);
+                }
+
+                result = timestamp.toInstant();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+
+    public static PathDiffState getState(FileSync fileSync) {
+        Path originalSourcePath = fileSync.getOldContentPath();
+        Path diffSourcePath = fileSync.getCurrentPath();
+
+        Instant originalTimestamp = getLastModifiedTimeAsInstant(originalSourcePath);
+        Instant diffTimestamp = diffSourcePath == originalSourcePath
+                ? originalTimestamp
+                : getLastModifiedTimeAsInstant(diffSourcePath);
+
+        PathDiffState result = new PathDiffState(
+            new PathState(originalSourcePath, originalTimestamp),
+            new PathState(diffSourcePath, diffTimestamp)
+        );
+
+        // logger.debug("Loaded state: " + result);
+
+        return result;
+    }
 //    @Override
 //    public boolean isCurrentContentASymLink() {
 //        Path currentPath = getCurrentPath();

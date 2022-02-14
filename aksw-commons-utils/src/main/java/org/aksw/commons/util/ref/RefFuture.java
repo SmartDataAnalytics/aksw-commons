@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
+/** In principle a typedef for Ref<CompletableFuture<T>> */
 public interface RefFuture<T>
     extends RefDelegate<CompletableFuture<T>, Ref<CompletableFuture<T>>>
 {

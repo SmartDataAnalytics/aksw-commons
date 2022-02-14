@@ -18,9 +18,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.kyro.guava.EntrySerializer;
 import org.aksw.commons.kyro.guava.RangeMapSerializer;
 import org.aksw.commons.kyro.guava.RangeSetSerializer;
@@ -28,8 +30,8 @@ import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.range.RangedSupplier;
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
 import org.aksw.commons.store.object.key.impl.KeyObjectStoreImpl;
-import org.aksw.commons.store.object.path.impl.ObjectFileStoreKyro;
-import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.store.object.path.impl.ObjectFileStoreKryo;
+import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.range.CountInfo;
 import org.aksw.commons.util.range.RangeBuffer;
 import org.aksw.commons.util.range.RangeUtils;
@@ -64,6 +66,7 @@ public class SmartRangeCacheImpl<T>
     protected ListPaginator<T> backend;
 
     protected SliceWithPages<T> slice;
+    protected ReentrantLock workerCreationLock = new ReentrantLock();
 
 
     /** The task for counting wrapped as a single - can be started on the demand */
@@ -161,7 +164,8 @@ public class SmartRangeCacheImpl<T>
 
 
     Lock getExecutorCreationReadLock() {
-        return slice.getWorkerCreationLock();
+    	return workerCreationLock;
+        // return slice.getWorkerCreationLock();
         // return executorCreationLock.readLock();
     }
 
@@ -208,42 +212,22 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-
-    // protected Set<BiConsumer<Long, RangeBufferImpl<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
-
-//    public Runnable addPageLoadListener(BiConsumer<Long, RangeBufferImpl<T>> listener) {
-//        pageLoadListeners.add(listener);
-//        return () -> pageLoadListeners.remove(listener);
-//    }
-
-
-    /** The open requests sorted by the start of their lowest GAP! (not the original request offset)
-     *  I.e. requests are indexed by their first position where backend data retrieval must be performed
-     */
-    // protected TreeMultimap<Long, RequestContext> openRequests;
-
-
     /**
-     * Map of the next interceptable executor offset to the executor
-     * Executors regularly synchronize on this map to declare the offset on which they check
-     *
-     *
+     * Creates a new worker and immediately starts it.
+     * The executor creation is driven by the RangeRequestIterator which creates executors on demand
+     * whenever it detects any gaps in its read ahead range which are not served by any existing executors.
+     * 
+     * @param offset
+     * @param initialLength
+     * @return
      */
-    // protected NavigableMap<Long, Executor> offsetToExecutor = new TreeMap<>();
-    // protected ConcurrentNavigableMap<Long, Executor> offsetToExecutor = new ConcurrentSkipListMap<>();
-
-    /// protected RangeMap<Long, Object> autoClaimers;
-
-
-
     public Entry<RangeRequestWorker<T>, Slot<Long>> newExecutor(long offset, long initialLength) {
-        // RangeRequestExecutor<T> result;
         RangeRequestWorker<T> worker;
         Slot<Long> slot;
         //executorCreationLock.writeLock().lock();
         try {
             worker = new RangeRequestWorker<>(this, offset, requestLimit, terminationDelayInMs);
-            slot = worker.getEndpointSlot();
+            slot = worker.newDemandSlot();
             slot.set(offset + initialLength);
 
             executors.add(worker);
@@ -339,51 +323,7 @@ public class SmartRangeCacheImpl<T>
             result = Single.just(Range.singleton(knownSize));
         } else {
             result = countSingle;
-
-//            result = backend
-//                .fetchCount(null, null)
-//                .map(r -> {
-//                    CountInfo countInfo = RangeUtils.toCountInfo(r);
-//                    if (!countInfo.isHasMoreItems()) {
-//                        long count = countInfo.getCount();
-//
-//                        slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
-//                    }
-//                    return r;
-//                })
-//                .cache();
-
         }
-//        Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
-//                () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
-//                (ee, e) -> {
-//                    try {
-//                        if (!ee.getValue()) {
-//                            Range<Long> range = ee.getKey().await();
-//                            e.onNext(range);
-//                            ee.setValue(true);
-//                        } else {
-//                            e.onComplete();
-//                        }
-//                    } catch (Exception x) {
-//                        e.onError(x);
-//                    }
-//                },
-//                ee -> ee.getKey().close())
-//                .singleOrError();
-//
-//        return result;
-
-
-        // If the size is known then return it - otherwise send at most one query to the backend for counting
-        // and return the result.
-        // Extension: If the count becomes known before the query returns then we could abort the count-request
-        // and return the newly known value instead
-//		if (knownSize < 0) {
-//			return
-//		} else {
-//			back
-//		}
 
         return result;
     }
@@ -417,7 +357,7 @@ public class SmartRangeCacheImpl<T>
     }
 
     public static KeyObjectStore createKeyObjectStore(Path basePath, KryoPool kryoPool) {
-        KeyObjectStore result = KeyObjectStoreImpl.create(basePath, new ObjectFileStoreKyro(kryoPool));
+        KeyObjectStore result = KeyObjectStoreImpl.create(basePath, new ObjectFileStoreKryo(kryoPool));
 
         return result;
     }
@@ -445,104 +385,11 @@ public class SmartRangeCacheImpl<T>
     }
 
 
-//    public PageRange<T> newPageRange() {
-//        return new PageRangeImpl<>(this);
-//    }
-
-/*
-    public static <V> AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> syncedRangeBuffer(
+    public static <V> AsyncClaimingCache<Long, Entry<BufferWithGenerationImpl<V>, Long>> syncedBuffer(
             long maximumSize,
             Duration syncDelayDuration,
             KeyObjectStore store,
-            Supplier<RangeBuffer<V>> newValue) {
-
-        // A map that upon loading a page takes a snapshot of its generation attribute
-        // and treats it as the version
-        // A page is dirty if its generation differs from its version
-        // Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
-
-        AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> result = AsyncClaimingCacheImpl.create(
-                syncDelayDuration,
-
-                // begin of level3 setup
-                   Caffeine.newBuilder()
-                   // .scheduler(Scheduler.systemScheduler())
-                   .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
-                   key -> {
-                       List<String> internalKey = Arrays.asList(Long.toString(key));
-                       RangeBuffer<V> value;
-                       try {
-                           value = store.computeIfAbsent(internalKey, newValue::get);
-                       } catch (Exception e) {
-                           // logger.warn("Error", e);
-                           throw new RuntimeException(e);
-                          //  value = newValue.get(); //new RangeBufferImpl<V>(1024);
-                       }
-
-//                       RangeBuffer<V> r = value;
-                       long generation = value.getGeneration();
-                       Entry<RangeBuffer<V>, Long> r = new SimpleEntry<>(value, generation);
-
-                       // keyToVersion.put(key, generation);
-
-    //                   Ref<V> r = RefImpl.create(v, null, () -> {
-    //                       // Sync the page upon closing it
-    //                       store.put(internalKey, v);
-    //                       logger.info("Synced " + internalKey);
-    //                       System.out.println("Synced" + internalKey);
-    //                   });
-    //
-                       return r;
-
-                   },
-                   (key, value, cause) -> {
-                       // keyToVersion.remove(key);
-                   },
-                // end of level3 setup
-
-                (key, value, cause) -> {
-                    RangeBuffer<V> buffer = value.getKey();
-                    Long version = value.getValue();
-
-                    List<String> internalKey = Arrays.asList(Long.toString(key));
-
-                    Lock readLock = buffer.getReadWriteLock().readLock();
-                    readLock.lock();
-
-                    // Long version = keyToVersion.get(key);
-
-                    if (version == null) {
-                        logger.error("Missing version for [" + key + "]");
-                    }
-
-                    long generation = buffer.getGeneration();
-
-                    try {
-                        if (generation != version) {
-                            logger.info("Syncing dirty buffer " + internalKey);
-                            // keyToVersion.put(key, generation);
-                            store.put(internalKey, buffer);
-                            value.setValue(version);
-                        } else {
-                            logger.info("Syncing not needed because of clean buffer " + internalKey);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        readLock.unlock();
-                    }
-                }
-            );
-
-        return result;
-    }
-*/
-
-    public static <V> AsyncClaimingCache<Long, Entry<BufferWithGeneration<V>, Long>> syncedBuffer(
-            long maximumSize,
-            Duration syncDelayDuration,
-            KeyObjectStore store,
-            Supplier<BufferWithGeneration<V>> newValue,
+            Supplier<BufferWithGenerationImpl<V>> newValue,
             Runnable preSyncAction) {
 
         // A map that upon loading a page takes a snapshot of its generation attribute
@@ -550,7 +397,7 @@ public class SmartRangeCacheImpl<T>
         // A page is dirty if its generation differs from its version
         // Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
 
-        AsyncClaimingCache<Long, Entry<BufferWithGeneration<V>, Long>> result = AsyncClaimingCacheImpl.create(
+        AsyncClaimingCache<Long, Entry<BufferWithGenerationImpl<V>, Long>> result = AsyncClaimingCache3Impl.create(
                 syncDelayDuration,
 
                 // begin of level3 setup
@@ -559,7 +406,7 @@ public class SmartRangeCacheImpl<T>
                    .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
                    key -> {
                        List<String> internalKey = Arrays.asList(Long.toString(key));
-                       BufferWithGeneration<V> value;
+                       BufferWithGenerationImpl<V> value;
                        try {
                            value = store.computeIfAbsent(internalKey, newValue::get);
                        } catch (Exception e) {
@@ -570,7 +417,7 @@ public class SmartRangeCacheImpl<T>
 
 //                       RangeBuffer<V> r = value;
                        long generation = value.getGeneration();
-                       Entry<BufferWithGeneration<V>, Long> r = new SimpleEntry<>(value, generation);
+                       Entry<BufferWithGenerationImpl<V>, Long> r = new SimpleEntry<>(value, generation);
 
                        // keyToVersion.put(key, generation);
 
@@ -590,7 +437,7 @@ public class SmartRangeCacheImpl<T>
                 // end of level3 setup
 
                 (key, value, cause) -> {
-                    BufferWithGeneration<V> buffer = value.getKey();
+                    BufferWithGenerationImpl<V> buffer = value.getKey();
                     Long version = value.getValue();
 
                     List<String> internalKey = Arrays.asList(Long.toString(key));
@@ -631,3 +478,173 @@ public class SmartRangeCacheImpl<T>
 
 
 }
+
+
+
+// protected Set<BiConsumer<Long, RangeBufferImpl<T>>> pageLoadListeners = Collections.synchronizedSet(Sets.newIdentityHashSet());
+
+//public Runnable addPageLoadListener(BiConsumer<Long, RangeBufferImpl<T>> listener) {
+//    pageLoadListeners.add(listener);
+//    return () -> pageLoadListeners.remove(listener);
+//}
+
+
+/** The open requests sorted by the start of their lowest GAP! (not the original request offset)
+ *  I.e. requests are indexed by their first position where backend data retrieval must be performed
+ */
+// protected TreeMultimap<Long, RequestContext> openRequests;
+
+
+/**
+ * Map of the next interceptable executor offset to the executor
+ * Executors regularly synchronize on this map to declare the offset on which they check
+ *
+ *
+ */
+// protected NavigableMap<Long, Executor> offsetToExecutor = new TreeMap<>();
+// protected ConcurrentNavigableMap<Long, Executor> offsetToExecutor = new ConcurrentSkipListMap<>();
+
+/// protected RangeMap<Long, Object> autoClaimers;
+
+
+
+//public PageRange<T> newPageRange() {
+//  return new PageRangeImpl<>(this);
+//}
+
+/*
+public static <V> AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> syncedRangeBuffer(
+      long maximumSize,
+      Duration syncDelayDuration,
+      KeyObjectStore store,
+      Supplier<RangeBuffer<V>> newValue) {
+
+  // A map that upon loading a page takes a snapshot of its generation attribute
+  // and treats it as the version
+  // A page is dirty if its generation differs from its version
+  // Map<Long, Long> keyToVersion = Collections.synchronizedMap(new IdentityHashMap<>());
+
+  AsyncClaimingCache<Long, Entry<RangeBuffer<V>, Long>> result = AsyncClaimingCacheImpl.create(
+          syncDelayDuration,
+
+          // begin of level3 setup
+             Caffeine.newBuilder()
+             // .scheduler(Scheduler.systemScheduler())
+             .maximumSize(maximumSize), //.expireAfterWrite(1, TimeUnit.SECONDS),
+             key -> {
+                 List<String> internalKey = Arrays.asList(Long.toString(key));
+                 RangeBuffer<V> value;
+                 try {
+                     value = store.computeIfAbsent(internalKey, newValue::get);
+                 } catch (Exception e) {
+                     // logger.warn("Error", e);
+                     throw new RuntimeException(e);
+                    //  value = newValue.get(); //new RangeBufferImpl<V>(1024);
+                 }
+
+//                 RangeBuffer<V> r = value;
+                 long generation = value.getGeneration();
+                 Entry<RangeBuffer<V>, Long> r = new SimpleEntry<>(value, generation);
+
+                 // keyToVersion.put(key, generation);
+
+//                   Ref<V> r = RefImpl.create(v, null, () -> {
+//                       // Sync the page upon closing it
+//                       store.put(internalKey, v);
+//                       logger.info("Synced " + internalKey);
+//                       System.out.println("Synced" + internalKey);
+//                   });
+//
+                 return r;
+
+             },
+             (key, value, cause) -> {
+                 // keyToVersion.remove(key);
+             },
+          // end of level3 setup
+
+          (key, value, cause) -> {
+              RangeBuffer<V> buffer = value.getKey();
+              Long version = value.getValue();
+
+              List<String> internalKey = Arrays.asList(Long.toString(key));
+
+              Lock readLock = buffer.getReadWriteLock().readLock();
+              readLock.lock();
+
+              // Long version = keyToVersion.get(key);
+
+              if (version == null) {
+                  logger.error("Missing version for [" + key + "]");
+              }
+
+              long generation = buffer.getGeneration();
+
+              try {
+                  if (generation != version) {
+                      logger.info("Syncing dirty buffer " + internalKey);
+                      // keyToVersion.put(key, generation);
+                      store.put(internalKey, buffer);
+                      value.setValue(version);
+                  } else {
+                      logger.info("Syncing not needed because of clean buffer " + internalKey);
+                  }
+              } catch (IOException e) {
+                  throw new RuntimeException(e);
+              } finally {
+                  readLock.unlock();
+              }
+          }
+      );
+
+  return result;
+}
+*/
+
+
+
+
+//result = backend
+//  .fetchCount(null, null)
+//  .map(r -> {
+//      CountInfo countInfo = RangeUtils.toCountInfo(r);
+//      if (!countInfo.isHasMoreItems()) {
+//          long count = countInfo.getCount();
+//
+//          slice.mutateMetaData(metaData -> metaData.setKnownSize(count));
+//      }
+//      return r;
+//  })
+//  .cache();
+
+//Single<Range<Long>> result = Flowable.<Range<Long>, SimpleEntry<RefFuture<Range<Long>>, Boolean>>generate(
+//        () -> new SimpleEntry<RefFuture<Range<Long>>, Boolean>(countCache.claim("count"), false),
+//        (ee, e) -> {
+//            try {
+//                if (!ee.getValue()) {
+//                    Range<Long> range = ee.getKey().await();
+//                    e.onNext(range);
+//                    ee.setValue(true);
+//                } else {
+//                    e.onComplete();
+//                }
+//            } catch (Exception x) {
+//                e.onError(x);
+//            }
+//        },
+//        ee -> ee.getKey().close())
+//        .singleOrError();
+//
+//return result;
+
+
+// If the size is known then return it - otherwise send at most one query to the backend for counting
+// and return the result.
+// Extension: If the count becomes known before the query returns then we could abort the count-request
+// and return the newly known value instead
+//if (knownSize < 0) {
+//	return
+//} else {
+//	back
+//}
+

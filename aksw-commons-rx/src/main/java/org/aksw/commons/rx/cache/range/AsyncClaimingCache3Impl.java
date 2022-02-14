@@ -11,6 +11,7 @@ import java.util.function.Function;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.ref.RefFutureImpl;
@@ -54,9 +55,9 @@ import com.github.benmanes.caffeine.cache.Scheduler;
  * @param <K>
  * @param <V>
  */
-public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
+public class AsyncClaimingCache3Impl<K, V> implements AsyncClaimingCache<K, V> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCacheImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AsyncClaimingCache3Impl.class);
 
     /** The map of claimed items; the value is a reference to the RefFuture of level3
      * Once the outer reference gets closed (i.e. when there are no more claims),
@@ -92,7 +93,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
 
     protected RemovalListener<K, V> level2RemovalListener;
 
-    public static <K, V> AsyncClaimingCache<K, V> create(
+    public static <K, V> AsyncClaimingCache3Impl<K, V> create(
             Duration syncDelayDuration,
             // Caffeine<Object, Object> cacheBuilder,
             // AsyncRefCache<K, V> level3,
@@ -102,11 +103,11 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
             RemovalListener<K, V> level3RemovalListener,
 
             RemovalListener<K, V> level2RemovalListener) {
-        return new AsyncClaimingCacheImpl<>(level3Master, level3CacheLoader, level3RemovalListener, level2RemovalListener, syncDelayDuration);
+        return new AsyncClaimingCache3Impl<>(level3Master, level3CacheLoader, level3RemovalListener, level2RemovalListener, syncDelayDuration);
     }
 
 
-    public AsyncClaimingCacheImpl(
+    public AsyncClaimingCache3Impl(
             Caffeine<Object, Object> level3Master,
             Function<K, V> level3CacheLoader,
             RemovalListener<K, V> level3RemovalListener,
@@ -449,7 +450,7 @@ public class AsyncClaimingCacheImpl<K, V> implements AsyncClaimingCache<K, V> {
     }
 
     public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
-        return hideInnerRef(refToRef, level1);
+        return hideInnerRef(refToRef, level1);        
     }
 
 }

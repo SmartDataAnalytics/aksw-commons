@@ -42,8 +42,6 @@ public class RangeRequestIterator<T>
 
     protected SliceWithPagesIterator<T> currentPageIt = null;
 
-    // protected int currentIndex = -1;
-
     /** The index of the next item to read */
     protected long currentOffset;
 

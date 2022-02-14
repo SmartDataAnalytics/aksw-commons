@@ -22,11 +22,19 @@ public class SliceMetaDataImpl
     protected long minimumKnownSize;
     protected long maximumKnownSize;
 
+    // Maybe move this attribute to a subclass such as PagedSliceMetaData
+    protected int pageSize;
+    
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     protected transient Condition hasDataCondition = readWriteLock.writeLock().newCondition();
 
     public SliceMetaDataImpl() {
+        this(1024 * 64);
+    }
+
+    public SliceMetaDataImpl(int pageSize) {
         this(
+        		pageSize,
                 TreeRangeSet.create(),
                 TreeRangeMap.create(),
                 0,
@@ -34,15 +42,20 @@ public class SliceMetaDataImpl
         );
     }
 
-    public SliceMetaDataImpl(RangeSet<Long> loadedRanges, RangeMap<Long, List<Throwable>> failedRanges,
+    public SliceMetaDataImpl(int pageSize, RangeSet<Long> loadedRanges, RangeMap<Long, List<Throwable>> failedRanges,
             long minimumKnownSize, long maximumKnownSize) {
         super();
+        this.pageSize = pageSize;
         this.loadedRanges = loadedRanges;
         this.failedRanges = failedRanges;
         this.minimumKnownSize = minimumKnownSize;
         this.maximumKnownSize = maximumKnownSize;
     }
 
+    public int getPageSize() {
+		return pageSize;
+	}
+    
     @Override
     public ReadWriteLock getReadWriteLock() {
         return readWriteLock;

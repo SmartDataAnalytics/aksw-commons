@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.ref.RefFutureImpl;
@@ -360,16 +361,16 @@ public class AsyncClaimingCacheImplOld<K, V> implements AsyncClaimingCache<K, V>
     }
 
 
-    @Override
-    public void sync(K key) {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public void syncAll() {
-        throw new UnsupportedOperationException();
-    }
+//    @Override
+//    public void sync(K key) {
+//        throw new UnsupportedOperationException();
+//    }
+//
+//
+//    @Override
+//    public void syncAll() {
+//        throw new UnsupportedOperationException();
+//    }
 
 }
 

@@ -25,15 +25,12 @@ public class PageHelperForConsumer<T>
     // This map holds a single client's requested slots across all tasked workers
     protected Map<RangeRequestWorker<T>, Slot<Long>> workerToSlot = new IdentityHashMap<>();
 
-    protected LongSupplier offsetSupplier;
-    protected SmartRangeCacheImpl<T> cache;
-
+    // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
     public PageHelperForConsumer(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
-        super(cache.getSlice(), nextCheckpointOffset);
-        this.offsetSupplier = offsetSupplier;
-        this.cache = cache;
+        super(cache, nextCheckpointOffset);
+        // this.offsetSupplier = offsetSupplier;
     }
 
 
@@ -48,9 +45,10 @@ public class PageHelperForConsumer<T>
         while (it.hasNext()) {
             Slot<Long> slot = it.next();
             Long value = slot.getSupplier().get();
-            long currentOffset = offsetSupplier.getAsLong();
+            // long currentOffset = offsetSupplier.getAsLong();
+            long currentOffset = nextCheckpointOffset;
             if (value < currentOffset) {
-                logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher ");
+                logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
                 slot.close();
                 it.remove();
             }
@@ -104,7 +102,7 @@ public class PageHelperForConsumer<T>
                 
                 if (slot == null) {
                 	// We are reusing an existing worker; allocate a new slot on it
-                	slot = worker.getEndpointSlot();
+                	slot = worker.newDemandSlot();
                 	workerToSlot.put(worker, slot);
                 }
                 

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +19,9 @@ import com.google.common.primitives.Ints;
 
 /**
  * An iterator over a range buffer that blocks if items are not loaded.
+ *
+ * It is used internally by RangeRequestIterator. RangeRequestIterator is the wrapper that takes care that data is being loaded
+ * before this iterator waits for any.
  *
  * The iterator MUST BE CLOSED in order for it to release claimed pages!
  * It auto-closes upon consumption.
@@ -43,14 +46,14 @@ public class SliceWithPagesIterator<T>
     /** Number of items read from rangeIterator */
     protected int readsFromCurrentRange = 0;
 
-    protected PageRange<T> pageRange;
+    protected SliceAccessor<T> pageRange;
 
 
     public SliceWithPagesIterator(SliceWithPages<T> page, long currentIndex) {
         super();
         this.rangeBuffer = page;
         this.currentIndex = currentIndex;
-        this.pageRange = page.newPageRange();
+        this.pageRange = page.newSliceAccessor();
     }
 
 
@@ -58,6 +61,9 @@ public class SliceWithPagesIterator<T>
     protected T computeNext() {
         T result;
 
+        // For the current index check the metadata for whether it is covered by a range.
+        // If so then we know we can consume all items within that range but once we reach the range's end
+        // we need to check (and possibly wait) for more data to become available.
         while (rangeIterator == null || !rangeIterator.hasNext()) {
             currentIndex += readsFromCurrentRange;
             readsFromCurrentRange = 0;
@@ -138,7 +144,7 @@ public class SliceWithPagesIterator<T>
 
                     pageRange.claimByOffsetRange(startAbs, endAbs);
 
-                    BufferWithGeneration<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
+                    BufferWithGenerationImpl<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
                     long capacity = buffer.getCapacity();
                     long endInPage = indexInPage + rangeLength;
                     int endIndex = Ints.saturatedCast(Math.min(capacity, endInPage));

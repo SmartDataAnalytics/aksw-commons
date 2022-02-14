@@ -16,17 +16,14 @@ public class KeyObjectStoreFromMap
 {
     protected Map<List<String>, Object> keyToObject;
 
-
     public KeyObjectStoreFromMap() {
         this(new ConcurrentHashMap<>());
     }
-
 
     public KeyObjectStoreFromMap(Map<List<String>, Object> keyToObject) {
         super();
         this.keyToObject = keyToObject;
     }
-
 
     public Map<List<String>, Object> getMap() {
         return keyToObject;

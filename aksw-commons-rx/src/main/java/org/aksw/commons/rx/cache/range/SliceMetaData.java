@@ -28,7 +28,9 @@ import com.google.common.collect.RangeSet;
  * @author raven
  *
  */
-public interface SliceMetaData {
+public interface SliceMetaData
+	extends Cloneable
+{
     RangeSet<Long> getLoadedRanges();
     RangeMap<Long, List<Throwable>> getFailedRanges();
 
@@ -38,6 +40,11 @@ public interface SliceMetaData {
     SliceMetaData setMinimumKnownSize(long size);
     SliceMetaData setMaximumKnownSize(long size);
 
+    /** A lock to control concurrent access to this object */
+    ReadWriteLock getReadWriteLock();
+    Condition getHasDataCondition();
+
+    int getPageSize();
 
     /** Updates the maximum known size iff the argument is less than the current known maximum */
     default SliceMetaData updateMaximumKnownSize(long size) {
@@ -61,9 +68,6 @@ public interface SliceMetaData {
         return this;
     }
 
-
-
-
     default SliceMetaData setKnownSize(long size) {
         Preconditions.checkArgument(size >= 0, "Negative known size");
 
@@ -72,10 +76,6 @@ public interface SliceMetaData {
 
         return this;
     }
-
-    /** A lock to control concurrent access to this object */
-    ReadWriteLock getReadWriteLock();
-    Condition getHasDataCondition();
 
     /** -1 If not exactly known */
     default long getKnownSize() {

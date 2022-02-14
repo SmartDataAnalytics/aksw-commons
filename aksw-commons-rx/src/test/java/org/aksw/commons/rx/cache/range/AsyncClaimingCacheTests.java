@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.util.ref.RefFuture;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public class AsyncClaimingCacheTests {
 
 
     public AsyncClaimingCache<String, String> createTestCache() {
-        AsyncClaimingCache<String, String> result = AsyncClaimingCacheImpl.create(
+        AsyncClaimingCache<String, String> result = AsyncClaimingCache3Impl.create(
                 Duration.ofSeconds(1),
 
                 Caffeine.newBuilder()

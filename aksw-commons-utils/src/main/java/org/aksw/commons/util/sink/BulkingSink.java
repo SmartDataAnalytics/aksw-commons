@@ -3,7 +3,7 @@ package org.aksw.commons.util.sink;
 
 /**
  * A sink that collects items in a buffer.
- * Only when the buffer becomes full the items are flushed to the delegate in bulk.
+ * Only when the buffer becomes full OR flush is called manually then items are flushed to the delegate in bulk.
  * Closing does not flush pending items!
  * 
  * This class is not thread-safe.
@@ -18,6 +18,9 @@ public class BulkingSink<T>
 	protected T[] buffer;
 	protected BulkConsumer delegate;
 
+	// Allow for non-zero starting offsets?
+	// protected int startOffsetInBuffer;
+	
 	protected int nextOffsetInBuffer;
 	
 	protected boolean isClosed = false;
@@ -39,6 +42,10 @@ public class BulkingSink<T>
 		this.buffer = (T[])new Object[bulkSize];
 		this.delegate = delegate;
 		
+	}
+	
+	public static <T> BulkingSink<T> create(int bulkSize, BulkConsumer delegate) {
+		return new BulkingSink<>(bulkSize, delegate);
 	}
 
 	@Override

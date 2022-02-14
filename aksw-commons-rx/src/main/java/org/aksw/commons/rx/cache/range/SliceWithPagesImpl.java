@@ -10,8 +10,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
-import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +25,8 @@ public class SliceWithPagesImpl<T>
     private static final Logger logger = LoggerFactory.getLogger(SliceWithPagesImpl.class);
 
     protected int pageSize;
-    protected AsyncClaimingCache<Long, BufferWithGeneration<T>> pageCache;
-    protected AsyncClaimingCache<String, SliceMetaData> metadataCache;
-
-    // protected ReentrantReadWriteLock executorCreationLock = new ReentrantReadWriteLock(true);
-    protected ReentrantLock workerCreationLock = new ReentrantLock();
+    protected AsyncClaimingCache<Long, BufferWithGenerationImpl<T>> pageCache;
+    protected AsyncClaimingCache3Impl<String, SliceMetaData> metadataCache;
 
     public SliceWithPagesImpl(
             KeyObjectStore objStore,
@@ -43,11 +41,11 @@ public class SliceWithPagesImpl<T>
                                 maxCachedPageCount,
                                 syncDelayDuration,
                                 objStore,
-                                () -> new BufferWithGeneration<T>(pageSize),
+                                () -> new BufferWithGenerationImpl<T>(pageSize),
                                 () -> metadataCache.syncAll()),
                         Entry::getKey);
 
-        this.metadataCache = AsyncClaimingCacheImpl.create(
+        this.metadataCache = AsyncClaimingCache3Impl.create(
                 syncDelayDuration,
 
 
@@ -96,8 +94,8 @@ public class SliceWithPagesImpl<T>
     }
 
     @Override
-    public PageRange<T> newPageRange() {
-        return new PageRangeImpl<>(this);
+    public SliceAccessor<T> newSliceAccessor() {
+        return new SliceAccessorImpl<>(this);
     }
 
 //    @Override
@@ -113,14 +111,6 @@ public class SliceWithPagesImpl<T>
 
 
 
-
-    @Override
-    public Lock getWorkerCreationLock() {
-        return workerCreationLock;
-    }
-
-
-
     @Override
     public Iterator<T> blockingIterator(long offset) {
         return new SliceWithPagesIterator<>(this, offset);
@@ -129,19 +119,19 @@ public class SliceWithPagesImpl<T>
 
 
     @Override
-    public RefFuture<BufferWithGeneration<T>> getPageForPageId(long pageId) {
+    public RefFuture<BufferWithGenerationImpl<T>> getPageForPageId(long pageId) {
         return pageCache.claim(pageId);
     }
 
 
 
-    @Override
-    public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
-        try (PageRange<T> pageRange = newPageRange()) {
-            pageRange.claimByOffsetRange(offsetInBuffer, offsetInBuffer + arrLength);
-
-            pageRange.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
-        }
-    }
+//    @Override
+//    public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+//        try (PageRange<T> pageRange = newPageRange()) {
+//            pageRange.claimByOffsetRange(offsetInBuffer, offsetInBuffer + arrLength);
+//
+//            pageRange.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+//        }
+//    }
 
 }

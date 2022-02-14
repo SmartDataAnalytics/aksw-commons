@@ -2,6 +2,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.concurrent.locks.Lock;
 
+import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
@@ -29,17 +30,19 @@ public abstract class PageHelperBase<T>
     private static final Logger logger = LoggerFactory.getLogger(PageHelperBase.class);
 
     protected SliceWithAutoSync<T> slice;
-    protected PageRange<T> pageRange;
+    protected SmartRangeCacheImpl<T> cache;
+    protected SliceAccessor<T> pageRange;
 
 
     /** At a checkpoint the data fetching tasks for the next blocks are scheduled */
     protected long nextCheckpointOffset;
 
 
-    public PageHelperBase(SliceWithAutoSync<T> slice, long nextCheckpointOffset) {
+    public PageHelperBase(SmartRangeCacheImpl<T> cache, long nextCheckpointOffset) {
         super();
-        this.slice = slice;
-        this.pageRange = slice.newPageRange();
+        this.cache = cache;
+        this.slice = cache.getSlice();
+        this.pageRange = slice.newSliceAccessor();
         this.nextCheckpointOffset = nextCheckpointOffset;
     }
 
@@ -47,7 +50,7 @@ public abstract class PageHelperBase<T>
         return nextCheckpointOffset;
     }
 
-    public PageRange<T> getPageRange() {
+    public SliceAccessor<T> getPageRange() {
         return pageRange;
     }
 
@@ -65,58 +68,15 @@ public abstract class PageHelperBase<T>
 
         Range<Long> claimAheadRange = Range.closedOpen(start, end);
 
-    	Lock workerCreationLock = slice.getWorkerCreationLock();
-    	workerCreationLock.lock();
-    	try {
-	        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
-	            SliceMetaData metaData = ref.await();
-	            Lock readLock = metaData.getReadWriteLock().readLock();
-	            readLock.lock();
-	            try {
-	//            	Locking workerCreationLock here creates a deadlock
-	//            	// Prevent spawning new workers while we check whether any of the existing ones
-	//            	// can satisfy our demand
-	//            	Lock workerCreationLock = slice.getWorkerCreationLock();
-	//            	workerCreationLock.lock();
-	//            	try {
-//	            	if (start > 9500) {
-//	            		System.out.println("here");
-//	            	}
-		                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
-		                processGaps(gaps, start, end);
-	//            	} finally {
-	//            		workerCreationLock.unlock();
-	//            	}
-	            	
-	            } finally {
-	                readLock.unlock();
-	            }
+        LockUtils.runWithLock(cache.getExecutorCreationReadLock(), () -> {
+        	slice.readMetaData(metaData -> {
+                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+                processGaps(gaps, start, end);
+        	});
 	
-	
-	            nextCheckpointOffset = end;
-	        }
-    	} finally {
-    		workerCreationLock.unlock();
-    	}
+	        nextCheckpointOffset = end;
+        });
     }
-//    public void checkpoint(long n) throws Exception {
-//
-//        long start = nextCheckpointOffset;
-//        long end = start + n;
-//
-//        pageRange.claimByOffsetRange(start, end);
-//                // Lock all pages
-//        try {
-//            pageRange.lock();
-//
-//            Deque<Range<Long>> gaps = pageRange.getGaps();
-//            processGaps(gaps, start, end);
-//        } finally {
-//            pageRange.unlock();
-//
-//            nextCheckpointOffset += n;
-//        }
-//    }
 
     protected abstract void processGaps(RangeSet<Long> gaps, long start, long end);
 
@@ -126,6 +86,32 @@ public abstract class PageHelperBase<T>
     }
 
 }
+
+
+
+//try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+//    SliceMetaData metaData = ref.await();
+//    Lock readLock = metaData.getReadWriteLock().readLock();
+//    readLock.lock();
+//    try {
+////            	Locking workerCreationLock here creates a deadlock
+////            	// Prevent spawning new workers while we check whether any of the existing ones
+////            	// can satisfy our demand
+////            	Lock workerCreationLock = slice.getWorkerCreationLock();
+////            	workerCreationLock.lock();
+////            	try {
+////    	if (start > 9500) {
+////    		System.out.println("here");
+////    	}
+//            RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+//            processGaps(gaps, start, end);
+////            	} finally {
+////            		workerCreationLock.unlock();
+////            	}
+//    	
+//    } finally {
+//        readLock.unlock();
+//    }
 
 //
 //
@@ -216,3 +202,22 @@ public abstract class PageHelperBase<T>
 // }
 //
 //
+
+//public void checkpoint(long n) throws Exception {
+//
+//  long start = nextCheckpointOffset;
+//  long end = start + n;
+//
+//  pageRange.claimByOffsetRange(start, end);
+//          // Lock all pages
+//  try {
+//      pageRange.lock();
+//
+//      Deque<Range<Long>> gaps = pageRange.getGaps();
+//      processGaps(gaps, start, end);
+//  } finally {
+//      pageRange.unlock();
+//
+//      nextCheckpointOffset += n;
+//  }
+//}

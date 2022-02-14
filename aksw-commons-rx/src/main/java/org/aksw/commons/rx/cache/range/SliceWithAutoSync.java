@@ -27,17 +27,23 @@ import com.google.common.collect.Range;
  * @param <T>
  */
 public interface SliceWithAutoSync<T>
-    extends Puttable
+    // extends ArrayPuttable
 {
     /**
-     * Obtain a new reference to the metadata.
-     *
-     * The reference must be closed after use in order to allow sync to trigger
+     * Obtain a new reference to the metadata. The referent may be loaded lazily.
+     * The reference must be closed after use in order to allow sync to trigger.
+     * 
      * @return
      */
     RefFuture<SliceMetaData> getMetaData();
 
 
+    /**
+     * Read the metadata and check whether the slice has a known size and
+     * there is only a single range of loaded data starting from offset 0 to that size.
+     * 
+     * @return
+     */
     default boolean isComplete() {
         boolean result = computeFromMetaData(false, metaData -> {
             long knownSize = metaData.getKnownSize();
@@ -58,7 +64,20 @@ public interface SliceWithAutoSync<T>
         computeFromMetaData(true, metaData -> { fn.accept(metaData); return null; });
     }
 
+    default void readMetaData(Consumer<? super SliceMetaData> fn) {
+        computeFromMetaData(false, metaData -> { fn.accept(metaData); return null; });
+    }
 
+
+    /**
+     * Lock the metadata and then invoke a value returning function on it.
+     * Afterwards release the lock. Returns the obtained value. 
+     * 
+     * @param <X>
+     * @param isWrite
+     * @param fn
+     * @return
+     */
     default <X> X computeFromMetaData(boolean isWrite, Function<? super SliceMetaData, X> fn) {
         X result;
         try (RefFuture<SliceMetaData> ref = getMetaData()) {
@@ -94,15 +113,18 @@ public interface SliceWithAutoSync<T>
     // sync(); // Sync everything
 
     /**
+     * An accessor which allows for 'claiming' a sub-range of this slice. The claimed range can be incrementally
+     * modified which may re-use already allocated resources (e.g. claimed pages) and thus improve performance.
+     * 
      * Sub-ranges of a slice can be loaded and iterated or inserted into.
      * The sub-ranges can be modified dynamically.
      */
-    PageRange<T> newPageRange();
+    SliceAccessor<T> newSliceAccessor();
 
     /**
      * A lock that when held prevents creation of workers that put data into the slice.
-     * This allows for analyzing all existing workers when having to decide whether
-     * a new worker needs to be created.
+     * This allows for analyzing all existing workers during scheduling; i.e. when deciding
+     * whether for a data demand any new workers need to be created or existing ones can be reused.
      *
      *
      * Note: This might not be the best place for the lock because it
@@ -111,5 +133,5 @@ public interface SliceWithAutoSync<T>
      *
      *
      */
-    Lock getWorkerCreationLock();
+    // Lock getWorkerCreationLock();
 }

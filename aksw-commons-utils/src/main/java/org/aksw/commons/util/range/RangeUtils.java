@@ -320,7 +320,7 @@ public class RangeUtils {
 
     /**
      * Given a map [start, end) pairs (start inclusive, end exclusive) of initial suppliers,
-     * return a schedule covers the set of gaps.
+     * return a schedule that covers the set of gaps.
      *
      * @param <K>
      * @param offsetToKey
@@ -490,6 +490,70 @@ public class RangeUtils {
 
         return result;
     }
+    
+        
+    /**
+     * Create method similar to {@link Range#range(Comparable, BoundType, Comparable, BoundType)}
+     * with the difference that {@code null} can be used as values in order to denote 'below/above all'.
+     * The respective bound type is then ignored.
+     */
+    public static <T extends Comparable<T>> Range<T> create(T lower, BoundType lowerType, T upper, BoundType upperType) {
+    	Range<T> result =
+    			lower == null
+    				? upper == null
+    					? Range.all()
+    					: Range.upTo(upper, upperType)
+    				: upper == null
+    					? Range.downTo(lower, lowerType)
+    					: Range.range(lower, lowerType, upper, upperType);
 
+    	return result;
+    }
 
+    public static <T extends Comparable<T>> Range<T> create(Endpoint<T> lower, Endpoint<T> upper) {
+    	return create(lower.getValue(), lower.getBoundType(), upper.getValue(), upper.getBoundType());
+    }
+    
+    public static <T extends Comparable<T>> Endpoint<T> getLowerEndpoint(Range<T> range) {
+    	Endpoint<T> result = range.hasLowerBound()
+    			? new Endpoint<>(range.lowerEndpoint(), range.lowerBoundType())
+    			: new Endpoint<>(null, BoundType.OPEN);
+    	return result;
+    }
+
+    public static <T extends Comparable<T>> Endpoint<T> getUpperEndpoint(Range<T> range) {
+    	Endpoint<T> result = range.hasUpperBound()
+    			? new Endpoint<>(range.upperEndpoint(), range.upperBoundType())
+    			: new Endpoint<>(null, BoundType.OPEN);
+    	return result;
+    }
+
+    
+    /**
+     * Compare the lower bounds of two <b>canonical</b> ranges.
+     * This means the bound type is ignored.
+     * 
+     * If both endpoints are absent they are considered equal and the result is 0
+     */
+    public static <C extends Comparable<C>> int compareToLowerBound(Range<C> a, Range<C> b) {
+    	return
+    		a.hasLowerBound()
+    			? (b.hasLowerBound() ? a.lowerEndpoint().compareTo(b.lowerEndpoint()) : 1)
+    			: (b.hasLowerBound() ? -1 : 0);
+    }
+
+    
+    /**
+     * Compare the upper bounds of two <b>canonical</b> ranges.
+     * This means the bound type is ignored.
+     * 
+     * If both endpoints are absent they are considered equal and the result is 0
+     */
+    public static <C extends Comparable<C>> int compareToUpperBound(Range<C> a, Range<C> b) {
+    	return
+    		a.hasUpperBound()
+    			? (b.hasUpperBound() ? a.upperEndpoint().compareTo(b.upperEndpoint()) : -1)
+    			: (b.hasUpperBound() ? 1 : 0);
+    }
+    
 }

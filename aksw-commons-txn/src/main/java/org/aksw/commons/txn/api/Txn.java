@@ -28,7 +28,9 @@ public interface Txn
 
 
     /** Get access to a resource as seen from this txn */
-    TxnResourceApi getResourceApi(String[] resRelPath);
+    // TxnResourceApi getResourceApi(String[] resRelPath);
+
+    TxnResourceApi getResourceApi(String... resRelPath);
 
     Stream<TxnResourceApi> listVisibleFiles(Iterable<String> prefix);
 

@@ -211,6 +211,12 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-txn</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-rx</artifactId>
 				<version>${project.version}</version>
 			</dependency>

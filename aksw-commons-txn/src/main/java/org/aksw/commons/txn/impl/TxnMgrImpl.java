@@ -4,16 +4,25 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
+import java.util.Iterator;
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
+import org.aksw.commons.io.util.FileUtils;
+import org.aksw.commons.io.util.symlink.SymbolicLinkStrategies;
 import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 import org.aksw.commons.lock.LockManager;
+import org.aksw.commons.lock.LockManagerPath;
 import org.aksw.commons.lock.db.api.LockStore;
 import org.aksw.commons.lock.db.impl.LockStoreImpl;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnMgr;
+import org.aksw.commons.txn.api.TxnResourceApi;
+import org.aksw.commons.util.array.Array;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,6 +117,21 @@ public class TxnMgrImpl
         lockStore = new LockStoreImpl(symlinkStrategy, lockRepo, resRepo, txnId -> txnBasePath.resolve(txnId));
     }
 
+    public static TxnMgrImpl createSimple(Path repoRoot) {
+        ResourceRepository<String> resLocks = ResourceRepoImpl.createWithUrlEncode(repoRoot.resolve("locks"));
+
+    	return new TxnMgrImpl(
+    			"txnMgr", repoRoot,
+    			repoRoot.getFileSystem().getPathMatcher("glob:**/*"),
+    			Duration.of(5, ChronoUnit.SECONDS),
+    			new LockManagerPath(repoRoot),
+    			repoRoot.resolve("txns"),
+    			ResourceRepoImpl.createWithUrlEncode(repoRoot),
+    			resLocks,
+    			SymbolicLinkStrategies.FILE);
+    }
+    
+    
     @Override
     public Path getRootPath() {
         return rootPath;

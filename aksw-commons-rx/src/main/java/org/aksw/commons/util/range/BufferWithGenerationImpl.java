@@ -6,12 +6,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.aksw.commons.rx.cache.range.Puttable;
+import org.aksw.commons.util.array.ArrayOps;
+import org.aksw.commons.util.array.ArrayWritable;
 
 import com.google.common.primitives.Ints;
 
-public class BufferWithGeneration<T>
-    implements Puttable
+public class BufferWithGenerationImpl<T>
+    implements ArrayWritable<T>
 {
     protected Object[] data;
     protected int generation;
@@ -19,18 +20,18 @@ public class BufferWithGeneration<T>
     protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /** For serialization */
-    protected BufferWithGeneration() {
+    protected BufferWithGenerationImpl() {
     }
 
-    public BufferWithGeneration(int size) {
+    public BufferWithGenerationImpl(int size) {
         this(new Object[size], 0);
     }
 
-    public BufferWithGeneration(Object[] data) {
+    public BufferWithGenerationImpl(Object[] data) {
         this(data, 0);
     }
 
-    public BufferWithGeneration(Object[] data, int generation) {
+    public BufferWithGenerationImpl(Object[] data, int generation) {
         this.data = data;
         this.generation = generation;
     }
@@ -72,4 +73,9 @@ public class BufferWithGeneration<T>
     public ReadWriteLock getReadWriteLock() {
         return readWriteLock;
     }
+
+	@Override
+	public ArrayOps<T> getArrayOps() {
+		return null;
+	}
 }

@@ -5,10 +5,14 @@ import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import org.aksw.commons.util.array.ArrayWritable;
+
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 
-public interface RangeBuffer<T> {
+public interface RangeBuffer<T>
+	extends ArrayWritable
+{
 
     /**
      * Return an iterator initialized at the given offset
@@ -37,9 +41,9 @@ public interface RangeBuffer<T> {
 
     long getCapacity();
 
-    void put(int offset, T item);
-    void putAll(int offset, Object arrayWithItemsOfTypeT);
-    void putAll(int pageOffset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength);
+//    void put(int offset, T item);
+//    void putAll(int offset, Object arrayWithItemsOfTypeT);
+//    void putAll(int pageOffset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength);
 
 
     /** Every call to put that modifies this object's state increments the generation */
@@ -57,7 +61,14 @@ public interface RangeBuffer<T> {
      * @return
      */
     ReadWriteLock getReadWriteLock();
+    
+    
+    /**
+     * A condition that:
+     *  (a) blocking iterators will wait for if no data is available
+     *  (b) producers must signal whenever they write data
+     * 
+     * @return
+     */
     Condition getHasDataCondition();
-
-    // List<T> getBufferAsList();
 }

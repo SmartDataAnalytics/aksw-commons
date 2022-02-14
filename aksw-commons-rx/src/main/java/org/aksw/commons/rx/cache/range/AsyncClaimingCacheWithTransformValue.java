@@ -2,6 +2,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.function.Function;
 
+import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.util.ref.RefFuture;
 
 public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
@@ -38,15 +39,5 @@ public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
     @Override
     public void invalidateAll() {
         delegate.invalidateAll();
-    }
-
-    @Override
-    public void sync(K key) {
-        delegate.sync(key);
-    }
-
-    @Override
-    public void syncAll() {
-        delegate.syncAll();
     }
 }

@@ -1,5 +1,6 @@
 package org.aksw.commons.util.ref;
 
+import java.util.function.Function;
 
 /**
  * Interface for nested references.
@@ -101,4 +102,13 @@ public interface Ref<T>
 
     StackTraceElement[] getCloseTriggerStackTrace();
 
+    /**
+     * Return a ref with a new referent obtained by mapping this ref's value with mapper.
+     * Closing the returned ref closes the original one. Synchronizes on the same object as this ref.
+     */
+    default <X> Ref<X> acquireMapped(Function<? super T, ? extends X> mapper) {
+    	Ref<T> base = acquire();
+    	X mapped = mapper.apply(base.get());
+    	return RefImpl.create(mapped, base.getSynchronizer(), base::close);
+    }
 }

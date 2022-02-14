@@ -14,13 +14,13 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoPool;
 
 
-public class ObjectFileStoreKyro
+public class ObjectFileStoreKryo
     implements ObjectFileStore
 {
     protected KryoPool kryoPool;
     // TODO Add support for a (hadoop) codec pool
 
-    public ObjectFileStoreKyro(KryoPool kryoPool) {
+    public ObjectFileStoreKryo(KryoPool kryoPool) {
         super();
         this.kryoPool = kryoPool;
     }

@@ -138,7 +138,7 @@ public class TxnReadUncommitted
 //	}
 
     @Override
-    public TxnResourceApi getResourceApi(String[] resRelPath) {
+    public TxnResourceApi getResourceApi(String... resRelPath) {
         TxnResourceApi result;
         try {
             result = containerCache.get(Array.wrap(resRelPath));

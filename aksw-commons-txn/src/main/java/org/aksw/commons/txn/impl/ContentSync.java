@@ -32,6 +32,7 @@ public interface ContentSync
     /** Returns true iff there is at least one backing resource with the old or new state */
     boolean exists();
 
+    /** Returns null if not exists */
     Instant getLastModifiedTime() throws IOException;
 
     /**
@@ -43,10 +44,14 @@ public interface ContentSync
      */
     void putContent(Consumer<OutputStream> outputStreamSupplier) throws IOException;
 
-    void recoverPreCommit() throws IOException;
+    /** Move the current content to the backup if no backup yet exists ; method should get a better name */
+    // void recoverPreCommit() throws IOException;
 
+    /** Convenience method. Truncates the new content which by default is interpreted as a deletion */
     default void markForDeletion() throws IOException {
-        try (OutputStream out = newOutputStreamToNewTmpContent(true)) { }
+        try (OutputStream out = newOutputStreamToNewTmpContent(true)) {
+        	out.flush();
+        }
     }
 
 }

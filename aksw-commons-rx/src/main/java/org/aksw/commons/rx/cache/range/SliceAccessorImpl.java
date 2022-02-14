@@ -10,7 +10,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
-import org.aksw.commons.util.range.BufferWithGeneration;
+import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
@@ -23,29 +23,36 @@ import com.google.common.primitives.Ints;
 /**
  * A sequence of claimed ranges within a certain range, whereas the range
  * can be modified resulting in an incremental change of the claims.
- *
+ * An individual page range should only be operated by a single thread though
+ * multiple threads may each have their own page range.
+ * 
+ * 
+ * - claimByOffsetRange() only triggers loading of the pages but does not wait for them to become ready
+ * - lock() waits for all claimed pages to become ready and afterwards locks them
+ * - unlock() must be called after lock(); unlocks all pages
+ * 
  * @author raven
  *
  * @param <T>
  */
-public class PageRangeImpl<T>
+public class SliceAccessorImpl<T>
     extends AutoCloseableWithLeakDetectionBase
-    implements PageRange<T>
+    implements SliceAccessor<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(PageRangeImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(SliceAccessorImpl.class);
 
     // protected SmartRangeCacheImpl<T> cache;
-    protected SliceWithPages<T> cache;
+    protected SliceWithPages<T> slice;
 
 
     protected Range<Long> offsetRange;
-    protected ConcurrentNavigableMap<Long, RefFuture<BufferWithGeneration<T>>> claimedPages = new ConcurrentSkipListMap<>();
-    protected NavigableMap<Long, BufferWithGeneration<T>> pageMap;
+    protected ConcurrentNavigableMap<Long, RefFuture<BufferWithGenerationImpl<T>>> claimedPages = new ConcurrentSkipListMap<>();
+    protected NavigableMap<Long, BufferWithGenerationImpl<T>> pageMap;
     protected boolean isLocked = false;
 
-    public PageRangeImpl(SliceWithPages<T> cache) {
+    public SliceAccessorImpl(SliceWithPages<T> cache) {
         super();
-        this.cache = cache;
+        this.slice = cache;
     }
 
     public Range<Long> getOffsetRange() {
@@ -57,19 +64,19 @@ public class PageRangeImpl<T>
 //    }
 
     public SliceWithPages<T> getCache() {
-        return cache;
+        return slice;
     }
 
 //    @Override
-    public ConcurrentNavigableMap<Long, RefFuture<BufferWithGeneration<T>>> getClaimedPages() {
+    public ConcurrentNavigableMap<Long, RefFuture<BufferWithGenerationImpl<T>>> getClaimedPages() {
         return claimedPages;
     }
 
     @Override
     public void claimByOffsetRange(long startOffset, long endOffset) {
         // Check for any additional pages that need claiming
-        long startPageId = cache.getPageIdForOffset(startOffset);
-        long endPageId = cache.getPageIdForOffset(endOffset);
+        long startPageId = slice.getPageIdForOffset(startOffset);
+        long endPageId = slice.getPageIdForOffset(endOffset);
 
         offsetRange = Range.closedOpen(startOffset, endOffset);
         claimByPageIdRange(startPageId, endPageId);
@@ -80,12 +87,12 @@ public class PageRangeImpl<T>
         ensureUnlocked();
 
         // Remove any claimed page before startPageId
-        NavigableMap<Long, RefFuture<BufferWithGeneration<T>>> prefixPagesToRelease = claimedPages.headMap(startPageId, false);
+        NavigableMap<Long, RefFuture<BufferWithGenerationImpl<T>>> prefixPagesToRelease = claimedPages.headMap(startPageId, false);
         prefixPagesToRelease.values().forEach(Ref::close);
         prefixPagesToRelease.clear();
 
         // Remove any claimed page after endPageId
-        NavigableMap<Long, RefFuture<BufferWithGeneration<T>>> suffixPagesToRelease = claimedPages.tailMap(endPageId, false);
+        NavigableMap<Long, RefFuture<BufferWithGenerationImpl<T>>> suffixPagesToRelease = claimedPages.tailMap(endPageId, false);
         suffixPagesToRelease.values().forEach(Ref::close);
         suffixPagesToRelease.clear();
 
@@ -97,7 +104,7 @@ public class PageRangeImpl<T>
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> {
                 logger.debug("Acquired page item [" + idx + "]");
-                RefFuture<BufferWithGeneration<T>> page = cache.getPageForPageId(idx);
+                RefFuture<BufferWithGenerationImpl<T>> page = slice.getPageForPageId(idx);
 
 //                if (isLocked) {
 //                    try {
@@ -114,12 +121,12 @@ public class PageRangeImpl<T>
         pageMap = null;
     }
 
-    protected NavigableMap<Long, BufferWithGeneration<T>> computePageMap() {
+    protected NavigableMap<Long, BufferWithGenerationImpl<T>> computePageMap() {
         return claimedPages.entrySet().stream()
         .collect(Collectors.toMap(
             Entry::getKey,
             e -> {
-                RefFuture<BufferWithGeneration<T>> refFuture = e.getValue();
+                RefFuture<BufferWithGenerationImpl<T>> refFuture = e.getValue();
 
                 return refFuture.await();
             },
@@ -136,7 +143,7 @@ public class PageRangeImpl<T>
         }
     }
 
-    public NavigableMap<Long, BufferWithGeneration<T>> getPageMap() {
+    public NavigableMap<Long, BufferWithGenerationImpl<T>> getPageMap() {
         updatePageMap();
         return pageMap;
     }
@@ -157,7 +164,7 @@ public class PageRangeImpl<T>
 //        pageMap.values().forEach(page -> page.getReadWriteLock().readLock().lock());
 
         // Prevent creation of new executors (other than by us) while we analyze the state
-        cache.getWorkerCreationLock().lock();
+        // slice.getWorkerCreationLock().lock();
     }
 
 //    @Override
@@ -175,7 +182,7 @@ public class PageRangeImpl<T>
         updatePageMap();
         // pageMap.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
 
-        cache.getWorkerCreationLock().unlock();
+        // slice.getWorkerCreationLock().unlock();
         isLocked = false;
     }
 
@@ -212,7 +219,7 @@ public class PageRangeImpl<T>
                 "Write range  " + totalWriteRange + " is not enclosed by claimed range " + offsetRange);
 
 
-        try (RefFuture<SliceMetaData> ref = cache.getMetaData()) {
+        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
             SliceMetaData metaData = ref.await();
             Lock metaDataWriteLock = metaData.getReadWriteLock().writeLock();
             metaDataWriteLock.lock();
@@ -223,12 +230,12 @@ public class PageRangeImpl<T>
                 int remaining = arrLength;
                 while (remaining > 0) {
 
-                    long pageId = cache.getPageIdForOffset(offset);
-                    long offsetInPage = cache.getIndexInPageForOffset(offset);
+                    long pageId = slice.getPageIdForOffset(offset);
+                    long offsetInPage = slice.getIndexInPageForOffset(offset);
 
-                    RefFuture<BufferWithGeneration<T>> currentPageRef = getClaimedPages().get(pageId);
+                    RefFuture<BufferWithGenerationImpl<T>> currentPageRef = getClaimedPages().get(pageId);
 
-                    BufferWithGeneration<T> buffer = currentPageRef.await();
+                    BufferWithGenerationImpl<T> buffer = currentPageRef.await();
 
         //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
         //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));

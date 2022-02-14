@@ -44,7 +44,7 @@ public class SliceTest {
                 .toFuture();
 
         String[] arr = new String[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-        buffer.putAll(0, arr, 0, totalSize);
+        // buffer.putAll(0, arr, 0, totalSize);
 
         buffer.mutateMetaData(metaData -> metaData.setMaximumKnownSize(totalSize));
 
