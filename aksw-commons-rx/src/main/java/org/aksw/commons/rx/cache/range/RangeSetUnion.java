@@ -1,20 +1,16 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.io.Serializable;
-import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Set;
-import java.util.function.Supplier;
 
+import org.aksw.commons.collections.SetUtils;
 import org.aksw.commons.util.range.RangeUtils;
 
-import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 
@@ -37,6 +33,8 @@ public class RangeSetUnion<T extends Comparable<T>>
 		this.second = second;
 	}
 	
+
+	/** Prefer {@link RangeSetOps#union(RangeSet, RangeSet)} */
 	public static <T extends Comparable<T>> RangeSetUnion<T> create(RangeSet<T> first, RangeSet<T> second) {
 		return new RangeSetUnion<>(first, second);
 	}
@@ -153,7 +151,10 @@ public class RangeSetUnion<T extends Comparable<T>>
 	@Override
 	public Set<Range<T>> asRanges() {
 		if (asRanges == null) {
-			asRanges = new AsRangesBase(first::asRanges, second::asRanges, RangeUtils::compareToLowerBound);
+			asRanges = new AsRangesBase<T>(
+					SetUtils.newForwardingSet(first::asRanges),
+					SetUtils.newForwardingSet(second::asRanges),
+					RangeUtils::compareToLowerBound);
 		}
 		return asRanges;
 	}
@@ -163,7 +164,10 @@ public class RangeSetUnion<T extends Comparable<T>>
 		if (asDescendingSetOfRanges == null) {
 			Comparator<Range<T>> cmp = RangeUtils::compareToUpperBound;
 			cmp = cmp.reversed();
-			asDescendingSetOfRanges = new AsRangesBase(first::asDescendingSetOfRanges, second::asDescendingSetOfRanges, cmp);
+			asDescendingSetOfRanges = new AsRangesBase<T>(
+					SetUtils.newForwardingSet(first::asDescendingSetOfRanges),
+					SetUtils.newForwardingSet(second::asDescendingSetOfRanges),
+					cmp);
 		}
 		return asDescendingSetOfRanges;
 	}
@@ -209,104 +213,6 @@ public class RangeSetUnion<T extends Comparable<T>>
 	@Override
 	public String toString() {
 		return asRanges().toString();
-	}
-	
-	private class AsRangesBase
-		extends AbstractSet<Range<T>> {
-
-		protected Supplier<Set<Range<T>>> aset;
-		protected Supplier<Set<Range<T>>> bset;
-		protected Comparator<Range<T>> endpointComparator;
-		
-		public AsRangesBase(
-				Supplier<Set<Range<T>>> aset,
-				Supplier<Set<Range<T>>> bset,
-				Comparator<Range<T>> endpointComparator) {
-			this.aset = aset;
-			this.bset = bset;
-			this.endpointComparator = endpointComparator;
-		}
-		
-//		@Override
-//		public boolean contains(Object o) {
-//			boolean r;
-//			if (o instanceof Range) {
-//				Range<T> range = (Range<T>)o;
-//				first.
-//				
-//				
-//			} else {
-//				r = false;
-//			}
-//			
-//			return result;
-//		}
-		
-		@Override
-		public Iterator<Range<T>> iterator() {			
-			return new AbstractIterator<Range<T>>() {
-
-				Iterator<Range<T>> ait = aset.get().iterator();
-				Iterator<Range<T>> bit = bset.get().iterator();
-
-				Range<T> a = ait.hasNext() ? ait.next() : null;
-				Range<T> b = bit.hasNext() ? bit.next() : null;
-
-				// Take and merge ranges from fit and sit as long as they are connected
-				@Override
-				protected Range<T> computeNext() {
-					Range<T> r = null;
-
-					loop: while (true) {
-						// Find out whether a or b has the lower endpoint; -2 means both are null
-						int c = a != null
-								? (b != null ? endpointComparator.compare(a, b) : -1)
-								: (b != null ? 1 : -2);
-
-						switch (c) {
-						case -1:
-						case 0:
-							if (r == null) {
-								r = a;
-								a = ait.hasNext() ? ait.next() : null;								
-							} else if (r.isConnected(a)) {
-								r = r.span(a);
-								a = ait.hasNext() ? ait.next() : null;
-							} else {
-								break loop;
-							}
-							break;
-						case 1:
-							if (r == null) {
-								r = b;
-								b = bit.hasNext() ? bit.next() : null;
-							} else if (r.isConnected(b)) {
-								r = r.span(b);
-								b = bit.hasNext() ? bit.next() : null;
-							} else {
-								break loop;
-							}
-							break;
-						case -2:
-							break loop;
-						default:
-							throw new RuntimeException("Should not happen");
-						}
-					}		
-					
-					if (r == null) {
-						r = endOfData();
-					}
-					return r;					
-				}
-			};
-		}
-
-		@Override
-		public int size() {
-			return Iterators.size(iterator());
-		}
-		
 	}
 	
 	

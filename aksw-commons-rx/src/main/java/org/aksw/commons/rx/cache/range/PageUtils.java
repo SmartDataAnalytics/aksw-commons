@@ -1,5 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.util.Collection;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -8,7 +9,6 @@ import java.util.stream.LongStream;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
 
 public class PageUtils {
 	public static long getPageIndexForOffset(long offset, long pageSize) {
@@ -38,8 +38,8 @@ public class PageUtils {
 		return result;
 	}
 	
-	public static NavigableSet<Long> touchedPageIndices(RangeSet<Long> rangeSet, long pageSize) {
-		NavigableSet<Long> result = rangeSet.asRanges().stream()
+	public static NavigableSet<Long> touchedPageIndices(Collection<Range<Long>> ranges, long pageSize) {
+		NavigableSet<Long> result = ranges.stream()
 			.flatMapToLong(range -> PageUtils.touchedPageIndices(range, pageSize))
 			.boxed()
 			.collect(Collectors.toCollection(TreeSet::new));

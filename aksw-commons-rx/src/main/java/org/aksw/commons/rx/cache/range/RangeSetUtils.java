@@ -46,6 +46,11 @@ public class RangeSetUtils {
 		};
 	}
 
+	public static <T extends Comparable<T>> Set<Range<T>> symmetricDifference(RangeSet<T> aset, RangeSet<T> bset) {
+		Set<Range<T>> added = difference(aset, bset);
+		Set<Range<T>> removed = difference(bset, aset);
+		return new AsRangesBase<>(added, removed, RangeUtils::compareToLowerBound);
+	}
 	
 	/**
 	 * Create an iterable over the complement of a range set w.r.t. a restriction range.

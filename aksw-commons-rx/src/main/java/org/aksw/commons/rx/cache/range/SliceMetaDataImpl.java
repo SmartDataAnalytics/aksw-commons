@@ -70,6 +70,10 @@ public class SliceMetaDataImpl
         return loadedRanges;
     }
 
+    public void setLoadedRanges(RangeSet<Long> loadedRanges) {
+		this.loadedRanges = loadedRanges;
+	}
+    
     public RangeMap<Long, List<Throwable>> getFailedRanges() {
         return failedRanges;
     }

@@ -4,7 +4,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public interface BufferView<A> {
 	RangeBuffer<A> getRangeBuffer();
-	ReadWriteLock getReadWriteLock();
+	// ReadWriteLock getReadWriteLock();
 	long getGeneration();
 	
 //	protected RangeBuffer rangeBuffer;

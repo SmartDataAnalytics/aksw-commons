@@ -380,6 +380,17 @@ public class ObjectStoreImpl
 			}
 
 			@Override
+			public void setRecencyStatus(PathDiffState status) {
+				this.contentStatus = status;
+			}
+
+			@Override
+			public PathDiffState fetchRecencyStatus() {
+				PathDiffState status = FileSyncImpl.getState(res.getFileSync());
+				return status;
+			}
+			
+			@Override
 			public void markAsDirty() {
 				isMarkedAsDirty = true;
 			}

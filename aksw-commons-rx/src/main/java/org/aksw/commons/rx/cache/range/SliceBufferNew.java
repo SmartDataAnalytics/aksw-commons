@@ -11,6 +11,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.LongFunction;
 
+import org.aksw.commons.cache.async.AsyncClaimingCache;
+import org.aksw.commons.cache.async.AsyncClaimingCacheImpl;
 import org.aksw.commons.io.util.Sync;
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.store.object.key.api.ObjectResource;
@@ -31,7 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.pool.KryoPool;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
@@ -64,6 +68,10 @@ public class SliceBufferNew<A>
 	// separate cache implementations
 	protected ArrayOps<A> arrayOps;
 
+	
+	protected AsyncClaimingCache<Long, BufferView<A>> pageCache;
+
+	
 	// Sync properties: sync unclaimed pages / snapshot; in either case sync delay; sync if too many changes
 //	public static <A> SliceBufferNew<A> getOrCreate(Path folder, ArrayOps<A> arrayOps, int pageSize) {
 //		ObjectStore objectStore = ObjectStoreImpl.create(folder, ObjectSerializerKryo.create(SmartRangeCacheImpl.createKyroPool(null)));
@@ -78,12 +86,15 @@ public class SliceBufferNew<A>
 	// A condition that is signalled whenever content or metadata changes
 	protected Condition hasDataCondition;
 
-	
 	// protected SparseVersionedBuffer<T> changes;
 
+	protected RangeSetDelegateMutable<Long> baseRanges;
+
+	// The baseMetaData is backed by baseRanges - baseRanges's delegate may be modified any time 
 	protected SliceMetaData baseMetaData;
-	// protected RangeSet<Long> liveRangeChanges;
 	
+	// protected RangeSet<Long> liveRangeChanges;
+
 	protected SliceMetaData liveMetaData;
 	//protected AsyncClaimingCache<Long, A> loadedPages;
 
@@ -91,11 +102,17 @@ public class SliceBufferNew<A>
 	protected PathState metaDataIdentity; // When the metadata was loaded
 	
 	
+	/**
+	 * Attribute for advertising detection of external changes to the base data.
+	 * Modification demands the global write lock. Whenever a change to the
+	 * base data is detected (during sync) then the generation is incremented. All clients should then
+	 * re-schedule their read/writes. */
+	protected int liveGeneration = 0;
+	
 	// The buffer with all active in-memory changes
-	protected RangeBuffer<A> liveChanges;
-	protected RangeBuffer<A> syncChanges;
-	
-	
+	protected RangeBufferDelegateMutable<A> liveChanges = new RangeBufferDelegateMutableImpl<>();
+	protected RangeBufferDelegateMutable<A> syncChanges = new RangeBufferDelegateMutableImpl<>();
+
 	protected LongFunction<String> pageIdToFileName;
 
 
@@ -121,7 +138,7 @@ public class SliceBufferNew<A>
 		// pageSize is only available after metadata is loaded
 		loadMetaData(pageSize);
 
-		this.syncChanges = newChangeBuffer();
+		this.syncChanges.setDelegate(newChangeBuffer());
 	}
 	
 	public void loadMetaData(int pageSize) {
@@ -137,11 +154,16 @@ public class SliceBufferNew<A>
 			}
 		}
 
+		baseRanges = new RangeSetDelegateMutableImpl<>();
+		baseRanges.setDelegate(metadata.getLoadedRanges());
+
 		this.baseMetaData = metadata;
 		this.pageSize = baseMetaData.getPageSize();
+		
+		
 
-		this.liveChanges = newChangeBuffer();
-		this.liveMetaData = copyWithNewRanges(baseMetaData, RangeSetUnion.create(liveChanges.getRanges(), baseMetaData.getLoadedRanges()));
+		this.liveChanges.setDelegate(newChangeBuffer());
+		this.liveMetaData = copyWithNewRanges(metadata, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
 		
 		
 		
@@ -150,7 +172,12 @@ public class SliceBufferNew<A>
     	df.setGroupingUsed(false);
     	
     	this.pageIdToFileName = pageId -> "segment-" + df.format(pageId) + ".ser";
-		
+
+    	this.pageCache = AsyncClaimingCacheImpl
+    			.<Long, BufferView<A>>newBuilder(Caffeine.newBuilder())
+    			.setCacheLoader(this::loadBuffer)
+    			.build();
+    			;
 	}
 
 
@@ -190,65 +217,83 @@ public class SliceBufferNew<A>
     public RefFuture<BufferWithGenerationImpl> getPageForPageId(long pageId) {
     	throw new UnsupportedOperationException();
     }
-    
-    // @Override
+
     public RefFuture<BufferView<A>> getPageForPageId2(long pageId) {
-    	RangeSet<Long> globalRanges;
+    	return pageCache.claim(pageId);
+    }
+
+    
+    public BufferView<A> loadBuffer(long pageId) {
     	
-    	// lock the file and derialize its content
-    	Buffer<A> existingData;
-    	
-    	
-    	// Buffer<A> overlay = new ArrayBuffer<>(arrayOps, arrayOps.create(pageSize)); // new PagedBuffer<>(arrayOps, pageSize);
+    	// TODO Lock the metadata file while we load the buffer
+    	// Verify that the in-memory metadata is up-to-data
+    	// if not, trigger a re-sync
     	
     	String fileName = pageIdToFileName.apply(pageId);
-    	RefFuture<ObjectInfo> ref = objectStore.claim(fileName);
-    	
-    	RefFuture<BufferView<A>> result = ref.acquireTransformed(oi -> {
-    		A array = oi.getObject();
-    		Buffer<A> buffer = array == null
-    				? ArrayBuffer.create(arrayOps, pageSize)
-    				: ArrayBuffer.create(arrayOps, array);
-
+       	
+		BufferWithAutoReload<A> baseBuffer = new BufferWithAutoReload<>(
+				objectStore,
+				fileName,
+				arrayOps,
+				pageSize,
+				-1,
+				() -> this.liveGeneration);
+		
+		// If eager then reload immediately - otherwise it is triggered on access
+		baseBuffer.reload();
+		
+		
+//		try (ObjectStoreConnection conn = objectStore.getConnection()) {
+//			ObjectResource res = conn.access(fileName);
+//			
+//			A array = res.reload();
+//		}
+		
+//    		A array = oi.getObject();
+//    		Buffer<A> buffer = array == null
+//    				? ArrayBuffer.create(arrayOps, pageSize)
+//    				: ArrayBuffer.create(arrayOps, array);
+//
     		long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
-    		RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseMetaData.getLoadedRanges(), pageOffset, buffer);    	
-    		RangeBuffer<A> deltaBuffer1 = syncChanges.slice(pageOffset, pageSize);
-    		RangeBuffer<A> deltaBuffer2 = liveChanges.slice(pageOffset, pageSize);
+    		// baseMetaData.getLoadedRanges()
+    		RangeBuffer<A> baseRangeBuffer = RangeBufferImpl.create(baseRanges, pageId, baseBuffer);
+
+    		// RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseRanges, pageOffset, buffer);    	
+    		RangeBuffer<A> deltaRangeBuffer1 = syncChanges.slice(pageOffset, pageSize);
+    		RangeBuffer<A> deltaRangeBuffer2 = liveChanges.slice(pageOffset, pageSize);
     	
-    		RangeBuffer<A> unionBuffer = RangeBufferUnion.create(baseBuffer, deltaBuffer1);
-    		RangeBuffer<A> finalUnionBuffer = RangeBufferUnion.create(deltaBuffer2, unionBuffer);
+    		RangeBuffer<A> unionBuffer = RangeBufferUnion.create(baseRangeBuffer, deltaRangeBuffer1);
+    		RangeBuffer<A> finalUnionBuffer = RangeBufferUnion.create(deltaRangeBuffer2, unionBuffer);
     		
     		// Wrap the buffer such that the minimum known size is updated?
     		
-    		
-    		return new BufferView<A>() {
-				@Override
-				public RangeBuffer<A> getRangeBuffer() {
-					return finalUnionBuffer;
-				}
+    	
 
-				@Override
-				public ReadWriteLock getReadWriteLock() {
-					return readWriteLock;
-				}
+		return new BufferView<A>() {
+			@Override
+			public RangeBuffer<A> getRangeBuffer() {
+				return finalUnionBuffer;
+			}
 
-				@Override
-				public long getGeneration() {
-					return 0;
-				}
-				
-				@Override
-				public String toString() {
-					return finalUnionBuffer.toString();
-				}
-    		};
-    	});
-    	ref.close();
-		
+//				@Override
+//				public ReadWriteLock getReadWriteLock() {
+//					return readWriteLock;
+//				}
 
-        return result;
+			@Override
+			public long getGeneration() {
+				return liveGeneration;
+			}
+			
+			@Override
+			public String toString() {
+				return finalUnionBuffer.toString();
+			}
+		};
     }
+
+
     
     public ArrayOps<A> getArrayOps() {
 		return arrayOps;
@@ -300,8 +345,8 @@ public class SliceBufferNew<A>
     	
     	// Before this method returns the sync changes are are merged into the base buffer
     	LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
-    		syncChanges = liveChanges;
-    		liveChanges = newChangeBuffer();
+    		syncChanges.setDelegate(liveChanges.getDelegate());
+    		liveChanges.setDelegate(newChangeBuffer());
     		// liveRangeChanges = liveChanges.getRanges();
     		
     		syncMetaData = liveMetaData;
@@ -317,20 +362,41 @@ public class SliceBufferNew<A>
     		);
     	});
     	
+    	// Incremented on detection of external changes
+    	int nextGeneration = liveGeneration;
     	
-		// Txn txn = txnMgr.newTxn(true, true);
-
     	try (ObjectStoreConnection conn = objectStore.getConnection()) {
     		conn.begin(true);
     		
     		ObjectResource res = conn.access("metadata.ser");
-    		PathDiffState status = res.getRecencyStatus();
+    		PathDiffState cachedStatus = res.getRecencyStatus();
+    		
+    		PathDiffState recentStatus = res.fetchRecencyStatus();
+    		
+    		ObjectInfo oi = null;
+    		if (!recentStatus.equals(cachedStatus)) {
+    			oi = res.loadNewInstance();
+    		}
+    		
+    		
+    		// Cross check the metadata whether reloading is needed
+    		boolean isReloaded = false;
+    		
+    		// If reloaded then create the diff
+    		if (isReloaded) {
+    			SliceMetaData reloaded = oi.getObject();
+    			
+    			Set<Range<Long>> diff = RangeSetUtils.symmetricDifference(syncMetaData.getLoadedRanges(), reloaded.getLoadedRanges());
+    		
+    			Set<Long> externallyModifiedPages = PageUtils.touchedPageIndices(diff, pageSize);
+    			
+    		}
 
-    		TreeRangeSet<Long> materializedMetaData = TreeRangeSet.create();
-    		materializedMetaData.addAll(baseMetaData.getLoadedRanges());
-    		materializedMetaData.addAll(syncChanges.getRanges());
+    		TreeRangeSet<Long> materializedRanges = TreeRangeSet.create();
+    		materializedRanges.addAll(baseRanges);
+    		materializedRanges.addAll(syncChanges.getRanges());
     	
-    		SliceMetaData newBaseMetadata = copyWithNewRanges(syncMetaData, materializedMetaData);
+    		SliceMetaData newBaseMetadata = copyWithNewRanges(syncMetaData, materializedRanges);
     		
     		res.setContent(newBaseMetadata);
     		
@@ -342,7 +408,7 @@ public class SliceBufferNew<A>
     		// Check whether the timestamp (generation) of the in memory copy of the meta data matches that on disk
 
     		
-        	Set<Long> idsOfDirtyPages = PageUtils.touchedPageIndices(syncChanges.getRanges(), pageSize);
+        	Set<Long> idsOfDirtyPages = PageUtils.touchedPageIndices(syncChanges.getRanges().asRanges(), pageSize);
         	
         	for (long pageId : idsOfDirtyPages) {
     			String pageFileName = pageIdToFileName.apply(pageId);
@@ -358,11 +424,8 @@ public class SliceBufferNew<A>
     					baseArray = arrayOps.create(pageSize);
     				}
     				
-    				RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseMetaData.getLoadedRanges(), offset, ArrayBuffer.create(arrayOps, baseArray));
-
-            		
+    				RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseRanges, offset, ArrayBuffer.create(arrayOps, baseArray));
             		RangeBuffer<A> subBuffer = syncChanges.slice(offset, pageSize);
-
             		RangeBuffer<A> unionBuffer = RangeBufferUnion.create(subBuffer, baseBuffer);
             		
             		A array = arrayOps.create(pageSize);
@@ -383,7 +446,9 @@ public class SliceBufferNew<A>
 
         	// Update buffer and metadata to the materialized data
         	LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
-        		syncMetaData.getLoadedRanges().clear();
+        		// syncMetaData.getLoadedRanges().clear();
+        		baseRanges.setDelegate(materializedRanges);
+        		syncChanges.setDelegate(newChangeBuffer());
         		
 //        		baseMetaData = newBaseMetadata;
 //        		
@@ -430,3 +495,95 @@ public class SliceBufferNew<A>
     
 }
 
+
+//public RefFuture<BufferView<A>> getPageForPageId(long pageId) {
+//String fileName = pageIdToFileName.apply(pageId);
+//
+//return pageCache.claim(fileName);
+//}
+//
+//// @Override
+//public RefFuture<BufferView<A>> getPageForPageId2Old(long pageId) {
+//// lock the file and derialize its content
+//
+//    	
+//// Buffer<A> overlay = new ArrayBuffer<>(arrayOps, arrayOps.create(pageSize)); // new PagedBuffer<>(arrayOps, pageSize);
+//
+//String fileName = pageIdToFileName.apply(pageId);
+//	
+//BufferWithAutoReload<A> baseBuffer = new BufferWithAutoReload<>(
+//		objectStore,
+//		fileName,
+//		arrayOps,
+//		pageSize,
+//		-1,
+//		() -> this.liveGeneration);
+//baseBuffer.reload();
+//
+//
+//RefFuture<ObjectInfo> ref = objectStore.claim(fileName);
+//
+//RefFuture<BufferView<A>> result = ref.acquireTransformed(oi -> {
+//	
+//	int generationHere = liveGeneration;
+//	
+//	
+//	// Set up a base buffer that auto-reloads on access if the generation here does not match the one of the slice anymore
+//	Buffer<A> baseDelegate = new BufferDelegate<A>() {
+//		@Override
+//		public Buffer<A> getDelegate() {
+//			int generationHere = 0;
+//			if (liveGeneration != generationHere) {
+//			
+//			}
+//			
+//			return null;
+//		}
+//	};
+//	
+//	
+//	A array = oi.getObject();
+//	Buffer<A> buffer = array == null
+//			? ArrayBuffer.create(arrayOps, pageSize)
+//			: ArrayBuffer.create(arrayOps, array);
+//
+//	long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
+//
+//	// baseMetaData.getLoadedRanges()
+//	// RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseRanges, pageOffset, buffer);    	
+//	RangeBuffer<A> deltaBuffer1 = syncChanges.slice(pageOffset, pageSize);
+//	RangeBuffer<A> deltaBuffer2 = liveChanges.slice(pageOffset, pageSize);
+//
+//	RangeBuffer<A> unionBuffer = RangeBufferUnion.create(baseBuffer, deltaBuffer1);
+//	RangeBuffer<A> finalUnionBuffer = RangeBufferUnion.create(deltaBuffer2, unionBuffer);
+//	
+//	// Wrap the buffer such that the minimum known size is updated?
+//	
+//	
+//	return new BufferView<A>() {
+//		@Override
+//		public RangeBuffer<A> getRangeBuffer() {
+//			return finalUnionBuffer;
+//		}
+//
+////		@Override
+////		public ReadWriteLock getReadWriteLock() {
+////			return readWriteLock;
+////		}
+//
+//		@Override
+//		public long getGeneration() {
+//			return liveGeneration;
+//		}
+//		
+//		@Override
+//		public String toString() {
+//			return finalUnionBuffer.toString();
+//		}
+//	};
+//});
+//ref.close();
+//
+//
+//return result;
+//}

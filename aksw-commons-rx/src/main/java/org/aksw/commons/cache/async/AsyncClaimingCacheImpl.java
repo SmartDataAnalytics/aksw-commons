@@ -74,13 +74,15 @@ public class AsyncClaimingCacheImpl<K, V>
 	private static class Latch {
 		// A flag to indicate that removal of the corresponding entry from keyToSynchronizer needs to be prevented
 		// because another thread already started reusing this latch
-		volatile boolean guarded = true;
+		volatile int numWaitingThreads = 1;
 		
-		Latch guard(boolean tf) { guarded = tf; return this; }
+		Latch inc() { ++numWaitingThreads; return this; }
+		Latch dec() { --numWaitingThreads; return this; }
+		int get() { return numWaitingThreads; }
 		
 		@Override
 		public String toString() {
-			return "Latch " + System.identityHashCode(this) + " (" + (guarded ? "guarded" : "unguarded") + ")";
+			return "Latch " + System.identityHashCode(this) + " has "+ numWaitingThreads + " threads waiting";
 		}
 	}
 	
@@ -96,12 +98,12 @@ public class AsyncClaimingCacheImpl<K, V>
 		RefFuture<V> result;
 
 		// We rely on ConcurrentHashMap.compute operating atomically
-		Latch synchronizer = keyToSynchronizer.compute(key, (k, before) -> before == null ? new Latch() : before.guard(true));
+		Latch synchronizer = keyToSynchronizer.compute(key, (k, before) -> before == null ? new Latch() : before.inc());
 		
 		// /guarded_entry/ marker; referenced in comment below
 		
         synchronized (synchronizer) {
-    		keyToSynchronizer.compute(key, (k, before) -> before.guard(false));
+    		keyToSynchronizer.compute(key, (k, before) -> before.dec());
         	
             boolean[] isFreshSecondaryRef = { false };
             
@@ -133,10 +135,9 @@ public class AsyncClaimingCacheImpl<K, V>
 		                    level1.remove(key);
 		                    logger.trace("Item [" + key + "] was unclaimed. Transferring to level2.");
 		                    level2.put(key, future);
-	
-		                    // If guard is true then there is already a thread waiting at /guaded_entry/ which is blocked by this close action.
-		                    // In that case the synchronizer has already been reused so we must not delete it from the map
-		            		keyToSynchronizer.compute(key, (kk, before) -> before.guarded ? before : null);
+
+		                    // If there are no waiting threads we can remove the latch
+		            		keyToSynchronizer.compute(key, (kk, before) -> before.get() == 0 ? null : before);
 		                });
 		            isFreshSecondaryRef[0] = true;
 		
@@ -255,7 +256,7 @@ public class AsyncClaimingCacheImpl<K, V>
 		return result;
 	}
 
-
+	
 	@Override
 	public void invalidateAll() {
 		LockUtils.runWithLock(invalidationLock.writeLock(), () -> {

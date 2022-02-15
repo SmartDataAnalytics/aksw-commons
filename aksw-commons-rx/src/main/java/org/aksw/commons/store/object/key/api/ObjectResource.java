@@ -21,6 +21,7 @@ public interface ObjectResource
 	
 	RefFuture<ObjectInfo> claimContent();
 	
+	ObjectInfo loadNewInstance();
 	
 	// Whether the cached resource has been loaded
 	boolean isCachedInstancePresent();
@@ -32,7 +33,10 @@ public interface ObjectResource
 
 	// Return information about the original source and any pending modification
 	PathDiffState getRecencyStatus();
-	
+	void setRecencyStatus(PathDiffState status);
+
+	PathDiffState fetchRecencyStatus();
+
 	
 	boolean hasChanged();
 	Object reloadRaw();
