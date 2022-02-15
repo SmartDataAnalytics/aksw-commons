@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.pool.KryoPool;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
@@ -87,7 +89,6 @@ public class SliceBufferNew<A>
 
 	protected SliceMetaData syncMetaData;
 	protected PathState metaDataIdentity; // When the metadata was loaded
-	
 	
 	
 	// The buffer with all active in-memory changes
@@ -198,7 +199,7 @@ public class SliceBufferNew<A>
     	Buffer<A> existingData;
     	
     	
-    	Buffer<A> overlay = new ArrayBuffer<>(arrayOps, arrayOps.create(pageSize)); // new PagedBuffer<>(arrayOps, pageSize);
+    	// Buffer<A> overlay = new ArrayBuffer<>(arrayOps, arrayOps.create(pageSize)); // new PagedBuffer<>(arrayOps, pageSize);
     	
     	String fileName = pageIdToFileName.apply(pageId);
     	RefFuture<ObjectInfo> ref = objectStore.claim(fileName);
@@ -211,7 +212,7 @@ public class SliceBufferNew<A>
 
     		long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
-    		RangeBuffer<A> baseBuffer = RangeBufferImpl.create(liveMetaData.getLoadedRanges(), pageOffset, buffer);    	
+    		RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseMetaData.getLoadedRanges(), pageOffset, buffer);    	
     		RangeBuffer<A> deltaBuffer1 = syncChanges.slice(pageOffset, pageSize);
     		RangeBuffer<A> deltaBuffer2 = liveChanges.slice(pageOffset, pageSize);
     	
@@ -295,6 +296,7 @@ public class SliceBufferNew<A>
     	// This means we need to ensure our in-memory copy of the metadata in up-to-date and then 'patch in'
     	// only the ranges of modified pages
     	
+    	Stopwatch stopwatch = Stopwatch.createStarted();
     	
     	// Before this method returns the sync changes are are merged into the base buffer
     	LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
@@ -314,8 +316,6 @@ public class SliceBufferNew<A>
     				syncMetaData.getMaximumKnownSize()
     		);
     	});
-    
-    	
     	
     	
 		// Txn txn = txnMgr.newTxn(true, true);
@@ -326,13 +326,13 @@ public class SliceBufferNew<A>
     		ObjectResource res = conn.access("metadata.ser");
     		PathDiffState status = res.getRecencyStatus();
 
-    		TreeRangeSet<Long> materialized = TreeRangeSet.create();
-    		materialized.addAll(baseMetaData.getLoadedRanges());
-    		materialized.addAll(syncChanges.getRanges());
+    		TreeRangeSet<Long> materializedMetaData = TreeRangeSet.create();
+    		materializedMetaData.addAll(baseMetaData.getLoadedRanges());
+    		materializedMetaData.addAll(syncChanges.getRanges());
     	
-    		SliceMetaData smd = copyWithNewRanges(syncMetaData, materialized);
+    		SliceMetaData newBaseMetadata = copyWithNewRanges(syncMetaData, materializedMetaData);
     		
-    		res.setContent(smd);
+    		res.setContent(newBaseMetadata);
     		
     		res.save();
     		
@@ -351,31 +351,60 @@ public class SliceBufferNew<A>
 
         		// RangeBufferBuffer<A> buffer = loadedPages.claim(pageId).await();
     			try (RefFuture<ObjectInfo> pageBuffer = objectStore.claim(pageFileName)) {
-    				// A baseArray = pageBuffer.await().getObject();
-    				// RangeBuffer<A> buf = (RangeBuffer<A>)obj;
-    				
             		long offset = PageUtils.getPageOffsetForId(pageId, pageId);
+
+    				A baseArray = pageBuffer.await().getObject();
+    				if (baseArray == null) {
+    					baseArray = arrayOps.create(pageSize);
+    				}
+    				
+    				RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseMetaData.getLoadedRanges(), offset, ArrayBuffer.create(arrayOps, baseArray));
+
             		
             		RangeBuffer<A> subBuffer = syncChanges.slice(offset, pageSize);
 
+            		RangeBuffer<A> unionBuffer = RangeBufferUnion.create(subBuffer, baseBuffer);
+            		
             		A array = arrayOps.create(pageSize);
 
             		// We need to wrap the array as a range buffer
-            		RangeBuffer<A> arrayWrapper = RangeBufferImpl.wrap(ArrayBuffer.create(arrayOps, array));
-            		subBuffer.transferTo(0, arrayWrapper, 0, pageSize);
+            		RangeBuffer<A> arrayWrapper = RangeBufferImpl.create(ArrayBuffer.create(arrayOps, array));
+            		unionBuffer.transferTo(0, arrayWrapper, 0, pageSize);
             		
             		pageRes.setContent(array);
             		pageRes.save();
     			}
-    			        	        		
+
         	}
 
     		
         	conn.commit();
 
+
+        	// Update buffer and metadata to the materialized data
+        	LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
+        		syncMetaData.getLoadedRanges().clear();
+        		
+//        		baseMetaData = newBaseMetadata;
+//        		
+//        		
+//        		// Remove the union with the syncChanges which we injected when entering the sync() method from live metadata
+//        		RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncMetaData.getLoadedRanges());
+//        		liveMetaData = copyWithNewRanges(liveMetaData, materializedMetaData)
+//        		liveMetaData = new SliceMetaDataImpl(
+//        				baseMetaData.getPageSize(),
+//        				liveChanges,
+//        				TreeRangeMap.create(),
+//        				syncMetaData.getMinimumKnownSize(),
+//        				syncMetaData.getMaximumKnownSize()
+//        		);
+        	});
+
     	} catch (Exception e) {
     		throw new RuntimeException(e);
 		}
+    	
+    	logger.info("Synchronization debug in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000.0f + " seconds");
     }
 
     

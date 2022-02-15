@@ -3,6 +3,7 @@ package org.aksw.commons.rx.cache.range;
 import java.io.IOException;
 
 import org.aksw.commons.util.array.Buffer;
+import org.aksw.commons.util.array.BufferLike;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -10,7 +11,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 
 public interface RangeBuffer<A>
-	extends Buffer<A>
+	extends BufferLike<A>
 {	
 	/** A set of ranges from which reading is valid. The range set may be shared among several range buffers and may thus include
 	 *  ranges outside of the range formed by the buffer's offset and capacity */
@@ -19,6 +20,8 @@ public interface RangeBuffer<A>
 	/** The offset within the range set where this buffer starts; may be null if the offset cannot be represented in a single value such as
 	 * in a union of two buffers which have different offsets */
 	Long getOffsetInRanges();
+	
+	Buffer<A> getBackingBuffer();
 	
 	default void transferFrom(long thisOffset, RangeBuffer<A> other, long otherOffset, long length) throws IOException {
 //		Range<Long> readRange = Range.closedOpen(otherOffset, otherOffset + length);
@@ -71,6 +74,6 @@ public interface RangeBuffer<A>
 		//RangeSet<Long> subRangeSet = getRanges().subRangeSet(Range.closedOpen(offset, offset + length));
 		long o = getOffsetInRanges();
 		long newOffset = o + offset;
-		return new RangeBufferImpl<>(getRanges(), offset, Buffer.super.slice(newOffset, length));
+		return new RangeBufferImpl<>(getRanges(), offset, getBackingBuffer().slice(newOffset, length));
 	}
 }

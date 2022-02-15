@@ -48,8 +48,8 @@ public class SyncPool {
 			LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
 				BufferView<Object[]> buffer = refBuffer.await();
 				try {
-					buffer.getRangeBuffer().putAll(0, arr1, 0, 4);
-					// buffer.getRangeBuffer().putAll(8, arr2, 0, 4);
+					 buffer.getRangeBuffer().putAll(0, arr1, 0, 4);
+//					buffer.getRangeBuffer().putAll(8, arr2, 0, 4);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}

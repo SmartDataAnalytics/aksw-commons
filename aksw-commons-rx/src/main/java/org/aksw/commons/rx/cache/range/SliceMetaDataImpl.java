@@ -128,4 +128,12 @@ public class SliceMetaDataImpl
             return false;
         return true;
     }
+
+	@Override
+	public String toString() {
+		return "SliceMetaDataImpl [minimumKnownSize=" + minimumKnownSize + ", maximumKnownSize=" + maximumKnownSize
+				+ ", pageSize=" + pageSize + ", loadedRanges=" + loadedRanges + ", failedRanges=" + failedRanges + "]";
+	}
+
+    
 }

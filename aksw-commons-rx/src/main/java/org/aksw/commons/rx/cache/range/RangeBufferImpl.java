@@ -18,13 +18,18 @@ public class RangeBufferImpl<A>
 	// correspond to a range starting at offset 100
 	protected RangeSet<Long> ranges;
 	protected long offsetInRanges;
-	protected Buffer<A> buffer;
+	protected Buffer<A> backingBuffer;
 	
 	public RangeBufferImpl(RangeSet<Long> ranges, long offsetInRanges, Buffer<A> buffer) {
 		super();
 		this.ranges = ranges;
 		this.offsetInRanges = offsetInRanges;
-		this.buffer = buffer;
+		this.backingBuffer = buffer;
+	}
+	
+	@Override
+	public Buffer<A> getBackingBuffer() {
+		return backingBuffer;
 	}
 
 	public static <A> RangeBufferImpl<A> create(RangeSet<Long> ranges, long offsetInRanges, Buffer<A> buffer) {
@@ -49,7 +54,7 @@ public class RangeBufferImpl<A>
 	
 	@Override
 	public long getCapacity() {
-		return buffer.getCapacity();
+		return backingBuffer.getCapacity();
 	}
 
 	@Override
@@ -59,7 +64,7 @@ public class RangeBufferImpl<A>
 	
 	@Override
 	public ArrayOps<A> getArrayOps() {
-		return buffer.getArrayOps();
+		return backingBuffer.getArrayOps();
 	}
 
 	/**
@@ -80,7 +85,7 @@ public class RangeBufferImpl<A>
 			throw new ReadOverGapException("Attempt to read over gaps at: " + gaps);
 		}
 
-		int result = buffer.readInto(tgt, tgtOffset, srcOffset, length);
+		int result = backingBuffer.readInto(tgt, tgtOffset, srcOffset, length);
 		return result;
 	}
 
@@ -94,7 +99,7 @@ public class RangeBufferImpl<A>
 		long start = LongMath.checkedAdd(offsetInRanges, offsetInBuffer);
 		long end = LongMath.checkedAdd(start, arrLength);
 
-		if (end >= buffer.getCapacity()) {
+		if (end >= backingBuffer.getCapacity()) {
 			throw new RuntimeException("Attempt to write beyond buffer capacity");
 		}
 
@@ -102,7 +107,7 @@ public class RangeBufferImpl<A>
 		
 		// TODO Add debug mode: Check when writing to already known ranges
 		
-		buffer.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+		backingBuffer.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
 		ranges.add(Range.closedOpen(start, end));
 	}
 

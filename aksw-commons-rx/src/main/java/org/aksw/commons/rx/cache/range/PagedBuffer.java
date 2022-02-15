@@ -94,7 +94,7 @@ public class PagedBuffer<A>
 			if (buffer == null) {
 				arrayOps.fillRaw(tgt, tgtIndex, remainingInPage, null);
 			} else {
-				arrayOps.copyRaw(buffer, tgtIndex, tgt, tgtIndex, remainingInPage);
+				arrayOps.copyRaw(buffer, indexInPage, tgt, tgtIndex, remainingInPage);
 			}
 			
 			tgtIndex += remainingInPage;

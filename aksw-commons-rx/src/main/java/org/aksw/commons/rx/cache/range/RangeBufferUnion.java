@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.util.Set;
 
 import org.aksw.commons.util.array.ArrayOps;
+import org.aksw.commons.util.array.Buffer;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
 
 /**
@@ -132,6 +132,11 @@ public class RangeBufferUnion<A>
 	@Override
 	public String toString() {
 		return getRanges().toString();
+	}
+
+	@Override
+	public Buffer<A> getBackingBuffer() {
+		return null;
 	}
 }
 
