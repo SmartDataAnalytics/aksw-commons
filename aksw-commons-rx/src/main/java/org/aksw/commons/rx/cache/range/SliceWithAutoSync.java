@@ -2,6 +2,7 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
@@ -10,6 +11,7 @@ import java.util.function.Function;
 import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 
 
 /**
@@ -29,10 +31,28 @@ import com.google.common.collect.Range;
 public interface SliceWithAutoSync<T>
     // extends ArrayPuttable
 {
+    ReadWriteLock getReadWriteLock();
+    Condition getHasDataCondition();
+    long getMinimumKnownSize();
+    void setMinimumKnownSize(long size);
+
+    long getMaximumKnownSize();
+    void setMaximumKnownSize(long size);
+
+    default long getKnownSize() {
+        long minSize = getMinimumKnownSize();
+        long maxSize = getMaximumKnownSize();
+
+        return minSize == maxSize ? minSize : -1;
+    }
+
+    RangeSet<Long> getLoadedRanges();
+
+
     /**
      * Obtain a new reference to the metadata. The referent may be loaded lazily.
      * The reference must be closed after use in order to allow sync to trigger.
-     * 
+     *
      * @return
      */
     RefFuture<SliceMetaData> getMetaData();
@@ -41,7 +61,7 @@ public interface SliceWithAutoSync<T>
     /**
      * Read the metadata and check whether the slice has a known size and
      * there is only a single range of loaded data starting from offset 0 to that size.
-     * 
+     *
      * @return
      */
     default boolean isComplete() {
@@ -71,8 +91,8 @@ public interface SliceWithAutoSync<T>
 
     /**
      * Lock the metadata and then invoke a value returning function on it.
-     * Afterwards release the lock. Returns the obtained value. 
-     * 
+     * Afterwards release the lock. Returns the obtained value.
+     *
      * @param <X>
      * @param isWrite
      * @param fn
@@ -115,7 +135,7 @@ public interface SliceWithAutoSync<T>
     /**
      * An accessor which allows for 'claiming' a sub-range of this slice. The claimed range can be incrementally
      * modified which may re-use already allocated resources (e.g. claimed pages) and thus improve performance.
-     * 
+     *
      * Sub-ranges of a slice can be loaded and iterated or inserted into.
      * The sub-ranges can be modified dynamically.
      */

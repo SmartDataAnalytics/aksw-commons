@@ -80,7 +80,7 @@ public class SliceBufferNew<A>
     protected ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     // A condition that is signalled whenever content or metadata changes
-    protected Condition hasDataCondition;
+    protected Condition hasDataCondition = readWriteLock.writeLock().newCondition();
 
     // protected SparseVersionedBuffer<T> changes;
 
@@ -209,13 +209,7 @@ public class SliceBufferNew<A>
     }
 
 
-    /** Return a union view of the data from storage and pending changes */
-    @Override
-    public RefFuture<BufferWithGenerationImpl> getPageForPageId(long pageId) {
-        throw new UnsupportedOperationException();
-    }
-
-    public RefFuture<BufferView<A>> getPageForPageId2(long pageId) {
+    public RefFuture<BufferView<A>> getPageForPageId(long pageId) {
         return pageCache.claim(pageId);
     }
 
@@ -275,7 +269,7 @@ public class SliceBufferNew<A>
         long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
         // baseMetaData.getLoadedRanges()
-        RangeBuffer<A> baseRangeBuffer = RangeBufferImpl.create(baseRanges, pageId, baseBuffer);
+        RangeBuffer<A> baseRangeBuffer = RangeBufferImpl.create(baseRanges, pageOffset, baseBuffer);
 
         // RangeBuffer<A> baseBuffer = RangeBufferImpl.create(baseRanges, pageOffset, buffer);
         RangeBuffer<A> deltaRangeBuffer1 = syncChanges.slice(pageOffset, pageSize);
@@ -437,7 +431,7 @@ public class SliceBufferNew<A>
                 // RangeBufferBuffer<A> buffer = loadedPages.claim(pageId).await();
                 // try (RefFuture<ObjectInfo> pageBuffer = objectStore.claim(pageFileName)) {
                 try (RefFuture<BufferView<A>> pageBuffer = pageCache.claim(pageId)) {
-                    long offset = PageUtils.getPageOffsetForId(pageId, pageId);
+                    long offset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
 //                    A baseArray = pageBuffer.await().getObject();
 //                    if (baseArray == null) {
@@ -500,6 +494,25 @@ public class SliceBufferNew<A>
 
 
 
+    @Override
+    public RangeSet<Long> getLoadedRanges() {
+        return liveMetaData.getLoadedRanges();
+    }
+
+    @Override
+    public long getMinimumKnownSize() {
+        return liveMetaData.getMinimumKnownSize();
+    }
+
+    @Override
+    public long getMaximumKnownSize() {
+        return liveMetaData.getMaximumKnownSize();
+    }
+
+    @Override
+    public Condition getHasDataCondition() {
+        return hasDataCondition;
+    }
 
 
     @Override

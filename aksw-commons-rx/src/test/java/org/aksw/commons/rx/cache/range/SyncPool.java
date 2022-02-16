@@ -43,15 +43,27 @@ public class SyncPool {
         Object[] arr1 = new Object[] {"this", "is", "a", "test"};
         Object[] arr2 = new Object[] {"another", "testarray", "withsome", "moreitems"};
 
-        try (RefFuture<BufferView<Object[]>> refBuffer = slice.getPageForPageId2(0)) {
 
+        // try (RefFuture<BufferView<Object[]>> refBuffer = slice.getPageForPageId2(0)) {
+        try (SliceAccessor<Object[]> accessor = slice.newSliceAccessor()) {
             LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
-                BufferView<Object[]> buffer = refBuffer.await();
+
+                accessor.claimByOffsetRange(0, 2000);
+
+                accessor.lock();
+
+                // BufferView<Object[]> buffer = refBuffer.await();
                 try {
-                    buffer.getRangeBuffer().putAll(0, arr1, 0, 4);
-                    buffer.getRangeBuffer().putAll(8, arr2, 0, 4);
-                } catch (IOException e) {
+                    accessor.putAll(0, arr1, 0, 4);
+                    accessor.putAll(8, arr2, 0, 4);
+                    accessor.putAll(130, arr2, 0, 4);
+//                    buffer.getRangeBuffer().putAll(0, arr1, 0, 4);
+//                    buffer.getRangeBuffer().putAll(8, arr2, 0, 4);
+//                    buffer.getRangeBuffer().putAll(130, arr2, 0, 4);
+                } catch (Exception e) {
                     throw new RuntimeException(e);
+                } finally {
+                    accessor.unlock();
                 }
             });
         }

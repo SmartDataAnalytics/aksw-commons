@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
+import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.Ref;
@@ -219,63 +220,65 @@ public class SliceAccessorImpl<T>
                 "Write range  " + totalWriteRange + " is not enclosed by claimed range " + offsetRange);
 
 
-        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
-            SliceMetaData metaData = ref.await();
-            Lock metaDataWriteLock = metaData.getReadWriteLock().writeLock();
-            metaDataWriteLock.lock();
-            try {
+//        try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
+//            SliceMetaData metaData = ref.await();
+//            Lock metaDataWriteLock = metaData.getReadWriteLock().writeLock();
+//            metaDataWriteLock.lock();
+//            try {
 
-                long knownSize = metaData.getKnownSize();
+        Lock lock = slice.getReadWriteLock().writeLock();
+        lock.lock();
+        try {
+            long knownSize = slice.getKnownSize();
 
-                int remaining = arrLength;
-                while (remaining > 0) {
+            int remaining = arrLength;
+            while (remaining > 0) {
 
-                    long pageId = slice.getPageIdForOffset(offset);
-                    long offsetInPage = slice.getIndexInPageForOffset(offset);
+                long pageId = slice.getPageIdForOffset(offset);
+                long offsetInPage = slice.getIndexInPageForOffset(offset);
 
-                    RefFuture<BufferView<T>> currentPageRef = getClaimedPages().get(pageId);
+                RefFuture<BufferView<T>> currentPageRef = getClaimedPages().get(pageId);
 
-                    BufferView<T> buffer = currentPageRef.await();
+                BufferView<T> buffer = currentPageRef.await();
 
-        //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
-        //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
+    //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
+    //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
 
-                    long numItemsUntilPageEnd = buffer.getCapacity() - offsetInPage;
-                    // long numItemsUntilPageKnownSize = cache.getMetaData().getMaximumKnownSize(); // BufferWithGeneration.getKnownSize() >= 0 ? BufferWithGeneration.getKnownSize() : BufferWithGeneration.getCapacity();
+                long numItemsUntilPageEnd = buffer.getCapacity() - offsetInPage;
+                // long numItemsUntilPageKnownSize = cache.getMetaData().getMaximumKnownSize(); // BufferWithGeneration.getKnownSize() >= 0 ? BufferWithGeneration.getKnownSize() : BufferWithGeneration.getCapacity();
 
-                    long numItemsUntilPageKnownSize = knownSize < 0 ? Long.MAX_VALUE : knownSize - offset;
+                long numItemsUntilPageKnownSize = knownSize < 0 ? Long.MAX_VALUE : knownSize - offset;
 
-                    // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
+                // long numItemsUtilRequestLimit = (requestOffset + requestLimit) - offset;
 
-                    int limit = Math.min(Ints.saturatedCast(Math.min(
-                            numItemsUntilPageEnd,
-                            numItemsUntilPageKnownSize)),
-                            remaining);
+                int limit = Math.min(Ints.saturatedCast(Math.min(
+                        numItemsUntilPageEnd,
+                        numItemsUntilPageKnownSize)),
+                        remaining);
 
-                    Lock contentWriteLock = buffer.getReadWriteLock().writeLock();
-                    contentWriteLock.lock();
+                Lock contentWriteLock = buffer.getReadWriteLock().writeLock();
+                contentWriteLock.lock();
 
-                    try {
-                        buffer.getRangeBuffer().putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        contentWriteLock.unlock();
-                    }
-                    remaining -= limit;
-                    offset += limit;
-                    arrOffset += limit;
+                try {
+                    buffer.getRangeBuffer().putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    contentWriteLock.unlock();
                 }
-
-                long min = metaData.getMinimumKnownSize();
-                metaData.setMinimumKnownSize(Math.max(min, offset + arrLength));
-                metaData.getLoadedRanges().add(totalWriteRange);
-                metaData.getHasDataCondition().signalAll();
-            } finally {
-                metaDataWriteLock.unlock();
+                remaining -= limit;
+                offset += limit;
+                arrOffset += limit;
             }
-        }
 
+            long min = slice.getMinimumKnownSize();
+            slice.setMinimumKnownSize(Math.max(min, offset + arrLength));
+            slice.getLoadedRanges().add(totalWriteRange);
+            slice.getHasDataCondition().signalAll();
+
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
