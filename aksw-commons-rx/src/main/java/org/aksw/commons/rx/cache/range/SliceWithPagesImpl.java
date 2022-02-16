@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.store.object.key.api.KeyObjectStore;
@@ -25,7 +23,7 @@ public class SliceWithPagesImpl<T>
     private static final Logger logger = LoggerFactory.getLogger(SliceWithPagesImpl.class);
 
     protected int pageSize;
-    protected AsyncClaimingCache<Long, BufferWithGenerationImpl<T>> pageCache;
+    protected AsyncClaimingCache<Long, BufferView<T>> pageCache;
     protected AsyncClaimingCache3Impl<String, SliceMetaData> metadataCache;
 
     public SliceWithPagesImpl(
@@ -119,7 +117,7 @@ public class SliceWithPagesImpl<T>
 
 
     @Override
-    public RefFuture<BufferWithGenerationImpl<T>> getPageForPageId(long pageId) {
+    public RefFuture<BufferView<T>> getPageForPageId(long pageId) {
         return pageCache.claim(pageId);
     }
 

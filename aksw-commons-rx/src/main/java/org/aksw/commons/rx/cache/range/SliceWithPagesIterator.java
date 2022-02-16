@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +34,8 @@ public class SliceWithPagesIterator<T>
     extends AbstractIterator<T>
     implements AutoCloseable
 {
-	private static final Logger logger = LoggerFactory.getLogger(SliceWithPagesIterator.class);
-	
+    private static final Logger logger = LoggerFactory.getLogger(SliceWithPagesIterator.class);
+
     protected SliceWithPages<T> rangeBuffer;
     protected long currentIndex;
 
@@ -110,7 +109,7 @@ public class SliceWithPagesIterator<T>
                                 while ((entry = loadedRanges.rangeContaining(currentIndex)) == null &&
                                         ((knownSize = metaData.getMaximumKnownSize()) < 0 || currentIndex < knownSize)) {
                                     try {
-                                    	logger.info("Awaiting more data: " + entry + " " + currentIndex + " " + knownSize);
+                                        logger.info("Awaiting more data: " + entry + " " + currentIndex + " " + knownSize);
                                         metaData.getHasDataCondition().await();
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
@@ -144,7 +143,7 @@ public class SliceWithPagesIterator<T>
 
                     pageRange.claimByOffsetRange(startAbs, endAbs);
 
-                    BufferWithGenerationImpl<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
+                    BufferView<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
                     long capacity = buffer.getCapacity();
                     long endInPage = indexInPage + rangeLength;
                     int endIndex = Ints.saturatedCast(Math.min(capacity, endInPage));

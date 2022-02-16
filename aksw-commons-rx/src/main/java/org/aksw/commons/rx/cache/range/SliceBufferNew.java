@@ -238,6 +238,8 @@ public class SliceBufferNew<A>
         int result;
 
         if (hasMetaDataChanged) {
+            logger.info("Metadata was externally modified on disk... reloading");
+
             // Re-check recency status now that the recsource is locked
             PathDiffState status = res.fetchRecencyStatus();
 
@@ -282,32 +284,20 @@ public class SliceBufferNew<A>
         RangeBuffer<A> unionBuffer = RangeBufferUnion.create(baseRangeBuffer, deltaRangeBuffer1);
         RangeBuffer<A> finalUnionBuffer = RangeBufferUnion.create(deltaRangeBuffer2, unionBuffer);
 
+
         // Wrap the buffer such that the minimum known size is updated?
 
         return new InternalBufferView(baseBuffer, finalUnionBuffer);
+    }
 
-//        return new BufferView<A>() {
-//            @Override
-//            public RangeBuffer<A> getRangeBuffer() {
-//                return finalUnionBuffer;
-//            }
-//
-//    //          @Override
-//    //          public ReadWriteLock getReadWriteLock() {
-//    //              return readWriteLock;
-//    //          }
-//
-//            @Override
-//            public long getGeneration() {
-//                return liveGeneration;
-//            }
-//
-//            @Override
-//            public String toString() {
-//                return finalUnionBuffer.toString();
-//            }
-//        };
+    /** Only call this method after acquiring the write lock! */
+    public void updateMinimumKnownSize(long size) {
+        this.liveMetaData.updateMinimumKnownSize(size);
+    }
 
+    /** Only call this method after acquiring the write lock! */
+    public void updateMaximumKnownSize(long size) {
+        this.liveMetaData.updateMaximumKnownSize(size);
     }
 
     /** Loading a page requires locking the metadata file - by loading pages in batch we can reduce redundant locking and reduce the risk of in-between external changes */
@@ -563,6 +553,15 @@ public class SliceBufferNew<A>
             return rangeBufferView.toString();
         }
 
+        @Override
+        public long getCapacity() {
+            return pageSize;
+        }
+
+        @Override
+        public ReadWriteLock getReadWriteLock() {
+            return readWriteLock;
+        }
     }
 
     class BufferWithAutoReloadOnAccess
