@@ -22,6 +22,7 @@ import org.aksw.commons.store.object.key.impl.ObjectInfo;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
 import org.aksw.commons.store.object.path.api.ObjectSerializer;
 import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
+import org.aksw.commons.txn.api.TxnApi;
 import org.aksw.commons.txn.impl.PathDiffState;
 import org.aksw.commons.txn.impl.PathState;
 import org.aksw.commons.util.array.ArrayBuffer;
@@ -92,6 +93,7 @@ public class SliceBufferNew<A>
 
 	// The baseMetaData is backed by baseRanges - baseRanges's delegate may be modified any time 
 	protected SliceMetaData baseMetaData;
+	protected PathDiffState baseMetaDataStatus;
 	
 	// protected RangeSet<Long> liveRangeChanges;
 
@@ -222,6 +224,43 @@ public class SliceBufferNew<A>
     	return pageCache.claim(pageId);
     }
 
+    
+    public void ensureUpToDateMetaData(ObjectStoreConnection conn, int fallbackPageSize) {
+    		
+    	String resourceName = "metadata.ser";
+		PathDiffState recencyStatus = objectStore.fetchRecencyStatus(resourceName);
+		if (!recencyStatus.equals(baseMetaDataStatus)) {
+		   	// try (ObjectStoreConnection conn = objectStore.getConnection()) {
+	    		// TxnApi.execRead(conn, () -> {
+		    		
+		    		ObjectResource res = conn.access(resourceName);
+		    		
+		    		// Re-check recency status now that the recsource is locked
+		    		PathDiffState status = res.fetchRecencyStatus();
+		    		
+		    		SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
+		    		
+		    		if (newMetaData != null) {
+			    		LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
+			    			if (newMetaData != null) {
+		    					logger.info("Loaded metadata: " + newMetaData);
+				    			baseRanges.setDelegate(newMetaData.getLoadedRanges());
+				    			baseMetaDataStatus = status;
+			    			} else {
+		    					logger.info("Created fresh slice metadata");
+		    					baseMetaData = new SliceMetaDataImpl(fallbackPageSize);
+		    					baseMetaDataStatus = null; // TODO Use a non-null placeholder value
+			    			}
+			    			
+			    			++liveGeneration;
+			    		});
+		    		}    		
+	    		// });
+//	    	} catch (Exception e) {
+//	    		throw new RuntimeException(e);
+//			}    		
+		}
+    }
     
     public BufferView<A> loadBuffer(long pageId) {
     	
@@ -369,12 +408,12 @@ public class SliceBufferNew<A>
     		conn.begin(true);
     		
     		ObjectResource res = conn.access("metadata.ser");
-    		PathDiffState cachedStatus = res.getRecencyStatus();
+    		// PathDiffState cachedStatus = res.getRecencyStatus();
     		
     		PathDiffState recentStatus = res.fetchRecencyStatus();
     		
     		ObjectInfo oi = null;
-    		if (!recentStatus.equals(cachedStatus)) {
+    		if (!recentStatus.equals(baseMetaDataStatus)) {
     			oi = res.loadNewInstance();
     		}
     		

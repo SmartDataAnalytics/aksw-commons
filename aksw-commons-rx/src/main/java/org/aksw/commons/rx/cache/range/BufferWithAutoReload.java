@@ -48,7 +48,7 @@ public class BufferWithAutoReload<A>
 				try (ObjectStoreConnection conn = objectStore.getConnection()) {
 					r = TxnApi.execRead(conn, () -> {
 						ObjectResource res = conn.access(fileName);
-						A array = res.reload();
+						A array = res.loadNewInstance();
 						if (array == null) {
 							array = arrayOps.create(freshSize);
 						}

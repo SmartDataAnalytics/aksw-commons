@@ -19,47 +19,52 @@ public interface ObjectResource
 //	boolean isContentClaimed();
 //	void unclaimContent();
 	
-	RefFuture<ObjectInfo> claimContent();
-	
-	ObjectInfo loadNewInstance();
-	
-	// Whether the cached resource has been loaded
-	boolean isCachedInstancePresent();
-	
-	Object getContent();
-	void setContent(Object obj);
-
-	PathState getLoadTimeStatus();
-
-	// Return information about the original source and any pending modification
-	PathDiffState getRecencyStatus();
-	void setRecencyStatus(PathDiffState status);
-
 	PathDiffState fetchRecencyStatus();
+	Object loadNewInstance();
+	void save(Object obj);
 
 	
-	boolean hasChanged();
-	Object reloadRaw();
-	Object getRaw();
-
-	void markAsDirty();
-	boolean isDirty();
-	
-	
-	/** Write changes to disk. Does not commit a transaction; changes may still be undone by a rollback. */
-	void save();
-	
-	default <T> T reload() {
-		@SuppressWarnings("unchecked")
-		T result = (T)reloadRaw();
-		return result;
-	}
-	
-	default <T> T get() {
-		@SuppressWarnings("unchecked")
-		T result = (T)getRaw();
-		return result;
-	}
-	
-	
+//	RefFuture<ObjectInfo> claimContent();
+//	
+//	ObjectInfo loadNewInstance();
+//	
+//	// Whether the cached resource has been loaded
+//	boolean isCachedInstancePresent();
+//	
+//	Object getContent();
+//	void setContent(Object obj);
+//
+//	PathState getLoadTimeStatus();
+//
+//	// Return information about the original source and any pending modification
+//	PathDiffState getRecencyStatus();
+//	void setRecencyStatus(PathDiffState status);
+//
+//	PathDiffState fetchRecencyStatus();
+//
+//	
+//	boolean hasChanged();
+//	Object reloadRaw();
+//	Object getRaw();
+//
+//	void markAsDirty();
+//	boolean isDirty();
+//	
+//	
+//	/** Write changes to disk. Does not commit a transaction; changes may still be undone by a rollback. */
+//	void save();
+//	
+//	default <T> T reload() {
+//		@SuppressWarnings("unchecked")
+//		T result = (T)reloadRaw();
+//		return result;
+//	}
+//	
+//	default <T> T get() {
+//		@SuppressWarnings("unchecked")
+//		T result = (T)getRaw();
+//		return result;
+//	}
+//	
+//	
 }
