@@ -1,24 +1,29 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
-import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
-import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeMap;
 import com.google.common.primitives.Ints;
 
 /**
@@ -34,24 +39,24 @@ import com.google.common.primitives.Ints;
  *
  * @author raven
  *
- * @param <T>
+ * @param <A>
  */
-public class SliceAccessorImpl<T>
+public class SliceAccessorImpl<A>
     extends AutoCloseableWithLeakDetectionBase
-    implements SliceAccessor<T>
+    implements SliceAccessor<A>
 {
     private static final Logger logger = LoggerFactory.getLogger(SliceAccessorImpl.class);
 
     // protected SmartRangeCacheImpl<T> cache;
-    protected SliceWithPages<T> slice;
+    protected SliceWithPages<A> slice;
 
 
     protected Range<Long> offsetRange;
-    protected ConcurrentNavigableMap<Long, RefFuture<BufferView<T>>> claimedPages = new ConcurrentSkipListMap<>();
-    protected NavigableMap<Long, BufferView<T>> pageMap;
+    protected ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> claimedPages = new ConcurrentSkipListMap<>();
+    protected NavigableMap<Long, BufferView<A>> pageMap;
     protected boolean isLocked = false;
 
-    public SliceAccessorImpl(SliceWithPages<T> cache) {
+    public SliceAccessorImpl(SliceWithPages<A> cache) {
         super();
         this.slice = cache;
     }
@@ -64,12 +69,12 @@ public class SliceAccessorImpl<T>
 //    	offsetRange.
 //    }
 
-    public SliceWithPages<T> getCache() {
+    public SliceWithPages<A> getCache() {
         return slice;
     }
 
 //    @Override
-    public ConcurrentNavigableMap<Long, RefFuture<BufferView<T>>> getClaimedPages() {
+    public ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> getClaimedPages() {
         return claimedPages;
     }
 
@@ -88,12 +93,12 @@ public class SliceAccessorImpl<T>
         ensureUnlocked();
 
         // Remove any claimed page before startPageId
-        NavigableMap<Long, RefFuture<BufferView<T>>> prefixPagesToRelease = claimedPages.headMap(startPageId, false);
+        NavigableMap<Long, RefFuture<BufferView<A>>> prefixPagesToRelease = claimedPages.headMap(startPageId, false);
         prefixPagesToRelease.values().forEach(Ref::close);
         prefixPagesToRelease.clear();
 
         // Remove any claimed page after endPageId
-        NavigableMap<Long, RefFuture<BufferView<T>>> suffixPagesToRelease = claimedPages.tailMap(endPageId, false);
+        NavigableMap<Long, RefFuture<BufferView<A>>> suffixPagesToRelease = claimedPages.tailMap(endPageId, false);
         suffixPagesToRelease.values().forEach(Ref::close);
         suffixPagesToRelease.clear();
 
@@ -105,7 +110,7 @@ public class SliceAccessorImpl<T>
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> {
                 logger.debug("Acquired page item [" + idx + "]");
-                RefFuture<BufferView<T>> page = slice.getPageForPageId(idx);
+                RefFuture<BufferView<A>> page = slice.getPageForPageId(idx);
 
 //                if (isLocked) {
 //                    try {
@@ -122,12 +127,12 @@ public class SliceAccessorImpl<T>
         pageMap = null;
     }
 
-    protected NavigableMap<Long, BufferView<T>> computePageMap() {
+    protected NavigableMap<Long, BufferView<A>> computePageMap() {
         return claimedPages.entrySet().stream()
         .collect(Collectors.toMap(
             Entry::getKey,
             e -> {
-                RefFuture<BufferView<T>> refFuture = e.getValue();
+                RefFuture<BufferView<A>> refFuture = e.getValue();
 
                 return refFuture.await();
             },
@@ -144,7 +149,7 @@ public class SliceAccessorImpl<T>
         }
     }
 
-    public NavigableMap<Long, BufferView<T>> getPageMap() {
+    public NavigableMap<Long, BufferView<A>> getPageMap() {
         updatePageMap();
         return pageMap;
     }
@@ -237,9 +242,9 @@ public class SliceAccessorImpl<T>
                 long pageId = slice.getPageIdForOffset(offset);
                 long offsetInPage = slice.getIndexInPageForOffset(offset);
 
-                RefFuture<BufferView<T>> currentPageRef = getClaimedPages().get(pageId);
+                RefFuture<BufferView<A>> currentPageRef = getClaimedPages().get(pageId);
 
-                BufferView<T> buffer = currentPageRef.await();
+                BufferView<A> buffer = currentPageRef.await();
 
     //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
     //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
@@ -279,6 +284,148 @@ public class SliceAccessorImpl<T>
         } finally {
             lock.unlock();
         }
+    }
+
+
+    /**
+     * The range [srcOffset, srcOffset + length) must be within the claimed range!
+     * @throws IOException
+     *
+     */
+    @Override
+    public int blockingRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
+        ensureOpen();
+
+        Range<Long> totalReadRange = Range.closedOpen(srcOffset, srcOffset + length);
+        Preconditions.checkArgument(
+                offsetRange.encloses(totalReadRange),
+                "Read range  " + totalReadRange + " is not enclosed by claimed range " + offsetRange);
+
+
+        int result;
+
+        long currentOffset = srcOffset;
+        ReadWriteLock rwl = slice.getReadWriteLock();
+        Lock readLock = rwl.readLock();
+        readLock.lock();
+        try {
+
+            RangeSet<Long> loadedRanges = slice.getLoadedRanges();
+
+            // FIXME - Add failed ranges again
+            RangeMap<Long, List<Throwable>> failedRanges = TreeRangeMap.create(); // ;metaData.getFailedRanges();
+
+            Range<Long> entry = null;
+            List<Throwable> failures = null;
+
+            try {
+                // If the index is outside of the known size then abort
+                // long knownSize = metaData.getSize();
+                long maximumSize = slice.getMaximumKnownSize();
+                if (currentOffset >= maximumSize) {
+                    // close();
+                    result = -1;
+                    // return -1;
+                } else {
+
+                    // rangeBuffer.getFailedRanges().getEntry(currentIndex);
+
+                    failures = failedRanges.get(currentOffset); // .getEntry(currentIndex);
+                    entry = loadedRanges.rangeContaining(currentOffset);
+
+                    if (entry == null && failures == null) {
+                        // Wait for data to become available
+                        // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
+
+                        Lock writeLock = rwl.writeLock();
+                        readLock.unlock();
+                        writeLock.lock();
+
+                        try {
+                            long knownSize;
+                            while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                                    ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
+                                try {
+                                    logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
+                                    slice.getHasDataCondition().await();
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        } finally {
+                            writeLock.unlock();
+                            readLock.lock();
+                        }
+                    }
+                }
+            } finally {
+                readLock.unlock();
+            }
+
+            if (failures != null && !failures.isEmpty()) {
+                throw new RuntimeException("Attempt to read a range of data marked with an error",
+                        failures.get(0));
+            }
+
+
+            if (entry == null) {
+                close();
+                result = -1; // We were positioned at or past the end of data so there was nothing to read
+            } else {
+                Range<Long> range = totalReadRange.intersection(entry); //  entry; //.getKey();
+                ContiguousSet<Long> cset = ContiguousSet.create(range, DiscreteDomain.longs());
+
+                // Result is the length of the range
+                result = cset.size();
+
+                long startAbs = cset.first();
+                long endAbs = startAbs + result;
+
+                // long rangeLength = endAbs - startAbs;
+
+                long pageSize = slice.getPageSize();
+                long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
+                long endPageId = PageUtils.getPageIndexForOffset(endAbs, pageSize);
+                long indexInPage = PageUtils.getIndexInPage(startAbs, pageSize);
+
+                for (long i = startPageId; i <= endPageId; ++i) {
+                    long endIndex = i == endPageId
+                            ? PageUtils.getIndexInPage(endAbs, pageSize)
+                            : pageSize;
+
+                    RefFuture<BufferView<A>> currentPageRef = getClaimedPages().get(i);
+
+                    BufferView<A> buffer = currentPageRef.await();
+                    buffer.getRangeBuffer().readInto(tgt, tgtOffset, indexInPage, Ints.checkedCast(endIndex));
+
+                    indexInPage = 0;
+                }
+
+
+//                pageRange.claimByOffsetRange(startAbs, endAbs);
+//
+//                BufferView<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
+//                long capacity = buffer.getCapacity();
+//                long endInPage = indexInPage + rangeLength;
+//                int endIndex = Ints.saturatedCast(Math.min(capacity, endInPage));
+//
+//                List<T> list = buffer.getDataAsList();
+//                List<T> subList = list.subList(indexInPage, endIndex);
+//                rangeIterator = subList.iterator();
+
+                // rangeIterator = IteratorUtils.limit(rangeBuffer.blockingIterator(start), length);
+
+
+//                    rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
+//                            .iterator();
+            }
+
+        } finally {
+            readLock.unlock();
+        }
+
+
+        return result;
     }
 
     @Override

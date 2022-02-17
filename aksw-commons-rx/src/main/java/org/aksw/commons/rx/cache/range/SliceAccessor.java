@@ -1,5 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.aksw.commons.util.ref.RefFuture;
@@ -21,10 +22,10 @@ import org.aksw.commons.util.ref.RefFuture;
  *
  * @param <T>
  */
-public interface SliceAccessor<T>
+public interface SliceAccessor<A>
     extends AutoCloseable
 {
-    ConcurrentNavigableMap<Long, RefFuture<BufferView<T>>> getClaimedPages();
+    ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> getClaimedPages();
 
 
     // Allow querying the page's range that contains offset?
@@ -55,6 +56,22 @@ public interface SliceAccessor<T>
      */
     void putAll(long offset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength);
 
+
+
+    /**
+     * Read a range of data and block if there is any missing.
+     * The read operation listens on signals to the slice's hasDataCondition
+     * and resumes when either the missing data became available and/or updates
+     * to the slice's maximum known size indicate that there is no more data to wait for.
+     *
+     *
+     * @param tgt Array into which to read the data
+     * @param tgtOffset Index into the tgt array
+     * @param srcOffset Offset in the slice
+     * @param length The maximum number of items to read
+     * @return The number of items read
+     */
+    int blockingRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
 
     /**
      * Unlock the range
