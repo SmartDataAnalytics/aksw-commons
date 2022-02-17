@@ -23,6 +23,18 @@ public interface RangeBuffer<A>
 
     Buffer<A> getBackingBuffer();
 
+    /** For a given buffer-local range return available ranges in global space */
+    // RangeSet<Long> getAvailableGlobalRanges(Range<Long> bufferRange);
+
+    /** Return a set of contributions by this buffer for the given lookup range
+     *  While this method does not expose which parts of the global range are covered,
+     *  this method allows to check whether there are any gaps in the read */
+    RangeSet<Long> getCoveredRanges(Range<Long> localRange);
+
+
+    // RangeSet<Long> getGlobalRanges(Range<Long> localRange);
+
+
     default void transferFrom(long thisOffset, RangeBuffer<A> other, long otherOffset, long length) throws IOException {
 //		Range<Long> readRange = Range.closedOpen(otherOffset, otherOffset + length);
 //
@@ -52,9 +64,15 @@ public interface RangeBuffer<A>
     public static <A> void transfer(RangeBuffer<A> src, long srcOffset, RangeBuffer<A> tgt, long tgtOffset, long length) throws IOException {
         Range<Long> readRange = Range.closedOpen(srcOffset, srcOffset + length);
 
+        RangeSet<Long> validReadRanges = src.getCoveredRanges(readRange);
+
+        // TODO Cache buffer
         int n = 4 * 1024;
         A buffer = tgt.getArrayOps().create(n);
-        for (Range<Long> range :  src.getRanges().subRangeSet(readRange).asRanges()) {
+
+
+        // for (Range<Long> range :  src.getRanges().subRangeSet(readRange).asRanges()) {
+        for (Range<Long> range : validReadRanges.asRanges()) {
             ContiguousSet<Long> cs = ContiguousSet.create(range, DiscreteDomain.longs());
             int remaining = cs.size();
             long first = cs.first();

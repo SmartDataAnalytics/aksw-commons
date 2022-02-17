@@ -4,7 +4,9 @@ import java.io.IOException;
 
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.array.Buffer;
+import org.aksw.commons.util.range.RangeUtils;
 
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -24,8 +26,24 @@ public class RangeBufferImpl<A>
         super();
         this.ranges = ranges;
         this.offsetInRanges = offsetInRanges;
-        System.out.println(offsetInRanges);
+        // System.out.println(offsetInRanges);
         this.backingBuffer = buffer;
+    }
+
+//    @Override
+//    public RangeSet<Long> getAvailableGlobalRanges(Range<Long> bufferRange) {
+//        Range adjustedRange = RangeUtils.shift(bufferRange, offsetInRanges, DiscreteDomain.longs());
+//        return ranges.subRangeSet(adjustedRange);
+//    }
+
+    @Override
+    public RangeSet<Long> getCoveredRanges(Range<Long> localRange) {
+        Range<Long> globalRange = RangeUtils.shiftLong(localRange, offsetInRanges);
+
+        RangeSet<Long> globalCovers = ranges.subRangeSet(globalRange);
+        RangeSet<Long> localCovers = RangeSetOps.shiftLong(globalCovers, -offsetInRanges);
+
+        return localCovers;
     }
 
     @Override

@@ -60,58 +60,60 @@ public class RangeBufferUnion<A>
     }
 
     @Override
+    public RangeSet<Long> getCoveredRanges(Range<Long> localRange) {
+        RangeSet<Long> firstCovers = first.getCoveredRanges(localRange);
+        RangeSet<Long> secondCovers = second.getCoveredRanges(localRange);
+        RangeSet<Long> result = RangeSetOps.union(firstCovers, secondCovers);
+        return result;
+    }
+
+//    @Override
+//    public RangeSet<Long> getAvailableGlobalRanges(Range<Long> bufferRange) {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
+
+    @Override
     public int readInto(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
         long end = srcOffset + length;
-        Range<Long> totalReadRange = Range.closedOpen(srcOffset, end);
+        Range<Long> totalLocalReadRange = Range.closedOpen(srcOffset, end);
 
-        if (!unionRanges.encloses(totalReadRange)) {
-            // UnionRangeSet does not yet provide a .complement() view
-            Set<Range<Long>> gaps = RangeSetUtils.complement(unionRanges, totalReadRange);
-            // RangeSet<Long> gaps = unionRanges.complement().subRangeSet(totalReadRange);
+        RangeSet<Long> gaps = TreeRangeSet.create();
+        gaps.add(totalLocalReadRange);
 
+        List<RangeBuffer<A>> buffers = Arrays.asList(first, second);
+
+        // For each buffer the range set of corresponding reads
+        List<RangeSet<Long>> readSchedules = new ArrayList<>();
+        for (int i = 0; i < buffers.size() && !gaps.isEmpty(); ++i) {
+            RangeSet<Long> schedule = TreeRangeSet.create();
+            readSchedules.add(schedule);
+            RangeBuffer<A> buffer = buffers.get(i);
+
+            for (Range<Long> gap : gaps.asRanges()) {
+                RangeSet<Long> contribs = buffer.getCoveredRanges(gap);
+                gaps.removeAll(contribs);
+
+                schedule.addAll(contribs);
+            }
+        }
+
+        if (!gaps.isEmpty()) {
             throw new RuntimeException("Attempt to read over gaps at: " + gaps);
         }
 
-        RangeSet<Long> gaps = TreeRangeSet.create();
-        gaps.add(totalReadRange);
-        List<RangeBuffer<A>> buffers = Arrays.asList(first, second);
-        List<RangeSet<Long>> readSchedule = new ArrayList<>();
-        for (int i = 0; i < buffers.size(); ++i) {
+        for (int i = 0; i < readSchedules.size(); ++i) {
             RangeBuffer<A> buffer = buffers.get(i);
+            RangeSet<Long> schedule = readSchedules.get(i);
 
-            long displacement = buffer.getOffsetInRanges();
-            long start = displacement + srcOffset;
-            Range<Long> firstReadRange = Range.closedOpen(start, start + length);
-            Set<Range<Long>> availableReads = first.getRanges().subRangeSet(firstReadRange).asRanges();
+            for (Range<Long> range : schedule.asRanges()) {
+                ContiguousSet<Long> tmp = ContiguousSet.create(range, DiscreteDomain.longs());
+                long readStart = tmp.first();
+                int tgtPos = Ints.checkedCast(readStart - srcOffset);
+                int l = tmp.size();
 
-
-
-        }
-
-        long firstOffset = first.getOffsetInRanges();
-        Range<Long> firstReadRange = Range.closedOpen(firstOffset + srcOffset, firstOffset + length);
-
-        Set<Range<Long>> freads = first.getRanges().subRangeSet(firstReadRange).asRanges();
-        Set<Range<Long>> sreads = RangeSetUtils.difference(second.getRanges().subRangeSet(totalReadRange), first.getRanges());
-
-        // Read the segments of the first buffer
-        for (Range<Long> fread : freads) {
-            ContiguousSet<Long> tmp = ContiguousSet.create(fread, DiscreteDomain.longs());
-            long readStart = tmp.first();
-            int tgtPos = Ints.checkedCast(readStart - srcOffset);
-            int l = tmp.size();
-
-            first.readInto(tgt, tgtOffset + tgtPos, readStart, l);
-        }
-
-        // Read the segments of the second buffer
-        for (Range<Long> sread : sreads) {
-            ContiguousSet<Long> tmp = ContiguousSet.create(sread, DiscreteDomain.longs());
-            long readStart = tmp.first();
-            int tgtPos = Ints.checkedCast(readStart - srcOffset);
-            int l = tmp.size();
-
-            second.readInto(tgt, tgtOffset + tgtPos, readStart, l);
+                buffer.readInto(tgt, tgtOffset + tgtPos, readStart, l);
+            }
         }
 
         return length;
@@ -152,4 +154,41 @@ public class RangeBufferUnion<A>
         return null;
     }
 }
+
+
+// old approach that did not create explicit scheduler for each union member - now approach scales to n-ary unions
+//
+//long firstOffset = first.getOffsetInRanges();
+//Range<Long> firstReadRange = Range.closedOpen(firstOffset + srcOffset, firstOffset + length);
+//
+//Set<Range<Long>> freads = first.getRanges().subRangeSet(firstReadRange).asRanges();
+//Set<Range<Long>> sreads = RangeSetUtils.difference(second.getRanges().subRangeSet(totalReadRange), first.getRanges());
+//
+//// Read the segments of the first buffer
+//for (Range<Long> fread : freads) {
+//  ContiguousSet<Long> tmp = ContiguousSet.create(fread, DiscreteDomain.longs());
+//  long readStart = tmp.first();
+//  int tgtPos = Ints.checkedCast(readStart - srcOffset);
+//  int l = tmp.size();
+//
+//  first.readInto(tgt, tgtOffset + tgtPos, readStart, l);
+//}
+//
+//// Read the segments of the second buffer
+//for (Range<Long> sread : sreads) {
+//  ContiguousSet<Long> tmp = ContiguousSet.create(sread, DiscreteDomain.longs());
+//  long readStart = tmp.first();
+//  int tgtPos = Ints.checkedCast(readStart - srcOffset);
+//  int l = tmp.size();
+//
+//  second.readInto(tgt, tgtOffset + tgtPos, readStart, l);
+//}
+
+//if (!unionRanges.encloses(totalReadRange)) {
+//// UnionRangeSet does not yet provide a .complement() view
+//Set<Range<Long>> gaps = RangeSetUtils.complement(unionRanges, totalReadRange);
+//// RangeSet<Long> gaps = unionRanges.complement().subRangeSet(totalReadRange);
+//
+//throw new RuntimeException("Attempt to read over gaps at: " + gaps);
+//}
 
