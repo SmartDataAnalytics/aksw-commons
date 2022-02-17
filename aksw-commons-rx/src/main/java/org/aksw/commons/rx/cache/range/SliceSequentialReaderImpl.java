@@ -1,0 +1,382 @@
+package org.aksw.commons.rx.cache.range;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.LongSupplier;
+
+import org.aksw.commons.lock.LockUtils;
+import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
+import org.aksw.commons.util.range.RangeUtils;
+import org.aksw.commons.util.ref.RefFuture;
+import org.aksw.commons.util.slot.Slot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeMap;
+import com.google.common.math.LongMath;
+import com.google.common.primitives.Ints;
+
+
+/**
+ * The class drives the iteration of items from the cache
+ * and triggers fetching of data as necessary.
+ *
+ * Thereby this class does not fetch the data directly, but it declares
+ * interest in data ranges. The SmartRangeCache will schedule loading of the region
+ * at least as long as interest is expressed.
+ *
+ * @author raven
+ *
+ * @param <T>
+ */
+public abstract class SliceSequentialReaderImpl<A>
+    extends AutoCloseableWithLeakDetectionBase
+    implements SequentialReader<A>
+{
+    private static final Logger logger = LoggerFactory.getLogger(SliceSequentialReaderImpl.class);
+
+    protected SliceWithAutoSync<A> slice;
+    protected SmartRangeCacheImpl<A> cache;
+    protected SliceAccessor<A> pageRange;
+
+    /**
+     * The original request range by this request.
+     * In general, the original request range has to be broken down into smaller ranges
+     * because of result size limits of the backend
+     */
+    protected Range<Long> requestRange;
+
+    
+    
+
+    /** At a checkpoint the data fetching tasks for the next blocks are scheduled */
+    protected long nextCheckpointOffset;
+    
+    
+    protected long currentOffset;
+
+    
+    protected int maxReadAheadItemCount = 100;
+
+
+    public SliceSequentialReaderImpl(SmartRangeCacheImpl<A> cache, long nextCheckpointOffset) {
+        super();
+        this.cache = cache;
+        this.slice = cache.getSlice();
+        this.pageRange = slice.newSliceAccessor();
+        this.currentOffset = nextCheckpointOffset;
+        this.nextCheckpointOffset = nextCheckpointOffset;
+    }
+
+    public long getNextCheckpointOffset() {
+        return nextCheckpointOffset;
+    }
+
+    public SliceAccessor<A> getPageRange() {
+        return pageRange;
+    }
+
+    /**
+     * Schedule ensured loading of the next 'n' items since the last
+     * checkpoint.
+     *
+     * Check whether there are any gaps ahead that require
+     * scheduling requests to the backend
+     *
+     */
+    protected void checkpoint(long n) {
+        clearPassedSlots();
+
+        long start = nextCheckpointOffset;
+        long end = start + n;
+
+        Range<Long> claimAheadRange = Range.closedOpen(start, end);
+
+        LockUtils.runWithLock(cache.getExecutorCreationReadLock(), () -> {
+            slice.readMetaData(metaData -> {
+                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+                processGaps(gaps, start, end);
+            });
+
+            nextCheckpointOffset = end;
+        });
+    }
+
+    // This map holds a single client's requested slots across all tasked workers
+    protected Map<RangeRequestWorker<A>, Slot<Long>> workerToSlot = new IdentityHashMap<>();
+
+    // protected LongSupplier offsetSupplier;
+    protected long maxRedundantFetchSize = 1000;
+
+    public SliceSequentialReaderImpl(SmartRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+        this.cache = cache;
+        this.slice = cache.getSlice();
+        this.pageRange = slice.newSliceAccessor();
+        this.nextCheckpointOffset = nextCheckpointOffset;
+    }
+
+
+    public void clearPassedSlots() {
+        Iterator<Slot<Long>> it = workerToSlot.values().iterator();
+        while (it.hasNext()) {
+            Slot<Long> slot = it.next();
+            Long value = slot.getSupplier().get();
+            // long currentOffset = offsetSupplier.getAsLong();
+            long currentOffset = nextCheckpointOffset;
+            if (value < currentOffset) {
+                logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
+                slot.close();
+                it.remove();
+            }
+        }
+    }
+
+
+    protected void scheduleWorkerToGaps(RangeSet<Long> gaps) {
+
+        // Index workers by offset
+        // If multiple workers have the same offset then only pick the first one with the highest request range
+
+        Map<Long, RangeRequestWorker<A>> offsetToWorker = new HashMap<>();
+        NavigableMap<Long, Long> offsetToEndpoint = new TreeMap<>();
+
+
+
+        // for (RangeRequestWorker<T> e : workerToSlot.keySet()) {
+        for (RangeRequestWorker<A> e : cache.getExecutors()) {
+            long workerStart = e.getCurrentOffset();
+            long workerEnd = e.getEndOffset();
+
+            // Skip workers that have reached their end of their data retrieval range
+            // because we cannot ask those for additional data
+            if (workerStart != workerEnd) {
+
+                Long priorEndpoint = offsetToEndpoint.get(workerStart);
+                if (priorEndpoint == null || priorEndpoint < workerEnd) {
+                    offsetToWorker.put(workerStart, e);
+                    offsetToEndpoint.put(workerStart, workerEnd);
+                }
+            }
+        }
+
+        NavigableMap<Long, Long> workerSchedules = RangeUtils.scheduleRangeSupply(offsetToEndpoint, gaps, maxRedundantFetchSize, cache.requestLimit);
+
+        for (Entry<Long, Long> schedule : workerSchedules.entrySet()) {
+            long start = schedule.getKey();
+            long end = schedule.getValue();
+            long length = end - start;
+
+            RangeRequestWorker<A> worker = offsetToWorker.get(start);
+
+            // If there is no worker with that offset then create one
+            // Otherwise update its slot
+            if (worker == null) {
+                Entry<RangeRequestWorker<A>, Slot<Long>> workerAndSlot = cache.newExecutor(start, length);
+                workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
+            } else {
+                Slot<Long> slot = workerToSlot.get(worker);
+
+                if (slot == null) {
+                    // We are reusing an existing worker; allocate a new slot on it
+                    slot = worker.newDemandSlot();
+                    workerToSlot.put(worker, slot);
+                }
+
+                slot.set(end);
+            }
+
+
+        }
+    }
+
+    protected void processGaps(RangeSet<Long> gaps, long start, long end) {
+        scheduleWorkerToGaps(gaps);
+    }
+
+    protected void closeActual() {
+        logger.debug("Releasing slots: " + workerToSlot);
+        workerToSlot.values().forEach(Slot::close);
+        workerToSlot.clear();
+
+        pageRange.close();
+    }
+    
+    
+    @Override
+    public int read(A tgt, int tgtOffset, int length) {
+
+    	ensureOpen();
+
+    	// Schedule data fetching for length + maxReadAheadItemCount items
+    	long endOffset = currentOffset + length;
+        Range<Long> totalReadRange = Range.closedOpen(currentOffset, currentOffset + length);
+
+    	if (endOffset >= nextCheckpointOffset) {
+    	
+            try {
+                long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
+                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(LongMath.saturatedAdd(end - currentOffset, 1));
+
+                // Read up length + maxReadAheadItemCount
+                int n = Math.min(length + maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
+
+                // Increments nextCheckpointOffset by n
+                checkpoint(n);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+         }
+
+
+//        Preconditions.checkArgument(
+//                offsetRange.encloses(totalReadRange),
+//                "Read range  " + totalReadRange + " is not enclosed by claimed range " + offsetRange);
+
+
+        int result;
+
+        ReadWriteLock rwl = slice.getReadWriteLock();
+        Lock readLock = rwl.readLock();
+        readLock.lock();
+        try {
+
+            RangeSet<Long> loadedRanges = slice.getLoadedRanges();
+
+            // FIXME - Add failed ranges again
+            RangeMap<Long, List<Throwable>> failedRanges = TreeRangeMap.create(); // ;metaData.getFailedRanges();
+
+            Range<Long> entry = null;
+            List<Throwable> failures = null;
+
+            try {
+                // If the index is outside of the known size then abort
+                // long knownSize = metaData.getSize();
+                long maximumSize = slice.getMaximumKnownSize();
+                if (currentOffset >= maximumSize) {
+                    // close();
+                    result = -1;
+                    // return -1;
+                } else {
+
+                    // rangeBuffer.getFailedRanges().getEntry(currentIndex);
+
+                    failures = failedRanges.get(currentOffset); // .getEntry(currentIndex);
+                    entry = loadedRanges.rangeContaining(currentOffset);
+
+                    if (entry == null && failures == null) {
+                        // Wait for data to become available
+                        // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
+
+                        Lock writeLock = rwl.writeLock();
+                        readLock.unlock();
+                        writeLock.lock();
+
+                        try {
+                            long knownSize;
+                            while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                                    ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
+                                try {
+                                    logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
+                                    slice.getHasDataCondition().await();
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        } finally {
+                            writeLock.unlock();
+                            readLock.lock();
+                        }
+                    }
+                }
+            } finally {
+                readLock.unlock();
+            }
+
+            if (failures != null && !failures.isEmpty()) {
+                throw new RuntimeException("Attempt to read a range of data marked with an error",
+                        failures.get(0));
+            }
+
+
+            if (entry == null) {
+                close();
+                result = -1; // We were positioned at or past the end of data so there was nothing to read
+            } else {
+                Range<Long> range = totalReadRange.intersection(entry); //  entry; //.getKey();
+                ContiguousSet<Long> cset = ContiguousSet.create(range, DiscreteDomain.longs());
+
+                // Result is the length of the range
+                result = cset.size();
+
+                long startAbs = cset.first();
+                long endAbs = startAbs + result;
+
+                // long rangeLength = endAbs - startAbs;
+                pageRange.claimByOffsetRange(startAbs, endAbs);
+
+                
+                long pageSize = slice.getPageSize();
+                long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
+                long endPageId = PageUtils.getPageIndexForOffset(endAbs, pageSize);
+                long indexInPage = PageUtils.getIndexInPage(startAbs, pageSize);
+
+                
+                for (long i = startPageId; i <= endPageId; ++i) {
+                    long endIndex = i == endPageId
+                            ? PageUtils.getIndexInPage(endAbs, pageSize)
+                            : pageSize;
+
+                    RefFuture<BufferView<A>> currentPageRef = pageRange.getClaimedPages().get(i);
+
+                    BufferView<A> buffer = currentPageRef.await();
+                    buffer.getRangeBuffer().readInto(tgt, tgtOffset, indexInPage, Ints.checkedCast(endIndex));
+
+                    indexInPage = 0;
+                }
+
+
+//                pageRange.claimByOffsetRange(startAbs, endAbs);
+//
+//                BufferView<T> buffer = pageRange.getClaimedPages().firstEntry().getValue().await();
+//                long capacity = buffer.getCapacity();
+//                long endInPage = indexInPage + rangeLength;
+//                int endIndex = Ints.saturatedCast(Math.min(capacity, endInPage));
+//
+//                List<T> list = buffer.getDataAsList();
+//                List<T> subList = list.subList(indexInPage, endIndex);
+//                rangeIterator = subList.iterator();
+
+                // rangeIterator = IteratorUtils.limit(rangeBuffer.blockingIterator(start), length);
+
+
+//                    rangeIterator = rangeBuffer.getBufferAsList().subList(range.lowerEndpoint(), range.upperEndpoint())
+//                            .iterator();
+            }
+
+        } finally {
+            readLock.unlock();
+        }
+
+
+        return result;
+    }
+
+
+}
+
