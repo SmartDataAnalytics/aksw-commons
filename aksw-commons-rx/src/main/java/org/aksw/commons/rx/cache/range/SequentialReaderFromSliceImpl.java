@@ -113,11 +113,10 @@ public class SequentialReaderFromSliceImpl<A>
         Range<Long> claimAheadRange = Range.closedOpen(start, end);
 
         LockUtils.runWithLock(cache.getExecutorCreationReadLock(), () -> {
-            slice.readMetaData(metaData -> {
-                RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+        	LockUtils.runWithLock(slice.getReadWriteLock().readLock(), () -> {
+                RangeSet<Long> gaps = slice.getGaps(claimAheadRange);
                 processGaps(gaps, start, end);
-            });
-
+        	});
             nextCheckpointOffset = end;
         });
     }

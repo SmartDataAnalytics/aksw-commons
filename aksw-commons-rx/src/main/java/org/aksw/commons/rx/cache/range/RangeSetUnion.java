@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.aksw.commons.collections.SetUtils;
 import org.aksw.commons.util.range.RangeUtils;
+import org.checkerframework.checker.units.qual.C;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -23,6 +24,7 @@ public class RangeSetUnion<T extends Comparable<T>>
 	protected RangeSet<T> second;
 	
 	
+	protected transient RangeSet<T> complement = null;
 	protected transient Set<Range<T>> asRanges = null;
 	protected transient Set<Range<T>> asDescendingSetOfRanges = null;
 
@@ -52,42 +54,10 @@ public class RangeSetUnion<T extends Comparable<T>>
 		boolean result = first.contains(value) || second.contains(value);
 		return result;		
 	}
-
-	/**
-	 * Returs a collection (list) of the range before and after the value (if they exist).
-	 * Should both ranges exist and connect on the value then the span is created resulting in the range surrounding the value.
-	 * @param value
-	 * @return
-	 */
-	protected Collection<Range<T>> getRangesBeforeAndAfter(T value) {
-		Range<T> before = Iterables.getFirst(subRangeSet(Range.atMost(value)).asDescendingSetOfRanges(), null);
-		Range<T> after =  Iterables.getFirst(subRangeSet(Range.atLeast(value)).asRanges(), null);
-
-		Collection<Range<T>> result;
-		if (before == null) {
-			if (after == null) {
-				result = Collections.emptyList();
-			} else {
-				result = Collections.singleton(after);
-			}
-		} else {
-			if (after == null) {
-				result = Collections.singleton(before);
-			} else {
-				if (before.isConnected(after)) {
-					result = Collections.singletonList(before.span(after));
-				} else {
-					result = ImmutableList.<Range<T>>builder().add(before).add(after).build();
-				}				
-			}
-		}
-
-		return result;
-	}
 	
 	@Override
 	public Range<T> rangeContaining(T value) {
-		Range<T> result = getRangesBeforeAndAfter(value).stream().filter(range -> range.contains(value)).findFirst().orElse(null);
+		Range<T> result = RangeSetUtils.getRangesBeforeAndAfter(this, value).stream().filter(range -> range.contains(value)).findFirst().orElse(null);
 		return result;
 	}		
 //		// Get the ranges before and after the value (if any)
@@ -126,7 +96,7 @@ public class RangeSetUnion<T extends Comparable<T>>
 			Range<T> onlyRange = Iterables.getFirst(asRanges(), null);
 			result = onlyRange != null && onlyRange.encloses(otherRange);
 		} else {
-			result = getRangesBeforeAndAfter(endpoint).stream().anyMatch(range -> range.encloses(otherRange));
+			result = RangeSetUtils.getRangesBeforeAndAfter(this, endpoint).stream().anyMatch(range -> range.encloses(otherRange));
 		}
 		return result;
 	}
@@ -174,8 +144,11 @@ public class RangeSetUnion<T extends Comparable<T>>
 
 	@Override
 	public RangeSet<T> complement() {
-		throw new UnsupportedOperationException();
-		// return create(first.complement(), second.complement());
+		if (complement == null) {
+			complement = new RangeSetComplement<>(this, Range.all());
+		}
+		
+		return complement; 
 	}
 
 	@Override
@@ -214,62 +187,4 @@ public class RangeSetUnion<T extends Comparable<T>>
 	public String toString() {
 		return asRanges().toString();
 	}
-	
-	
-//	private class Complement
-//		extends AbstractSet<T>
-//	{
-//		protected Range<T> restriction;
-//		
-//		public Complement(Range<T> restriction) {
-//			super();
-//			this.restriction = restriction;
-//		}
-//		
-//		@Override
-//		public Iterator<T> iterator() {
-//			
-//			
-//			return new AbstractIterator<T>() {
-//				BoundType lastBoundType = restriction.hasLowerBound() ? restriction.
-//				T lastEndpoint = null;
-//				
-//				Iterator<Range<T>> it = RangeSetUnion.this.asRanges().iterator();
-//				Range<T> a = it.hasNext() ? it.next() : null;
-//				
-//				@Override
-//				protected T computeNext() {
-//					Range<T> result;
-//
-//					while (true) {
-//						if (a == null) {
-//							
-//							
-//						} else if (!a.hasLowerBound()) {
-//							if (a.hasUpperBound()) {
-//								lastBoundType = a.upperBoundType();
-//								lastEndpoint = a.upperEndpoint();
-//							}						
-//						} else {
-//							BoundType nextBoundType = BoundType.OPEN.equals(a.lowerBoundType()) ? BoundType.CLOSED : BoundType.OPEN;
-//							T nextEndpoint = a.lowerEndpoint();
-//							
-//							result = lastEndpoint == null
-//									? Range.upTo(nextEndpoint, nextBoundType)
-//									: Range.range(lastEndpoint, lastBoundType, nextEndpoint, nextBoundType);
-//						}
-//					}					
-//					
-//					// TODO Auto-generated method stub
-//					return null;
-//				}
-//			};
-//		}
-//
-//		@Override
-//		public int size() {
-//			return Iterators.size(iterator());
-//		}
-//	}
-	
 }

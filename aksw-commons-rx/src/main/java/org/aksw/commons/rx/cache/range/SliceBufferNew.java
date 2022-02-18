@@ -29,7 +29,6 @@ import org.aksw.commons.txn.impl.PathState;
 import org.aksw.commons.util.array.ArrayBuffer;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.array.Buffer;
-import org.aksw.commons.util.range.BufferWithGenerationImpl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
@@ -51,7 +51,7 @@ class LazyLoadingDiffBuffer {
 // The outside only sees a buffer - but internally it has a structure that enables serializing the changed regions
 
 public class SliceBufferNew<A>
-    implements SliceWithPages, Sync
+    implements SliceWithPages<A>, Sync
     // implements SliceWithAutoSync<T>
 {
     protected Logger logger = LoggerFactory.getLogger(SliceBufferNew.class);
@@ -213,6 +213,11 @@ public class SliceBufferNew<A>
         return pageCache.claim(pageId);
     }
 
+	@Override
+    public RangeSet<Long> getGaps(Range<Long> requestRange) {
+    	return liveMetaData.getGaps(requestRange);
+    }
+        
 
     public boolean hasMetaDataChanged() {
         String resourceName = "metadata.ser";

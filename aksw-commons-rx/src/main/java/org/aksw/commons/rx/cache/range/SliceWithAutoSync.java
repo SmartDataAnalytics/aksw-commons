@@ -49,6 +49,8 @@ public interface SliceWithAutoSync<T>
     RangeSet<Long> getLoadedRanges();
 
 
+    RangeSet<Long> getGaps(Range<Long> requestRange);
+
     /**
      * Obtain a new reference to the metadata. The referent may be loaded lazily.
      * The reference must be closed after use in order to allow sync to trigger.

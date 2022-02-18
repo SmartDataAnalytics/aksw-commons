@@ -2,11 +2,13 @@ package org.aksw.commons.rx.cache.range;
 
 import java.text.DecimalFormat;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 
 public class RangeSetUnionTests {
 
@@ -32,6 +34,17 @@ public class RangeSetUnionTests {
 
 
     @Test
+    public void testGenericComplement() {
+    	RangeSet<Long> c = RangeSetOps.union(TreeRangeSet.<Long>create(), TreeRangeSet.create()).complement();
+
+    	Range<Long> first = c.asRanges().iterator().next();
+    	Assert.assertEquals(first, Range.all());
+    
+    	Assert.assertEquals(c.span(), Range.all());
+    }
+    
+    
+    @Test
     public void testFlat() {
 
         DecimalFormat df = new DecimalFormat();
@@ -55,7 +68,7 @@ public class RangeSetUnionTests {
                 .add(Range.closedOpen(3, 4))
                 .build();
 
-        System.out.println("Complement: " + RangeSetUtils.complement(odd, Range.all()));
+        System.out.println("Complement: " + odd.complement());
         // System.out.println(odd.complement().subRangeSet(Range.closedOpen(1, 3)));
     }
 
