@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -41,10 +42,20 @@ public class SyncPool {
         		IntStream.range('a', 'z').mapToObj(i -> "item " + (char)i).collect(Collectors.toList())));
   
         
-        SequentialReader<Object[]> reader = source.newInputStream(Range.atLeast(10l));
+        SmartRangeCacheNew<Object[]> cache = new SmartRangeCacheNew<>(source, slice, Duration.ofSeconds(5), 10000, 10);
+        
+        Range<Long> requestRange = Range.atLeast(10l);
+        SequentialReader<Object[]> baseReader = source.newInputStream(requestRange);
         
         Object[] buffer = arrayOps.create(10);
-        reader.read(buffer, 0, buffer.length);
+        // baseReader.read(buffer, 0, buffer.length);
+        
+        System.out.println(Arrays.toString(buffer));
+        
+        
+        SequentialReader<Object[]> cachedReader = cache.newInputStream(requestRange);
+        
+        cachedReader.read(buffer, 0, buffer.length);
         
         System.out.println(Arrays.toString(buffer));
         

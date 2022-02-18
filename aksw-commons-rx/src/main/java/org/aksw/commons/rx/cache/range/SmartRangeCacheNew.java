@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 
 public class SmartRangeCacheNew<T>
+	implements SequentialReaderSource<T>
 //     implements ListPaginator<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(SmartRangeCacheNew.class);
@@ -128,9 +129,9 @@ public class SmartRangeCacheNew<T>
      *
      * @param requestRange
      */
-    public SequentialReader<T> request(Range<Long> requestRange) {
-
-    	SequentialReaderFromSliceImpl<T> result = new SequentialReaderFromSliceImpl<>(this, requestRange);
+    @Override
+    public SequentialReader<T> newInputStream(Range<Long> range) {
+    	SequentialReaderFromSliceImpl<T> result = new SequentialReaderFromSliceImpl<>(this, range);
         // RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
