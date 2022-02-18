@@ -1,11 +1,11 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.time.Duration;
-import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.lock.LockUtils;
+import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.sink.BulkingSink;
@@ -23,7 +23,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.math.LongMath;
 
-import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 /**
@@ -31,20 +30,25 @@ import io.reactivex.rxjava3.disposables.Disposable;
  *
  * @author raven
  *
- * @param <T>
+ * @param <A>
  */
-public class RangeRequestWorkerNew<T>
+public class RangeRequestWorkerNew<A>
     extends AutoCloseableWithLeakDetectionBase
     implements Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(RangeRequestWorkerNew.class);
 
+    
+    
     /**
      * Reference to the manager - if there is a failure in processing the request the executor
      * notifies it
      */
-    protected SmartRangeCacheImpl<T> cacheSystem;
+    protected SmartRangeCacheNew<A> cacheSystem;
 
+    
+    protected ArrayOps<A> arrayOps;
+    
     /**
      * Demands from clients to load data up to the supplied value.
      * A client can unregister a demand any time.
@@ -58,16 +62,18 @@ public class RangeRequestWorkerNew<T>
      * The data supplying iterator.
      * If all data in the range of operation of this worker is cached then no backend request is made.
      */
-    protected Iterator<T> iterator = null;
+    // protected Iterator<T> iterator = null;
 
+    protected SequentialReader<A> sequentialReader;
+    
     /** The disposable of the data supplier */
     protected Disposable disposable;
 
     /** The data slice */
-    protected SliceWithAutoSync<T> slice;
+    protected SliceWithAutoSync<A> slice;
 
     /** The pages claimed by this worker; obtained from slice */
-    protected SliceAccessor<T> pageRange;
+    protected SliceAccessor<A> pageRange;
 
     protected long currentPageId = -1;
 
@@ -130,7 +136,7 @@ public class RangeRequestWorkerNew<T>
 
 
     public RangeRequestWorkerNew(
-            SmartRangeCacheImpl<T> cacheSystem,
+    		SmartRangeCacheNew<A> cacheSystem,
             long requestOffset,
             long requestLimit,
             long terminationDelay) {
@@ -147,7 +153,7 @@ public class RangeRequestWorkerNew<T>
         this.offsetToMaxAllowedRefetchCount = offset -> 5000;
 
         endpointDemands.addValueChangeListener(event -> {
-            logger.info("Slot event on " + this + ": " + event);
+            logger.info("End-offset of data range demand updated to " + this + ": " + event);
 
             synchronized (endpointDemands) {
                 endpointDemands.notifyAll();
@@ -169,8 +175,6 @@ public class RangeRequestWorkerNew<T>
         return numItemsProcessed / (float)(processingTimeInNanos / 1e9);
     }
 
-
-
     /**
      * Estimated time of arrival at the given index in seconds
      * Index must be greater or equal to offset
@@ -184,7 +188,6 @@ public class RangeRequestWorkerNew<T>
         float result = distance * throughput;
         return result;
     }
-
 
     /**
      * Stops processing of this executor and
@@ -205,9 +208,13 @@ public class RangeRequestWorkerNew<T>
     protected synchronized void initBackendRequest() {
         // Synchronize because abort may be called concurrently
         if (!isClosed) {
-            Flowable<T> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
-            iterator = backendFlow.blockingIterable().iterator();
-            disposable = (Disposable)iterator;
+            // Flowable<A> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
+            // iterator = backendFlow.blockingIterable().iterator();
+            // disposable = (Disposable)iterator;
+            
+        	// TODO Init the reader
+        	sequentialReader = null;
+            
         } else {
             return; // Exit immediately due to abort
         }
@@ -269,15 +276,21 @@ public class RangeRequestWorkerNew<T>
      * - reached end of data
      * - 
      * - exception
+     * @throws Exception 
      * 
      */
-    public void runCore() {
+    public void runCore() throws Exception {
         initBackendRequest();
 
+        A buffer = arrayOps.create(bulkSize);
+        
         // Measuring the time for the first item may be meaningless if an underlying cache is used
         // It may be better to measure on e.g. the HTTP level using interceptors on HTTP client
+        
+        boolean isFirstRun = true;
         Stopwatch stopwatch = Stopwatch.createStarted();
-        iterator.hasNext();
+        process(1);
+        
         firstItemTime = stopwatch.elapsed();
 
         // pauseLock.writeLock().newCondition();
@@ -296,14 +309,22 @@ public class RangeRequestWorkerNew<T>
                 }
             }
 
+            boolean hasNext;
             try {
-                process(reportingInterval);
+            	// Align with bulk size; this should give more aesthetic numbers in debugging and logging
+            	if (isFirstRun) {
+            		isFirstRun = false;
+            		hasNext = process(reportingInterval - 1) >= 0;
+            	} else {
+            		hasNext = process(reportingInterval) >= 0;
+            	}
+
             } catch (Exception e) {
                  throw new RuntimeException(e);
             }
 
 
-            if (iterator.hasNext()) {
+            if (hasNext) {
 
                 // Shut down if there is no pending request for further data
                 synchronized (endpointDemands)  {
@@ -362,7 +383,7 @@ public class RangeRequestWorkerNew<T>
                 // If there is no more data then terminate immediately
                 break;
             }
-        }
+        }        
     }
 
 
@@ -387,11 +408,13 @@ public class RangeRequestWorkerNew<T>
      * @throws Exception
      *
      */
-    public void process(int n) throws Exception {
+    public int process(int n) throws Exception {
 
+    	A buffer = arrayOps.create(reportingInterval);
+    	
         pageRange.claimByOffsetRange(offset, offset + n);
 
-        BulkingSink<T> sink = BulkingSink.create(bulkSize,
+        BulkingSink<A> sink = BulkingSink.create(bulkSize,
                 (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
 
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
@@ -410,26 +433,21 @@ public class RangeRequestWorkerNew<T>
 
         // Explicitly acquire the write lock in order to update the
         // buffer and possibly the known size in one operation
+    	int numItemsReadTmp;
         pageRange.lock();
-        try {
+        try {        	
+        	// Note: Read should never return 0!
+        	while ((numItemsReadTmp = sequentialReader.read(buffer, 0, n)) >= 0 && numItemsProcessed < limit && !isClosed && !Thread.interrupted()) {
+                pageRange.putAll(offset, buffer, 0, numItemsReadTmp);
 
-            int i = 0;
-            boolean hasNext;
-            while ((hasNext = iterator.hasNext()) && i < limit && !isClosed && !Thread.interrupted()) {
-                T item = iterator.next();
-                ++i;
-                sink.accept(item);
-            }
-
-            sink.flush();
-            sink.close();
-
-            numItemsProcessed += i;
-            offset += i;
-
-            boolean hn = hasNext;
-            slice.mutateMetaData(metaData -> {
-                metaData.setMinimumKnownSize(offset);
+                numItemsProcessed += numItemsReadTmp;
+                offset += numItemsReadTmp;
+        	}
+        	
+        	int numItemsRead = numItemsReadTmp;
+        	
+        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
+                slice.setMinimumKnownSize(offset);
 
                 // If there is no further item although the request range has not been covered
                 // then we have detected the end
@@ -441,19 +459,56 @@ public class RangeRequestWorkerNew<T>
                 // (3) another request with the same offset that yield results
 
                 // TODO set the known size if the page is full
-                if (!hn && numItemsProcessed < requestLimit) {
-                    if (metaData.getKnownSize() < 0) {
+                if (numItemsProcessed < 0 && numItemsProcessed < requestLimit) {
+                    if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
-                        metaData.setKnownSize(offset);
+                        slice.setMaximumKnownSize(offset);
                     }
                 }
-                logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
-            });
+                logger.info("Signalling data condition to clients - " + numItemsRead + " - " + numItemsProcessed + " " + requestLimit);
+                slice.getHasDataCondition().signalAll();
+        	});
+
+//            int i = 0;
+//            boolean hasNext;
+//            while ((hasNext = iterator.hasNext()) && i < limit && !isClosed && !Thread.interrupted()) {
+//                A item = iterator.next();
+//                ++i;
+//                sink.accept(item);
+//            }
+
+//            sink.flush();
+//            sink.close();
+
+//            slice.mutateMetaData(metaData -> {
+//                metaData.setMinimumKnownSize(offset);
+//
+//                // If there is no further item although the request range has not been covered
+//                // then we have detected the end
+//
+//                // Note: We may have also just hit the backend's result-set-limit
+//                // This is the case if there is
+//                // (1) a known result-set-limit value on the smart cache
+//                // (2) a known higher offset in the smart cache or
+//                // (3) another request with the same offset that yield results
+//
+//                // TODO set the known size if the page is full
+//                if (!hn && numItemsProcessed < requestLimit) {
+//                    if (metaData.getKnownSize() < 0) {
+//                        // long knownPageSize = offsetInPage + i;
+//                        // rangeBuffer.setKnownSize(knownPageSize);
+//                        metaData.setKnownSize(offset);
+//                    }
+//                }
+//                logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
+//            });
 
         } finally {
             pageRange.unlock();
         }
+        
+        return numItemsReadTmp;
     }
 
     

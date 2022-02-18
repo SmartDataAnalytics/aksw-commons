@@ -17,15 +17,19 @@ public class AutoCloseableBase
     protected void closeActual() throws Exception {}
 
     @Override
-    public final synchronized void close() {
+    public final void close() {
         if (!isClosed) {
-            isClosed = true;
-
-            try {
-                closeActual();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        	synchronized (this) {
+        		if (!isClosed) {
+		            isClosed = true;
+		
+		            try {
+		                closeActual();
+		            } catch (Exception e) {
+		                throw new RuntimeException(e);
+		            }
+        		}
+        	}
         }
     }
 }

@@ -239,6 +239,11 @@ public class SmartRangeCacheImpl<T>
         return new SimpleEntry<>(worker, slot);
     }
 
+    
+    // Should only be called by the RangeRequestWorker once it terminates
+    void removeExecutor(RangeRequestWorker<T> worker) {
+    	this.executors.remove(worker);
+    }
 
     /**
      * Create a RequestContext for the given requestRange:

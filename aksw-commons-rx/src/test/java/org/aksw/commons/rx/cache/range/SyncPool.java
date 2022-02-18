@@ -6,25 +6,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.aksw.commons.lock.LockUtils;
-import org.aksw.commons.store.object.key.api.ObjectResource;
-import org.aksw.commons.store.object.key.api.ObjectStore;
-import org.aksw.commons.store.object.key.api.ObjectStoreConnection;
-import org.aksw.commons.store.object.key.impl.ObjectInfo;
-import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
-import org.aksw.commons.store.object.path.api.ObjectSerializer;
-import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
+import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.txn.impl.TxnHandler;
 import org.aksw.commons.txn.impl.TxnMgrImpl;
 import org.aksw.commons.util.array.ArrayBuffer;
 import org.aksw.commons.util.array.ArrayOps;
-import org.aksw.commons.util.ref.RefFuture;
 import org.junit.Test;
 
-import com.esotericsoftware.kryo.pool.KryoPool;
+import com.google.common.collect.Range;
 import com.google.common.collect.TreeRangeSet;
 
 public class SyncPool {
@@ -35,7 +30,35 @@ public class SyncPool {
 //
 //	}
 
-    @Test
+	
+	@Test
+	public void testRangeCache() throws IOException {
+		ArrayOps<Object[]> arrayOps = ArrayOps.OBJECT;
+		
+        SliceBufferNew<Object[]> slice = SliceBufferNew.create(arrayOps, Path.of("/tmp/cache-test"), 128);
+
+        SequentialReaderSource<Object[]> source = SequentialReaderSourceRx.create(arrayOps, ListPaginatorFromList.wrap(
+        		IntStream.range('a', 'z').mapToObj(i -> "item " + (char)i).collect(Collectors.toList())));
+  
+        
+        SequentialReader<Object[]> reader = source.newInputStream(Range.atLeast(10l));
+        
+        Object[] buffer = arrayOps.create(10);
+        reader.read(buffer, 0, buffer.length);
+        
+        System.out.println(Arrays.toString(buffer));
+        
+//        SmartRangeCacheNew<Object[]> cache = new SmartRangeCacheNew<>();
+		
+//        return SmartRangeCacheImpl.wrap(
+//                backend, SmartRangeCacheImpl.createKeyObjectStore(
+//                        Paths.get("/tmp/test/" + testId),
+//                        SmartRangeCacheImpl.createKyroPool(null)), 1024, 10, Duration.ofSeconds(1), 10000, 1000);
+
+		
+	}
+	
+    // @Test
     public void test() throws Exception {
         // ObjectStore objectStore = ObjectStoreImpl.create(null, null)
         SliceBufferNew<Object[]> slice = SliceBufferNew.create(ArrayOps.OBJECT, Path.of("/tmp/cache-test"), 128);

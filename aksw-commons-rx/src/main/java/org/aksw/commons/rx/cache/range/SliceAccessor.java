@@ -64,7 +64,6 @@ public interface SliceAccessor<A>
      * and resumes when either the missing data became available and/or updates
      * to the slice's maximum known size indicate that there is no more data to wait for.
      *
-     *
      * @param tgt Array into which to read the data
      * @param tgtOffset Index into the tgt array
      * @param srcOffset Offset in the slice

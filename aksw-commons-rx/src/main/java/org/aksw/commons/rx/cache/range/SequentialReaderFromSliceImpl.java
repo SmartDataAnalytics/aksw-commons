@@ -6,10 +6,9 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Objects;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.LongSupplier;
@@ -17,12 +16,10 @@ import java.util.function.LongSupplier;
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.range.RangeUtils;
-import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -45,14 +42,14 @@ import com.google.common.primitives.Ints;
  *
  * @param <T>
  */
-public abstract class SliceSequentialReaderImpl<A>
+public class SequentialReaderFromSliceImpl<A>
     extends AutoCloseableWithLeakDetectionBase
     implements SequentialReader<A>
 {
-    private static final Logger logger = LoggerFactory.getLogger(SliceSequentialReaderImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(SequentialReaderFromSliceImpl.class);
 
     protected SliceWithAutoSync<A> slice;
-    protected SmartRangeCacheImpl<A> cache;
+    protected SmartRangeCacheNew<A> cache;
     protected SliceAccessor<A> pageRange;
 
     /**
@@ -70,19 +67,26 @@ public abstract class SliceSequentialReaderImpl<A>
     
     
     protected long currentOffset;
-
-    
     protected int maxReadAheadItemCount = 100;
 
-
-    public SliceSequentialReaderImpl(SmartRangeCacheImpl<A> cache, long nextCheckpointOffset) {
+    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, Range<Long> requestRange) {
         super();
+        this.requestRange = requestRange;
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
         this.currentOffset = nextCheckpointOffset;
         this.nextCheckpointOffset = nextCheckpointOffset;
     }
+
+//    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, long nextCheckpointOffset) {
+//        super();
+//        this.cache = cache;
+//        this.slice = cache.getSlice();
+//        this.pageRange = slice.newSliceAccessor();
+//        this.currentOffset = nextCheckpointOffset;
+//        this.nextCheckpointOffset = nextCheckpointOffset;
+//    }
 
     public long getNextCheckpointOffset() {
         return nextCheckpointOffset;
@@ -119,12 +123,12 @@ public abstract class SliceSequentialReaderImpl<A>
     }
 
     // This map holds a single client's requested slots across all tasked workers
-    protected Map<RangeRequestWorker<A>, Slot<Long>> workerToSlot = new IdentityHashMap<>();
+    protected Map<RangeRequestWorkerNew<A>, Slot<Long>> workerToSlot = new IdentityHashMap<>();
 
     // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
-    public SliceSequentialReaderImpl(SmartRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
@@ -153,13 +157,13 @@ public abstract class SliceSequentialReaderImpl<A>
         // Index workers by offset
         // If multiple workers have the same offset then only pick the first one with the highest request range
 
-        Map<Long, RangeRequestWorker<A>> offsetToWorker = new HashMap<>();
+        Map<Long, RangeRequestWorkerNew<A>> offsetToWorker = new HashMap<>();
         NavigableMap<Long, Long> offsetToEndpoint = new TreeMap<>();
 
 
 
         // for (RangeRequestWorker<T> e : workerToSlot.keySet()) {
-        for (RangeRequestWorker<A> e : cache.getExecutors()) {
+        for (RangeRequestWorkerNew<A> e : cache.getExecutors()) {
             long workerStart = e.getCurrentOffset();
             long workerEnd = e.getEndOffset();
 
@@ -182,12 +186,12 @@ public abstract class SliceSequentialReaderImpl<A>
             long end = schedule.getValue();
             long length = end - start;
 
-            RangeRequestWorker<A> worker = offsetToWorker.get(start);
+            RangeRequestWorkerNew<A> worker = offsetToWorker.get(start);
 
             // If there is no worker with that offset then create one
             // Otherwise update its slot
             if (worker == null) {
-                Entry<RangeRequestWorker<A>, Slot<Long>> workerAndSlot = cache.newExecutor(start, length);
+                Entry<RangeRequestWorkerNew<A>, Slot<Long>> workerAndSlot = cache.newExecutor(start, length);
                 workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
             } else {
                 Slot<Long> slot = workerToSlot.get(worker);
@@ -219,7 +223,7 @@ public abstract class SliceSequentialReaderImpl<A>
     
     
     @Override
-    public int read(A tgt, int tgtOffset, int length) {
+    public int read(A tgt, int tgtOffset, int length) throws IOException {
 
     	ensureOpen();
 
@@ -330,7 +334,9 @@ public abstract class SliceSequentialReaderImpl<A>
                 // long rangeLength = endAbs - startAbs;
                 pageRange.claimByOffsetRange(startAbs, endAbs);
 
+                pageRange.blockingRead(tgt, tgtOffset, endOffset, result);
                 
+                /*
                 long pageSize = slice.getPageSize();
                 long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
                 long endPageId = PageUtils.getPageIndexForOffset(endAbs, pageSize);
@@ -349,6 +355,7 @@ public abstract class SliceSequentialReaderImpl<A>
 
                     indexInPage = 0;
                 }
+                */
 
 
 //                pageRange.claimByOffsetRange(startAbs, endAbs);
