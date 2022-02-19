@@ -295,6 +295,9 @@ public class RangeRequestWorkerNew<A>
      * 
      */
     public void runCore() throws Exception {
+    	
+    	A buffer = arrayOps.create(reportingInterval);
+
         initBackendRequest();
         
         // Measuring the time for the first item may be meaningless if an underlying cache is used
@@ -302,7 +305,7 @@ public class RangeRequestWorkerNew<A>
         
         boolean isFirstRun = true;
         Stopwatch stopwatch = Stopwatch.createStarted();
-        process(1);
+        process(buffer, 1);
         
         firstItemTime = stopwatch.elapsed();
 
@@ -327,9 +330,9 @@ public class RangeRequestWorkerNew<A>
             	// Align with bulk size; this should give more aesthetic numbers in debugging and logging
             	if (isFirstRun) {
             		isFirstRun = false;
-            		hasNext = process(reportingInterval - 1) >= 0;
+            		hasNext = process(buffer, reportingInterval - 1) >= 0;
             	} else {
-            		hasNext = process(reportingInterval) >= 0;
+            		hasNext = process(buffer, reportingInterval) >= 0;
             	}
 
             } catch (Exception e) {
@@ -423,9 +426,10 @@ public class RangeRequestWorkerNew<A>
      * @throws Exception
      *
      */
-    public int process(int n) throws Exception {
-
-    	A buffer = arrayOps.create(reportingInterval);
+    public int process(A buffer, int n) throws Exception {
+    	if (n == 0) {
+    		throw new IllegalArgumentException("Request to process 0 items is invalid");
+    	}
     	
         pageRange.claimByOffsetRange(offset, offset + n);
 
@@ -447,7 +451,12 @@ public class RangeRequestWorkerNew<A>
         // Explicitly acquire the write lock in order to update the
         // buffer and possibly the known size in one operation
     	int numItemsReadTmp;
-        pageRange.lock();
+        // pageRange.lock();
+        
+        Lock writeLock = slice.getReadWriteLock().writeLock();
+        writeLock.lock();
+        
+        long itemsProcessedNow = 0;
         try {        	
         	// Note: Read should never return 0!
         	while ((numItemsReadTmp = sequentialReader.read(buffer, 0, n)) >= 0 && numItemsProcessed < limit && !isClosed && !Thread.interrupted()) {
@@ -455,12 +464,14 @@ public class RangeRequestWorkerNew<A>
 
                 numItemsProcessed += numItemsReadTmp;
                 offset += numItemsReadTmp;
+                itemsProcessedNow += numItemsReadTmp;
         	}
         	
-        	int numItemsRead = numItemsReadTmp;
+        	// int numItemsRead = numItemsProcessed;
         	
-        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
-                slice.setMinimumKnownSize(offset);
+//        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
+        	
+                slice.updateMinimumKnownSize(offset);
 
                 // If there is no further item although the request range has not been covered
                 // then we have detected the end
@@ -472,16 +483,16 @@ public class RangeRequestWorkerNew<A>
                 // (3) another request with the same offset that yield results
 
                 // TODO set the known size if the page is full
-                if (numItemsProcessed < 0 && numItemsProcessed < requestLimit) {
+                if (itemsProcessedNow <= 0 && numItemsProcessed < requestLimit) {
                     if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
                         slice.setMaximumKnownSize(offset);
                     }
                 }
-                logger.info("Signalling data condition to clients - " + numItemsRead + " - " + numItemsProcessed + " " + requestLimit);
+                logger.info(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d", offset, numItemsProcessed, requestLimit));
                 slice.getHasDataCondition().signalAll();
-        	});
+//        	});
 
 //            int i = 0;
 //            boolean hasNext;
@@ -518,7 +529,8 @@ public class RangeRequestWorkerNew<A>
 //            });
 
         } finally {
-            pageRange.unlock();
+            // pageRange.unlock();
+        	writeLock.unlock();
         }
         
         return numItemsReadTmp;

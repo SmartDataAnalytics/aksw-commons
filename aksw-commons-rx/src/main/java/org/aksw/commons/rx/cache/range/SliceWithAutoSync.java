@@ -40,6 +40,30 @@ public interface SliceWithAutoSync<T>
     long getMaximumKnownSize();
     void setMaximumKnownSize(long size);
 
+    
+    /** Updates the maximum known size iff the argument is less than the current known maximum */
+    default SliceWithAutoSync<T> updateMaximumKnownSize(long size) {
+        long current = getMaximumKnownSize();
+
+        if (size < current) {
+            setMaximumKnownSize(size);
+        }
+
+        return this;
+    }
+
+    /** Updates the minimum known size iff the argument is graeter than the current known minimum */
+    default SliceWithAutoSync<T> updateMinimumKnownSize(long size) {
+        long current = getMinimumKnownSize();
+
+        if (size > current) {
+            setMinimumKnownSize(size);
+        }
+
+        return this;
+    }
+
+    
     default long getKnownSize() {
         long minSize = getMinimumKnownSize();
         long maxSize = getMaximumKnownSize();
