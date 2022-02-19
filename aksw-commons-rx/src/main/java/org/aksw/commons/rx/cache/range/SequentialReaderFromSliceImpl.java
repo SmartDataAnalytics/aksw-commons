@@ -231,7 +231,7 @@ public class SequentialReaderFromSliceImpl<A>
 
     	// Schedule data fetching for length + maxReadAheadItemCount items
     	long endOffset = currentOffset + length;
-        Range<Long> totalReadRange = Range.closedOpen(currentOffset, currentOffset + length);
+        Range<Long> totalReadRange = Range.closedOpen(currentOffset, endOffset);
 
     	if (endOffset >= nextCheckpointOffset) {
     	
@@ -325,7 +325,7 @@ public class SequentialReaderFromSliceImpl<A>
                 Range<Long> range = totalReadRange.intersection(entry); //  entry; //.getKey();
                 ContiguousSet<Long> cset = ContiguousSet.create(range, DiscreteDomain.longs());
 
-                // Result is the length of the range
+                // Result is the length of the range of the available data
                 result = cset.size();
 
                 long startAbs = cset.first();
@@ -334,8 +334,11 @@ public class SequentialReaderFromSliceImpl<A>
                 // long rangeLength = endAbs - startAbs;
                 pageRange.claimByOffsetRange(startAbs, endAbs);
 
-                pageRange.unsafeRead(tgt, tgtOffset, endOffset, result);
+                result = pageRange.unsafeRead(tgt, tgtOffset, currentOffset, result);
                 
+                if (result >= 0) {
+                	currentOffset += result;
+                }
                 /*
                 long pageSize = slice.getPageSize();
                 long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
