@@ -290,13 +290,15 @@ public class SliceBufferNew<A>
     }
 
     /** Only call this method after acquiring the write lock! */
-    public void updateMinimumKnownSize(long size) {
+    public SliceWithAutoSync<A> updateMinimumKnownSize(long size) {
         this.liveMetaData.updateMinimumKnownSize(size);
+        return this;
     }
 
     /** Only call this method after acquiring the write lock! */
-    public void updateMaximumKnownSize(long size) {
+    public SliceWithAutoSync<A> updateMaximumKnownSize(long size) {
         this.liveMetaData.updateMaximumKnownSize(size);
+        return this;
     }
 
     /** Loading a page requires locking the metadata file - by loading pages in batch we can reduce redundant locking and reduce the risk of in-between external changes */

@@ -38,6 +38,8 @@ public class SequentialReaderFromStream<A>
 			arrayOps.set(array, position + i, value);
 		}
 		
-		return i == 0 ? -1 : i;
+		// return 0 if length is 0
+		int result = i == 0 && length > 0 ? -1 : i;
+		return result;
 	}
 }

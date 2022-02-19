@@ -456,7 +456,7 @@ public class RangeRequestWorkerNew<A>
         Lock writeLock = slice.getReadWriteLock().writeLock();
         writeLock.lock();
         
-        long itemsProcessedNow = 0;
+        // long itemsProcessedNow = 0;
         try {        	
         	// Note: Read should never return 0!
         	while ((numItemsReadTmp = sequentialReader.read(buffer, 0, n)) >= 0 && numItemsProcessed < limit && !isClosed && !Thread.interrupted()) {
@@ -464,7 +464,7 @@ public class RangeRequestWorkerNew<A>
 
                 numItemsProcessed += numItemsReadTmp;
                 offset += numItemsReadTmp;
-                itemsProcessedNow += numItemsReadTmp;
+                // itemsProcessedNow += numItemsReadTmp;
         	}
         	
         	// int numItemsRead = numItemsProcessed;
@@ -483,7 +483,7 @@ public class RangeRequestWorkerNew<A>
                 // (3) another request with the same offset that yield results
 
                 // TODO set the known size if the page is full
-                if (itemsProcessedNow <= 0 && numItemsProcessed < requestLimit) {
+                if (numItemsReadTmp < 0 && numItemsProcessed < requestLimit) {
                     if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);

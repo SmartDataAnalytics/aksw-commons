@@ -229,6 +229,10 @@ public class SequentialReaderFromSliceImpl<A>
 
     	ensureOpen();
 
+    	if (length == 0) {
+    		return 0;
+    	}
+    	
     	// Schedule data fetching for length + maxReadAheadItemCount items
     	long endOffset = currentOffset + length;
         Range<Long> totalReadRange = Range.closedOpen(currentOffset, endOffset);
@@ -299,13 +303,14 @@ public class SequentialReaderFromSliceImpl<A>
                             try {
                                 logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
                                 slice.getHasDataCondition().await();
+                                logger.info("Woke up after awaiting more data");
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
                         }
                     } finally {
                     	// rwl supports downgrading write lock to read by means of 
-                    	// acquisition of read lock while write lock is hold
+                    	// acquisition of read lock while write lock is held
                         readLock.lock();
                         writeLock.unlock();
                     }
