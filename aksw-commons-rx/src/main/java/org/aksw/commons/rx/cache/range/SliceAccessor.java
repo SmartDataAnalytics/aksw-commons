@@ -70,8 +70,12 @@ public interface SliceAccessor<A>
      * @param length The maximum number of items to read
      * @return The number of items read
      */
-    int blockingRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
+    // int blockingRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
 
+
+    int unsafeRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
+
+    
     /**
      * Unlock the range
      */

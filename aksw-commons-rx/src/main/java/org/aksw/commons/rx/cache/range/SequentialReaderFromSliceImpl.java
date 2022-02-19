@@ -49,7 +49,7 @@ public class SequentialReaderFromSliceImpl<A>
     private static final Logger logger = LoggerFactory.getLogger(SequentialReaderFromSliceImpl.class);
 
     protected SliceWithAutoSync<A> slice;
-    protected SmartRangeCacheNew<A> cache;
+    protected AdvancedRangeCacheNew<A> cache;
     protected SliceAccessor<A> pageRange;
 
     /**
@@ -69,14 +69,17 @@ public class SequentialReaderFromSliceImpl<A>
     protected long currentOffset;
     protected int maxReadAheadItemCount = 100;
 
-    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, Range<Long> requestRange) {
+    public SequentialReaderFromSliceImpl(AdvancedRangeCacheNew<A> cache, Range<Long> requestRange) {
         super();
         this.requestRange = requestRange;
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
-        this.currentOffset = nextCheckpointOffset;
-        this.nextCheckpointOffset = nextCheckpointOffset;
+        
+        ContiguousSet<Long> set = ContiguousSet.create(requestRange, DiscreteDomain.longs());
+        
+        this.currentOffset = set.first(); // null or NSE exception?
+        this.nextCheckpointOffset = currentOffset;
     }
 
 //    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, long nextCheckpointOffset) {
@@ -127,7 +130,7 @@ public class SequentialReaderFromSliceImpl<A>
     // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
-    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+    public SequentialReaderFromSliceImpl(AdvancedRangeCacheNew<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
@@ -267,48 +270,46 @@ public class SequentialReaderFromSliceImpl<A>
             Range<Long> entry = null;
             List<Throwable> failures = null;
 
-            try {
-                // If the index is outside of the known size then abort
-                // long knownSize = metaData.getSize();
-                long maximumSize = slice.getMaximumKnownSize();
-                if (currentOffset >= maximumSize) {
-                    // close();
-                    result = -1;
-                    // return -1;
-                } else {
+            // If the index is outside of the known size then abort
+            // long knownSize = metaData.getSize();
+            long maximumSize = slice.getMaximumKnownSize();
+            if (currentOffset >= maximumSize) {
+                // close();
+                result = -1;
+                // return -1;
+            } else {
 
-                    // rangeBuffer.getFailedRanges().getEntry(currentIndex);
+                // rangeBuffer.getFailedRanges().getEntry(currentIndex);
 
-                    failures = failedRanges.get(currentOffset); // .getEntry(currentIndex);
-                    entry = loadedRanges.rangeContaining(currentOffset);
+                failures = failedRanges.get(currentOffset); // .getEntry(currentIndex);
+                entry = loadedRanges.rangeContaining(currentOffset);
 
-                    if (entry == null && failures == null) {
-                        // Wait for data to become available
-                        // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
+                if (entry == null && failures == null) {
+                    // Wait for data to become available
+                    // Solution based on https://stackoverflow.com/questions/13088363/how-to-wait-for-data-with-reentrantreadwritelock
 
-                        Lock writeLock = rwl.writeLock();
-                        readLock.unlock();
-                        writeLock.lock();
+                    Lock writeLock = rwl.writeLock();
+                    readLock.unlock();
+                    writeLock.lock();
 
-                        try {
-                            long knownSize;
-                            while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
-                                    ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
-                                try {
-                                    logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
-                                    slice.getHasDataCondition().await();
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
+                    try {
+                        long knownSize;
+                        while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                                ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
+                            try {
+                                logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
+                                slice.getHasDataCondition().await();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
                             }
-                        } finally {
-                            writeLock.unlock();
-                            readLock.lock();
                         }
+                    } finally {
+                    	// rwl supports downgrading write lock to read by means of 
+                    	// acquisition of read lock while write lock is hold
+                        readLock.lock();
+                        writeLock.unlock();
                     }
                 }
-            } finally {
-                readLock.unlock();
             }
 
             if (failures != null && !failures.isEmpty()) {
@@ -333,7 +334,7 @@ public class SequentialReaderFromSliceImpl<A>
                 // long rangeLength = endAbs - startAbs;
                 pageRange.claimByOffsetRange(startAbs, endAbs);
 
-                pageRange.blockingRead(tgt, tgtOffset, endOffset, result);
+                pageRange.unsafeRead(tgt, tgtOffset, endOffset, result);
                 
                 /*
                 long pageSize = slice.getPageSize();

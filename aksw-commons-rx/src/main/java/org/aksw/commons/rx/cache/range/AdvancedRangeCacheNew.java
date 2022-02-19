@@ -20,11 +20,11 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
 
 
-public class SmartRangeCacheNew<T>
+public class AdvancedRangeCacheNew<T>
 	implements SequentialReaderSource<T>
 //     implements ListPaginator<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(SmartRangeCacheNew.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheNew.class);
 
     protected SequentialReaderSource<T> dataSource;
     protected SliceWithPages<T> slice;
@@ -42,7 +42,7 @@ public class SmartRangeCacheNew<T>
     protected ExecutorService executorService =
             MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
 
-    public SmartRangeCacheNew(
+    public AdvancedRangeCacheNew(
     		SequentialReaderSource<T> dataSource,
     		SliceWithPages<T> slice,
             Duration syncDelayDuration,
@@ -102,7 +102,7 @@ public class SmartRangeCacheNew<T>
             slot.set(offset + initialLength);
 
             executors.add(worker);
-            logger.debug("NEW WORKER: " + offset + ":" + initialLength);
+            logger.debug(String.format("New worker created with initial schedule of offset %1$d and length %2$d", offset, initialLength));
             executorService.submit(worker);
         } finally {
             // executorCreationLock.writeLock().unlock();
@@ -112,7 +112,7 @@ public class SmartRangeCacheNew<T>
 
     
     // Should only be called by the RangeRequestWorker once it terminates
-    void removeExecutor(RangeRequestWorker<T> worker) {
+    void removeExecutor(RangeRequestWorkerNew<T> worker) {
     	this.executors.remove(worker);
     }
 

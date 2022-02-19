@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.Range;
@@ -45,6 +46,8 @@ public interface SliceWithAutoSync<T>
 
         return minSize == maxSize ? minSize : -1;
     }
+    
+    ArrayOps<T> getArrayOps();
 
     RangeSet<Long> getLoadedRanges();
 

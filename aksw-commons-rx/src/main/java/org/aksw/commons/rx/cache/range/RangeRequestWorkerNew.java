@@ -2,13 +2,13 @@ package org.aksw.commons.rx.cache.range;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.ref.RefFuture;
-import org.aksw.commons.util.sink.BulkingSink;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
 import org.aksw.commons.util.slot.ObservableSlottedValueImpl;
 import org.aksw.commons.util.slot.Slot;
@@ -44,7 +44,7 @@ public class RangeRequestWorkerNew<A>
      * Reference to the manager - if there is a failure in processing the request the executor
      * notifies it
      */
-    protected SmartRangeCacheNew<A> cacheSystem;
+    protected AdvancedRangeCacheNew<A> cacheSystem;
 
     
     protected ArrayOps<A> arrayOps;
@@ -136,12 +136,13 @@ public class RangeRequestWorkerNew<A>
 
 
     public RangeRequestWorkerNew(
-    		SmartRangeCacheNew<A> cacheSystem,
+    		AdvancedRangeCacheNew<A> cacheSystem,
             long requestOffset,
             long requestLimit,
             long terminationDelay) {
         super();
         this.cacheSystem = cacheSystem;
+        this.arrayOps = cacheSystem.getSlice().getArrayOps();
         this.requestOffset = requestOffset;
         this.offset = requestOffset;
         this.requestLimit = requestLimit;
@@ -213,7 +214,7 @@ public class RangeRequestWorkerNew<A>
             // disposable = (Disposable)iterator;
             
         	// TODO Init the reader
-        	sequentialReader = null;
+        	sequentialReader = cacheSystem.getDataSource().newInputStream(Range.atLeast(requestOffset));
             
         } else {
             return; // Exit immediately due to abort
@@ -225,7 +226,7 @@ public class RangeRequestWorkerNew<A>
         try {
             checkpoint();
             // If the checkpoint offset was not advanced then we reached end of data
-            if (nextCheckpointOffset != offset) {
+            if (offset != nextCheckpointOffset) {
                 runCore();
             }
             logger.debug("RangeRequestWorker normal termination");
@@ -251,8 +252,9 @@ public class RangeRequestWorkerNew<A>
 
         Range<Long> claimAheadRange = Range.closedOpen(offset, offset + effectiveLimit);
 
-        slice.computeFromMetaData(false, metaData -> {
-            RangeSet<Long> gaps = metaData.getGaps(claimAheadRange);
+        // slice.computeFromMetaData(false, metaData -> {
+        LockUtils.runWithLock(slice.getReadWriteLock().readLock(), () -> {
+            RangeSet<Long> gaps = slice.getGaps(claimAheadRange);
             if (gaps.isEmpty()) {
                 // Nothing todo; not updating the limits will cause the worker to terminate
             } else {
@@ -261,10 +263,23 @@ public class RangeRequestWorkerNew<A>
 
                 nextCheckpointOffset = last;
             }
-            return null;
+            // return null;
         });
+        //});
     }
 
+    
+//    public void run2() {
+//
+//    	synchronized (cacheSystem.getExecutorCreationReadLock()) {
+//
+//    		// Check if there are any more demands -if not then we can safely shut dowwn
+//    		
+//    		
+//		}
+//    	
+//    }
+    
     
     /**
      * 
@@ -281,8 +296,6 @@ public class RangeRequestWorkerNew<A>
      */
     public void runCore() throws Exception {
         initBackendRequest();
-
-        A buffer = arrayOps.create(bulkSize);
         
         // Measuring the time for the first item may be meaningless if an underlying cache is used
         // It may be better to measure on e.g. the HTTP level using interceptors on HTTP client
@@ -358,15 +371,17 @@ public class RangeRequestWorkerNew<A>
                 }
 
                 // If there are no more slots or we have reached to known size then terminate
-                try (RefFuture<SliceMetaData> ref = slice.getMetaData()) {
-                    SliceMetaData metaData = ref.await();
-
-                    long knownSize = metaData.getKnownSize();
+                Lock readLock = slice.getReadWriteLock().readLock();
+                readLock.unlock();
+                try {
+                    long knownSize = slice.getKnownSize();
                     if (knownSize >= 0 && offset >= knownSize) {
                         break;
                     }
+                } finally {
+                	readLock.unlock();
                 }
-
+                
                 if (IdleMode.PAUSE.equals(idleMode)) {
                     synchronized (endpointDemands) {
                         long maxEndpoint = endpointDemands.build();
@@ -414,15 +429,13 @@ public class RangeRequestWorkerNew<A>
     	
         pageRange.claimByOffsetRange(offset, offset + n);
 
-        BulkingSink<A> sink = BulkingSink.create(bulkSize,
-                (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
+//        BulkingSink<A> sink = BulkingSink.create(bulkSize,
+//                (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
 
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
-        long limit = Math.min(
-                reportingInterval,
-                numItemsUntilNextCheckpoint);
-
+        long limit = Math.min(n,
+        		Math.min(reportingInterval, numItemsUntilNextCheckpoint));
 
         // In wait mode stop exactly at maxEndpoint (do not read ahead)
         if (IdleMode.PAUSE.equals(idleMode)) {

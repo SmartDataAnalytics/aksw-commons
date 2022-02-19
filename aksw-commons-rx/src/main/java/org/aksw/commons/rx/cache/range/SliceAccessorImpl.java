@@ -286,13 +286,59 @@ public class SliceAccessorImpl<A>
         }
     }
 
+    
+    /** Read a range of data - does not await any new data */
+    public int unsafeRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
+        ensureOpen();
+
+        Range<Long> totalReadRange = Range.closedOpen(srcOffset, srcOffset + length);
+        Preconditions.checkArgument(
+                offsetRange.encloses(totalReadRange),
+                "Read range  " + totalReadRange + " is not enclosed by claimed range " + offsetRange);
+
+
+        int result;
+
+        // Range<Long> range = totalReadRange.intersection(entry); //  entry; //.getKey();
+        ContiguousSet<Long> cset = ContiguousSet.create(totalReadRange, DiscreteDomain.longs());
+
+        // Result is the length of the range
+        result = cset.size();
+
+        long startAbs = cset.first();
+        long endAbs = startAbs + result;
+
+        // long rangeLength = endAbs - startAbs;
+
+        long pageSize = slice.getPageSize();
+        long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
+        long endPageId = PageUtils.getPageIndexForOffset(endAbs, pageSize);
+        long indexInPage = PageUtils.getIndexInPage(startAbs, pageSize);
+
+        for (long i = startPageId; i <= endPageId; ++i) {
+            long endIndex = i == endPageId
+                    ? PageUtils.getIndexInPage(endAbs, pageSize)
+                    : pageSize;
+
+            RefFuture<BufferView<A>> currentPageRef = getClaimedPages().get(i);
+
+            BufferView<A> buffer = currentPageRef.await();
+            buffer.getRangeBuffer().readInto(tgt, tgtOffset, indexInPage, Ints.checkedCast(endIndex));
+
+            indexInPage = 0;
+        }
+
+        return result;
+    }
 
     /**
+     * Method is subject to removal - use sequentialReaderForSlice.read
+     * 
      * The range [srcOffset, srcOffset + length) must be within the claimed range!
      * @throws IOException
      *
      */
-    @Override
+    // @Override
     public int blockingRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
         ensureOpen();
 

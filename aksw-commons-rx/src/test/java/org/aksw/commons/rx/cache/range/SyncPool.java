@@ -42,7 +42,7 @@ public class SyncPool {
         		IntStream.range('a', 'z').mapToObj(i -> "item " + (char)i).collect(Collectors.toList())));
   
         
-        SmartRangeCacheNew<Object[]> cache = new SmartRangeCacheNew<>(source, slice, Duration.ofSeconds(5), 10000, 10);
+        AdvancedRangeCacheNew<Object[]> cache = new AdvancedRangeCacheNew<>(source, slice, Duration.ofSeconds(5), 10000, 10);
         
         Range<Long> requestRange = Range.atLeast(10l);
         SequentialReader<Object[]> baseReader = source.newInputStream(requestRange);

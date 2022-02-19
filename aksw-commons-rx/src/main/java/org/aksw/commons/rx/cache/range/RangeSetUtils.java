@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -105,6 +106,7 @@ public class RangeSetUtils {
 				() -> set.subRangeSet(restriction).asRanges().iterator(),
 				RangeUtils::getLowerEndpoint,
 				RangeUtils::getUpperEndpoint,
+				RangeUtils::create,
 				restriction);
 	}
 
@@ -113,6 +115,7 @@ public class RangeSetUtils {
 				() -> set.subRangeSet(restriction).asDescendingSetOfRanges().iterator(),
 				RangeUtils::getUpperEndpoint,
 				RangeUtils::getLowerEndpoint,
+				(hi, lo) -> RangeUtils.create(lo, hi),
 				restriction);
 	}
 
@@ -120,6 +123,7 @@ public class RangeSetUtils {
 			Supplier<Iterator<Range<T>>> iteratorSupp,
 			Function<Range<T>, Endpoint<T>> getNearerEndpoint,
 			Function<Range<T>, Endpoint<T>> getFartherEndpoint,
+			BiFunction<Endpoint<T>, Endpoint<T>, Range<T>> createRange,
 			Range<T> restriction) {
 		return new AbstractSet<Range<T>>() {
 
@@ -152,7 +156,7 @@ public class RangeSetUtils {
 							}
 							
 							if (!tmp.equals(ae) || it == null) {
-								r = RangeUtils.create(tmp, ae);
+								r = createRange.apply(tmp, ae);
 								break;
 							}
 						}
