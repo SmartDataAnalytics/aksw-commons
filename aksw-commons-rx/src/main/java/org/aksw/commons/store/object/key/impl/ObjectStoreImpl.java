@@ -273,8 +273,20 @@ public class ObjectStoreImpl
 
 			@Override
 			public Object loadNewInstance() {
-				// TODO Auto-generated method stub
-				return null;
+				res.declareAccess();
+				res.lock(true);
+
+				Object result = null;
+				if (res.getFileSync().exists()) {
+					try (InputStream in = res.getFileSync().openCurrentContent()) {
+						result = objectSerializer.read(in);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+
+				res.unlock();
+				return result;
 			}
 			
 			@Override

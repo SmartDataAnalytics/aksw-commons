@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -30,6 +31,8 @@ import org.aksw.commons.util.array.ArrayBuffer;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.array.Buffer;
 import org.aksw.commons.util.ref.RefFuture;
+import org.aksw.commons.util.stack_trace.StackTraceUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -243,7 +246,11 @@ public class SliceBufferNew<A>
             PathDiffState status = res.fetchRecencyStatus();
 
             SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
-
+            Objects.requireNonNull(newMetaData, "Deserialization of metadata yeld null");
+            
+        	// System.out.println("Acquired readWrite lock at: " + StackTraceUtils.toString(Thread.currentThread().getStackTrace()));
+        	
+            
             result = LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
                 if (newMetaData != null) {
                     logger.info("Loaded metadata: " + newMetaData);
