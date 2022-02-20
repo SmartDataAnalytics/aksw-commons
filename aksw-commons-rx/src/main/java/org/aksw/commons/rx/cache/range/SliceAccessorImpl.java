@@ -276,8 +276,9 @@ public class SliceAccessorImpl<A>
                 arrOffset += limit;
             }
 
-            long min = slice.getMinimumKnownSize();
-            slice.setMinimumKnownSize(Math.max(min, offset + arrLength));
+            slice.updateMinimumKnownSize(offset);
+//            long min = slice.getMinimumKnownSize();
+//            slice.setMinimumKnownSize(Math.max(min, offset + arrLength));
             slice.getLoadedRanges().add(totalWriteRange);
             slice.getHasDataCondition().signalAll();
 

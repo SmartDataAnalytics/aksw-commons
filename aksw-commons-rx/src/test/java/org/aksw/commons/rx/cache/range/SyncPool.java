@@ -56,9 +56,12 @@ public class SyncPool {
         SequentialReader<Object[]> cachedReader = cache.newInputStream(requestRange);
   
         int n = 0;
-        while ((n = cachedReader.read(buffer, 0, buffer.length - n)) > 0) {
+        int c = 0;
+        while ((c = cachedReader.read(buffer, n, buffer.length - n)) > 0) {
+        	n += c;
         }
                 
+        slice.sync();
         System.out.println(Arrays.toString(buffer));
         
 //        SmartRangeCacheNew<Object[]> cache = new SmartRangeCacheNew<>();

@@ -22,6 +22,7 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.math.LongMath;
+import com.google.common.primitives.Ints;
 
 import io.reactivex.rxjava3.disposables.Disposable;
 
@@ -305,7 +306,7 @@ public class RangeRequestWorkerNew<A>
         
         boolean isFirstRun = true;
         Stopwatch stopwatch = Stopwatch.createStarted();
-        process(buffer, 1);
+        process(buffer, 0, 1);
         
         firstItemTime = stopwatch.elapsed();
 
@@ -330,9 +331,9 @@ public class RangeRequestWorkerNew<A>
             	// Align with bulk size; this should give more aesthetic numbers in debugging and logging
             	if (isFirstRun) {
             		isFirstRun = false;
-            		hasNext = process(buffer, reportingInterval - 1) >= 0;
+            		hasNext = process(buffer, 1, reportingInterval - 1) >= 0;
             	} else {
-            		hasNext = process(buffer, reportingInterval) >= 0;
+            		hasNext = process(buffer, 0, reportingInterval) >= 0;
             	}
 
             } catch (Exception e) {
@@ -375,7 +376,7 @@ public class RangeRequestWorkerNew<A>
 
                 // If there are no more slots or we have reached to known size then terminate
                 Lock readLock = slice.getReadWriteLock().readLock();
-                readLock.unlock();
+                readLock.lock();
                 try {
                     long knownSize = slice.getKnownSize();
                     if (knownSize >= 0 && offset >= knownSize) {
@@ -426,7 +427,7 @@ public class RangeRequestWorkerNew<A>
      * @throws Exception
      *
      */
-    public int process(A buffer, int n) throws Exception {
+    public int process(A buffer, int bufferOffset, int n) throws Exception {
     	if (n == 0) {
     		throw new IllegalArgumentException("Request to process 0 items is invalid");
     	}
@@ -438,34 +439,45 @@ public class RangeRequestWorkerNew<A>
 
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
-        long limit = Math.min(n,
+        long remainingReads = Math.min(n,
         		Math.min(reportingInterval, numItemsUntilNextCheckpoint));
 
         // In wait mode stop exactly at maxEndpoint (do not read ahead)
         if (IdleMode.PAUSE.equals(idleMode)) {
             long maxEndpointDemand = endpointDemands.build();
             long numItemsUntilEndpoint = maxEndpointDemand - offset;
-            limit = Math.min(limit, numItemsUntilEndpoint);
+            remainingReads = Math.min(remainingReads, numItemsUntilEndpoint);
         }
 
         // Explicitly acquire the write lock in order to update the
         // buffer and possibly the known size in one operation
-    	int numItemsReadTmp;
         // pageRange.lock();
         
         Lock writeLock = slice.getReadWriteLock().writeLock();
         writeLock.lock();
         
         // long itemsProcessedNow = 0;
+        
+        int remainingReadsInt = Ints.checkedCast(remainingReads);
+    	int numItemsOfLastRead = 0;
+        int result = 0;
         try {        	
         	// Note: Read should never return 0!
-        	while ((numItemsReadTmp = sequentialReader.read(buffer, 0, n)) >= 0 && numItemsProcessed < limit && !isClosed && !Thread.interrupted()) {
-                pageRange.putAll(offset, buffer, 0, numItemsReadTmp);
+        	while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
+        			!isClosed && !Thread.interrupted() &&
+        			(numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
+                pageRange.putAll(offset, buffer, bufferOffset, numItemsOfLastRead);
 
-                numItemsProcessed += numItemsReadTmp;
-                offset += numItemsReadTmp;
+                remainingReadsInt -= numItemsOfLastRead;
+                result += numItemsOfLastRead;
+                bufferOffset += numItemsOfLastRead;
                 // itemsProcessedNow += numItemsReadTmp;
         	}
+            offset += result;
+            numItemsProcessed += result;
+            
+        	// result becomes -1 if it is 0 for a non-zero length
+        	result = result == 0 && n != 0 ? -1 : result;
         	
         	// int numItemsRead = numItemsProcessed;
         	
@@ -483,7 +495,7 @@ public class RangeRequestWorkerNew<A>
                 // (3) another request with the same offset that yield results
 
                 // TODO set the known size if the page is full
-                if (numItemsReadTmp < 0 && numItemsProcessed < requestLimit) {
+                if (numItemsOfLastRead < 0 && numItemsProcessed < requestLimit) {
                     if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
@@ -533,7 +545,7 @@ public class RangeRequestWorkerNew<A>
         	writeLock.unlock();
         }
         
-        return numItemsReadTmp;
+        return result;
     }
 
     

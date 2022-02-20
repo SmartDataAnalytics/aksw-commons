@@ -52,7 +52,7 @@ public interface SliceWithAutoSync<T>
         return this;
     }
 
-    /** Updates the minimum known size iff the argument is graeter than the current known minimum */
+    /** Updates the minimum known size iff the argument is greater than the current known minimum */
     default SliceWithAutoSync<T> updateMinimumKnownSize(long size) {
         long current = getMinimumKnownSize();
 
