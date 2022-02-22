@@ -53,7 +53,7 @@ public class SliceAccessorImpl<A>
 
     protected Range<Long> offsetRange;
     protected ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> claimedPages = new ConcurrentSkipListMap<>();
-    protected NavigableMap<Long, BufferView<A>> pageMap;
+    // protected NavigableMap<Long, BufferView<A>> pageMap;
     protected boolean isLocked = false;
 
     public SliceAccessorImpl(SliceWithPages<A> cache) {
@@ -107,11 +107,14 @@ public class SliceAccessorImpl<A>
 //        long lastPageId = claimedPages.isEmpty() ? Long.MAX_VALUE, claimedPages.lastKey();
 //        long lowerEnd = Math.min(endPageId, lastPageId);
 
+        
+        // Phase 1/2: Trigger loading of all pages
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> {
                 logger.debug("Acquired page item [" + idx + "]");
                 RefFuture<BufferView<A>> page = slice.getPageForPageId(idx);
-
+                
+                // System.out.println("Loaded page " + idx);
 //                if (isLocked) {
 //                    try {
 //                        page.await().getReadWriteLock().readLock().lock();
@@ -124,7 +127,11 @@ public class SliceAccessorImpl<A>
             });
         }
 
-        pageMap = null;
+        
+        // Phase 2/2: Await for all pages to be loaded - this may also resync them
+		for (RefFuture<BufferView<A>> page : claimedPages.values()) {
+        	page.await();
+        }
     }
 
     protected NavigableMap<Long, BufferView<A>> computePageMap() {
@@ -143,16 +150,16 @@ public class SliceAccessorImpl<A>
     // Deque<Range<Long>> gaps = SmartRangeCacheImpl.computeGaps(requestRange, pageSize, pages);
 
 
-    protected void updatePageMap() {
-        if (pageMap == null) {
-            pageMap = computePageMap();
-        }
-    }
-
-    public NavigableMap<Long, BufferView<A>> getPageMap() {
-        updatePageMap();
-        return pageMap;
-    }
+//    protected void updatePageMap() {
+//        if (pageMap == null) {
+//            pageMap = computePageMap();
+//        }
+//    }
+//
+//    public NavigableMap<Long, BufferView<A>> getPageMap() {
+//        updatePageMap();
+//        return pageMap;
+//    }
 
 
     protected void ensureUnlocked() {
@@ -166,7 +173,7 @@ public class SliceAccessorImpl<A>
         ensureUnlocked();
 
         isLocked = true;
-        updatePageMap();
+        // updatePageMap();
 //        pageMap.values().forEach(page -> page.getReadWriteLock().readLock().lock());
 
         // Prevent creation of new executors (other than by us) while we analyze the state
@@ -185,7 +192,7 @@ public class SliceAccessorImpl<A>
     @Override
     public void unlock() {
         // Unlock all pages
-        updatePageMap();
+        // updatePageMap();
         // pageMap.values().forEach(page -> page.getReadWriteLock().readLock().unlock());
 
         // slice.getWorkerCreationLock().unlock();
@@ -205,7 +212,7 @@ public class SliceAccessorImpl<A>
 
         claimedPages.values().forEach(Ref::close);
         claimedPages.clear();
-        pageMap = null;
+        // pageMap = null;
         // TODO Release all claimed task-ranges
     }
 

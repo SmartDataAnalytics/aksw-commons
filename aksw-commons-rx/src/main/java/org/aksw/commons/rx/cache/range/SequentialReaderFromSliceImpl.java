@@ -261,6 +261,8 @@ public class SequentialReaderFromSliceImpl<A>
 
         int result;
 
+        pageRange.claimByOffsetRange(currentOffset, endOffset);
+
         ReadWriteLock rwl = slice.getReadWriteLock();
         Lock readLock = rwl.readLock();
         readLock.lock();
@@ -337,7 +339,10 @@ public class SequentialReaderFromSliceImpl<A>
                 long endAbs = startAbs + result;
 
                 // long rangeLength = endAbs - startAbs;
-                pageRange.claimByOffsetRange(startAbs, endAbs);
+                
+                // TODO We may need to unlock before the claim in order to allow (re-loading) of the pages in the claim range
+                
+//                pageRange.claimByOffsetRange(startAbs, endAbs);
 
                 result = pageRange.unsafeRead(tgt, tgtOffset, currentOffset, result);
                 

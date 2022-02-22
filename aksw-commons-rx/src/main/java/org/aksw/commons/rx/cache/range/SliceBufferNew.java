@@ -25,6 +25,7 @@ import org.aksw.commons.store.object.key.impl.ObjectInfo;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
 import org.aksw.commons.store.object.path.api.ObjectSerializer;
 import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
+import org.aksw.commons.txn.api.TxnApi;
 import org.aksw.commons.txn.impl.PathDiffState;
 import org.aksw.commons.txn.impl.PathState;
 import org.aksw.commons.util.array.ArrayBuffer;
@@ -142,29 +143,20 @@ public class SliceBufferNew<A>
     }
 
     public void loadMetaData(int pageSize) {
-        SliceMetaData metadata;
-        try (RefFuture<ObjectInfo> ref = objectStore.claim("metadata.ser")) {
-            ObjectInfo objectInfo = ref.await();
-            metadata = objectInfo.getObject();
-            if (metadata == null) {
-                metadata = new SliceMetaDataImpl(pageSize);
-                logger.info("Created fresh slice metadata");
-            } else {
-                logger.info("Loaded metadata: " + metadata);
-            }
-        }
-
         baseRanges = new RangeSetDelegateMutableImpl<>();
-        baseRanges.setDelegate(metadata.getLoadedRanges());
 
-        this.baseMetaData = metadata;
-        this.pageSize = baseMetaData.getPageSize();
+    	try (ObjectStoreConnection conn = objectStore.getConnection()) {
+    		TxnApi.execRead(conn, () -> {
+    			lockAndSyncMetaData(conn, pageSize);
+    		});
+    	} catch (Exception e) {
+    		throw new RuntimeException(e);
+		}
 
-
+    	this.pageSize = baseMetaData.getPageSize();
 
         this.liveChanges.setDelegate(newChangeBuffer());
-        this.liveMetaData = copyWithNewRanges(metadata, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
-
+        this.liveMetaData = copyWithNewRanges(baseMetaData, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
 
 
         DecimalFormat df = new DecimalFormat();
@@ -228,6 +220,11 @@ public class SliceBufferNew<A>
         return !recencyStatus.equals(baseMetaDataStatus);
     }
 
+    
+    @Override
+    public void checkForUpdate() {
+    	
+    }
 
     /** Returns the metadata generation */
     public int lockAndSyncMetaData(ObjectStoreConnection conn, int fallbackPageSize) {
@@ -242,7 +239,7 @@ public class SliceBufferNew<A>
         if (hasMetaDataChanged) {
             logger.info("Metadata was externally modified on disk... reloading");
 
-            // Re-check recency status now that the recsource is locked
+            // Re-check recency status now that the resource is locked
             PathDiffState status = res.fetchRecencyStatus();
 
             SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
@@ -255,6 +252,7 @@ public class SliceBufferNew<A>
                 if (newMetaData != null) {
                     logger.info("Loaded metadata: " + newMetaData);
                     baseRanges.setDelegate(newMetaData.getLoadedRanges());
+                    baseMetaData = newMetaData;
                     baseMetaDataStatus = status;
                 } else {
                     logger.info("Created fresh slice metadata");
@@ -277,6 +275,8 @@ public class SliceBufferNew<A>
         String fileName = pageIdToFileName.apply(pageId);
 
         BufferWithAutoReloadOnAccess baseBuffer = new BufferWithAutoReloadOnAccess(fileName);
+        
+        baseBuffer.reloadIfNeeded();
 
         long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
@@ -620,7 +620,8 @@ public class SliceBufferNew<A>
                         ObjectResource pageRes = conn.access(fileName);
 
                         future = CompletableFuture.supplyAsync(() -> {
-                            A array = (A)pageRes.loadNewInstance();
+                            @SuppressWarnings("unchecked")
+							A array = (A)pageRes.loadNewInstance();
                             if (array == null) {
                                 array = arrayOps.create(pageSize);
                             }
@@ -629,9 +630,13 @@ public class SliceBufferNew<A>
                             return arrayBuffer;
                         }).whenComplete((v, t) -> {
                             try {
-                                conn.close();
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
+                            	conn.commit();
+                            } finally {
+                                try {
+									conn.close();
+								} catch (Exception e) {
+	                                throw new RuntimeException(e);
+								}
                             }
                         });
                         return future;

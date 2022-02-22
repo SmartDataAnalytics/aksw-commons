@@ -76,6 +76,8 @@ public interface SliceWithAutoSync<T>
     RangeSet<Long> getLoadedRanges();
 
 
+    void checkForUpdate();
+    
     RangeSet<Long> getGaps(Range<Long> requestRange);
 
     /**
