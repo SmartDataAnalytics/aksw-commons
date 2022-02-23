@@ -35,7 +35,7 @@ public class TxnResourceApiSerializable
     protected ResourceLock<String> resourceLock;
     protected ReadWriteLockWithOwnership txnResourceLock;
 
-    protected Cache<Array<String>, Boolean> accessCache = CacheBuilder.newBuilder()
+    protected Cache<org.aksw.commons.path.core.Path<String>, Boolean> accessCache = CacheBuilder.newBuilder()
             .maximumSize(1000)
             .build();
 
@@ -43,10 +43,10 @@ public class TxnResourceApiSerializable
 
     //		public ResourceApi(String resourceName) {
         //this.resourceName = resourceName;
-    public TxnResourceApiSerializable(TxnSerializable txn, String[] resKey) {// Path resFilePath) {
+    public TxnResourceApiSerializable(TxnSerializable txn, org.aksw.commons.path.core.Path<String> resKey) {// Path resFilePath) {
         super(txn, resKey);
 
-        String resKeyStr = PathUtils.join(resKey);
+        String resKeyStr = resKey.toString(); // PathUtils.join(resKey);
 
         resourceLock = txn.txnMgr.lockStore.getLockForResource(resKeyStr);
         txnResourceLock = resourceLock.get(txn.txnId);
@@ -92,7 +92,7 @@ public class TxnResourceApiSerializable
     @Override
     public void declareAccess() {
         try {
-            accessCache.get(Array.wrap(resKey), () -> {
+            accessCache.get(resKey, () -> {
                 declareAccessCore();
                 return true;
             });
@@ -134,7 +134,7 @@ public class TxnResourceApiSerializable
 
     @Override
     public void undeclareAccess() {
-        accessCache.invalidate(Array.wrap(resKey));
+        accessCache.invalidate(resKey);
         try {
             // TODO Use delete instead and log an exception?
             Files.deleteIfExists(journalEntryFile);

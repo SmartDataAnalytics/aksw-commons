@@ -21,7 +21,7 @@ import org.aksw.commons.txn.impl.TxnComponent;
 public interface TxnResourceApi
     extends TxnComponent
 {
-    String[] getResourceKey();
+	org.aksw.commons.path.core.Path<String> getResourceKey();
     ReadWriteLockWithOwnership getTxnResourceLock();
 
 

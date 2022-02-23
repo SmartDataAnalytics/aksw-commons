@@ -40,22 +40,22 @@ public class ObjectStoreImpl
 	// and a write transaction can own specific entries in the content cache
 	// It is write transaction's responsibility to ensure the cache is in sync with the disk upon commit / rollback!
 	// Read transactions must not access entries which may be modified by a write transaction (MRSW locking)
-	protected AsyncClaimingCache<Array<String>, ObjectInfo> contentCache;
+	protected AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectInfo> contentCache;
 	
 	
 	// Accessors provide a thread-safe api to read metadata about a resource and load the content
 	// Accessors should be generally cheap to create but they can hold certain state that should only exist once
 	// to avoid redundant checks or inconsistent data (e.g. when content was loaded) so it makes sense to manage
 	// them in a claiming cache
-	protected AsyncClaimingCache<Array<String>, ObjectResource> accessorCache; // accessorCache
+	protected AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectResource> accessorCache; // accessorCache
 	
 
 	
 	
 
 	public ObjectStoreImpl(TxnMgr txnMgr, TxnHandler txnHandler, ObjectSerializer objectSerializer,
-			AsyncClaimingCache<Array<String>, ObjectInfo> contentCache,
-			AsyncClaimingCache<Array<String>, ObjectResource> accessorCache) {
+			AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectInfo> contentCache,
+			AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectResource> accessorCache) {
 		super();
 		this.txnMgr = txnMgr;
 		this.txnHandler = txnHandler;
@@ -66,8 +66,8 @@ public class ObjectStoreImpl
 
 	
 	@Override
-	public PathDiffState fetchRecencyStatus(String... key) {
-		Path path = PathUtils.resolve(txnMgr.getRootPath().resolve(txnMgr.getResRepo().getRootPath()), key);
+	public PathDiffState fetchRecencyStatus(org.aksw.commons.path.core.Path<String> key) {
+		Path path = PathUtils.resolve(txnMgr.getRootPath().resolve(txnMgr.getResRepo().getRootPath()), key.getSegments());
 		FileSync fileSync = FileSyncImpl.create(path, false);
 		PathDiffState result = FileSyncImpl.getState(fileSync);
 		
@@ -119,16 +119,17 @@ public class ObjectStoreImpl
 //				.build();
 //		
 		
-		AsyncClaimingCache<Array<String>, ObjectInfo> contentCache = AsyncClaimingCacheImpl
-				.<Array<String>, ObjectInfo>newBuilder(Caffeine.newBuilder())
-				.setCacheLoader(new CacheLoader<Array<String>, ObjectInfo>() {
+		AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectInfo> contentCache = AsyncClaimingCacheImpl
+				.<org.aksw.commons.path.core.Path<String>, ObjectInfo>newBuilder(Caffeine.newBuilder())
+				.setCacheLoader(new CacheLoader<org.aksw.commons.path.core.Path<String>, ObjectInfo>() {
 					
 					@Override
-					public @Nullable ObjectInfo load(Array<String> key) throws Exception {
+					public @Nullable ObjectInfo load(org.aksw.commons.path.core.Path<String> key) throws Exception {
 
 						// Lock the file while we read from it
 						Txn txn = txnMgr.newTxn(true, false);
-						TxnResourceApi api = txn.getResourceApi(key.getArray());
+						
+						TxnResourceApi api = txn.getResourceApi(key);
 						api.declareAccess();
 						api.lock(false);
 						Path path = api.getFileSync().getCurrentPath();
@@ -149,7 +150,7 @@ public class ObjectStoreImpl
 					}
 					
 					@Override
-					public @Nullable ObjectInfo reload(Array<String> key, ObjectInfo oldValue) throws Exception {
+					public @Nullable ObjectInfo reload(org.aksw.commons.path.core.Path<String> key, ObjectInfo oldValue) throws Exception {
 						// TODO Custom reload handling?
 						return CacheLoader.super.reload(key, oldValue);
 					}
@@ -167,10 +168,10 @@ public class ObjectStoreImpl
 		return new ObjectStoreImpl(txnMgr, txnHandler, objectSerializer, contentCache, null);
 	}
 	
-	protected static void save(TxnMgr txnMgr, ObjectSerializer objectSerializer, TxnHandler txnHandler, Array<String> key, ObjectInfo v) throws IOException {
+	protected static void save(TxnMgr txnMgr, ObjectSerializer objectSerializer, TxnHandler txnHandler, org.aksw.commons.path.core.Path<String> key, ObjectInfo v) throws IOException {
 		Txn txn;
 		txn = txnMgr.newTxn(true, true);
-		TxnResourceApi api = txn.getResourceApi(key.getArray());
+		TxnResourceApi api = txn.getResourceApi(key);
 		api.declareAccess();
 		api.lock(true);
 		api.getFileSync().putContent(out -> {
@@ -185,8 +186,8 @@ public class ObjectStoreImpl
 	
 
 	@Override
-	public RefFuture<ObjectInfo> claim(String... key) {
-		return contentCache.claim(Array.wrap(key));
+	public RefFuture<ObjectInfo> claim(org.aksw.commons.path.core.Path<String> key) {
+		return contentCache.claim(key);
 	}
 
 	
@@ -234,7 +235,7 @@ public class ObjectStoreImpl
 		}
 
 		@Override
-		public ObjectResource access(String... keySegments) {
+		public ObjectResource access(org.aksw.commons.path.core.Path<String> keySegments) {
 			TxnResourceApi api = txn.getResourceApi(keySegments);
 			return new Kor(api);
 		}

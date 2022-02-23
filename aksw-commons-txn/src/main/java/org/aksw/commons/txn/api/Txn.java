@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.stream.Stream;
 
+import org.aksw.commons.path.core.Path;
+
 /**
  * A transaction can hold locks to several resources.
  * The resources (potentially) locked by a transaction can be accessed using streamAccessedResourcePaths().
@@ -30,11 +32,11 @@ public interface Txn
     /** Get access to a resource as seen from this txn */
     // TxnResourceApi getResourceApi(String[] resRelPath);
 
-    TxnResourceApi getResourceApi(String... resRelPath);
+    TxnResourceApi getResourceApi(Path<String> resRelPath);
 
-    Stream<TxnResourceApi> listVisibleFiles(Iterable<String> prefix);
+    Stream<TxnResourceApi> listVisibleFiles(Path<String> prefix);
 
-    Stream<String[]> streamAccessedResourcePaths() throws IOException;
+    Stream<Path<String>> streamAccessedResourcePaths() throws IOException;
 
 
     /** Whether the transaction has become stale */

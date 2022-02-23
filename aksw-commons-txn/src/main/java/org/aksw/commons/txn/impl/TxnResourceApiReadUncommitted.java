@@ -23,7 +23,7 @@ public class TxnResourceApiReadUncommitted<T extends TxnReadUncommitted>
 {
     protected T txn;
 
-    protected String[] resKey;
+    protected org.aksw.commons.path.core.Path<String> resKey;
     // protected String resFilename;
 
     protected Path resFilePath;
@@ -35,7 +35,7 @@ public class TxnResourceApiReadUncommitted<T extends TxnReadUncommitted>
 
     //		public ResourceApi(String resourceName) {
         //this.resourceName = resourceName;
-    public TxnResourceApiReadUncommitted(T txn, String[] resKey) {// Path resFilePath) {
+    public TxnResourceApiReadUncommitted(T txn, org.aksw.commons.path.core.Path<String> resKey) {// Path resFilePath) {
         this.txn = txn;
         this.resKey = resKey;
         // this.resFilePath = resFilePath;
@@ -43,7 +43,7 @@ public class TxnResourceApiReadUncommitted<T extends TxnReadUncommitted>
 
         // String readLockFileName = "txn-" + txnId + "read.lock";
 
-        resFileAbsPath = PathUtils.resolve(txn.txnMgr.getRootPath(), resKey).normalize();
+        resFileAbsPath = PathUtils.resolve(txn.txnMgr.getRootPath(), resKey.getSegments()).normalize();
 
         // FIXME HACK - the data.trig should probably come from elsewhere
         // fileSync = FileSyncImpl.create(resFileAbsPath.resolve("data.trig"), true);
@@ -62,7 +62,7 @@ public class TxnResourceApiReadUncommitted<T extends TxnReadUncommitted>
     }
 
     @Override
-    public String[] getResourceKey() {
+    public org.aksw.commons.path.core.Path<String> getResourceKey() {
         return resKey;
     }
 

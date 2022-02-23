@@ -10,10 +10,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.util.PathUtils;
+import org.aksw.commons.path.core.PathNio;
+import org.aksw.commons.path.core.PathOpsStr;
+import org.aksw.commons.path.core.PathStr;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnMgr;
 import org.aksw.commons.txn.api.TxnResourceApi;
-import org.aksw.commons.util.array.Array;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -45,7 +47,7 @@ public class TxnReadUncommitted
 
     //protected LockStore<String[], String> lockStore;
 
-    protected TxnResourceApi createResourceApi(String[] key) {
+    protected TxnResourceApi createResourceApi(org.aksw.commons.path.core.Path<String> key) {
         return new TxnResourceApiReadUncommitted<>(this, key);
     }
 
@@ -59,12 +61,12 @@ public class TxnReadUncommitted
         throw new UnsupportedOperationException("not implemented yet");
     }
 
-    protected LoadingCache<Array<String>, TxnResourceApi> containerCache = CacheBuilder.newBuilder()
+    protected LoadingCache<org.aksw.commons.path.core.Path<String>, TxnResourceApi> containerCache = CacheBuilder.newBuilder()
             .maximumSize(1000)
-            .build(new CacheLoader<Array<String>, TxnResourceApi>() {
+            .build(new CacheLoader<org.aksw.commons.path.core.Path<String>, TxnResourceApi>() {
                 @Override
-                public TxnResourceApi load(Array<String> key) throws Exception {
-                    return createResourceApi(key.getArray());
+                public TxnResourceApi load(org.aksw.commons.path.core.Path<String> key) throws Exception {
+                    return createResourceApi(key);
                 }
             });
 
@@ -84,7 +86,7 @@ public class TxnReadUncommitted
 
 
     @Override
-    public Stream<TxnResourceApi> listVisibleFiles(Iterable<String> prefix) {
+    public Stream<TxnResourceApi> listVisibleFiles(org.aksw.commons.path.core.Path<String> prefix) {
 
         // TODO This pure listing of file resources should probably go to the repository
         Path rootPath = txnMgr.getRootPath();
@@ -92,7 +94,7 @@ public class TxnReadUncommitted
                 // txnMgr.getResRepo().getRootPath().getFileSystem().getPathMatcher("glob:**/*.trig");
 
         // The root path may not exist if the store is empty
-        Path basePath = PathUtils.resolve(rootPath, prefix);
+        Path basePath = PathUtils.resolve(rootPath, prefix.getSegments());
         
         // isVisible filters out graphs that were created after the transaction start
         Stream<TxnResourceApi> result;
@@ -103,7 +105,8 @@ public class TxnReadUncommitted
                         // No longer valid: We are interested in the folder - not the file itself: Get the parent
                         // .map(Path::getParent)
                         .map(path -> rootPath.relativize(path))
-                        .map(PathUtils::getPathSegments)
+                        .map(relPath -> PathOpsStr.newAbsolutePath().resolve(PathNio.wrap(relPath)))
+                        // .map(PathUtils::getPathSegments)
                         .map(this::getResourceApi)
                         .filter(TxnResourceApi::isVisible)
                     : Stream.empty();
@@ -138,10 +141,10 @@ public class TxnReadUncommitted
 //	}
 
     @Override
-    public TxnResourceApi getResourceApi(String... resRelPath) {
+    public TxnResourceApi getResourceApi(org.aksw.commons.path.core.Path<String> resRelPath) {
         TxnResourceApi result;
         try {
-            result = containerCache.get(Array.wrap(resRelPath));
+            result = containerCache.get(resRelPath);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -178,7 +181,7 @@ public class TxnReadUncommitted
     }
 
     @Override
-    public Stream<String[]> streamAccessedResourcePaths() throws IOException {
+    public Stream<org.aksw.commons.path.core.Path<String>> streamAccessedResourcePaths() throws IOException {
         return Stream.empty();
     }
 

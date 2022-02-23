@@ -33,15 +33,15 @@ public class TxnHandler {
 		this.txnMgr = txnMgr;
 	}
 
-	protected void beforePreCommit(String[] resKey) throws Exception {
+	protected void beforePreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
 		
 	}
 	
-	protected void afterPreCommit(String[] resKey) throws Exception {
+	protected void afterPreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
 		
 	}
 	
-	protected void beforeUnlock(String[] resKey, boolean isCommit) throws Exception {
+	protected void beforeUnlock(org.aksw.commons.path.core.Path<String> resKey, boolean isCommit) throws Exception {
 		
 	}
 	
@@ -69,11 +69,11 @@ public class TxnHandler {
     public void commit(Txn txn) {
         try {
             // TODO Non-write transactions can probably skip the sync block - or?
-            try (Stream<String[]> stream = txn.streamAccessedResourcePaths()) {
-                Iterator<String[]> it = stream.iterator();
+            try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
+                Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
                 while (it.hasNext()) {
-                    String[] relPath = it.next();
-                    logger.debug("Syncing: " + Arrays.toString(relPath));
+                	org.aksw.commons.path.core.Path<String> relPath = it.next();
+                    logger.debug("Syncing: " + relPath);
                     // Path relPath = txnMgr.getResRepo().getRelPath(res);
 
                     TxnResourceApi api = txn.getResourceApi(relPath);
@@ -146,14 +146,14 @@ public class TxnHandler {
             }
 
             // TODO Stream the relPaths rather than the string resource names?
-            try (Stream<String[]> stream = txn.streamAccessedResourcePaths()) {
-                Iterator<String[]> it = stream.iterator();
+            try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
+                Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
                 while (it.hasNext()) {
-                    String[] res = it.next();
-                    logger.debug("Finalizing and unlocking: " + Array.wrap(res));
+                	org.aksw.commons.path.core.Path<String> res = it.next();
+                    logger.debug("Finalizing and unlocking: " + res);
                     TxnResourceApi api = txn.getResourceApi(res);
 
-                    String[] resourceKey = api.getResourceKey();
+                    org.aksw.commons.path.core.Path<String> resourceKey = api.getResourceKey();
 
                     Path targetFile = api.getFileSync().getTargetFile();
                     if (isCommit) {

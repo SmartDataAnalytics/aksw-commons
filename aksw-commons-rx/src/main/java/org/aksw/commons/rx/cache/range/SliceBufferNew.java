@@ -64,6 +64,8 @@ public class SliceBufferNew<A>
     // Storage layer for transactional saving of buffers
     protected ObjectStore objectStore;
 
+    protected org.aksw.commons.path.core.Path<String> objectStoreBasePath;
+    
     // Array abstraction; avoids having mainly used to abstract from byte[] and Object[] and consequently having to build
     // separate cache implementations
     protected ArrayOps<A> arrayOps;
@@ -130,10 +132,11 @@ public class SliceBufferNew<A>
     }
 
 
-    public SliceBufferNew(ArrayOps<A> arrayOps, ObjectStore objectStore, int pageSize) {
+    public SliceBufferNew(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
         super();
         this.arrayOps = arrayOps;
         this.objectStore = objectStore;
+        this.objectStoreBasePath = objectStoreBasePath;
         // this.pageSize = pageSize;
 
         // pageSize is only available after metadata is loaded
@@ -173,16 +176,16 @@ public class SliceBufferNew<A>
     }
 
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, int pageSize) {
-        return new SliceBufferNew<>(arrayOps, objectStore, pageSize);
+    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
+        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize);
     }
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, int pageSize) {
+    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
         KryoPool kryoPool = SmartRangeCacheImpl.createKyroPool(null);
         ObjectSerializer objectSerializer = ObjectSerializerKryo.create(kryoPool);
         ObjectStore objectStore = ObjectStoreImpl.create(repoPath, objectSerializer);
 
-        return new SliceBufferNew<>(arrayOps, objectStore, pageSize);
+        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize);
     }
 
 
@@ -216,7 +219,7 @@ public class SliceBufferNew<A>
 
     public boolean hasMetaDataChanged() {
         String resourceName = "metadata.ser";
-        PathDiffState recencyStatus = objectStore.fetchRecencyStatus(resourceName);
+        PathDiffState recencyStatus = objectStore.fetchRecencyStatus(objectStoreBasePath.resolve(resourceName));
         return !recencyStatus.equals(baseMetaDataStatus);
     }
 
@@ -232,7 +235,7 @@ public class SliceBufferNew<A>
         boolean hasMetaDataChanged = hasMetaDataChanged();
 
         String resourceName = "metadata.ser";
-        ObjectResource res = conn.access(resourceName);
+        ObjectResource res = conn.access(objectStoreBasePath.resolve(resourceName));
 
         int result;
 
@@ -243,7 +246,7 @@ public class SliceBufferNew<A>
             PathDiffState status = res.fetchRecencyStatus();
 
             SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
-            Objects.requireNonNull(newMetaData, "Deserialization of metadata yeld null");
+            // Objects.requireNonNull(newMetaData, "Deserialization of metadata yeld null");
             
         	// System.out.println("Acquired readWrite lock at: " + StackTraceUtils.toString(Thread.currentThread().getStackTrace()));
         	
@@ -251,7 +254,6 @@ public class SliceBufferNew<A>
             result = LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
                 if (newMetaData != null) {
                     logger.info("Loaded metadata: " + newMetaData);
-                    baseRanges.setDelegate(newMetaData.getLoadedRanges());
                     baseMetaData = newMetaData;
                     baseMetaDataStatus = status;
                 } else {
@@ -259,6 +261,7 @@ public class SliceBufferNew<A>
                     baseMetaData = new SliceMetaDataImpl(fallbackPageSize);
                     baseMetaDataStatus = null; // TODO Use a non-null placeholder value
                 }
+                baseRanges.setDelegate(baseMetaData.getLoadedRanges());
 
                 ++liveGeneration;
                 return liveGeneration;
@@ -391,7 +394,7 @@ public class SliceBufferNew<A>
         try (ObjectStoreConnection conn = objectStore.getConnection()) {
             conn.begin(true);
 
-            ObjectResource res = conn.access("metadata.ser");
+            ObjectResource res = conn.access(objectStoreBasePath.resolve("metadata.ser"));
 
             int generationNow = lockAndSyncMetaData(conn, pageSize);
 
@@ -468,7 +471,7 @@ public class SliceBufferNew<A>
                     unionRangeBuffer.transferTo(0, arrayWrapper, 0, pageSize);
 
                     // pageRes.setContent(array);
-                    ObjectResource pageRes = conn.access(pageFileName);
+                    ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(pageFileName));
                     pageRes.save(array);
                 }
 
@@ -617,7 +620,7 @@ public class SliceBufferNew<A>
                         conn.begin(false);
                         generationHere = lockAndSyncMetaData(conn, pageSize);
 
-                        ObjectResource pageRes = conn.access(fileName);
+                        ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(fileName));
 
                         future = CompletableFuture.supplyAsync(() -> {
                             @SuppressWarnings("unchecked")
@@ -648,7 +651,7 @@ public class SliceBufferNew<A>
 
         void updateIfNeeded(int generationNow, ObjectStoreConnection conn) {
             if (generationHere != generationNow || future == null) {
-                ObjectResource pageRes = conn.access(fileName);
+                ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(fileName));
 
                 A array = (A)pageRes.loadNewInstance();
                 if (array == null) {

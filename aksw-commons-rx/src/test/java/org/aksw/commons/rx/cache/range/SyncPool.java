@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.aksw.commons.lock.LockUtils;
+import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnResourceApi;
@@ -36,7 +37,7 @@ public class SyncPool {
 	public void testRangeCache() throws IOException {
 		ArrayOps<Object[]> arrayOps = ArrayOps.OBJECT;
 		
-        SliceBufferNew<Object[]> slice = SliceBufferNew.create(arrayOps, Path.of("/tmp/cache-test"), 128);
+        SliceBufferNew<Object[]> slice = SliceBufferNew.create(arrayOps, Path.of("/tmp/cache-test"), PathOpsStr.create("test1"), 128);
 
         SequentialReaderSource<Object[]> source = SequentialReaderSourceRx.create(arrayOps, ListPaginatorFromList.wrap(
         		IntStream.range('a', 'z').mapToObj(i -> "item " + (char)i).collect(Collectors.toList())));
@@ -77,7 +78,7 @@ public class SyncPool {
     // @Test
     public void test() throws Exception {
         // ObjectStore objectStore = ObjectStoreImpl.create(null, null)
-        SliceBufferNew<Object[]> slice = SliceBufferNew.create(ArrayOps.OBJECT, Path.of("/tmp/cache-test"), 128);
+        SliceBufferNew<Object[]> slice = SliceBufferNew.create(ArrayOps.OBJECT, Path.of("/tmp/cache-test"), PathOpsStr.create("/test1"), 128);
 
         Object[] arr1 = new Object[] {"this", "is", "a", "test"};
         Object[] arr2 = new Object[] {"another", "testarray", "withsome", "moreitems"};
@@ -202,7 +203,7 @@ public class SyncPool {
 
         Txn txn = txnMgr.newTxn(true, true);
         {
-            TxnResourceApi res = txn.getResourceApi("file1.txt");
+            TxnResourceApi res = txn.getResourceApi(PathOpsStr.create("file1.txt"));
             res.declareAccess();
             res.lock(true);
             res.getFileSync().putContent(out -> {
@@ -213,7 +214,7 @@ public class SyncPool {
         }
 
         {
-            TxnResourceApi res = txn.getResourceApi("file2.txt");
+            TxnResourceApi res = txn.getResourceApi(PathOpsStr.create("file2.txt"));
             res.declareAccess();
             res.lock(true);
             res.getFileSync().putContent(out -> {

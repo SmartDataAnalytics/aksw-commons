@@ -3,6 +3,8 @@ package org.aksw.commons.lock.db.api;
 import java.io.IOException;
 import java.util.stream.Stream;
 
+import org.aksw.commons.path.core.Path;
+
 /**
  * Interface to manage a set of read/write locks for a set of resources
  * 
@@ -21,7 +23,7 @@ public interface LockStore<R, O> {
 	 */
 	ResourceLock<O> getLockForResource(String resource);
 	
-	ResourceLock<O> getLockByKey(String[] lockKey);
+	ResourceLock<O> getLockByKey(Path<String> lockKey);
 	
 	/**
 	 * Get a stream of all existing resource locks

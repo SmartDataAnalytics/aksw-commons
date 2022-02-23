@@ -15,6 +15,7 @@ import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 import org.aksw.commons.lock.db.api.LockStore;
 import org.aksw.commons.lock.db.api.ReadWriteLockWithOwnership;
 import org.aksw.commons.lock.db.api.ResourceLock;
+import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.txn.impl.ResourceRepository;
 
 
@@ -76,11 +77,11 @@ public class LockStoreImpl
         String tmpKey = Arrays.asList(storeKey).stream().collect(Collectors.joining("/"));
 
         String[] lockKey = lockRepo.getPathSegments(tmpKey);
-        return getLockByKey(lockKey);
+        return getLockByKey(PathOpsStr.newRelativePath(lockKey));
     }
 
     @Override
-    public ResourceLock<String> getLockByKey(String[] lockKey) {
+    public ResourceLock<String> getLockByKey(org.aksw.commons.path.core.Path<String> lockKey) {
         return new ResourceLockImpl(lockKey);
     }
 
@@ -95,6 +96,7 @@ public class LockStoreImpl
         return Files.walk(lockRepo.getRootPath())
             // .filter(pathMatcher::matches)
             .map(PathUtils::getPathSegments)
+            .map(PathOpsStr::newRelativePath)
             .map(this::getLockByKey);
                  //.map(rootFolder::relativize)
 
@@ -105,7 +107,7 @@ public class LockStoreImpl
         implements ResourceLock<String>
     {
         /// protected Path resShBasePath; // rootFolder
-        protected String[] lockKey;
+        protected org.aksw.commons.path.core.Path<String> lockKey;
         protected Path lockAbsPath;
 
         /** The management lock file which when exists prevents modification of
@@ -113,11 +115,11 @@ public class LockStoreImpl
         protected Path mgmtLockPath;
         protected Path writeLockPath;
 
-        public ResourceLockImpl(String[] lockKey) {
+        public ResourceLockImpl(org.aksw.commons.path.core.Path<String> lockKey) {
             super();
             this.lockKey = lockKey; //lockRepo.getPathSegments(resource);
 
-            lockAbsPath = PathUtils.resolve(lockRepo.getRootPath(), lockKey);
+            lockAbsPath = PathUtils.resolve(lockRepo.getRootPath(), lockKey.getSegments());
             //mgmtLock = new LockFromFile(lockAbsPath.resolve(mgmtLockFilename));
             mgmtLockPath = lockAbsPath.resolve(mgmtLockFilename);
             writeLockPath = lockAbsPath.resolve(writeLockFilename);

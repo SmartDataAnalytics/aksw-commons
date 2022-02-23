@@ -11,6 +11,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -19,8 +20,8 @@ import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.io.util.PathUtils;
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.lock.db.impl.LockFromFile;
+import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.txn.api.TxnResourceApi;
-import org.aksw.commons.util.array.Array;
 import org.aksw.commons.util.exception.FinallyRunAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,7 @@ public class TxnSerializable
 //	protected IsolationLevel isolationLevel;
 
     @Override
-    protected TxnResourceApi createResourceApi(String[] key) {
+    protected TxnResourceApi createResourceApi(org.aksw.commons.path.core.Path<String> key) {
         return new TxnResourceApiSerializable(this, key);
     }
 
@@ -157,16 +158,19 @@ public class TxnSerializable
     }
 
     public TxnResourceApi getResourceApi(String resourceName) {
-        String[] relRelPath = txnMgr.getResRepo().getPathSegments(resourceName);
-        TxnResourceApi result = getResourceApi(relRelPath);
+        String[] resRelPath = txnMgr.getResRepo().getPathSegments(resourceName);
+        
+        // NOTE Converting String[] to Path<String> should be simplified
+        org.aksw.commons.path.core.Path<String> rrp = PathOpsStr.get().newPath(false, Arrays.asList(resRelPath));
+        TxnResourceApi result = getResourceApi(rrp);
         return result;
     }
 
     @Override
-    public TxnResourceApi getResourceApi(String... resRelPath) {
+    public TxnResourceApi getResourceApi(org.aksw.commons.path.core.Path<String> resRelPath) {
         TxnResourceApi result;
         try {
-            result = containerCache.get(Array.wrap(resRelPath));
+            result = containerCache.get(resRelPath);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -317,20 +321,23 @@ public class TxnSerializable
 //			.map(StringUtils::urlDecode);
 //	}
 
-    public String[] getRelPathForJournalEntry(Path txnPath) {
+    public org.aksw.commons.path.core.Path<String> getRelPathForJournalEntry(Path txnPath) {
         try {
             Path txnToRes = txnMgr.symlinkStrategy.readSymbolicLink(txnPath);
             Path resAbsPath = txnPath.resolveSibling(txnToRes).normalize();
             Path resRelPath = txnMgr.getRootPath().relativize(resAbsPath);
-            String[] result = PathUtils.getPathSegments(resRelPath);
+            String[] array = PathUtils.getPathSegments(resRelPath);
+            
+            org.aksw.commons.path.core.Path<String> result = PathOpsStr.get().newPath(false, Arrays.asList(array));
+            
             return result;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
+    
     @Override
-    public Stream<String[]> streamAccessedResourcePaths() throws IOException {
+    public Stream<org.aksw.commons.path.core.Path<String>> streamAccessedResourcePaths() throws IOException {
         return streamAccessedEntries()
             .map(this::getRelPathForJournalEntry);
     }

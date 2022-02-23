@@ -20,7 +20,9 @@ import java.util.List;
 public class PathStr
     extends PathBase<String, PathStr>
 {
-    public PathStr(PathOps<String, PathStr> pathOps, boolean isAbsolute, List<String> segments) {
+	private static final long serialVersionUID = 1L;
+
+	public PathStr(PathOps<String, PathStr> pathOps, boolean isAbsolute, List<String> segments) {
         super(pathOps, isAbsolute, segments);
     }
 }
