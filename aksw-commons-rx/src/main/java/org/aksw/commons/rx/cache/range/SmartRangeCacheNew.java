@@ -19,7 +19,7 @@ import io.reactivex.rxjava3.core.Single;
 public class SmartRangeCacheNew<T>
     implements ListPaginator<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(SmartRangeCacheNew.class);
+    // private static final Logger logger = LoggerFactory.getLogger(SmartRangeCacheNew.class);
 
     /** The supplier for actually retrieving data from the backend */
     protected ListPaginator<T> backend;
@@ -65,7 +65,7 @@ public class SmartRangeCacheNew<T>
 
         Single<Range<Long>> result;
 
-        long knownSize = core.getSlice().computeFromMetaData(false, SliceMetaData::getKnownSize);
+        long knownSize = core.getSlice().computeFromMetaData(false, SliceMetaDataBasic::getKnownSize);
 
 
         if (knownSize >= 0) {

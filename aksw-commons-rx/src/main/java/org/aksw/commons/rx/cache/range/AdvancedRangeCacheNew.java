@@ -45,7 +45,6 @@ public class AdvancedRangeCacheNew<T>
     public AdvancedRangeCacheNew(
     		SequentialReaderSource<T> dataSource,
     		SliceWithPages<T> slice,
-            Duration syncDelayDuration,
             long requestLimit,
             Duration terminationDelay) {
 
@@ -60,11 +59,10 @@ public class AdvancedRangeCacheNew<T>
     public static <A> AdvancedRangeCacheNew<A> create(
     		SequentialReaderSource<A> dataSource,
     		SliceWithPages<A> slice,
-            Duration syncDelayDuration,
             long requestLimit,
             Duration terminationDelay) {
 
-    	return new AdvancedRangeCacheNew<>(dataSource, slice, syncDelayDuration, requestLimit, terminationDelay);
+    	return new AdvancedRangeCacheNew<>(dataSource, slice, requestLimit, terminationDelay);
     }
 
     
@@ -153,7 +151,7 @@ public class AdvancedRangeCacheNew<T>
         protected SliceWithPages<A> slice;
 
         protected long requestLimit;
-        protected Duration syncDelay;
+        // protected Duration syncDelay;
         protected Duration terminationDelay;
         
         public static <A> Builder<A> create() {
@@ -196,17 +194,17 @@ public class AdvancedRangeCacheNew<T>
 			return this;
 		}
         
-		public Duration getSyncDelay() {
-			return syncDelay;
-		}
-
-		public Builder<A> setSyncDelay(Duration syncDelay) {
-			this.syncDelay = syncDelay;
-			return this;
-		}
+//		public Duration getSyncDelay() {
+//			return syncDelay;
+//		}
+//
+//		public Builder<A> setSyncDelay(Duration syncDelay) {
+//			this.syncDelay = syncDelay;
+//			return this;
+//		}
 
 		public AdvancedRangeCacheNew<A> build() {
-			return AdvancedRangeCacheNew.create(dataSource, slice, syncDelay, requestLimit, terminationDelay);
+			return AdvancedRangeCacheNew.create(dataSource, slice, requestLimit, terminationDelay);
 		}
     }
     

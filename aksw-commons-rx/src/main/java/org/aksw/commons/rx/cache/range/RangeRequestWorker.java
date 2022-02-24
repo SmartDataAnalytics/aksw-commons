@@ -392,7 +392,7 @@ public class RangeRequestWorker<T>
         pageRange.claimByOffsetRange(offset, offset + n);
 
         BulkingSink<T> sink = BulkingSink.create(bulkSize,
-                (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
+                (arr, start, len) -> pageRange.write(offset, arr, start, len));
 
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 

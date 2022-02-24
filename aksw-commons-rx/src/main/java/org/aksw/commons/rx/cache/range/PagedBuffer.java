@@ -18,7 +18,7 @@ import com.google.common.math.LongMath;
  * @param <T>
  */
 public class PagedBuffer<A>
-	implements Buffer
+	implements Buffer<A>
 {
 	protected ArrayOps<A> arrayOps;
 	protected int pageSize;
@@ -53,7 +53,7 @@ public class PagedBuffer<A>
 	
 
 	@Override
-	public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
 		if (LongMath.checkedAdd(offsetInBuffer, arrLength) > capacity) {
 			throw new IndexOutOfBoundsException("Put outside of capacity");
 		}

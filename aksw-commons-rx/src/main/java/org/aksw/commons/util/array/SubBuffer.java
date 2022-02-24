@@ -19,12 +19,12 @@ public class SubBuffer<A>
 	}
 
 	@Override
-	public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
+	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
 		if (offsetInBuffer - start + arrLength > length) {
 			throw new RuntimeException("Attempt to read beyond buffer capacity");
 		}
 		
-		backend.putAll(LongMath.checkedAdd(start, offsetInBuffer), arrayWithItemsOfTypeT, arrOffset, arrLength);
+		backend.write(LongMath.checkedAdd(start, offsetInBuffer), arrayWithItemsOfTypeT, arrOffset, arrLength);
 	}
 
 	@Override

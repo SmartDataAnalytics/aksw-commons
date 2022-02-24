@@ -45,8 +45,8 @@ public class RangeBufferUnion<A>
     }
 
     @Override
-    public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
-        first.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+    public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
+        first.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
     }
 
     @Override

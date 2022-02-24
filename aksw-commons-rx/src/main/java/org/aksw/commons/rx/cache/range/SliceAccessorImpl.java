@@ -222,7 +222,7 @@ public class SliceAccessorImpl<A>
 
 
     @Override
-    public synchronized void putAll(long offset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+    public synchronized void write(long offset, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
 
         ensureOpen();
 
@@ -272,7 +272,7 @@ public class SliceAccessorImpl<A>
                 contentWriteLock.lock();
 
                 try {
-                    buffer.getRangeBuffer().putAll(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
+                    buffer.getRangeBuffer().write(offsetInPage, arrayWithItemsOfTypeT, arrOffset, limit);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 } finally {

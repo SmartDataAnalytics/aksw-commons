@@ -3,12 +3,14 @@ package org.aksw.commons.rx.cache.range;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.util.Iterator;
+import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -22,7 +24,6 @@ import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.store.object.key.api.ObjectResource;
 import org.aksw.commons.store.object.key.api.ObjectStore;
 import org.aksw.commons.store.object.key.api.ObjectStoreConnection;
-import org.aksw.commons.store.object.key.impl.ObjectInfo;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
 import org.aksw.commons.store.object.path.api.ObjectSerializer;
 import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
@@ -33,8 +34,6 @@ import org.aksw.commons.util.array.ArrayBuffer;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.array.Buffer;
 import org.aksw.commons.util.ref.RefFuture;
-import org.aksw.commons.util.stack_trace.StackTraceUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +45,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.util.concurrent.MoreExecutors;
 
 
 
@@ -101,6 +101,8 @@ public class SliceBufferNew<A>
     protected SliceMetaData syncMetaData;
     protected PathState metaDataIdentity; // When the metadata was loaded
 
+    protected Duration syncDelay;
+    protected volatile ScheduledFuture<?> syncFuture = null;
 
     /**
      * Attribute for advertising detection of external changes to the base data.
@@ -111,6 +113,23 @@ public class SliceBufferNew<A>
 
     // The buffer with all active in-memory changes
     protected RangeBufferDelegateMutable<A> liveChanges = new RangeBufferDelegateMutableImpl<>();
+    
+    
+//	@Override
+//	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
+//		super.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+//		scheduleSync();
+//	};
+
+    
+    protected ScheduledExecutorService syncScheduler = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+    
+    protected void scheduleSync() {
+    	if (syncFuture == null || syncFuture.isDone()) {    	
+    		syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+    	}
+    }
+    
     protected RangeBufferDelegateMutable<A> syncChanges = new RangeBufferDelegateMutableImpl<>();
 
     protected LongFunction<String> pageIdToFileName;
@@ -129,11 +148,17 @@ public class SliceBufferNew<A>
     }
 
 
-    public SliceBufferNew(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
+    public SliceBufferNew(
+    		ArrayOps<A> arrayOps, 
+    		ObjectStore objectStore, 
+    		org.aksw.commons.path.core.Path<String> objectStoreBasePath, 
+    		int pageSize,
+    		Duration syncDelay) {
         super();
         this.arrayOps = arrayOps;
         this.objectStore = objectStore;
         this.objectStoreBasePath = objectStoreBasePath;
+        this.syncDelay = syncDelay;
         // this.pageSize = pageSize;
 
         // pageSize is only available after metadata is loaded
@@ -173,21 +198,37 @@ public class SliceBufferNew<A>
     }
 
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
-        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize);
+    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
+        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
     }
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize) {
+    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
         KryoPool kryoPool = SmartRangeCacheImpl.createKyroPool(null);
         ObjectSerializer objectSerializer = ObjectSerializerKryo.create(kryoPool);
         ObjectStore objectStore = ObjectStoreImpl.create(repoPath, objectSerializer);
 
-        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize);
+        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
     }
 
 
     protected RangeBuffer<A> newChangeBuffer() {
-        return RangeBufferImpl.create(PagedBuffer.create(arrayOps, pageSize));
+		Buffer<A> actualBuffer = PagedBuffer.create(arrayOps, pageSize);
+
+		// Wrap the buffer such than modifications schedule a sync action
+    	return RangeBufferImpl.create(
+        		new BufferDelegateBase<A>() {
+					@Override
+					public Buffer<A> getDelegate() {
+						return actualBuffer;
+		        	}
+					
+					@Override
+					public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength)
+							throws IOException {
+						super.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+						scheduleSync();
+					}
+				});
         // return RangeBufferImpl.create(rangeSet, 0, PagedBuffer.create(arrayOps, pageSize));
     }
 

@@ -15,7 +15,8 @@ import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class SliceTest {
-    @Test
+/*
+	@Test
     public void test1() throws ExecutionException, InterruptedException {
 
 //        return SmartRangeCacheImpl.wrap(
@@ -52,5 +53,5 @@ public class SliceTest {
         List<String> actual = future.get();
         Assert.assertEquals(expected, actual);
     }
-
+*/
 }

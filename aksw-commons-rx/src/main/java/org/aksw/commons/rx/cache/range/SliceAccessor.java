@@ -54,7 +54,7 @@ public interface SliceAccessor<A>
      *
      * The page range should be locked when calling this method.
      */
-    void putAll(long offset, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength);
+    void write(long offset, A arrayWithItemsOfTypeT, int arrOffset, int arrLength);
 
 
 

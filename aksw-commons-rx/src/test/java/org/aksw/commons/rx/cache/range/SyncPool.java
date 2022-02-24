@@ -43,7 +43,7 @@ public class SyncPool {
         		IntStream.range('a', 'z').mapToObj(i -> "item " + (char)i).collect(Collectors.toList())));
   
         
-        AdvancedRangeCacheNew<Object[]> cache = new AdvancedRangeCacheNew<>(source, slice, Duration.ofSeconds(5), 10000, 10);
+        AdvancedRangeCacheNew<Object[]> cache = new AdvancedRangeCacheNew<>(source, slice, Duration.ofSeconds(5), 10000, Duration.ofSeconds(10));
         
         Range<Long> requestRange = Range.atLeast(10l);
         SequentialReader<Object[]> baseReader = source.newInputStream(requestRange);
@@ -94,10 +94,10 @@ public class SyncPool {
 
                 // BufferView<Object[]> buffer = refBuffer.await();
                 try {
-                    accessor.putAll(0, arr1, 0, 4);
-                    accessor.putAll(8, arr2, 0, 4);
-                    accessor.putAll(130, arr2, 0, 4);
-                    accessor.putAll(1300, arr1, 0, 4);
+                    accessor.write(0, arr1, 0, 4);
+                    accessor.write(8, arr2, 0, 4);
+                    accessor.write(130, arr2, 0, 4);
+                    accessor.write(1300, arr1, 0, 4);
 //                    buffer.getRangeBuffer().putAll(0, arr1, 0, 4);
 //                    buffer.getRangeBuffer().putAll(8, arr2, 0, 4);
 //                    buffer.getRangeBuffer().putAll(130, arr2, 0, 4);
@@ -177,7 +177,7 @@ public class SyncPool {
     public static void mainY(String[] args) throws Exception {
         RangeBufferImpl<Object[]> base = new RangeBufferImpl<>(TreeRangeSet.create(), 0, ArrayBuffer.create(ArrayOps.OBJECT, 10));
 
-        base.putAll(3, new String[] { "this", "is", "a","test"}, 0, 4);
+        base.write(3, new String[] { "this", "is", "a","test"}, 0, 4);
 
         RangeBufferImpl<Object[]> overlay = new RangeBufferImpl<>(TreeRangeSet.create(), 0, ArrayBuffer.create(ArrayOps.OBJECT, 10));
 

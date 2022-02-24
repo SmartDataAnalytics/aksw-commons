@@ -9,11 +9,11 @@ public interface BufferLikeDelegate<A, D extends BufferLike<A>>
 	extends BufferLike<A>
 {
 	D getDelegate();
-	
+
 	@Override
-	default void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength)
+	default void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength)
 			throws IOException {
-		getDelegate().putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+		getDelegate().write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
 	}
 
 	@Override

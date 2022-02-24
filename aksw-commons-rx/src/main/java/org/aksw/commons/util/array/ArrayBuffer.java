@@ -1,7 +1,5 @@
 package org.aksw.commons.util.array;
 
-import java.lang.reflect.Array;
-
 import com.google.common.primitives.Ints;
 
 public class ArrayBuffer<A>
@@ -28,7 +26,7 @@ public class ArrayBuffer<A>
 	}
 
 	@Override
-	public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
 		int offsetInBufferInt = Ints.checkedCast(offsetInBuffer);
 		arrayOps.copy((A)arrayWithItemsOfTypeT, arrOffset, array, offsetInBufferInt, arrLength);
 	}

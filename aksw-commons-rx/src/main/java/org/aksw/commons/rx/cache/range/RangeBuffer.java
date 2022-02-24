@@ -80,7 +80,7 @@ public interface RangeBuffer<A>
                 int x = Math.min(remaining, n);
                 src.readInto(buffer, 0, first, x);
                 long o = srcOffset - tgtOffset + first;
-                tgt.putAll(o, buffer, 0, x);
+                tgt.write(o, buffer, 0, x);
                 remaining -= x;
                 first += x;
             }

@@ -465,7 +465,7 @@ public class RangeRequestWorkerNew<A>
         	while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
         			!isClosed && !Thread.interrupted() &&
         			(numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
-                pageRange.putAll(offset, buffer, bufferOffset, numItemsOfLastRead);
+                pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
 
                 remainingReadsInt -= numItemsOfLastRead;
                 result += numItemsOfLastRead;

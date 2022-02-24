@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import org.aksw.commons.util.array.ArrayWritable;
 
 public interface ByteArrayPuttable
-	extends ArrayWritable
+	extends ArrayWritable<byte[]>
 {
 	void putBytes(long offsetInBuffer, ByteBuffer byteBuffer);
 	
@@ -15,7 +15,7 @@ public interface ByteArrayPuttable
 	}
 	
 	@Override
-	default void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
+	default void putAll(long offsetInBuffer, byte[] arrayWithItemsOfTypeT, int arrOffset, int arrLength) {
 		byte[] bytes = (byte[])arrayWithItemsOfTypeT;
 		putBytes(offsetInBuffer, bytes, arrOffset, arrLength);
 	}

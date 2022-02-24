@@ -6,7 +6,6 @@ import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.array.Buffer;
 import org.aksw.commons.util.range.RangeUtils;
 
-import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
@@ -114,7 +113,7 @@ public class RangeBufferImpl<A>
     }
 
     @Override
-    public void putAll(long offsetInBuffer, Object arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
+    public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
         long start = LongMath.checkedAdd(offsetInRanges, offsetInBuffer);
         long end = LongMath.checkedAdd(start, arrLength);
 
@@ -126,7 +125,7 @@ public class RangeBufferImpl<A>
 
         // TODO Add debug mode: Check when writing to already known ranges
 
-        backingBuffer.putAll(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+        backingBuffer.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
         ranges.add(Range.closedOpen(start, end));
     }
 
