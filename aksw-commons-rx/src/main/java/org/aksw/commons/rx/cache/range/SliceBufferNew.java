@@ -62,7 +62,7 @@ public class SliceBufferNew<A>
     protected ObjectStore objectStore;
 
     protected org.aksw.commons.path.core.Path<String> objectStoreBasePath;
-    
+
     // Array abstraction; avoids having mainly used to abstract from byte[] and Object[] and consequently having to build
     // separate cache implementations
     protected ArrayOps<A> arrayOps;
@@ -113,23 +113,23 @@ public class SliceBufferNew<A>
 
     // The buffer with all active in-memory changes
     protected RangeBufferDelegateMutable<A> liveChanges = new RangeBufferDelegateMutableImpl<>();
-    
-    
+
+
 //	@Override
 //	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
 //		super.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
 //		scheduleSync();
 //	};
 
-    
+
     protected ScheduledExecutorService syncScheduler = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
-    
+
     protected void scheduleSync() {
-    	if (syncFuture == null || syncFuture.isDone()) {    	
-    		syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
-    	}
+        if (syncFuture == null || syncFuture.isDone()) {
+            syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+        }
     }
-    
+
     protected RangeBufferDelegateMutable<A> syncChanges = new RangeBufferDelegateMutableImpl<>();
 
     protected LongFunction<String> pageIdToFileName;
@@ -149,11 +149,11 @@ public class SliceBufferNew<A>
 
 
     public SliceBufferNew(
-    		ArrayOps<A> arrayOps, 
-    		ObjectStore objectStore, 
-    		org.aksw.commons.path.core.Path<String> objectStoreBasePath, 
-    		int pageSize,
-    		Duration syncDelay) {
+            ArrayOps<A> arrayOps,
+            ObjectStore objectStore,
+            org.aksw.commons.path.core.Path<String> objectStoreBasePath,
+            int pageSize,
+            Duration syncDelay) {
         super();
         this.arrayOps = arrayOps;
         this.objectStore = objectStore;
@@ -170,15 +170,15 @@ public class SliceBufferNew<A>
     public void loadMetaData(int pageSize) {
         baseRanges = new RangeSetDelegateMutableImpl<>();
 
-    	try (ObjectStoreConnection conn = objectStore.getConnection()) {
-    		TxnApi.execRead(conn, () -> {
-    			lockAndSyncMetaData(conn, pageSize);
-    		});
-    	} catch (Exception e) {
-    		throw new RuntimeException(e);
-		}
+        try (ObjectStoreConnection conn = objectStore.getConnection()) {
+            TxnApi.execRead(conn, () -> {
+                lockAndSyncMetaData(conn, pageSize);
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-    	this.pageSize = baseMetaData.getPageSize();
+        this.pageSize = baseMetaData.getPageSize();
 
         this.liveChanges.setDelegate(newChangeBuffer());
         this.liveMetaData = copyWithNewRanges(baseMetaData, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
@@ -212,24 +212,29 @@ public class SliceBufferNew<A>
 
 
     protected RangeBuffer<A> newChangeBuffer() {
-		Buffer<A> actualBuffer = PagedBuffer.create(arrayOps, pageSize);
+        Buffer<A> actualBuffer = PagedBuffer.create(arrayOps, pageSize);
 
-		// Wrap the buffer such than modifications schedule a sync action
-    	return RangeBufferImpl.create(
-        		new BufferDelegateBase<A>() {
-					@Override
-					public Buffer<A> getDelegate() {
-						return actualBuffer;
-		        	}
-					
-					@Override
-					public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength)
-							throws IOException {
-						super.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
-						scheduleSync();
-					}
-				});
-        // return RangeBufferImpl.create(rangeSet, 0, PagedBuffer.create(arrayOps, pageSize));
+
+        // This is not the best place for scheduling sync because
+        // we can't capture changes to the known min/max sizes here
+
+        // Wrap the buffer such than modifications schedule a sync action
+//        return RangeBufferImpl.create(
+//                new BufferDelegateBase<A>() {
+//                    @Override
+//                    public Buffer<A> getDelegate() {
+//                        return actualBuffer;
+//                    }
+//
+//                    @Override
+//                    public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength)
+//                            throws IOException {
+//                        super.write(offsetInBuffer, arrayWithItemsOfTypeT, arrOffset, arrLength);
+//                        scheduleSync();
+//                    }
+//                });
+        //return RangeBufferImpl.create(rangeSet, 0, PagedBuffer.create(arrayOps, pageSize));
+        return RangeBufferImpl.create(actualBuffer);
     }
 
 
@@ -249,11 +254,11 @@ public class SliceBufferNew<A>
         return pageCache.claim(pageId);
     }
 
-	@Override
+    @Override
     public RangeSet<Long> getGaps(Range<Long> requestRange) {
-    	return liveMetaData.getGaps(requestRange);
+        return liveMetaData.getGaps(requestRange);
     }
-        
+
 
     public boolean hasMetaDataChanged() {
         String resourceName = "metadata.ser";
@@ -261,10 +266,10 @@ public class SliceBufferNew<A>
         return !recencyStatus.equals(baseMetaDataStatus);
     }
 
-    
+
     @Override
     public void checkForUpdate() {
-    	
+
     }
 
     /** Returns the metadata generation */
@@ -278,18 +283,19 @@ public class SliceBufferNew<A>
         int result;
 
         if (hasMetaDataChanged) {
-            logger.info("Metadata was externally modified on disk... reloading");
+            logger.info("Metadata was externally modified on disk... attempting to acquire lock for reload...");
 
             // Re-check recency status now that the resource is locked
             PathDiffState status = res.fetchRecencyStatus();
 
             SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
             // Objects.requireNonNull(newMetaData, "Deserialization of metadata yeld null");
-            
-        	// System.out.println("Acquired readWrite lock at: " + StackTraceUtils.toString(Thread.currentThread().getStackTrace()));
-        	
-            
+
+            // System.out.println("Acquired readWrite lock at: " + StackTraceUtils.toString(Thread.currentThread().getStackTrace()));
+
+
             result = LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
+                logger.info("Lock for reload acquired");
                 if (newMetaData != null) {
                     logger.info("Loaded metadata: " + newMetaData);
                     baseMetaData = newMetaData;
@@ -316,7 +322,7 @@ public class SliceBufferNew<A>
         String fileName = pageIdToFileName.apply(pageId);
 
         BufferWithAutoReloadOnAccess baseBuffer = new BufferWithAutoReloadOnAccess(fileName);
-        
+
         baseBuffer.reloadIfNeeded();
 
         long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
@@ -544,7 +550,7 @@ public class SliceBufferNew<A>
             throw new RuntimeException(e);
         }
 
-        logger.info("Synchronization debug in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000.0f + " seconds");
+        logger.info("Synchronization completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000.0f + " seconds");
     }
 
 
@@ -659,7 +665,7 @@ public class SliceBufferNew<A>
 
                         future = CompletableFuture.supplyAsync(() -> {
                             @SuppressWarnings("unchecked")
-							A array = (A)pageRes.loadNewInstance();
+                            A array = (A)pageRes.loadNewInstance();
                             if (array == null) {
                                 array = arrayOps.create(pageSize);
                             }
@@ -668,13 +674,13 @@ public class SliceBufferNew<A>
                             return arrayBuffer;
                         }).whenComplete((v, t) -> {
                             try {
-                            	conn.commit();
+                                conn.commit();
                             } finally {
                                 try {
-									conn.close();
-								} catch (Exception e) {
-	                                throw new RuntimeException(e);
-								}
+                                    conn.close();
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         });
                         return future;
@@ -702,17 +708,18 @@ public class SliceBufferNew<A>
         @Override
         public Buffer<A> getDelegate() {
             try {
-                return reloadIfNeeded().get();
+                return future.get();
+                // return reloadIfNeeded().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException();
             }
         }
     }
 
-	@Override
-	public RangeMap<Long, List<Throwable>> getFailedRanges() {
-		return liveMetaData.getFailedRanges();
-	}
+    @Override
+    public RangeMap<Long, List<Throwable>> getFailedRanges() {
+        return liveMetaData.getFailedRanges();
+    }
 }
 
 

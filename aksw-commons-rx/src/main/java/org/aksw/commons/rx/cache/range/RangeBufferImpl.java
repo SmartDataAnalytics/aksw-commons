@@ -117,7 +117,7 @@ public class RangeBufferImpl<A>
         long start = LongMath.checkedAdd(offsetInRanges, offsetInBuffer);
         long end = LongMath.checkedAdd(start, arrLength);
 
-        if ((offsetInBuffer + arrLength) >= backingBuffer.getCapacity()) {
+        if ((offsetInBuffer + arrLength) > backingBuffer.getCapacity()) {
             throw new RuntimeException("Attempt to write beyond buffer capacity");
         }
 

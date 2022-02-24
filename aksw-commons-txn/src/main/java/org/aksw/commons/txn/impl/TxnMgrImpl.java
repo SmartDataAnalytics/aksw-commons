@@ -120,18 +120,18 @@ public class TxnMgrImpl
     public static TxnMgrImpl createSimple(Path repoRoot) {
         ResourceRepository<String> resLocks = ResourceRepoImpl.createWithUrlEncode(repoRoot.resolve("locks"));
 
-    	return new TxnMgrImpl(
-    			"txnMgr", repoRoot,
-    			repoRoot.getFileSystem().getPathMatcher("glob:**/*"),
-    			Duration.of(5, ChronoUnit.SECONDS),
-    			new LockManagerPath(repoRoot),
-    			repoRoot.resolve("txns"),
-    			ResourceRepoImpl.createWithUrlEncode(repoRoot),
-    			resLocks,
-    			SymbolicLinkStrategies.FILE);
+        return new TxnMgrImpl(
+                "txnMgr", repoRoot,
+                repoRoot.getFileSystem().getPathMatcher("glob:**/*"),
+                Duration.of(5, ChronoUnit.SECONDS),
+                new LockManagerPath(repoRoot),
+                repoRoot.resolve("txns"),
+                ResourceRepoImpl.createWithUrlEncode(repoRoot),
+                resLocks,
+                SymbolicLinkStrategies.FILE);
     }
-    
-    
+
+
     @Override
     public Path getRootPath() {
         return rootPath;
@@ -209,7 +209,7 @@ public class TxnMgrImpl
                 throw new RuntimeException("Failed to lock txn folder; set useJournal=false if read only access with 'read uncommitted' isolation level is intended");
             }
 
-            logger.debug("Allocated txn folder" + txnFolder);
+            logger.debug("Allocated txn folder: " + txnFolder);
             result = new TxnSerializable(this, txnId, txnFolder);
             if (!result.claim()) {
                 throw new RuntimeException("Failed to claim ownership of the recently created txn " + txnId);
