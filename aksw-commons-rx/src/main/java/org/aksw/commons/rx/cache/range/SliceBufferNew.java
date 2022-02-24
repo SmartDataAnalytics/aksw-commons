@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -41,16 +42,12 @@ import com.esotericsoftware.kryo.pool.KryoPool;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
 
-
-class LazyLoadingDiffBuffer {
-
-
-}
 
 // The outside only sees a buffer - but internally it has a structure that enables serializing the changed regions
 
@@ -510,7 +507,6 @@ public class SliceBufferNew<A>
     }
 
 
-
     @Override
     public RangeSet<Long> getLoadedRanges() {
         return liveMetaData.getLoadedRanges();
@@ -531,17 +527,15 @@ public class SliceBufferNew<A>
         return hasDataCondition;
     }
 
+//    @Override
+//    public RefFuture getMetaData() {
+//        throw new UnsupportedOperationException();
+//    }
 
-    @Override
-    public RefFuture getMetaData() {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public Iterator blockingIterator(long offset) {
-        throw new UnsupportedOperationException();
-    }
+//    @Override
+//    public Iterator blockingIterator(long offset) {
+//        throw new UnsupportedOperationException();
+//    }
 
 
     @Override
@@ -673,6 +667,11 @@ public class SliceBufferNew<A>
             }
         }
     }
+
+	@Override
+	public RangeMap<Long, List<Throwable>> getFailedRanges() {
+		return liveMetaData.getFailedRanges();
+	}
 }
 
 

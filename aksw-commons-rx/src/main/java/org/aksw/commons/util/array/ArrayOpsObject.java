@@ -1,17 +1,23 @@
 package org.aksw.commons.util.array;
 
 import java.util.Arrays;
+import java.util.function.IntFunction;
 
-public class ArrayOpsObject
-	implements ArrayOps<Object[]>
+public class ArrayOpsObject<T>
+	implements ArrayOps<T[]>
 {
 	// When operations operate on that many items then use the system functions
 	public static final int SYSTEM_THRESHOLD = 16;
+	protected IntFunction<T[]> arrayConstructor;
 
-
+	public ArrayOpsObject(IntFunction<T[]> arrayConstructor) {
+		super();
+		this.arrayConstructor = arrayConstructor;
+	}
+	
 	@Override
-	public Object[] create(int size) {
-		return new Object[size];
+	public T[] create(int size) {
+		return arrayConstructor.apply(size);
 	}
 
 	@Override

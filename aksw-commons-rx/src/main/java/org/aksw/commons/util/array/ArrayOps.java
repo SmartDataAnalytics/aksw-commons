@@ -1,5 +1,7 @@
 package org.aksw.commons.util.array;
 
+import java.lang.reflect.Array;
+import java.util.function.IntFunction;
 
 public interface ArrayOps<A> {
 	A create(int size);
@@ -37,8 +39,17 @@ public interface ArrayOps<A> {
 	default void lengthRaw(Object array) {
 		length((A)array);
 	}
-	
 
+	@SuppressWarnings("unchecked")
+	public static <T> ArrayOpsObject<T> createFor(Class<T> componentType) {
+		return new ArrayOpsObject<>(size -> (T[])Array.newInstance(componentType, size));
+	}
+
+	public static <T> ArrayOpsObject<T> createFor(IntFunction<T[]> arrayConstructor) {
+		return new ArrayOpsObject<>(arrayConstructor);
+	}
+
+	
 	public static final ArrayOpsByte BYTE = new ArrayOpsByte();
-	public static final ArrayOpsObject OBJECT = new ArrayOpsObject();
+	public static final ArrayOpsObject<Object> OBJECT = createFor(Object.class);
 }

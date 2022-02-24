@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -321,7 +319,7 @@ public class SmartRangeCacheImpl<T>
 
         Single<Range<Long>> result;
 
-        long knownSize = slice.computeFromMetaData(false, SliceMetaData::getKnownSize);
+        long knownSize = slice.computeFromMetaData(false, SliceMetaDataBasic::getKnownSize);
 
 
         if (knownSize >= 0) {

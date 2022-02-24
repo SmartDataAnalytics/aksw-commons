@@ -7,20 +7,20 @@ import org.aksw.commons.util.array.ArrayOps;
 
 import com.google.common.collect.AbstractIterator;
 
-public class SequentialReaderIterator<T, A>
+public class SequentialReaderIterator<T>
 	extends AbstractIterator<T>
 {
-	protected SequentialReader<A> reader;
+	protected SequentialReader<T[]> reader;
 	
-	protected ArrayOps<A> arrayOps;
-	protected A array;
+	protected ArrayOps<T[]> arrayOps;
+	protected T[] array;
 	protected int arrayLength;
 
 	protected int currentOffset;
 	protected int currentDataLength;
 	
 	
-	public SequentialReaderIterator(ArrayOps<A> arrayOps, SequentialReader<A> reader) {
+	public SequentialReaderIterator(ArrayOps<T[]> arrayOps, SequentialReader<T[]> reader) {
 		super();
 		this.arrayOps = arrayOps;
 		this.reader = reader;
@@ -34,7 +34,7 @@ public class SequentialReaderIterator<T, A>
 	}
 
 	
-	public static <T, A> Iterator<T> create(ArrayOps<A> arrayOps, SequentialReader<A> reader) {
+	public static <T> Iterator<T> create(ArrayOps<T[]> arrayOps, SequentialReader<T[]> reader) {
 		return new SequentialReaderIterator<>(arrayOps, reader);
 	}
 

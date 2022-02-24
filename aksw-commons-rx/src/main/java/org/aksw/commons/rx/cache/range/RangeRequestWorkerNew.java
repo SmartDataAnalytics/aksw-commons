@@ -8,7 +8,6 @@ import java.util.function.LongUnaryOperator;
 import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
-import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
 import org.aksw.commons.util.slot.ObservableSlottedValueImpl;
 import org.aksw.commons.util.slot.Slot;
@@ -107,7 +106,7 @@ public class RangeRequestWorkerNew<A>
      * Task termination may be delayed in millis in order to allow it to recover should another observer register
      * in the delay phase
      */
-    protected long terminationDelay;
+    protected Duration terminationDelay;
 
     /**
      * Wait mode - true: do not fetch more data then there is demand - false: keep pre-fetching data
@@ -140,7 +139,7 @@ public class RangeRequestWorkerNew<A>
     		AdvancedRangeCacheNew<A> cacheSystem,
             long requestOffset,
             long requestLimit,
-            long terminationDelay) {
+            Duration terminationDelay) {
         super();
         this.cacheSystem = cacheSystem;
         this.arrayOps = cacheSystem.getSlice().getArrayOps();
@@ -313,7 +312,7 @@ public class RangeRequestWorkerNew<A>
         // pauseLock.writeLock().newCondition();
         while (true) {
 
-            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay) {            	
+            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay.toMillis()) {            	
                 break;
             }
 
@@ -351,7 +350,7 @@ public class RangeRequestWorkerNew<A>
                         switch (idleMode) {
                         case PAUSE:
                             try {
-                                endpointDemands.wait(terminationDelay);
+                                endpointDemands.wait(terminationDelay.toMillis());
                             } catch (InterruptedException e) {
                             }
                             break;

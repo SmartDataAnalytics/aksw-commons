@@ -7,15 +7,15 @@ import java.util.stream.Stream;
 import org.aksw.commons.util.array.ArrayOps;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 
-public class SequentialReaderFromStream<A>
+public class SequentialReaderFromStream<T>
 	extends AutoCloseableWithLeakDetectionBase
-	implements SequentialReader<A>
+	implements SequentialReader<T[]>
 {
-	protected ArrayOps<A> arrayOps;		
-	protected Stream<?> stream = null;
-	protected Iterator<?> iterator = null;
+	protected ArrayOps<T[]> arrayOps;		
+	protected Stream<T> stream = null;
+	protected Iterator<T> iterator = null;
 
-	public SequentialReaderFromStream(ArrayOps<A> arrayOps, Stream<?> stream) {
+	public SequentialReaderFromStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
 		super();
 		this.arrayOps = arrayOps;
 		this.stream = stream;
@@ -29,7 +29,7 @@ public class SequentialReaderFromStream<A>
 	}
 
 	@Override
-	public int read(A array, int position, int length) throws IOException {
+	public int read(T[] array, int position, int length) throws IOException {
 		ensureOpen();
 		
 		int i;

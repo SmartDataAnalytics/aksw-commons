@@ -36,7 +36,7 @@ public class AdvancedRangeCacheNew<T>
     protected Set<RangeRequestWorkerNew<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
     
     protected long requestLimit;
-    protected long terminationDelayInMs;
+    protected Duration terminationDelay;
 
 
     protected ExecutorService executorService =
@@ -47,16 +47,26 @@ public class AdvancedRangeCacheNew<T>
     		SliceWithPages<T> slice,
             Duration syncDelayDuration,
             long requestLimit,
-            long terminationDelayInMs) {
+            Duration terminationDelay) {
 
     	this.dataSource = dataSource;
 
         this.slice = slice;
         this.requestLimit = requestLimit;
-        this.terminationDelayInMs = terminationDelayInMs;
+        this.terminationDelay = terminationDelay;
     }
 
-    
+
+    public static <A> AdvancedRangeCacheNew<A> create(
+    		SequentialReaderSource<A> dataSource,
+    		SliceWithPages<A> slice,
+            Duration syncDelayDuration,
+            long requestLimit,
+            Duration terminationDelay) {
+
+    	return new AdvancedRangeCacheNew<>(dataSource, slice, syncDelayDuration, requestLimit, terminationDelay);
+    }
+
     
     public SequentialReaderSource<T> getDataSource() {
 		return dataSource;
@@ -97,7 +107,7 @@ public class AdvancedRangeCacheNew<T>
         Slot<Long> slot;
         //executorCreationLock.writeLock().lock();
         try {
-            worker = new RangeRequestWorkerNew<>(this, offset, requestLimit, terminationDelayInMs);
+            worker = new RangeRequestWorkerNew<>(this, offset, requestLimit, terminationDelay);
             slot = worker.newDemandSlot();
             slot.set(offset + initialLength);
 
@@ -137,5 +147,68 @@ public class AdvancedRangeCacheNew<T>
         return result;
     }
 
+    
+    public static class Builder<A> {
+        protected SequentialReaderSource<A> dataSource;
+        protected SliceWithPages<A> slice;
+
+        protected long requestLimit;
+        protected Duration syncDelay;
+        protected Duration terminationDelay;
+        
+        public static <A> Builder<A> create() {
+        	return new Builder<A>();
+        }
+        
+		public SequentialReaderSource<A> getDataSource() {
+			return dataSource;
+		}
+		
+		public Builder<A> setDataSource(SequentialReaderSource<A> dataSource) {
+			this.dataSource = dataSource;
+			return this;
+		}
+		
+		public SliceWithPages<A> getSlice() {
+			return slice;
+		}
+		
+		public Builder<A> setSlice(SliceWithPages<A> slice) {
+			this.slice = slice;
+			return this;
+		}
+		
+		public long getRequestLimit() {
+			return requestLimit;
+		}
+		
+		public Builder<A> setRequestLimit(long requestLimit) {
+			this.requestLimit = requestLimit;
+			return this;
+		}
+		
+		public Duration getTerminationDelay() {
+			return terminationDelay;
+		}
+		
+		public Builder<A> setTerminationDelay(Duration terminationDelay) {
+			this.terminationDelay = terminationDelay;
+			return this;
+		}
+        
+		public Duration getSyncDelay() {
+			return syncDelay;
+		}
+
+		public Builder<A> setSyncDelay(Duration syncDelay) {
+			this.syncDelay = syncDelay;
+			return this;
+		}
+
+		public AdvancedRangeCacheNew<A> build() {
+			return AdvancedRangeCacheNew.create(dataSource, slice, syncDelay, requestLimit, terminationDelay);
+		}
+    }
+    
 }
 

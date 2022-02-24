@@ -30,63 +30,22 @@ import com.google.common.collect.RangeSet;
  * @param <T>
  */
 public interface SliceWithAutoSync<T>
+	extends SliceMetaDataBasic
     // extends ArrayPuttable
 {
     ReadWriteLock getReadWriteLock();
-    Condition getHasDataCondition();
-    long getMinimumKnownSize();
-    void setMinimumKnownSize(long size);
-
-    long getMaximumKnownSize();
-    void setMaximumKnownSize(long size);
-
-    
-    /** Updates the maximum known size iff the argument is less than the current known maximum */
-    default SliceWithAutoSync<T> updateMaximumKnownSize(long size) {
-        long current = getMaximumKnownSize();
-
-        if (size < current) {
-            setMaximumKnownSize(size);
-        }
-
-        return this;
-    }
-
-    /** Updates the minimum known size iff the argument is greater than the current known minimum */
-    default SliceWithAutoSync<T> updateMinimumKnownSize(long size) {
-        long current = getMinimumKnownSize();
-
-        if (size > current) {
-            setMinimumKnownSize(size);
-        }
-
-        return this;
-    }
-
-    
-    default long getKnownSize() {
-        long minSize = getMinimumKnownSize();
-        long maxSize = getMaximumKnownSize();
-
-        return minSize == maxSize ? minSize : -1;
-    }
-    
+    Condition getHasDataCondition();    
+        
     ArrayOps<T> getArrayOps();
-
-    RangeSet<Long> getLoadedRanges();
-
-
     void checkForUpdate();
     
-    RangeSet<Long> getGaps(Range<Long> requestRange);
-
     /**
      * Obtain a new reference to the metadata. The referent may be loaded lazily.
      * The reference must be closed after use in order to allow sync to trigger.
      *
      * @return
      */
-    RefFuture<SliceMetaData> getMetaData();
+    // RefFuture<SliceMetaData> getMetaData();
 
 
     /**
@@ -111,11 +70,11 @@ public interface SliceWithAutoSync<T>
         return result;
     }
 
-    default void mutateMetaData(Consumer<? super SliceMetaData> fn) {
+    default void mutateMetaData(Consumer<? super SliceMetaDataBasic> fn) {
         computeFromMetaData(true, metaData -> { fn.accept(metaData); return null; });
     }
 
-    default void readMetaData(Consumer<? super SliceMetaData> fn) {
+    default void readMetaData(Consumer<? super SliceMetaDataBasic> fn) {
         computeFromMetaData(false, metaData -> { fn.accept(metaData); return null; });
     }
 
@@ -129,22 +88,19 @@ public interface SliceWithAutoSync<T>
      * @param fn
      * @return
      */
-    default <X> X computeFromMetaData(boolean isWrite, Function<? super SliceMetaData, X> fn) {
+    default <X> X computeFromMetaData(boolean isWrite, Function<? super SliceMetaDataBasic, X> fn) {
         X result;
-        try (RefFuture<SliceMetaData> ref = getMetaData()) {
-            SliceMetaData metaData = ref.await();
-            ReadWriteLock rwl = metaData.getReadWriteLock();
-            Lock lock = isWrite ? rwl.writeLock() : rwl.readLock();
-            lock.lock();
-            try {
-                result = fn.apply(metaData);
+        ReadWriteLock rwl = this.getReadWriteLock();
+        Lock lock = isWrite ? rwl.writeLock() : rwl.readLock();
+        lock.lock();
+        try {
+            result = fn.apply(this);
 
-                if (isWrite) {
-                    metaData.getHasDataCondition().signalAll();
-                }
-            } finally {
-                lock.unlock();
+            if (isWrite) {
+                this.getHasDataCondition().signalAll();
             }
+        } finally {
+            lock.unlock();
         }
 
         return result;
@@ -157,7 +113,7 @@ public interface SliceWithAutoSync<T>
      * @param offset
      * @return
      */
-    Iterator<T> blockingIterator(long offset);
+    // Iterator<T> blockingIterator(long offset);
 
     // void syncMetaData();
     // syncPages();

@@ -28,8 +28,8 @@ import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Scheduler.Worker;
 import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.internal.fuseable.SimpleQueue;
-import io.reactivex.rxjava3.internal.queue.SpscArrayQueue;
+import io.reactivex.rxjava3.operators.SimpleQueue;
+import io.reactivex.rxjava3.operators.SpscArrayQueue;
 
 public class RxUtils {
     private static final Logger logger = LoggerFactory.getLogger(RxUtils.class);
