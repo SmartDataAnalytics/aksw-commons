@@ -476,7 +476,7 @@ public class RangeUtils {
             .filter(offsetAndEndpoint -> {
                 long supplyEnd = offsetAndEndpoint.getValue();
 
-                boolean isEnclosing = supplyEnd > end;
+                boolean isEnclosing = supplyEnd >= end;
                 return isEnclosing;
             })
             .map(Entry::getKey);

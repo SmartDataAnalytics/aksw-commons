@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -191,7 +192,16 @@ public class SequentialReaderFromSliceImpl<A>
             long end = schedule.getValue();
             long length = end - start;
 
-            RangeRequestWorkerNew<A> worker = offsetToWorker.get(start);
+            // Find the worker closed to the schedule start
+            // SortedMap<Long, Long> headMap = offsetToEndpoint.headMap(start);
+            Entry<Long, Long> workerRange = offsetToEndpoint.floorEntry(start);
+            Long workerStart = workerRange == null || workerRange.getValue() < end
+                    ? null
+                    : workerRange.getKey();
+
+            RangeRequestWorkerNew<A> worker = workerStart == null
+                    ? null
+                    :  offsetToWorker.get(workerStart);
 
             // If there is no worker with that offset then create one
             // Otherwise update its slot
@@ -212,6 +222,8 @@ public class SequentialReaderFromSliceImpl<A>
 
 
         }
+
+        System.out.println("Worker schedules: " + workerSchedules);
     }
 
     protected void processGaps(RangeSet<Long> gaps, long start, long end) {

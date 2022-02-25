@@ -350,6 +350,7 @@ public class RangeRequestWorkerNew<A>
 
                 // Shut down if there is no pending request for further data
                 synchronized (endpointDemands)  {
+                    // Endpoint is exclusive (offset must be strictly lower)
                     long maxDemandedEndpoint = endpointDemands.build();
 
                     if (offset >= maxDemandedEndpoint) {
@@ -476,9 +477,11 @@ public class RangeRequestWorkerNew<A>
                 remainingReadsInt -= numItemsOfLastRead;
                 result += numItemsOfLastRead;
                 bufferOffset += numItemsOfLastRead;
+                offset += numItemsOfLastRead;
+                System.out.println("write at offset " + offset);
                 // itemsProcessedNow += numItemsReadTmp;
             }
-            offset += result;
+            // offset += result;
             numItemsProcessed += result;
 
             // result becomes -1 if it is 0 for a non-zero length
