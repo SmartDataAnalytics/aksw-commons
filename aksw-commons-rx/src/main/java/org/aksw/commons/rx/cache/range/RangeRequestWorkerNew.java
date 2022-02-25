@@ -23,8 +23,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.Ints;
 
-import io.reactivex.rxjava3.disposables.Disposable;
-
 /**
  * A producer task: Takes items from an iterator and writes them them to pages
  *
@@ -38,21 +36,21 @@ public class RangeRequestWorkerNew<A>
 {
     private static final Logger logger = LoggerFactory.getLogger(RangeRequestWorkerNew.class);
 
-    
-    
+
+
     /**
      * Reference to the manager - if there is a failure in processing the request the executor
      * notifies it
      */
     protected AdvancedRangeCacheNew<A> cacheSystem;
 
-    
+
     protected ArrayOps<A> arrayOps;
-    
+
     /**
      * Demands from clients to load data up to the supplied value.
      * A client can unregister a demand any time.
-     * 
+     *
      */
     protected ObservableSlottedValue<Long, Long> endpointDemands = ObservableSlottedValueImpl.wrap(SlottedBuilderImpl.create(
             values -> values.stream().reduce(-1l,Math::max)));
@@ -65,9 +63,9 @@ public class RangeRequestWorkerNew<A>
     // protected Iterator<T> iterator = null;
 
     protected SequentialReader<A> sequentialReader;
-    
+
     /** The disposable of the data supplier */
-    protected Disposable disposable;
+    // protected Disposable disposable;
 
     /** The data slice */
     protected SliceWithAutoSync<A> slice;
@@ -129,14 +127,14 @@ public class RangeRequestWorkerNew<A>
 
     /** Throughput in items / second */
     protected long numItemsProcessed = 0;
-    
+
     /** Total time */
     protected long processingTimeInNanos = 0;
 
 
 
     public RangeRequestWorkerNew(
-    		AdvancedRangeCacheNew<A> cacheSystem,
+            AdvancedRangeCacheNew<A> cacheSystem,
             long requestOffset,
             long requestLimit,
             Duration terminationDelay) {
@@ -151,7 +149,11 @@ public class RangeRequestWorkerNew<A>
         this.slice = cacheSystem.getSlice();
         this.pageRange = slice.newSliceAccessor();
 
+        // TODO Make configurable
         this.offsetToMaxAllowedRefetchCount = offset -> 5000;
+
+        // Ensure to trigger a checkpoint as first action of a run
+        this.nextCheckpointOffset = offset;
 
         endpointDemands.addValueChangeListener(event -> {
             logger.info("End-offset of data range demand updated to " + this + ": " + event);
@@ -197,10 +199,13 @@ public class RangeRequestWorkerNew<A>
     @Override
     protected void closeActual() {
         // Cancel the backend process
-        if (disposable != null) {
-            disposable.dispose();
+        if (sequentialReader != null) {
+            try {
+                sequentialReader.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
-
         // Free claimed resources (pages)
         pageRange.releaseAll();
     }
@@ -212,10 +217,10 @@ public class RangeRequestWorkerNew<A>
             // Flowable<A> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
             // iterator = backendFlow.blockingIterable().iterator();
             // disposable = (Disposable)iterator;
-            
-        	// TODO Init the reader
-        	sequentialReader = cacheSystem.getDataSource().newInputStream(Range.atLeast(requestOffset));
-            
+
+            // TODO Init the reader
+            sequentialReader = cacheSystem.getDataSource().newInputStream(Range.atLeast(requestOffset));
+
         } else {
             return; // Exit immediately due to abort
         }
@@ -229,9 +234,9 @@ public class RangeRequestWorkerNew<A>
             if (offset != nextCheckpointOffset) {
                 runCore();
             }
-            logger.debug("RangeRequestWorker normal termination");
+            logger.debug("RangeRequestWorker normal termination at offset " + offset);
         } catch (Exception e) {
-            logger.error("RangeRequestWorker exceptional termination", e);
+            logger.error("RangeRequestWorker exceptional termination at offset " + offset, e);
             throw new RuntimeException(e);
         } finally {
             close();
@@ -246,17 +251,18 @@ public class RangeRequestWorkerNew<A>
 
         // A demand overrides the worker's maxAllowedRefetchCount
         // Demands should take refetching of ranges into account
-    	long remainingAllowedItems = requestLimit - numItemsProcessed;
+        long remainingAllowedItems = requestLimit - numItemsProcessed;
         long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
         long effectiveLimit = Math.min(maxAllowedRefetchCount, remainingAllowedItems);
+        long claimAheadRangeEnd = offset + effectiveLimit;
 
-        Range<Long> claimAheadRange = Range.closedOpen(offset, offset + effectiveLimit);
+        Range<Long> claimAheadRange = Range.closedOpen(offset, claimAheadRangeEnd);
 
         // slice.computeFromMetaData(false, metaData -> {
         LockUtils.runWithLock(slice.getReadWriteLock().readLock(), () -> {
             RangeSet<Long> gaps = slice.getGaps(claimAheadRange);
             if (gaps.isEmpty()) {
-                // Nothing todo; not updating the limits will cause the worker to terminate
+                nextCheckpointOffset = claimAheadRangeEnd;
             } else {
                 Range<Long> lastGap = gaps.asDescendingSetOfRanges().iterator().next();
                 long last = LongMath.saturatedAdd(ContiguousSet.create(lastGap, DiscreteDomain.longs()).last(), 1);
@@ -268,51 +274,51 @@ public class RangeRequestWorkerNew<A>
         //});
     }
 
-    
+
 //    public void run2() {
 //
 //    	synchronized (cacheSystem.getExecutorCreationReadLock()) {
 //
 //    		// Check if there are any more demands -if not then we can safely shut dowwn
-//    		
-//    		
+//
+//
 //		}
-//    	
+//
 //    }
-    
-    
+
+
     /**
-     * 
+     *
      * A worker can only shutdown if it holds the workerSetLock: A concurrent RangeRequestIterator may schedule a new task for a worker
-     * that was just about to terminate. 
-     * 
+     * that was just about to terminate.
+     *
      * Shutdown conditions:
      * - idle for too long
      * - reached end of data
-     * - 
+     * -
      * - exception
-     * @throws Exception 
-     * 
+     * @throws Exception
+     *
      */
     public void runCore() throws Exception {
-    	
-    	A buffer = arrayOps.create(reportingInterval);
+
+        A buffer = arrayOps.create(reportingInterval);
 
         initBackendRequest();
-        
+
         // Measuring the time for the first item may be meaningless if an underlying cache is used
         // It may be better to measure on e.g. the HTTP level using interceptors on HTTP client
-        
+
         boolean isFirstRun = true;
         Stopwatch stopwatch = Stopwatch.createStarted();
         process(buffer, 0, 1);
-        
+
         firstItemTime = stopwatch.elapsed();
 
         // pauseLock.writeLock().newCondition();
         while (true) {
 
-            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay.toMillis()) {            	
+            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay.toMillis()) {
                 break;
             }
 
@@ -327,13 +333,13 @@ public class RangeRequestWorkerNew<A>
 
             boolean hasNext;
             try {
-            	// Align with bulk size; this should give more aesthetic numbers in debugging and logging
-            	if (isFirstRun) {
-            		isFirstRun = false;
-            		hasNext = process(buffer, 1, reportingInterval - 1) >= 0;
-            	} else {
-            		hasNext = process(buffer, 0, reportingInterval) >= 0;
-            	}
+                // Align with bulk size; this should give more aesthetic numbers in debugging and logging
+                if (isFirstRun) {
+                    isFirstRun = false;
+                    hasNext = process(buffer, 1, reportingInterval - 1) >= 0;
+                } else {
+                    hasNext = process(buffer, 0, reportingInterval) >= 0;
+                }
 
             } catch (Exception e) {
                  throw new RuntimeException(e);
@@ -382,9 +388,9 @@ public class RangeRequestWorkerNew<A>
                         break;
                     }
                 } finally {
-                	readLock.unlock();
+                    readLock.unlock();
                 }
-                
+
                 if (IdleMode.PAUSE.equals(idleMode)) {
                     synchronized (endpointDemands) {
                         long maxEndpoint = endpointDemands.build();
@@ -401,7 +407,7 @@ public class RangeRequestWorkerNew<A>
                 // If there is no more data then terminate immediately
                 break;
             }
-        }        
+        }
     }
 
 
@@ -427,10 +433,10 @@ public class RangeRequestWorkerNew<A>
      *
      */
     public int process(A buffer, int bufferOffset, int n) throws Exception {
-    	if (n == 0) {
-    		throw new IllegalArgumentException("Request to process 0 items is invalid");
-    	}
-    	
+        if (n == 0) {
+            throw new IllegalArgumentException("Request to process 0 items is invalid");
+        }
+
         pageRange.claimByOffsetRange(offset, offset + n);
 
 //        BulkingSink<A> sink = BulkingSink.create(bulkSize,
@@ -439,7 +445,7 @@ public class RangeRequestWorkerNew<A>
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
         long remainingReads = Math.min(n,
-        		Math.min(reportingInterval, numItemsUntilNextCheckpoint));
+                Math.min(reportingInterval, numItemsUntilNextCheckpoint));
 
         // In wait mode stop exactly at maxEndpoint (do not read ahead)
         if (IdleMode.PAUSE.equals(idleMode)) {
@@ -451,37 +457,37 @@ public class RangeRequestWorkerNew<A>
         // Explicitly acquire the write lock in order to update the
         // buffer and possibly the known size in one operation
         // pageRange.lock();
-        
+
         Lock writeLock = slice.getReadWriteLock().writeLock();
         writeLock.lock();
-        
+
         // long itemsProcessedNow = 0;
-        
+
         int remainingReadsInt = Ints.checkedCast(remainingReads);
-    	int numItemsOfLastRead = 0;
+        int numItemsOfLastRead = 0;
         int result = 0;
-        try {        	
-        	// Note: Read should never return 0!
-        	while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
-        			!isClosed && !Thread.interrupted() &&
-        			(numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
+        try {
+            // Note: Read should never return 0!
+            while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
+                    !isClosed && !Thread.interrupted() &&
+                    (numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
                 pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
 
                 remainingReadsInt -= numItemsOfLastRead;
                 result += numItemsOfLastRead;
                 bufferOffset += numItemsOfLastRead;
                 // itemsProcessedNow += numItemsReadTmp;
-        	}
+            }
             offset += result;
             numItemsProcessed += result;
-            
-        	// result becomes -1 if it is 0 for a non-zero length
-        	result = result == 0 && n != 0 ? -1 : result;
-        	
-        	// int numItemsRead = numItemsProcessed;
-        	
+
+            // result becomes -1 if it is 0 for a non-zero length
+            result = result == 0 && n != 0 ? -1 : result;
+
+            // int numItemsRead = numItemsProcessed;
+
 //        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
-        	
+
                 slice.updateMinimumKnownSize(offset);
 
                 // If there is no further item although the request range has not been covered
@@ -541,26 +547,26 @@ public class RangeRequestWorkerNew<A>
 
         } finally {
             // pageRange.unlock();
-        	writeLock.unlock();
+            writeLock.unlock();
         }
-        
+
         return result;
     }
 
-    
+
 
     /**
      * Acquire a new slot into which the end-offset of a demanded data range can be put.
-     * 
+     *
      * FIXME The worker may just have terminated; so we need synchronization with the workerSyncLock such that during scheduling workers don't
      * disappear.
-     * 
+     *
      * @return
      */
     public Slot<Long> newDemandSlot() {
-    	synchronized (endpointDemands) {
-    		return endpointDemands.newSlot();
-    	}
+        synchronized (endpointDemands) {
+            return endpointDemands.newSlot();
+        }
     }
 }
 

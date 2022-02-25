@@ -20,6 +20,7 @@ import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -59,13 +60,13 @@ public class SequentialReaderFromSliceImpl<A>
      */
     protected Range<Long> requestRange;
 
-    
-    
+
+
 
     /** At a checkpoint the data fetching tasks for the next blocks are scheduled */
     protected long nextCheckpointOffset;
-    
-    
+
+
     protected long currentOffset;
     protected int maxReadAheadItemCount = 100;
 
@@ -75,9 +76,9 @@ public class SequentialReaderFromSliceImpl<A>
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
-        
+        // requestRange.canonical(DiscreteDomain.longs()).lowerEndpoint();
         ContiguousSet<Long> set = ContiguousSet.create(requestRange, DiscreteDomain.longs());
-        
+
         this.currentOffset = set.first(); // null or NSE exception?
         this.nextCheckpointOffset = currentOffset;
     }
@@ -108,6 +109,8 @@ public class SequentialReaderFromSliceImpl<A>
      *
      */
     protected void checkpoint(long n) {
+        Preconditions.checkArgument(n >= 0, "Argument must not be negative");
+
         clearPassedSlots();
 
         long start = nextCheckpointOffset;
@@ -116,10 +119,10 @@ public class SequentialReaderFromSliceImpl<A>
         Range<Long> claimAheadRange = Range.closedOpen(start, end);
 
         LockUtils.runWithLock(cache.getExecutorCreationReadLock(), () -> {
-        	LockUtils.runWithLock(slice.getReadWriteLock().readLock(), () -> {
+            LockUtils.runWithLock(slice.getReadWriteLock().readLock(), () -> {
                 RangeSet<Long> gaps = slice.getGaps(claimAheadRange);
                 processGaps(gaps, start, end);
-        	});
+            });
             nextCheckpointOffset = end;
         });
     }
@@ -222,26 +225,28 @@ public class SequentialReaderFromSliceImpl<A>
 
         pageRange.close();
     }
-    
-    
+
+
     @Override
     public int read(A tgt, int tgtOffset, int length) throws IOException {
+        ensureOpen();
 
-    	ensureOpen();
+        if (length == 0) {
+            return 0;
+        }
 
-    	if (length == 0) {
-    		return 0;
-    	}
-    	
-    	// Schedule data fetching for length + maxReadAheadItemCount items
-    	long endOffset = currentOffset + length;
-        Range<Long> totalReadRange = Range.closedOpen(currentOffset, endOffset);
+        // Schedule data fetching for length + maxReadAheadItemCount items
+        long requestedEndOffset = currentOffset + length;
 
-    	if (endOffset >= nextCheckpointOffset) {
-    	
+        long maxEndOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last() + 1;
+        long effectiveEndOffset = Math.min(requestedEndOffset, maxEndOffset);
+
+        Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveEndOffset);
+
+        if (effectiveEndOffset >= nextCheckpointOffset) {
+
             try {
-                long end = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last();
-                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(LongMath.saturatedAdd(end - currentOffset, 1));
+                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(effectiveEndOffset - nextCheckpointOffset);
 
                 // Read up length + maxReadAheadItemCount
                 int n = Math.min(length + maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
@@ -261,7 +266,7 @@ public class SequentialReaderFromSliceImpl<A>
 
         int result;
 
-        pageRange.claimByOffsetRange(currentOffset, endOffset);
+        pageRange.claimByOffsetRange(currentOffset, effectiveEndOffset);
 
         ReadWriteLock rwl = slice.getReadWriteLock();
         Lock readLock = rwl.readLock();
@@ -303,7 +308,8 @@ public class SequentialReaderFromSliceImpl<A>
                         while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
                             try {
-                                logger.info("Awaiting more data: " + entry + " " + currentOffset + " " + knownSize);
+                                logger.info(String.format(
+                                        "Awaiting data at offset %d for entry %s of a slice of known size %d with loaded ranges %s", currentOffset, entry, knownSize, slice.getLoadedRanges()));
                                 slice.getHasDataCondition().await();
                                 logger.info("Woke up after awaiting more data");
                             } catch (InterruptedException e) {
@@ -311,8 +317,8 @@ public class SequentialReaderFromSliceImpl<A>
                             }
                         }
                     } finally {
-                    	// rwl supports downgrading write lock to read by means of 
-                    	// acquisition of read lock while write lock is held
+                        // rwl supports downgrading write lock to read by means of
+                        // acquisition of read lock while write lock is held
                         readLock.lock();
                         writeLock.unlock();
                     }
@@ -333,29 +339,34 @@ public class SequentialReaderFromSliceImpl<A>
                 ContiguousSet<Long> cset = ContiguousSet.create(range, DiscreteDomain.longs());
 
                 // Result is the length of the range of the available data
-                result = cset.size();
+                int readLength = cset.size();
 
-                long startAbs = cset.first();
-                long endAbs = startAbs + result;
+                if (readLength == 0) {
+                    result = -1;
+                } else {
 
-                // long rangeLength = endAbs - startAbs;
-                
-                // TODO We may need to unlock before the claim in order to allow (re-loading) of the pages in the claim range
-                
-//                pageRange.claimByOffsetRange(startAbs, endAbs);
+                    long startAbs = cset.first();
+                    long endAbs = startAbs + readLength;
 
-                result = pageRange.unsafeRead(tgt, tgtOffset, currentOffset, result);
-                
-                if (result >= 0) {
-                	currentOffset += result;
+                    // long rangeLength = endAbs - startAbs;
+
+                    // TODO We may need to unlock before the claim in order to allow (re-loading) of the pages in the claim range
+
+    //                pageRange.claimByOffsetRange(startAbs, endAbs);
+
+                    result = pageRange.unsafeRead(tgt, tgtOffset, currentOffset, readLength);
+                    if (result >= 0) {
+                        currentOffset += result;
+                    }
                 }
+
                 /*
                 long pageSize = slice.getPageSize();
                 long startPageId = PageUtils.getPageIndexForOffset(startAbs, pageSize);
                 long endPageId = PageUtils.getPageIndexForOffset(endAbs, pageSize);
                 long indexInPage = PageUtils.getIndexInPage(startAbs, pageSize);
 
-                
+
                 for (long i = startPageId; i <= endPageId; ++i) {
                     long endIndex = i == endPageId
                             ? PageUtils.getIndexInPage(endAbs, pageSize)

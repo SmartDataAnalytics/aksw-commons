@@ -2,7 +2,6 @@ package org.aksw.commons.txn.impl;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
@@ -10,45 +9,44 @@ import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnMgr;
 import org.aksw.commons.txn.api.TxnResourceApi;
-import org.aksw.commons.util.array.Array;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Skeleton for implementing commit / rollback actions. Provides callbacks
  * that allow for syncing in-memory copies.
- * 
+ *
  * @author raven
  *
  */
 public class TxnHandler {
 
-	private static final Logger logger = LoggerFactory.getLogger(TxnHandler.class);
-	
-	protected TxnMgr txnMgr;
+    private static final Logger logger = LoggerFactory.getLogger(TxnHandler.class);
 
-	
-	public TxnHandler(TxnMgr txnMgr) {
-		super();
-		this.txnMgr = txnMgr;
-	}
+    protected TxnMgr txnMgr;
 
-	protected void beforePreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
-		
-	}
-	
-	protected void afterPreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
-		
-	}
-	
-	protected void beforeUnlock(org.aksw.commons.path.core.Path<String> resKey, boolean isCommit) throws Exception {
-		
-	}
-	
-	protected void end() {
-		
-	}
-	
+
+    public TxnHandler(TxnMgr txnMgr) {
+        super();
+        this.txnMgr = txnMgr;
+    }
+
+    protected void beforePreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
+
+    }
+
+    protected void afterPreCommit(org.aksw.commons.path.core.Path<String> resKey) throws Exception {
+
+    }
+
+    protected void beforeUnlock(org.aksw.commons.path.core.Path<String> resKey, boolean isCommit) throws Exception {
+
+    }
+
+    protected void end() {
+
+    }
+
     public void cleanupStaleTxns() throws IOException {
         logger.info("Checking existing txns...");
         try (Stream<Txn> stream = txnMgr.streamTxns()) {
@@ -64,15 +62,15 @@ public class TxnHandler {
             });
         }
     }
-    
-    
+
+
     public void commit(Txn txn) {
         try {
             // TODO Non-write transactions can probably skip the sync block - or?
             try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
                 Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
                 while (it.hasNext()) {
-                	org.aksw.commons.path.core.Path<String> relPath = it.next();
+                    org.aksw.commons.path.core.Path<String> relPath = it.next();
                     logger.debug("Syncing: " + relPath);
                     // Path relPath = txnMgr.getResRepo().getRelPath(res);
 
@@ -80,8 +78,8 @@ public class TxnHandler {
                     if (api.getTxnResourceLock().ownsWriteLock()) {
                         // If we own a write lock and the state is dirty then sync
                         // If there are any in memory changes then write them out
-                    	
-                    	beforePreCommit(relPath);
+
+                        beforePreCommit(relPath);
                         // Precommit: Copy any new data files to their final location (but keep backups)
                         ContentSync fs = api.getFileSync();
                         fs.preCommit();
@@ -117,9 +115,9 @@ public class TxnHandler {
         }
     }
 
-    
+
     /**
-     * 
+     *
      * @param txn
      * @param resourceAction (resourceKey, isCommit) An action to run on a resource after changes were rolled back or committed -
      *        but before the resource is unlocked. Typically used to synchronize an in-memory cache.
@@ -149,7 +147,7 @@ public class TxnHandler {
             try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
                 Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
                 while (it.hasNext()) {
-                	org.aksw.commons.path.core.Path<String> res = it.next();
+                    org.aksw.commons.path.core.Path<String> res = it.next();
                     logger.debug("Finalizing and unlocking: " + res);
                     TxnResourceApi api = txn.getResourceApi(res);
 
@@ -188,8 +186,8 @@ public class TxnHandler {
             throw new RuntimeException(e);
         }
     }
-    
-    
+
+
     public void abort(Txn txn) {
         try {
             txn.addRollback();
@@ -200,7 +198,7 @@ public class TxnHandler {
             end();
         }
     }
-    
+
     public void rollbackOrEnd(Txn txn) throws IOException {
         logger.info("Detected stale txn; applying rollback: " + txn.getId());
         if (!txn.isCommit()) {

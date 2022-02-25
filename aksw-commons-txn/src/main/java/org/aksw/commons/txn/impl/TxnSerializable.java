@@ -159,7 +159,7 @@ public class TxnSerializable
 
     public TxnResourceApi getResourceApi(String resourceName) {
         String[] resRelPath = txnMgr.getResRepo().getPathSegments(resourceName);
-        
+
         // NOTE Converting String[] to Path<String> should be simplified
         org.aksw.commons.path.core.Path<String> rrp = PathOpsStr.get().newPath(false, Arrays.asList(resRelPath));
         TxnResourceApi result = getResourceApi(rrp);
@@ -327,15 +327,15 @@ public class TxnSerializable
             Path resAbsPath = txnPath.resolveSibling(txnToRes).normalize();
             Path resRelPath = txnMgr.getRootPath().relativize(resAbsPath);
             String[] array = PathUtils.getPathSegments(resRelPath);
-            
+
             org.aksw.commons.path.core.Path<String> result = PathOpsStr.get().newPath(false, Arrays.asList(array));
-            
+
             return result;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public Stream<org.aksw.commons.path.core.Path<String>> streamAccessedResourcePaths() throws IOException {
         return streamAccessedEntries()
@@ -357,7 +357,9 @@ public class TxnSerializable
     }
 
     /**
-     * A stale transaction was idle for longer than the heartbeat time
+     * A stale transaction was idle for longer than the heartbeat time.
+     * If the owner file (used for heartbeat checks) does not (yet)
+     * exist then the txn is also considered stale.
      */
     @Override
     public boolean isStale() throws IOException {
@@ -394,6 +396,8 @@ public class TxnSerializable
             // If we own the lock we must check that no other process claimed the transaction
             boolean r = false;
             if (isStale()) {
+                String txnMgrId = txnMgr.getTxnMgrId();
+                logger.info("Claiming stale transaction with txnMgrId: " + txnMgrId);
                 writeOwner();
                 updateHeartbeatInternal();
                 r = true;

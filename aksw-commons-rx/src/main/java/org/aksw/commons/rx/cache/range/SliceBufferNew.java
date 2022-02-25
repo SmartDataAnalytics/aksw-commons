@@ -126,7 +126,7 @@ public class SliceBufferNew<A>
 
     protected void scheduleSync() {
         if (syncFuture == null || syncFuture.isDone()) {
-            syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+            // syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -679,6 +679,8 @@ public class SliceBufferNew<A>
                                 try {
                                     conn.close();
                                 } catch (Exception e) {
+                                    // TODO Because of async loading the exception may get swallowed - improve handling
+                                    e.printStackTrace();
                                     throw new RuntimeException(e);
                                 }
                             }
