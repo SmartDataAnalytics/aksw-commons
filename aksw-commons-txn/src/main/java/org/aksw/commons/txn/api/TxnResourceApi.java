@@ -21,7 +21,7 @@ import org.aksw.commons.txn.impl.TxnComponent;
 public interface TxnResourceApi
     extends TxnComponent
 {
-	org.aksw.commons.path.core.Path<String> getResourceKey();
+    org.aksw.commons.path.core.Path<String> getResourceKey();
     ReadWriteLockWithOwnership getTxnResourceLock();
 
 
@@ -60,8 +60,13 @@ public interface TxnResourceApi
     default void unlock() {
         ReadWriteLockWithOwnership txnResourceLock = getTxnResourceLock();
 
-        txnResourceLock.readLock().unlock();
-        txnResourceLock.writeLock().unlock();
+        if (txnResourceLock.ownsReadLock()) {
+            txnResourceLock.readLock().unlock();
+        }
+
+        if (txnResourceLock.ownsWriteLock()) {
+            txnResourceLock.writeLock().unlock();
+        }
     }
 }
 

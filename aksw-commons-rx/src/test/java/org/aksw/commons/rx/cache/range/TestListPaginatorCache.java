@@ -47,12 +47,22 @@ public class TestListPaginatorCache {
     public void test() throws IOException {
         Random random = new Random(0);
 
+        for (int i = 0; i < 10; ++i) {
+            testOnce("test" + i, random, random.nextInt(10));
+        }
+        // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
+
+
+
+    }
+
+    public void testOnce(String testId, Random random, int numIterations) {
         ListPaginator<String> backend = createListWithRandomItems(random);
 
         KryoPool kryoPool = SmartRangeCacheImpl.createKyroPool(null);
         ObjectStore objectStore = ObjectStoreImpl.create(Path.of("/tmp/aksw-commons-cache-test"), ObjectSerializerKryo.create(kryoPool));
 
-        org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store");
+        org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
         SliceBufferNew<String[]> slice = SliceBufferNew.create(ArrayOps.createFor(String.class), objectStore, objectStoreBasePath, 100, Duration.ofMillis(500));
 
         Builder<String[]> builder = AdvancedRangeCacheNew.Builder.<String[]>create()
@@ -65,7 +75,7 @@ public class TestListPaginatorCache {
         ListPaginator<String> frontend = SmartRangeCacheNew.create(backend, builder);
 
 
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < numIterations; ++i) {
             int size = Ints.saturatedCast(backend.fetchCount(null, null).blockingGet().lowerEndpoint());
 
             int start = random.nextInt(size);
@@ -81,10 +91,5 @@ public class TestListPaginatorCache {
 
             // slice.sync();
         }
-
-        // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
-
-
-
     }
 }

@@ -223,7 +223,7 @@ public class SequentialReaderFromSliceImpl<A>
 
         }
 
-        System.out.println("Worker schedules: " + workerSchedules);
+        // System.out.println("Worker schedules: " + workerSchedules);
     }
 
     protected void processGaps(RangeSet<Long> gaps, long start, long end) {

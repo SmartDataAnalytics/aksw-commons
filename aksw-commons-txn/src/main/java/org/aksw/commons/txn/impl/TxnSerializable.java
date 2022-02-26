@@ -397,7 +397,14 @@ public class TxnSerializable
             boolean r = false;
             if (isStale()) {
                 String txnMgrId = txnMgr.getTxnMgrId();
-                logger.info("Claiming stale transaction with txnMgrId: " + txnMgrId);
+
+                String priorOwner;
+                try {
+                    priorOwner = getOwner();
+                } catch (NoSuchFileException e) {
+                    priorOwner = "(none)";
+                }
+                logger.info("Claiming stale transaction with txnMgrId: " + txnMgrId + " - prior owner was: " + priorOwner);
                 writeOwner();
                 updateHeartbeatInternal();
                 r = true;

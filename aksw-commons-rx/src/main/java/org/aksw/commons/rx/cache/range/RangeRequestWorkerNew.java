@@ -478,7 +478,7 @@ public class RangeRequestWorkerNew<A>
                 result += numItemsOfLastRead;
                 bufferOffset += numItemsOfLastRead;
                 offset += numItemsOfLastRead;
-                System.out.println("write at offset " + offset);
+                // System.out.println("write at offset " + offset);
                 // itemsProcessedNow += numItemsReadTmp;
             }
             // offset += result;

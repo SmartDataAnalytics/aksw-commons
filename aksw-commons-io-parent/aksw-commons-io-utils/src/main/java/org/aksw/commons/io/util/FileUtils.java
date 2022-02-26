@@ -46,7 +46,7 @@ public class FileUtils {
     }
 
     /**
-     * Delete a specific path and then - regardless of deletion outcom e -try to delete all empty directories up to a given baseFolder.
+     * Delete a specific path and then - regardless of deletion outcome -try to delete all empty directories up to a given baseFolder.
      * Empty folders are only deleted if their path starts with the baseFolder
      *
      * The result is the same as of {@link Files#deleteIfExists(Path)}.
@@ -65,15 +65,17 @@ public class FileUtils {
     public static void deleteEmptyFolders(Path path, Path baseFolder, boolean alsoDeleteBase) {
         while (path.startsWith(baseFolder) && (alsoDeleteBase || !path.equals(baseFolder))) {
             if (Files.exists(path)) {
-                if (!Files.isDirectory(path)) {
-                    throw new IllegalArgumentException("Path must be a directory: " + path);
-                }
+                if (Files.isDirectory(path)) {
+                    // There can be race conditions when threads concurrently create files
+                    // and attempt to clean empty dirs - it seems its better to silently ignore errors
+                    // throw new IllegalArgumentException("Path must be a directory: " + path);
 
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    // Ignore
-                    break;
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (IOException e) {
+                        // Ignore
+                        break;
+                    }
                 }
             }
             path = path.getParent();

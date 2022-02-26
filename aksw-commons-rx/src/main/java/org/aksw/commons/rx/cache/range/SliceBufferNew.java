@@ -323,7 +323,11 @@ public class SliceBufferNew<A>
 
         BufferWithAutoReloadOnAccess baseBuffer = new BufferWithAutoReloadOnAccess(fileName);
 
-        baseBuffer.reloadIfNeeded();
+        baseBuffer.reloadIfNeeded().whenComplete((b, t) -> {
+            if (t != null) {
+                logger.error("Reloading buffer failed", t);
+            }
+        });
 
         long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 

@@ -91,7 +91,7 @@ public class LockFromLink
         String currentOwnerKey = readOwnerKey();
         if (currentOwnerKey != null) {
             if (!ownerKey.equals(currentOwnerKey)) {
-                throw new RuntimeException("Cannot unlock for " + ownerKey + " because it is owned by " + currentOwnerKey);
+                throw new RuntimeException("Cannot unlock a lock with owner " + ownerKey + " because it is owned by " + currentOwnerKey);
             }
 
             forceUnlock();

@@ -96,7 +96,11 @@ public class TxnHandler {
                 applyJournal(txn);
         } catch (Exception e) {
             try {
-                txn.addRollback();
+                if (txn.isCommit()) {
+                    throw new RuntimeException("Failed to finalize commit after pre-commit", e);
+                } else {
+                    txn.addRollback();
+                }
             } catch (Exception e2) {
                 e2.addSuppressed(e);
                 throw new RuntimeException(e2);
