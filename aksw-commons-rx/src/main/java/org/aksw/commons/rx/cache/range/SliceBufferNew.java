@@ -174,6 +174,11 @@ public class SliceBufferNew<A>
             TxnApi.execRead(conn, () -> {
                 lockAndSyncMetaData(conn, pageSize);
             });
+
+            // TODO We might need to separate commit and unlocking:
+            // This woud allow for taking timestamps of committed data before another transaction can change those
+            // PathDiffState status = res.fetchRecencyStatus();
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -263,6 +268,8 @@ public class SliceBufferNew<A>
     public boolean hasMetaDataChanged() {
         String resourceName = "metadata.ser";
         PathDiffState recencyStatus = objectStore.fetchRecencyStatus(objectStoreBasePath.resolve(resourceName));
+
+        System.out.println("Current now: " + recencyStatus + " - before: " + baseMetaDataStatus);
         return !recencyStatus.equals(baseMetaDataStatus);
     }
 
@@ -275,10 +282,12 @@ public class SliceBufferNew<A>
     /** Returns the metadata generation */
     public int lockAndSyncMetaData(ObjectStoreConnection conn, int fallbackPageSize) {
 
-        boolean hasMetaDataChanged = hasMetaDataChanged();
 
         String resourceName = "metadata.ser";
         ObjectResource res = conn.access(objectStoreBasePath.resolve(resourceName));
+
+
+        boolean hasMetaDataChanged = hasMetaDataChanged();
 
         int result;
 
@@ -286,27 +295,30 @@ public class SliceBufferNew<A>
             logger.info("Metadata was externally modified on disk... attempting to acquire lock for reload...");
 
             // Re-check recency status now that the resource is locked
-            PathDiffState status = res.fetchRecencyStatus();
-
-            SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
             // Objects.requireNonNull(newMetaData, "Deserialization of metadata yeld null");
 
             // System.out.println("Acquired readWrite lock at: " + StackTraceUtils.toString(Thread.currentThread().getStackTrace()));
 
 
             result = LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
+                PathDiffState status = res.fetchRecencyStatus();
+
+                SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
+
                 logger.info("Lock for reload acquired");
                 if (newMetaData != null) {
                     logger.info("Loaded metadata: " + newMetaData);
                     baseMetaData = newMetaData;
-                    baseMetaDataStatus = status;
                 } else {
                     logger.info("Created fresh slice metadata");
                     baseMetaData = new SliceMetaDataImpl(fallbackPageSize);
-                    baseMetaDataStatus = null; // TODO Use a non-null placeholder value
+                    // baseMetaDataStatus = null; // TODO Use a non-null placeholder value
                 }
+                baseMetaDataStatus = status;
+
                 baseRanges.setDelegate(baseMetaData.getLoadedRanges());
 
+                // recencyStatus = status;
                 ++liveGeneration;
                 return liveGeneration;
             });
@@ -425,7 +437,8 @@ public class SliceBufferNew<A>
 
             syncMetaData = liveMetaData;
 
-            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncMetaData.getLoadedRanges());
+//            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncMetaData.getLoadedRanges());
+            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncChanges.getRanges());
 
             liveMetaData = new SliceMetaDataImpl(
                     syncMetaData.getPageSize(),

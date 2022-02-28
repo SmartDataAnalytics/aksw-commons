@@ -50,9 +50,15 @@ public class SequentialReaderIterator<T>
             }
         }
 
-        Object tmp = currentDataLength == -1
-                ? endOfData()
-                : arrayOps.get(array, currentOffset);
+        Object tmp;
+        if (currentDataLength == -1) {
+            tmp = endOfData();
+        } else {
+            tmp = arrayOps.get(array, currentOffset);
+            if (tmp == null) {
+                throw new NullPointerException("Unexpected null value");
+            }
+        }
 
         ++currentOffset;
 

@@ -126,7 +126,10 @@ public class TxnHandler {
      * @param resourceAction (resourceKey, isCommit) An action to run on a resource after changes were rolled back or committed -
      *        but before the resource is unlocked. Typically used to synchronize an in-memory cache.
      */
-    public void applyJournal(Txn txn) { //LoadingCache<Array<String>, SyncedDataset> syncCache) {
+    @Deprecated // Old version does not separate finalization and unlocking
+    // The advantage of the old version is that resources are unlocked earlier which could
+    // reduce latency
+    public void applyJournalOld(Txn txn) { //LoadingCache<Array<String>, SyncedDataset> syncCache) {
         TxnMgr txnMgr = txn.getTxnMgr();
         // ResourceRepository<String> resRepo = txnMgr.getResRepo();
         Path resRepoRootPath = txnMgr.getRootPath();
@@ -180,6 +183,96 @@ public class TxnHandler {
 //                        }
 //                    }
 
+                    api.unlock();
+                    api.undeclareAccess();
+                }
+            }
+
+            txn.cleanUpTxn();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void applyJournal(Txn txn) {
+        sync(txn);
+        unlock(txn);
+    }
+
+
+    /** Finalize all pending changes. All files of the transaction will be in their final state.
+     */
+    public void sync(Txn txn) { //LoadingCache<Array<String>, SyncedDataset> syncCache) {
+        TxnMgr txnMgr = txn.getTxnMgr();
+        // ResourceRepository<String> resRepo = txnMgr.getResRepo();
+        Path resRepoRootPath = txnMgr.getRootPath();
+
+        boolean isCommit;
+        try {
+            isCommit = txn.isCommit() && !txn.isRollback();
+        } catch (IOException e1) {
+            throw new RuntimeException(e1);
+        }
+
+        try {
+
+            // Run the finalization actions
+            // As these actions remove undo information
+            // there is no turning back anymore
+            if (isCommit) {
+                txn.addFinalize();
+            }
+
+            // TODO Stream the relPaths rather than the string resource names?
+            try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
+                Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
+                while (it.hasNext()) {
+                    org.aksw.commons.path.core.Path<String> res = it.next();
+                    logger.debug("Finalizing: " + res);
+                    TxnResourceApi api = txn.getResourceApi(res);
+
+                    org.aksw.commons.path.core.Path<String> resourceKey = api.getResourceKey();
+
+                    Path targetFile = api.getFileSync().getTargetFile();
+                    if (isCommit) {
+                        api.finalizeCommit();
+                    } else {
+                        api.rollback();
+                    }
+
+                    // Clean up empty paths
+                    FileUtils.deleteEmptyFolders(targetFile.getParent(), resRepoRootPath, true);
+                }
+            }
+
+            txn.cleanUpTxn();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void unlock(Txn txn) { //LoadingCache<Array<String>, SyncedDataset> syncCache) {
+        TxnMgr txnMgr = txn.getTxnMgr();
+
+        boolean isCommit;
+        try {
+            isCommit = txn.isCommit() && !txn.isRollback();
+        } catch (IOException e1) {
+            throw new RuntimeException(e1);
+        }
+
+        try {
+            // TODO Stream the relPaths rather than the string resource names?
+            try (Stream<org.aksw.commons.path.core.Path<String>> stream = txn.streamAccessedResourcePaths()) {
+                Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
+                while (it.hasNext()) {
+                    org.aksw.commons.path.core.Path<String> res = it.next();
+                    logger.debug("Unlocking: " + res);
+                    TxnResourceApi api = txn.getResourceApi(res);
+
+                    org.aksw.commons.path.core.Path<String> resourceKey = api.getResourceKey();
+
+                    beforeUnlock(resourceKey, isCommit);
                     api.unlock();
                     api.undeclareAccess();
                 }

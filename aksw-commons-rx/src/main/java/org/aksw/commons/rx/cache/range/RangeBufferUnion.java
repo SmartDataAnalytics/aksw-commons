@@ -112,7 +112,12 @@ public class RangeBufferUnion<A>
                 int tgtPos = Ints.checkedCast(readStart - srcOffset);
                 int l = tmp.size();
 
-                buffer.readInto(tgt, tgtOffset + tgtPos, readStart, l);
+                int tgtStart = tgtOffset + tgtPos;
+                buffer.readInto(tgt, tgtStart, readStart, l);
+
+                if (first.getArrayOps().get(tgt, tgtStart) == null) {
+                    throw new NullPointerException("Unexpected null read");
+                }
             }
         }
 

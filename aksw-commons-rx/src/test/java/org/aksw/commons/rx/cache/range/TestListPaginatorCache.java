@@ -56,7 +56,7 @@ public class TestListPaginatorCache {
 
     }
 
-    public void testOnce(String testId, Random random, int numIterations) {
+    public void testOnce(String testId, Random random, int numIterations) throws IOException {
         ListPaginator<String> backend = createListWithRandomItems(random);
 
         KryoPool kryoPool = SmartRangeCacheImpl.createKyroPool(null);
@@ -89,7 +89,7 @@ public class TestListPaginatorCache {
             Assert.assertEquals(expected, actual);
 
 
-            // slice.sync();
+            slice.sync();
         }
     }
 }
