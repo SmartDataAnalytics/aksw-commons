@@ -1,10 +1,5 @@
 package org.aksw.commons.rx.cache.slice;
 
-import java.util.concurrent.ConcurrentNavigableMap;
-
-import org.aksw.commons.util.range.BufferWithGenerationImpl;
-import org.aksw.commons.util.ref.RefFuture;
-
 /**
  * Abstraction over a sequence of pages to view their content as
  * consecutive items. The underlying pages may be claimed by multiple page ranges held by different clients.

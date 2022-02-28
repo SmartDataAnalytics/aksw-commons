@@ -16,6 +16,6 @@ public class RangeSetOps {
 
     /** Create a view of a shifted range set of longs where each endpoint has a constant (possibly negative) value added to it */
     public static RangeSet<Long> shiftLong(RangeSet<Long> rangeSet, long shiftValue) {
-        return convert(rangeSet, Converter.from(v -> v + shiftValue, v -> v - shiftValue));
+        return convert(rangeSet, Converter.from((Long v) -> v + shiftValue, (Long v) -> v - shiftValue));
     }
 }

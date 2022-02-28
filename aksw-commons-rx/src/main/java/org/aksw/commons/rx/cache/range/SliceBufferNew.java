@@ -25,6 +25,7 @@ import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.store.object.key.api.ObjectResource;
 import org.aksw.commons.store.object.key.api.ObjectStore;
 import org.aksw.commons.store.object.key.api.ObjectStoreConnection;
+import org.aksw.commons.store.object.key.impl.KryoUtils;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
 import org.aksw.commons.store.object.path.api.ObjectSerializer;
 import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
@@ -211,7 +212,7 @@ public class SliceBufferNew<A>
     }
 
     public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
-        KryoPool kryoPool = SmartRangeCacheImpl.createKyroPool(null);
+        KryoPool kryoPool = KryoUtils.createKyroPool(null);
         ObjectSerializer objectSerializer = ObjectSerializerKryo.create(kryoPool);
         ObjectStore objectStore = ObjectStoreImpl.create(repoPath, objectSerializer);
 

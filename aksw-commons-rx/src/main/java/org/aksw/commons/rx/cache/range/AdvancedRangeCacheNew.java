@@ -29,7 +29,7 @@ public class AdvancedRangeCacheNew<T>
     protected SequentialReaderSource<T> dataSource;
     protected SliceWithPages<T> slice;
 
-    protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
+    // protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
     protected ReentrantLock workerCreationLock = new ReentrantLock();
 
@@ -87,13 +87,13 @@ public class AdvancedRangeCacheNew<T>
         return workerCreationLock;
     }
 
-    public Runnable register(RangeRequestIterator<T> it) {
-        activeRequests.add(it);
-
-        return () -> {
-            activeRequests.remove(it);
-        };
-    }
+//    public Runnable register(RangeRequestIterator<T> it) {
+//        activeRequests.add(it);
+//
+//        return () -> {
+//            activeRequests.remove(it);
+//        };
+//    }
 
 
     /**
