@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
+import org.aksw.commons.util.function.ThrowingRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public class LockUtils {
         return result;
     }
 
-    public static void runWithLock(Lock lock, Runnable action) {
+    public static void runWithLock(Lock lock, ThrowingRunnable action) {
         runWithLock(lock, () -> { action.run(); return null; });
     }
 

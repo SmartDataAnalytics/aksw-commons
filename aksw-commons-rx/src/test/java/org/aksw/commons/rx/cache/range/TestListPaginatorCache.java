@@ -53,14 +53,16 @@ public class TestListPaginatorCache {
 
     @Test
     public void test() throws IOException {
+        boolean isMemory = false;
+
         Stopwatch sw = Stopwatch.createStarted();
 
         Random random = new Random(0);
 
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 30; ++i) {
             ListPaginator<String> backend = createListWithRandomItems(random);
 
-            testOnce(String.class, backend, false, "test" + i, random, random.nextInt(9) + 1);
+            testOnce(String.class, backend, isMemory, "test" + i, random, random.nextInt(19) + 1);
         }
         // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
 

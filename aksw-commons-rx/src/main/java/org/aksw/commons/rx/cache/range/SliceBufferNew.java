@@ -530,7 +530,9 @@ public class SliceBufferNew<A>
                     BufferWithAutoReloadOnAccess baseBuffer = bufferView.getBaseBuffer();
 
                     // Synchronous update of the page (we could trigger async update on all first and then wait for all here)
-                    baseBuffer.updateIfNeeded(generationNow, conn);
+                    LockUtils.runWithLock(getReadWriteLock().writeLock(), () -> {
+                        baseBuffer.updateIfNeeded(generationNow, conn);
+                    });
 
                     RangeBuffer<A> baseRangeBuffer = RangeBufferImpl.create(baseRanges, offset, baseBuffer);
                     RangeBuffer<A> subRangeBuffer = syncChanges.slice(offset, pageSize);
@@ -541,7 +543,10 @@ public class SliceBufferNew<A>
                     // We need to wrap the array as a range buffer
                     Buffer<A> newBaseBuffer = ArrayBuffer.create(arrayOps, array);
                     RangeBuffer<A> arrayWrapper = RangeBufferImpl.create(newBaseBuffer);
-                    unionRangeBuffer.transferTo(0, arrayWrapper, 0, pageSize);
+
+                    LockUtils.runWithLock(getReadWriteLock().readLock(), () -> {
+                        unionRangeBuffer.transferTo(0, arrayWrapper, 0, pageSize);
+                    });
 
                     // pageRes.setContent(array);
                     ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(pageFileName));
