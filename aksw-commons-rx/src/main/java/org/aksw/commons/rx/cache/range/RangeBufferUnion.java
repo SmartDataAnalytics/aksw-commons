@@ -89,7 +89,7 @@ public class RangeBufferUnion<A>
             readSchedules.add(schedule);
             RangeBuffer<A> buffer = buffers.get(i);
 
-            for (Range<Long> gap : gaps.asRanges()) {
+            for (Range<Long> gap : new ArrayList<>(gaps.asRanges())) {
                 RangeSet<Long> contribs = buffer.getCoveredRanges(gap);
                 gaps.removeAll(contribs);
 

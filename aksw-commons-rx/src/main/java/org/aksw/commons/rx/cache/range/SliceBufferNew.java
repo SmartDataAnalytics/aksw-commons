@@ -128,6 +128,7 @@ public class SliceBufferNew<A>
 
     protected void scheduleSync() {
         if (syncFuture == null || syncFuture.isDone()) {
+            logger.info("Scheduled sync of slice in " + syncDelay);
             syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
         }
     }
@@ -143,10 +144,12 @@ public class SliceBufferNew<A>
 
     public void setMinimumKnownSize(long minimumKnownSize) {
         this.liveMetaData.setMinimumKnownSize(minimumKnownSize);
+        scheduleSync();
     }
 
     public void setMaximumKnownSize(long maximumKnownSize) {
         this.liveMetaData.setMaximumKnownSize(maximumKnownSize);
+        scheduleSync();
     }
 
 
