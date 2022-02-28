@@ -6,8 +6,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.aksw.commons.collection.slice.SliceMetaData;
 import org.aksw.commons.lock.LockUtils;
-import org.aksw.commons.rx.cache.range.SliceMetaData;
 
 import com.google.common.collect.Range;
 

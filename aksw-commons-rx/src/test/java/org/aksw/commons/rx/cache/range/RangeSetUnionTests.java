@@ -2,6 +2,9 @@ package org.aksw.commons.rx.cache.range;
 
 import java.text.DecimalFormat;
 
+import org.aksw.commons.collection.rangeset.RangeSetOps;
+import org.aksw.commons.collection.rangeset.RangeSetUnion;
+import org.aksw.commons.collection.rangeset.RangeSetUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

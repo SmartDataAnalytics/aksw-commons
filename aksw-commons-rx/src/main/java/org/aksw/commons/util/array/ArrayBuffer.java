@@ -1,5 +1,7 @@
 package org.aksw.commons.util.array;
 
+import org.aksw.commons.buffer.plain.Buffer;
+
 import com.google.common.primitives.Ints;
 
 public class ArrayBuffer<A>

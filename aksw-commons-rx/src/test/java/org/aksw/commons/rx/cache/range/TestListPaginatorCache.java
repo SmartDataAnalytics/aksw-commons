@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import org.aksw.commons.cache.range.AdvancedRangeCacheImpl;
+import org.aksw.commons.cache.range.AdvancedRangeCacheImpl.Builder;
+import org.aksw.commons.collection.slice.SliceBufferNew;
+import org.aksw.commons.collection.slice.SliceInMemory;
+import org.aksw.commons.collection.slice.SliceWithAutoSync;
 import org.aksw.commons.path.core.PathOpsStr;
-import org.aksw.commons.rx.cache.range.AdvancedRangeCacheNew.Builder;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.store.object.key.api.ObjectStore;
@@ -85,7 +89,7 @@ public class TestListPaginatorCache {
                 ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
                 : SliceBufferNew.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, Duration.ofMillis(500));
 
-        Builder<T[]> builder = AdvancedRangeCacheNew.Builder.<T[]>create()
+        Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
             .setRequestLimit(10000)
             .setWorkerBulkSize(128)
@@ -93,7 +97,7 @@ public class TestListPaginatorCache {
             .setTerminationDelay(Duration.ofSeconds(10));
 
         //  SmartRangeCacheNew<String> cache
-        ListPaginator<T> frontend = SmartRangeCacheNew.create(backend, builder);
+        ListPaginator<T> frontend = ListPaginatorCache.create(backend, builder);
 
 
         for (int i = 0; i < numIterations; ++i) {

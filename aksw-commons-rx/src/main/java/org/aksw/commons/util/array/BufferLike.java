@@ -7,13 +7,13 @@ package org.aksw.commons.util.array;
  * from 0 to the buffer's capacity.
  */
 public interface BufferLike<A>
-	extends ArrayWritable<A>, ArrayReadable<A>
+    extends ArrayWritable<A>, ArrayReadable<A>, HasArrayOps<A>
 {
-	ArrayOps<A> getArrayOps();
+    ArrayOps<A> getArrayOps();
 
-	
-	/** Buffers with 'unlimited' capacity should return Long.MAX_VALUE */
-	long getCapacity();
 
-	BufferLike<A> slice(long offset, long length);
+    /** Buffers with 'unlimited' capacity should return Long.MAX_VALUE */
+    long getCapacity();
+
+    BufferLike<A> slice(long offset, long length);
 }

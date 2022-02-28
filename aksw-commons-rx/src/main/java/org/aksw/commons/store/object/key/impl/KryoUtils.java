@@ -3,9 +3,9 @@ package org.aksw.commons.store.object.key.impl;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.function.Consumer;
 
-import org.aksw.commons.kyro.guava.EntrySerializer;
-import org.aksw.commons.kyro.guava.RangeMapSerializer;
-import org.aksw.commons.kyro.guava.RangeSetSerializer;
+import org.aksw.commons.kryo.guava.EntrySerializer;
+import org.aksw.commons.kryo.guava.RangeMapSerializer;
+import org.aksw.commons.kryo.guava.RangeSetSerializer;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;

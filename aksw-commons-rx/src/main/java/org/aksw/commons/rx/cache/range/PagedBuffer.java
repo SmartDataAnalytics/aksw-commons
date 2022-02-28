@@ -3,8 +3,8 @@ package org.aksw.commons.rx.cache.range;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.aksw.commons.buffer.plain.Buffer;
 import org.aksw.commons.util.array.ArrayOps;
-import org.aksw.commons.util.array.Buffer;
 
 import com.google.common.math.LongMath;
 
