@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
 
 public class TestListPaginatorCache {
@@ -59,23 +60,28 @@ public class TestListPaginatorCache {
         for (int i = 0; i < 10; ++i) {
             ListPaginator<String> backend = createListWithRandomItems(random);
 
-            testOnce(String.class, backend, "test" + i, random, random.nextInt(9) + 1);
+            testOnce(String.class, backend, false, "test" + i, random, random.nextInt(9) + 1);
         }
         // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
 
         logger.info("Cache test took: " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f + " seconds");
     }
 
-    public <T> void testOnce(Class<T> clazz, ListPaginator<T> backend, String testId, Random random, int numIterations) throws IOException {
+    public <T> void testOnce(
+            Class<T> clazz, ListPaginator<T> backend, boolean inMemory, String testId, Random random, int numIterations) throws IOException {
 
         KryoPool kryoPool = KryoUtils.createKyroPool(null);
         ObjectStore objectStore = ObjectStoreImpl.create(Path.of("/tmp/aksw-commons-cache-test"), ObjectSerializerKryo.create(kryoPool));
 
         org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
 
-         int pageSize = 1024 * 50;
+        int pageSize = 1024 * 50;
 //        int pageSize = 100;
-        SliceBufferNew<T[]> slice = SliceBufferNew.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, Duration.ofMillis(500));
+
+        ArrayOps<T[]> arrayOps = ArrayOps.createFor(clazz);
+        SliceWithAutoSync<T[]> slice = inMemory
+                ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
+                : SliceBufferNew.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, Duration.ofMillis(500));
 
         Builder<T[]> builder = AdvancedRangeCacheNew.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
@@ -101,7 +107,6 @@ public class TestListPaginatorCache {
             List<T> actual = frontend.fetchList(requestRange);
 
             Assert.assertEquals(expected, actual);
-
 
             slice.sync();
         }

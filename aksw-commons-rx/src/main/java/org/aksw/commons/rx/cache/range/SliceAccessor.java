@@ -25,7 +25,7 @@ import org.aksw.commons.util.ref.RefFuture;
 public interface SliceAccessor<A>
     extends AutoCloseable
 {
-    ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> getClaimedPages();
+    // ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> getClaimedPages();
 
 
     // Allow querying the page's range that contains offset?
@@ -54,7 +54,7 @@ public interface SliceAccessor<A>
      *
      * The page range should be locked when calling this method.
      */
-    void write(long offset, A arrayWithItemsOfTypeT, int arrOffset, int arrLength);
+    void write(long offset, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException;
 
 
 
@@ -75,7 +75,7 @@ public interface SliceAccessor<A>
 
     int unsafeRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
 
-    
+
     /**
      * Unlock the range
      */

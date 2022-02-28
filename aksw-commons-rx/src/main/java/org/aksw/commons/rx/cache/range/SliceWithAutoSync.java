@@ -1,6 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -9,10 +9,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.aksw.commons.util.array.ArrayOps;
-import org.aksw.commons.util.ref.RefFuture;
 
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
 
 
 /**
@@ -30,15 +28,15 @@ import com.google.common.collect.RangeSet;
  * @param <T>
  */
 public interface SliceWithAutoSync<T>
-	extends SliceMetaDataBasic
+    extends SliceMetaDataBasic
     // extends ArrayPuttable
 {
     ReadWriteLock getReadWriteLock();
-    Condition getHasDataCondition();    
-        
+    Condition getHasDataCondition();
+
     ArrayOps<T> getArrayOps();
-    void checkForUpdate();
-    
+    // void checkForUpdate();
+
     /**
      * Obtain a new reference to the metadata. The referent may be loaded lazily.
      * The reference must be closed after use in order to allow sync to trigger.
@@ -118,6 +116,7 @@ public interface SliceWithAutoSync<T>
     // void syncMetaData();
     // syncPages();
     // sync(); // Sync everything
+    void sync() throws IOException;
 
     /**
      * An accessor which allows for 'claiming' a sub-range of this slice. The claimed range can be incrementally

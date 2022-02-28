@@ -211,7 +211,8 @@ public class RangeRequestWorkerNew<A>
             }
         }
         // Free claimed resources (pages)
-        pageRange.releaseAll();
+        // pageRange.releaseAll();
+        pageRange.close();
     }
 
 

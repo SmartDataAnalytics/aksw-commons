@@ -128,7 +128,7 @@ public class SliceBufferNew<A>
 
     protected void scheduleSync() {
         if (syncFuture == null || syncFuture.isDone()) {
-            // syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+            syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -278,11 +278,6 @@ public class SliceBufferNew<A>
         return result;
     }
 
-
-    @Override
-    public void checkForUpdate() {
-
-    }
 
     /** Returns the metadata generation */
     public int lockAndSyncMetaData(ObjectStoreConnection conn, int fallbackPageSize) {

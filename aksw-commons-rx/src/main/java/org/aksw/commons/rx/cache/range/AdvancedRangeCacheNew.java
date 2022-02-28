@@ -27,7 +27,7 @@ public class AdvancedRangeCacheNew<T>
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheNew.class);
 
     protected SequentialReaderSource<T> dataSource;
-    protected SliceWithPages<T> slice;
+    protected SliceWithAutoSync<T> slice;
 
     // protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
@@ -46,7 +46,7 @@ public class AdvancedRangeCacheNew<T>
 
     public AdvancedRangeCacheNew(
             SequentialReaderSource<T> dataSource,
-            SliceWithPages<T> slice,
+            SliceWithAutoSync<T> slice,
             long requestLimit,
             int workerBulkSize,
             Duration terminationDelay) {
@@ -62,7 +62,7 @@ public class AdvancedRangeCacheNew<T>
 
     public static <A> AdvancedRangeCacheNew<A> create(
             SequentialReaderSource<A> dataSource,
-            SliceWithPages<A> slice,
+            SliceWithAutoSync<A> slice,
             long requestLimit,
             int workerBulkSize,
             Duration terminationDelay) {
@@ -75,7 +75,7 @@ public class AdvancedRangeCacheNew<T>
         return dataSource;
     }
 
-    public SliceWithPages<T> getSlice() {
+    public SliceWithAutoSync<T> getSlice() {
         return slice;
     }
 
@@ -153,7 +153,7 @@ public class AdvancedRangeCacheNew<T>
 
     public static class Builder<A> {
         protected SequentialReaderSource<A> dataSource;
-        protected SliceWithPages<A> slice;
+        protected SliceWithAutoSync<A> slice;
 
         protected int workerBulkSize;
 
@@ -174,11 +174,11 @@ public class AdvancedRangeCacheNew<T>
             return this;
         }
 
-        public SliceWithPages<A> getSlice() {
+        public SliceWithAutoSync<A> getSlice() {
             return slice;
         }
 
-        public Builder<A> setSlice(SliceWithPages<A> slice) {
+        public Builder<A> setSlice(SliceWithAutoSync<A> slice) {
             this.slice = slice;
             return this;
         }
