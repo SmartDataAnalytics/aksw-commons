@@ -19,11 +19,11 @@ public class RetryUtils {
         for (retryAttempt = 0; retryAttempt < retryCount; ++retryAttempt) {
             try {
                 result = action.call();
-                logger.debug(String.format("Retry attempt %d/%d succeeded", retryAttempt, retryCount));
+                logger.trace(String.format("Retry attempt %d/%d succeeded", retryAttempt, retryCount));
                 break;
             } catch (Exception e) {
                 // logger.warn("Retry failed: " + ExceptionUtils.getRootCauseMessage(e));
-                logger.warn(String.format("Retry attempt %d/%d failed: ", retryAttempt + 1, retryCount) + ExceptionUtils.getRootCauseMessage(e), e);
+                logger.trace(String.format("Retry attempt %d/%d failed: ", retryAttempt + 1, retryCount) + ExceptionUtils.getRootCauseMessage(e), e);
                 if (retryAttempt + 1 == retryCount) {
                     throw new RuntimeException(e);
                 } else {

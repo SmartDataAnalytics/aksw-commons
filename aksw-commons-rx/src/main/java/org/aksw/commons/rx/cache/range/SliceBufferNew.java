@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -90,15 +91,15 @@ public class SliceBufferNew<A>
     protected RangeSetDelegateMutable<Long> baseRanges;
 
     // The baseMetaData is backed by baseRanges - baseRanges's delegate may be modified any time
-    protected SliceMetaData baseMetaData;
+    protected SliceMetaDataWithPages baseMetaData;
     protected PathDiffState baseMetaDataStatus;
 
     // protected RangeSet<Long> liveRangeChanges;
 
-    protected SliceMetaData liveMetaData;
+    protected SliceMetaDataWithPages liveMetaData;
     //protected AsyncClaimingCache<Long, A> loadedPages;
 
-    protected SliceMetaData syncMetaData;
+    protected SliceMetaDataWithPages syncMetaData;
     protected PathState metaDataIdentity; // When the metadata was loaded
 
     protected Duration syncDelay;
@@ -186,6 +187,8 @@ public class SliceBufferNew<A>
         this.pageSize = baseMetaData.getPageSize();
 
         this.liveChanges.setDelegate(newChangeBuffer());
+//        this.liveMetaData = copyWithNewRanges(baseMetaData,
+//                RangeSetOps.union(liveChanges.getRanges(), RangeSetOps.union(syncChanges.getRanges(), baseRanges)));
         this.liveMetaData = copyWithNewRanges(baseMetaData, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
 
 
@@ -269,8 +272,9 @@ public class SliceBufferNew<A>
         String resourceName = "metadata.ser";
         PathDiffState recencyStatus = objectStore.fetchRecencyStatus(objectStoreBasePath.resolve(resourceName));
 
-        System.out.println("Current now: " + recencyStatus + " - before: " + baseMetaDataStatus);
-        return !recencyStatus.equals(baseMetaDataStatus);
+        boolean result = !recencyStatus.equals(baseMetaDataStatus);
+        logger.debug("Metadata changed: " + result + "; status now: " + recencyStatus + " - before: " + baseMetaDataStatus);
+        return result;
     }
 
 
@@ -303,7 +307,7 @@ public class SliceBufferNew<A>
             result = LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
                 PathDiffState status = res.fetchRecencyStatus();
 
-                SliceMetaData newMetaData = (SliceMetaData)res.loadNewInstance();
+                SliceMetaDataWithPages newMetaData = (SliceMetaDataWithPages)res.loadNewInstance();
 
                 logger.info("Lock for reload acquired");
                 if (newMetaData != null) {
@@ -311,7 +315,7 @@ public class SliceBufferNew<A>
                     baseMetaData = newMetaData;
                 } else {
                     logger.info("Created fresh slice metadata");
-                    baseMetaData = new SliceMetaDataImpl(fallbackPageSize);
+                    baseMetaData = new SliceMetaDataWithPagesImpl(fallbackPageSize);
                     // baseMetaDataStatus = null; // TODO Use a non-null placeholder value
                 }
                 baseMetaDataStatus = status;
@@ -410,8 +414,8 @@ public class SliceBufferNew<A>
 //    }
 
 
-    public static SliceMetaData copyWithNewRanges(SliceMetaData base, RangeSet<Long> rangeSet) {
-        return new SliceMetaDataImpl(
+    public static SliceMetaDataWithPages copyWithNewRanges(SliceMetaDataWithPages base, RangeSet<Long> rangeSet) {
+        return new SliceMetaDataWithPagesImpl(
                 base.getPageSize(),
                 rangeSet,
                 base.getFailedRanges(),
@@ -421,11 +425,13 @@ public class SliceBufferNew<A>
     }
 
     @Override
-    public void sync() throws IOException {
+    public synchronized void sync() throws IOException {
         // The somewhat complex part is now to compute the new metadata rangeset and making sure that
         // existing data on disk is still consistently described.
         // This means we need to ensure our in-memory copy of the metadata in up-to-date and then 'patch in'
         // only the ranges of modified pages
+
+        Set<Long> idsOfDirtyPages = Collections.emptySet();
 
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -435,14 +441,19 @@ public class SliceBufferNew<A>
             liveChanges.setDelegate(newChangeBuffer());
             // liveRangeChanges = liveChanges.getRanges();
 
+//            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncMetaData.getLoadedRanges());
+            RangeSet<Long> newLiveRanges = RangeSetOps.union(liveChanges.getRanges(),
+                    RangeSetOps.union(syncChanges.getRanges(), baseRanges));
+
+//          this.liveMetaData = copyWithNewRanges(baseMetaData,
+//          RangeSetOps.union(liveChanges.getRanges(), RangeSetOps.union(syncChanges.getRanges(), baseRanges)));
+
             syncMetaData = liveMetaData;
 
-//            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncMetaData.getLoadedRanges());
-            RangeSet<Long> rs = RangeSetUnion.create(liveChanges.getRanges(), syncChanges.getRanges());
-
-            liveMetaData = new SliceMetaDataImpl(
+            liveMetaData = new SliceMetaDataWithPagesImpl(
                     syncMetaData.getPageSize(),
-                    rs,
+                    newLiveRanges,
+                    // liveMetaData.getLoadedRanges(), // Reuse the existing view
                     TreeRangeMap.create(),
                     syncMetaData.getMinimumKnownSize(),
                     syncMetaData.getMaximumKnownSize()
@@ -487,11 +498,13 @@ public class SliceBufferNew<A>
             materializedRanges.addAll(baseRanges);
             materializedRanges.addAll(syncChanges.getRanges());
 
-            SliceMetaData newBaseMetadata = copyWithNewRanges(syncMetaData, materializedRanges);
+            SliceMetaDataWithPages newBaseMetadata = copyWithNewRanges(syncMetaData, materializedRanges);
 
             // res.setContent(newBaseMetadata);
 
-            res.save(newBaseMetadata);
+            if (!newBaseMetadata.equals(baseMetaData)) {
+                res.save(newBaseMetadata);
+            }
 
             // If the metadata changed on disk we need to reload it and check which pages need to be reloaded as well
             // FIXME Update idsOfDirtyPages with changes from modified metadata
@@ -499,7 +512,9 @@ public class SliceBufferNew<A>
             // Check whether the timestamp (generation) of the in memory copy of the meta data matches that on disk
 
 
-            Set<Long> idsOfDirtyPages = PageUtils.touchedPageIndices(syncChanges.getRanges().asRanges(), pageSize);
+            idsOfDirtyPages = PageUtils.touchedPageIndices(syncChanges.getRanges().asRanges(), pageSize);
+
+            logger.info("Synchronizing " + idsOfDirtyPages.size() + " dirty pages");
 
             for (long pageId : idsOfDirtyPages) {
                  String pageFileName = pageIdToFileName.apply(pageId);
@@ -528,12 +543,18 @@ public class SliceBufferNew<A>
                     A array = arrayOps.create(pageSize);
 
                     // We need to wrap the array as a range buffer
-                    RangeBuffer<A> arrayWrapper = RangeBufferImpl.create(ArrayBuffer.create(arrayOps, array));
+                    Buffer<A> newBaseBuffer = ArrayBuffer.create(arrayOps, array);
+                    RangeBuffer<A> arrayWrapper = RangeBufferImpl.create(newBaseBuffer);
                     unionRangeBuffer.transferTo(0, arrayWrapper, 0, pageSize);
 
                     // pageRes.setContent(array);
                     ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(pageFileName));
                     pageRes.save(array);
+
+                    // We need a write lock to update the pointer to the page content
+                    LockUtils.runWithLock(getReadWriteLock().writeLock(), () -> {
+                        baseBuffer.setFuture(CompletableFuture.completedFuture(newBaseBuffer));
+                    });
                 }
 
             }
@@ -548,7 +569,18 @@ public class SliceBufferNew<A>
                 baseRanges.setDelegate(materializedRanges);
                 syncChanges.setDelegate(newChangeBuffer());
 
-//        		baseMetaData = newBaseMetadata;
+                baseMetaData = newBaseMetadata;
+
+                liveMetaData = copyWithNewRanges(liveMetaData, RangeSetOps.union(liveChanges.getRanges(), baseRanges));
+
+//                liveMetaData = new SliceMetaDataWithPagesImpl(
+//                        syncMetaData.getPageSize(),
+//                        newLiveRanges,
+//                        TreeRangeMap.create(),
+//                        syncMetaData.getMinimumKnownSize(),
+//                        syncMetaData.getMaximumKnownSize()
+//                );
+
 //
 //
 //        		// Remove the union with the syncChanges which we injected when entering the sync() method from live metadata
@@ -567,7 +599,7 @@ public class SliceBufferNew<A>
             throw new RuntimeException(e);
         }
 
-        logger.info("Synchronization completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000.0f + " seconds");
+        logger.info("Synchronization of " + idsOfDirtyPages.size() + " dirty pages completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS) / 1000.0f + " seconds");
     }
 
 
@@ -658,6 +690,10 @@ public class SliceBufferNew<A>
         protected String fileName;
         protected int generationHere;
         protected CompletableFuture<Buffer<A>> future;
+
+        public void setFuture(CompletableFuture<Buffer<A>> future) {
+            this.future = future;
+        }
 
         public BufferWithAutoReloadOnAccess(String fileName) {
             super();

@@ -88,11 +88,11 @@ public class RangeRequestWorkerNew<A>
 
 
     /** The number of items to process in one batch (before checking for conditions such as interrupts or no-more-demand) */
-    protected int bulkSize = 16;
+    protected int bulkSize;
 
     /** Report read items in chunks preferably and at most this size.
      *  Prevents having to synchronize on every single item. */
-    protected int reportingInterval = bulkSize;
+    // protected int reportingInterval = bulkSize;
 
     /** The current offset*/
     protected volatile long offset;
@@ -137,6 +137,7 @@ public class RangeRequestWorkerNew<A>
             AdvancedRangeCacheNew<A> cacheSystem,
             long requestOffset,
             long requestLimit,
+            int bulkSize,
             Duration terminationDelay) {
         super();
         this.cacheSystem = cacheSystem;
@@ -144,6 +145,7 @@ public class RangeRequestWorkerNew<A>
         this.requestOffset = requestOffset;
         this.offset = requestOffset;
         this.requestLimit = requestLimit;
+        this.bulkSize = bulkSize;
         this.terminationDelay = terminationDelay;
 
         this.slice = cacheSystem.getSlice();
@@ -156,7 +158,9 @@ public class RangeRequestWorkerNew<A>
         this.nextCheckpointOffset = offset;
 
         endpointDemands.addValueChangeListener(event -> {
-            logger.info("End-offset of data range demand updated to " + this + ": " + event);
+            if (logger.isTraceEnabled()) {
+                logger.trace("End-offset of data range demand updated to " + this + ": " + event);
+            }
 
             synchronized (endpointDemands) {
                 endpointDemands.notifyAll();
@@ -302,7 +306,7 @@ public class RangeRequestWorkerNew<A>
      */
     public void runCore() throws Exception {
 
-        A buffer = arrayOps.create(reportingInterval);
+        A buffer = arrayOps.create(bulkSize);
 
         initBackendRequest();
 
@@ -336,9 +340,9 @@ public class RangeRequestWorkerNew<A>
                 // Align with bulk size; this should give more aesthetic numbers in debugging and logging
                 if (isFirstRun) {
                     isFirstRun = false;
-                    hasNext = process(buffer, 1, reportingInterval - 1) >= 0;
+                    hasNext = process(buffer, 1, bulkSize - 1) >= 0;
                 } else {
-                    hasNext = process(buffer, 0, reportingInterval) >= 0;
+                    hasNext = process(buffer, 0, bulkSize) >= 0;
                 }
 
             } catch (Exception e) {
@@ -446,7 +450,7 @@ public class RangeRequestWorkerNew<A>
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
         long remainingReads = Math.min(n,
-                Math.min(reportingInterval, numItemsUntilNextCheckpoint));
+                Math.min(bulkSize, numItemsUntilNextCheckpoint));
 
         // In wait mode stop exactly at maxEndpoint (do not read ahead)
         if (IdleMode.PAUSE.equals(idleMode)) {
@@ -510,7 +514,11 @@ public class RangeRequestWorkerNew<A>
                         slice.setMaximumKnownSize(offset);
                     }
                 }
-                logger.info(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d", offset, numItemsProcessed, requestLimit));
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d", offset, numItemsProcessed, requestLimit));
+                }
+
                 slice.getHasDataCondition().signalAll();
 //        	});
 

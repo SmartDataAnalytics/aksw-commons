@@ -1,6 +1,7 @@
 package org.aksw.commons.rx.cache.range;
 
 public class RangeBufferDelegateMutableImpl<A>
+    extends RangeBufferDelegateBase<A>
     implements RangeBufferDelegateMutable<A>
 {
     protected RangeBuffer<A> delegate;

@@ -71,11 +71,11 @@ public class TxnHandler {
                 Iterator<org.aksw.commons.path.core.Path<String>> it = stream.iterator();
                 while (it.hasNext()) {
                     org.aksw.commons.path.core.Path<String> relPath = it.next();
-                    logger.debug("Syncing: " + relPath);
                     // Path relPath = txnMgr.getResRepo().getRelPath(res);
 
                     TxnResourceApi api = txn.getResourceApi(relPath);
                     if (api.getTxnResourceLock().ownsWriteLock()) {
+                        logger.debug("Syncing: " + relPath);
                         // If we own a write lock and the state is dirty then sync
                         // If there are any in memory changes then write them out
 

@@ -1,9 +1,6 @@
 package org.aksw.commons.rx.cache.range;
 
 import java.util.List;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
@@ -12,7 +9,7 @@ import com.google.common.collect.TreeRangeSet;
 
 
 public class SliceMetaDataImpl
-    implements SliceMetaData
+    implements SliceMetaDataBasic
 {
     /**
      * If the value is null then the range is considered as successfully loaded.
@@ -23,19 +20,11 @@ public class SliceMetaDataImpl
     protected long minimumKnownSize;
     protected long maximumKnownSize;
 
-    // Maybe move this attribute to a subclass such as PagedSliceMetaData
-    protected int pageSize;
-    
-    protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    protected transient Condition hasDataCondition = readWriteLock.writeLock().newCondition();
+//    protected transient ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+//    protected transient Condition hasDataCondition = readWriteLock.writeLock().newCondition();
 
     public SliceMetaDataImpl() {
-        this(1024 * 64);
-    }
-
-    public SliceMetaDataImpl(int pageSize) {
         this(
-        		pageSize,
                 TreeRangeSet.create(),
                 TreeRangeMap.create(),
                 0,
@@ -43,38 +32,33 @@ public class SliceMetaDataImpl
         );
     }
 
-    public SliceMetaDataImpl(int pageSize, RangeSet<Long> loadedRanges, RangeMap<Long, List<Throwable>> failedRanges,
+    public SliceMetaDataImpl(RangeSet<Long> loadedRanges, RangeMap<Long, List<Throwable>> failedRanges,
             long minimumKnownSize, long maximumKnownSize) {
         super();
-        this.pageSize = pageSize;
         this.loadedRanges = loadedRanges;
         this.failedRanges = failedRanges;
         this.minimumKnownSize = minimumKnownSize;
         this.maximumKnownSize = maximumKnownSize;
     }
 
-    public int getPageSize() {
-		return pageSize;
-	}
-    
-    @Override
-    public ReadWriteLock getReadWriteLock() {
-        return readWriteLock;
-    }
-
-    @Override
-    public Condition getHasDataCondition() {
-        return hasDataCondition;
-    }
+//    @Override
+//    public ReadWriteLock getReadWriteLock() {
+//        return readWriteLock;
+//    }
+//
+//    @Override
+//    public Condition getHasDataCondition() {
+//        return hasDataCondition;
+//    }
 
     public RangeSet<Long> getLoadedRanges() {
         return loadedRanges;
     }
 
     public void setLoadedRanges(RangeSet<Long> loadedRanges) {
-		this.loadedRanges = loadedRanges;
-	}
-    
+        this.loadedRanges = loadedRanges;
+    }
+
     public RangeMap<Long, List<Throwable>> getFailedRanges() {
         return failedRanges;
     }
@@ -87,14 +71,14 @@ public class SliceMetaDataImpl
         return maximumKnownSize;
     }
 
-    public SliceMetaData setMinimumKnownSize(long minimumKnownSize) {
+    @Override
+    public void setMinimumKnownSize(long minimumKnownSize) {
         this.minimumKnownSize = minimumKnownSize;
-        return this;
     }
 
-    public SliceMetaData setMaximumKnownSize(long maximumKnownSize) {
+    @Override
+    public void setMaximumKnownSize(long maximumKnownSize) {
         this.maximumKnownSize = maximumKnownSize;
-        return this;
     }
 
     @Override
@@ -134,11 +118,11 @@ public class SliceMetaDataImpl
         return true;
     }
 
-	@Override
-	public String toString() {
-		return "SliceMetaDataImpl [minimumKnownSize=" + minimumKnownSize + ", maximumKnownSize=" + maximumKnownSize
-				+ ", pageSize=" + pageSize + ", loadedRanges=" + loadedRanges + ", failedRanges=" + failedRanges + "]";
-	}
+    @Override
+    public String toString() {
+        return "SliceMetaDataImpl [loadedRanges=" + loadedRanges + ", failedRanges=" + failedRanges
+                + ", minimumKnownSize=" + minimumKnownSize + ", maximumKnownSize=" + maximumKnownSize + "]";
+    }
 
-    
+
 }

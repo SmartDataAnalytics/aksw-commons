@@ -401,10 +401,12 @@ public class TxnSerializable
                 String priorOwner;
                 try {
                     priorOwner = getOwner();
+                    logger.info("Claiming stale transaction with txnMgrId: " + txnMgrId + " - prior owner was: " + priorOwner);
                 } catch (NoSuchFileException e) {
                     priorOwner = "(none)";
+
+                    // no log message because we assume we claimed the txn which we just created ourself
                 }
-                logger.info("Claiming stale transaction with txnMgrId: " + txnMgrId + " - prior owner was: " + priorOwner);
                 writeOwner();
                 updateHeartbeatInternal();
                 r = true;

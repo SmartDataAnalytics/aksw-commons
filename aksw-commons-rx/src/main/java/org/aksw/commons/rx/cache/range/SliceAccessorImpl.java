@@ -107,13 +107,15 @@ public class SliceAccessorImpl<A>
 //        long lastPageId = claimedPages.isEmpty() ? Long.MAX_VALUE, claimedPages.lastKey();
 //        long lowerEnd = Math.min(endPageId, lastPageId);
 
-        
+
         // Phase 1/2: Trigger loading of all pages
         for (long i = startPageId; i <= endPageId; ++i) {
             claimedPages.computeIfAbsent(i, idx -> {
-                logger.debug("Acquired page item [" + idx + "]");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Acquired page item [" + idx + "]");
+                }
                 RefFuture<BufferView<A>> page = slice.getPageForPageId(idx);
-                
+
                 // System.out.println("Loaded page " + idx);
 //                if (isLocked) {
 //                    try {
@@ -127,10 +129,10 @@ public class SliceAccessorImpl<A>
             });
         }
 
-        
+
         // Phase 2/2: Await for all pages to be loaded - this may also resync them
-		for (RefFuture<BufferView<A>> page : claimedPages.values()) {
-        	page.await();
+        for (RefFuture<BufferView<A>> page : claimedPages.values()) {
+            page.await();
         }
     }
 
@@ -208,7 +210,9 @@ public class SliceAccessorImpl<A>
         // Release all claimed pages
         // Remove all claimed pages before the checkpoint
 
-        logger.debug("Releasing pages: " + claimedPages.keySet());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Releasing pages: " + claimedPages.keySet());
+        }
 
         claimedPages.values().forEach(Ref::close);
         claimedPages.clear();
@@ -294,7 +298,7 @@ public class SliceAccessorImpl<A>
         }
     }
 
-    
+
     /** Read a range of data - does not await any new data */
     public int unsafeRead(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
         ensureOpen();
@@ -327,13 +331,13 @@ public class SliceAccessorImpl<A>
             RefFuture<BufferView<A>> currentPageRef = getClaimedPages().get(i);
 
             BufferView<A> buffer = currentPageRef.await();
-			int remainingInPage = Ints.checkedCast(Math.min(pageSize - indexInPage, remainingInSrc));
+            int remainingInPage = Ints.checkedCast(Math.min(pageSize - indexInPage, remainingInSrc));
 
-			buffer.getRangeBuffer().readInto(tgt, tgtOffset, indexInPage, remainingInPage);
+            buffer.getRangeBuffer().readInto(tgt, tgtOffset, indexInPage, remainingInPage);
 
-			tgtOffset += remainingInPage;
-			remainingInSrc -= remainingInPage;
-			indexInPage = 0;
+            tgtOffset += remainingInPage;
+            remainingInSrc -= remainingInPage;
+            indexInPage = 0;
         }
 
         return result;
@@ -341,7 +345,7 @@ public class SliceAccessorImpl<A>
 
     /**
      * Method is subject to removal - use sequentialReaderForSlice.read
-     * 
+     *
      * The range [srcOffset, srcOffset + length) must be within the claimed range!
      * @throws IOException
      *

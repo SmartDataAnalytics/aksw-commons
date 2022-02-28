@@ -48,7 +48,7 @@ public class RangeRequestWorker<T>
     /**
      * Demands from clients to load data up to the supplied value.
      * A client can unregister a demand any time.
-     * 
+     *
      */
     protected ObservableSlottedValue<Long, Long> endpointDemands = ObservableSlottedValueImpl.wrap(SlottedBuilderImpl.create(
             values -> values.stream().reduce(-1l,Math::max)));
@@ -123,7 +123,7 @@ public class RangeRequestWorker<T>
 
     /** Throughput in items / second */
     protected long numItemsProcessed = 0;
-    
+
     /** Total time */
     protected long processingTimeInNanos = 0;
 
@@ -238,7 +238,7 @@ public class RangeRequestWorker<T>
 
         // A demand overrides the worker's maxAllowedRefetchCount
         // Demands should take refetching of ranges into account
-    	long remainingAllowedItems = requestLimit - numItemsProcessed;
+        long remainingAllowedItems = requestLimit - numItemsProcessed;
         long maxAllowedRefetchCount = getMaxAllowedRefetchCount(offset);
         long effectiveLimit = Math.min(maxAllowedRefetchCount, remainingAllowedItems);
 
@@ -258,18 +258,18 @@ public class RangeRequestWorker<T>
         });
     }
 
-    
+
     /**
-     * 
+     *
      * A worker can only shutdown if it holds the workerSetLock: A concurrent RangeRequestIterator may schedule a new task for a worker
-     * that was just about to terminate. 
-     * 
+     * that was just about to terminate.
+     *
      * Shutdown conditions:
      * - idle for too long
      * - reached end of data
-     * - 
+     * -
      * - exception
-     * 
+     *
      */
     public void runCore() {
         initBackendRequest();
@@ -283,7 +283,7 @@ public class RangeRequestWorker<T>
         // pauseLock.writeLock().newCondition();
         while (true) {
 
-            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay) {            	
+            if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay) {
                 break;
             }
 
@@ -448,7 +448,7 @@ public class RangeRequestWorker<T>
                         metaData.setKnownSize(offset);
                     }
                 }
-                logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
+                // logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
             });
 
         } finally {
@@ -456,20 +456,20 @@ public class RangeRequestWorker<T>
         }
     }
 
-    
+
 
     /**
      * Acquire a new slot into which the end-offset of a demanded data range can be put.
-     * 
+     *
      * FIXME The worker may just have terminated; so we need synchronization with the workerSyncLock such that during scheduling workers don't
      * disappear.
-     * 
+     *
      * @return
      */
     public Slot<Long> newDemandSlot() {
-    	synchronized (endpointDemands) {
-    		return endpointDemands.newSlot();
-    	}
+        synchronized (endpointDemands) {
+            return endpointDemands.newSlot();
+        }
     }
 }
 

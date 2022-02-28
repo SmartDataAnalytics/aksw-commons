@@ -21,7 +21,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 
 public class AdvancedRangeCacheNew<T>
-	implements SequentialReaderSource<T>
+    implements SequentialReaderSource<T>
 //     implements ListPaginator<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheNew.class);
@@ -30,46 +30,51 @@ public class AdvancedRangeCacheNew<T>
     protected SliceWithPages<T> slice;
 
     protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
-    
+
     protected ReentrantLock workerCreationLock = new ReentrantLock();
 
     protected Set<RangeRequestWorkerNew<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
-    
+
     protected long requestLimit;
     protected Duration terminationDelay;
 
+    // Number of items a worker processes in bulk before signalling available data
+    protected int workerBulkSize;
 
     protected ExecutorService executorService =
             MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
 
     public AdvancedRangeCacheNew(
-    		SequentialReaderSource<T> dataSource,
-    		SliceWithPages<T> slice,
+            SequentialReaderSource<T> dataSource,
+            SliceWithPages<T> slice,
             long requestLimit,
+            int workerBulkSize,
             Duration terminationDelay) {
 
-    	this.dataSource = dataSource;
+        this.dataSource = dataSource;
 
         this.slice = slice;
         this.requestLimit = requestLimit;
+        this.workerBulkSize = workerBulkSize;
         this.terminationDelay = terminationDelay;
     }
 
 
     public static <A> AdvancedRangeCacheNew<A> create(
-    		SequentialReaderSource<A> dataSource,
-    		SliceWithPages<A> slice,
+            SequentialReaderSource<A> dataSource,
+            SliceWithPages<A> slice,
             long requestLimit,
+            int workerBulkSize,
             Duration terminationDelay) {
 
-    	return new AdvancedRangeCacheNew<>(dataSource, slice, requestLimit, terminationDelay);
+        return new AdvancedRangeCacheNew<>(dataSource, slice, requestLimit, workerBulkSize, terminationDelay);
     }
 
-    
+
     public SequentialReaderSource<T> getDataSource() {
-		return dataSource;
-	}
-    
+        return dataSource;
+    }
+
     public SliceWithPages<T> getSlice() {
         return slice;
     }
@@ -79,7 +84,7 @@ public class AdvancedRangeCacheNew<T>
     }
 
     public Lock getExecutorCreationReadLock() {
-    	return workerCreationLock;
+        return workerCreationLock;
     }
 
     public Runnable register(RangeRequestIterator<T> it) {
@@ -95,7 +100,7 @@ public class AdvancedRangeCacheNew<T>
      * Creates a new worker and immediately starts it.
      * The executor creation is driven by the RangeRequestIterator which creates executors on demand
      * whenever it detects any gaps in its read ahead range which are not served by any existing executors.
-     * 
+     *
      * @param offset
      * @param initialLength
      * @return
@@ -105,7 +110,7 @@ public class AdvancedRangeCacheNew<T>
         Slot<Long> slot;
         //executorCreationLock.writeLock().lock();
         try {
-            worker = new RangeRequestWorkerNew<>(this, offset, requestLimit, terminationDelay);
+            worker = new RangeRequestWorkerNew<>(this, offset, requestLimit, workerBulkSize, terminationDelay);
             slot = worker.newDemandSlot();
             slot.set(offset + initialLength);
 
@@ -118,10 +123,10 @@ public class AdvancedRangeCacheNew<T>
         return new SimpleEntry<>(worker, slot);
     }
 
-    
+
     // Should only be called by the RangeRequestWorker once it terminates
     void removeExecutor(RangeRequestWorkerNew<T> worker) {
-    	this.executors.remove(worker);
+        this.executors.remove(worker);
     }
 
     /**
@@ -139,61 +144,72 @@ public class AdvancedRangeCacheNew<T>
      */
     @Override
     public SequentialReader<T> newInputStream(Range<Long> range) {
-    	SequentialReaderFromSliceImpl<T> result = new SequentialReaderFromSliceImpl<>(this, range);
+        SequentialReaderFromSliceImpl<T> result = new SequentialReaderFromSliceImpl<>(this, range);
         // RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
     }
 
-    
+
     public static class Builder<A> {
         protected SequentialReaderSource<A> dataSource;
         protected SliceWithPages<A> slice;
 
+        protected int workerBulkSize;
+
         protected long requestLimit;
         // protected Duration syncDelay;
         protected Duration terminationDelay;
-        
+
         public static <A> Builder<A> create() {
-        	return new Builder<A>();
+            return new Builder<A>();
         }
-        
-		public SequentialReaderSource<A> getDataSource() {
-			return dataSource;
-		}
-		
-		public Builder<A> setDataSource(SequentialReaderSource<A> dataSource) {
-			this.dataSource = dataSource;
-			return this;
-		}
-		
-		public SliceWithPages<A> getSlice() {
-			return slice;
-		}
-		
-		public Builder<A> setSlice(SliceWithPages<A> slice) {
-			this.slice = slice;
-			return this;
-		}
-		
-		public long getRequestLimit() {
-			return requestLimit;
-		}
-		
-		public Builder<A> setRequestLimit(long requestLimit) {
-			this.requestLimit = requestLimit;
-			return this;
-		}
-		
-		public Duration getTerminationDelay() {
-			return terminationDelay;
-		}
-		
-		public Builder<A> setTerminationDelay(Duration terminationDelay) {
-			this.terminationDelay = terminationDelay;
-			return this;
-		}
-        
+
+        public SequentialReaderSource<A> getDataSource() {
+            return dataSource;
+        }
+
+        public Builder<A> setDataSource(SequentialReaderSource<A> dataSource) {
+            this.dataSource = dataSource;
+            return this;
+        }
+
+        public SliceWithPages<A> getSlice() {
+            return slice;
+        }
+
+        public Builder<A> setSlice(SliceWithPages<A> slice) {
+            this.slice = slice;
+            return this;
+        }
+
+        public long getRequestLimit() {
+            return requestLimit;
+        }
+
+        public Builder<A> setRequestLimit(long requestLimit) {
+            this.requestLimit = requestLimit;
+            return this;
+        }
+
+        public int getWorkerBulkSize() {
+            return workerBulkSize;
+        }
+
+        public Builder<A> setWorkerBulkSize(int workerBulkSize) {
+            this.workerBulkSize = workerBulkSize;
+            return this;
+        }
+
+        public Duration getTerminationDelay() {
+            return terminationDelay;
+        }
+
+        public Builder<A> setTerminationDelay(Duration terminationDelay) {
+            this.terminationDelay = terminationDelay;
+            return this;
+        }
+
 //		public Duration getSyncDelay() {
 //			return syncDelay;
 //		}
@@ -203,10 +219,10 @@ public class AdvancedRangeCacheNew<T>
 //			return this;
 //		}
 
-		public AdvancedRangeCacheNew<A> build() {
-			return AdvancedRangeCacheNew.create(dataSource, slice, requestLimit, terminationDelay);
-		}
+        public AdvancedRangeCacheNew<A> build() {
+            return AdvancedRangeCacheNew.create(dataSource, slice, requestLimit, workerBulkSize, terminationDelay);
+        }
     }
-    
+
 }
 

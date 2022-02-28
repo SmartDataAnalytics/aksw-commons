@@ -2,6 +2,8 @@ package org.aksw.commons.rx.cache.range;
 
 import java.util.List;
 
+import org.aksw.commons.util.range.RangeUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -10,14 +12,14 @@ import com.google.common.collect.RangeSet;
 public interface SliceMetaDataBasic {
     RangeSet<Long> getLoadedRanges();
     RangeMap<Long, List<Throwable>> getFailedRanges();
-	
+
     long getMinimumKnownSize();
     void setMinimumKnownSize(long size);
 
     long getMaximumKnownSize();
     void setMaximumKnownSize(long size);
 
-    
+
     /** Updates the maximum known size iff the argument is less than the current known maximum */
     default SliceMetaDataBasic updateMaximumKnownSize(long size) {
         long current = getMaximumKnownSize();
@@ -39,7 +41,7 @@ public interface SliceMetaDataBasic {
 
         return this;
     }
-    
+
 
     default long getKnownSize() {
         long minSize = getMinimumKnownSize();
@@ -57,5 +59,17 @@ public interface SliceMetaDataBasic {
         return this;
     }
 
-    RangeSet<Long> getGaps(Range<Long> requestRange);
+    // RangeSet<Long> getGaps(Range<Long> requestRange);
+
+    default RangeSet<Long> getGaps(Range<Long> requestRange) {
+        long maxKnownSize = getMaximumKnownSize();
+        Range<Long> maxKnownRange = Range.closedOpen(0l, maxKnownSize);
+
+        Range<Long> effectiveRequestRange = requestRange.intersection(maxKnownRange);
+
+        RangeSet<Long> loadedRanges = getLoadedRanges();
+        RangeSet<Long> result = RangeUtils.gaps(effectiveRequestRange, loadedRanges);
+        return result;
+    }
+
 }

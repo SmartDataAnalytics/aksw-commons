@@ -320,10 +320,16 @@ public class SequentialReaderFromSliceImpl<A>
                         while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownSize)) {
                             try {
-                                logger.info(String.format(
-                                        "Awaiting data at offset %d for entry %s of a slice of known size %d with loaded ranges %s", currentOffset, entry, knownSize, slice.getLoadedRanges()));
+                                if (logger.isTraceEnabled()) {
+                                    logger.trace(String.format(
+                                            "Awaiting data at offset %d for entry %s of a slice of known size %d with loaded ranges %s", currentOffset, entry, knownSize, slice.getLoadedRanges()));
+                                }
+
                                 slice.getHasDataCondition().await();
-                                logger.info("Woke up after awaiting more data");
+
+                                if (logger.isTraceEnabled()) {
+                                    logger.trace("Woke up after awaiting more data");
+                                }
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
