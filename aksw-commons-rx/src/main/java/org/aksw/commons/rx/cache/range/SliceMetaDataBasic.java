@@ -5,9 +5,11 @@ import java.util.List;
 import org.aksw.commons.util.range.RangeUtils;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 
 public interface SliceMetaDataBasic {
     RangeSet<Long> getLoadedRanges();
@@ -65,10 +67,17 @@ public interface SliceMetaDataBasic {
         long maxKnownSize = getMaximumKnownSize();
         Range<Long> maxKnownRange = Range.closedOpen(0l, maxKnownSize);
 
-        Range<Long> effectiveRequestRange = requestRange.intersection(maxKnownRange);
+        boolean isConnected = requestRange.isConnected(maxKnownRange);
 
-        RangeSet<Long> loadedRanges = getLoadedRanges();
-        RangeSet<Long> result = RangeUtils.gaps(effectiveRequestRange, loadedRanges);
+        RangeSet<Long> result;
+        if (isConnected) {
+            Range<Long> effectiveRequestRange = requestRange.intersection(maxKnownRange);
+            RangeSet<Long> loadedRanges = getLoadedRanges();
+            result = RangeUtils.gaps(effectiveRequestRange, loadedRanges);
+        } else {
+            result = TreeRangeSet.create();
+        }
+
         return result;
     }
 

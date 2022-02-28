@@ -249,8 +249,10 @@ public class SequentialReaderFromSliceImpl<A>
 
         // Schedule data fetching for length + maxReadAheadItemCount items
         long requestedEndOffset = currentOffset + length;
+        // ContiguousSet<Long> cset = ContiguousSet.create(requestRange, DiscreteDomain.longs());
+        // long requestRangeSize = cset.size();
 
-        long maxEndOffset = ContiguousSet.create(requestRange, DiscreteDomain.longs()).last() + 1;
+        long maxEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
         long effectiveEndOffset = Math.min(requestedEndOffset, maxEndOffset);
 
         Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveEndOffset);

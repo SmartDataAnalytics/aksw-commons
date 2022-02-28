@@ -438,8 +438,8 @@ public class RangeRequestWorkerNew<A>
      *
      */
     public int process(A buffer, int bufferOffset, int n) throws Exception {
-        if (n == 0) {
-            throw new IllegalArgumentException("Request to process 0 items is invalid");
+        if (n <= 0) {
+            throw new IllegalArgumentException("Request to process 0 or fewer items is invalid");
         }
 
         pageRange.claimByOffsetRange(offset, offset + n);
