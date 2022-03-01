@@ -29,9 +29,13 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
 
 public class TestListPaginatorCache {
 
@@ -57,7 +61,7 @@ public class TestListPaginatorCache {
     }
 
     @Test
-    public void test() throws IOException {
+    public void testEssential() throws IOException {
         boolean isMemory = false;
 
         Stopwatch sw = Stopwatch.createStarted();
@@ -67,17 +71,63 @@ public class TestListPaginatorCache {
         for (int i = 0; i < 30; ++i) {
             ListPaginator<String> backend = createListWithRandomItems(random);
 
-            testOnce(String.class, backend, isMemory, "test" + i, random, random.nextInt(19) + 1);
+            testOnce(String.class, backend, backend, 10000, isMemory, "test-" + i, random, random.nextInt(19) + 1);
         }
         // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
 
         logger.info("Cache test took: " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f + " seconds");
     }
 
-    public <T> void testOnce(
-            Class<T> clazz, ListPaginator<T> backend, boolean inMemory, String testId, Random random, int numIterations) throws IOException {
 
-        KryoPool kryoPool = KryoUtils.createKyroPool(null);
+
+    @Test
+    public void testRequestLimits() throws IOException {
+        boolean isMemory = false;
+
+        Stopwatch sw = Stopwatch.createStarted();
+
+        Random random = new Random(0);
+
+        for (int i = 0; i < 30; ++i) {
+            int requestLimit = random.nextInt(99) + 1;
+
+            ListPaginator<String> referenceBackend = createListWithRandomItems(random);
+            ListPaginator<String> restrictedBackend = new ListPaginator<String>() {
+                protected ListPaginator<String> backend = referenceBackend;
+
+                @Override
+                public Flowable<String> apply(Range<Long> t) {
+                    Range<Long> c = t.canonical(DiscreteDomain.longs());
+                    Range<Long> restriction = Range.closedOpen(c.lowerEndpoint(), c.lowerEndpoint() + requestLimit);
+                    return backend.apply(restriction);
+                }
+
+                @Override
+                public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
+                    return backend.fetchCount(itemLimit, rowLimit);
+                }
+            };
+
+            testOnce(String.class, referenceBackend, restrictedBackend, requestLimit, isMemory,
+                    "test-pagination-" + i, random, random.nextInt(19) + 1);
+        }
+        // createListWithRandomItems(random).apply(Range.atLeast(0l)).forEach(System.out::println);
+
+        logger.info("Cache test took: " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f + " seconds");
+    }
+
+
+    public <T> void testOnce(
+            Class<T> clazz,
+            ListPaginator<T> referenceBackend,
+            ListPaginator<T> cachableBackend,
+            long requestLimit,
+            boolean inMemory,
+            String testId,
+            Random random,
+            int numIterations) throws IOException {
+
+        KryoPool kryoPool = KryoUtils.createKryoPool(null);
         ObjectStore objectStore = ObjectStoreImpl.create(Path.of("/tmp/aksw-commons-cache-test"), ObjectSerializerKryo.create(kryoPool));
 
         org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
@@ -92,30 +142,31 @@ public class TestListPaginatorCache {
 
         Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
-            .setRequestLimit(10000)
+            .setRequestLimit(requestLimit)
             .setWorkerBulkSize(128)
             .setSlice(slice)
             .setTerminationDelay(Duration.ofSeconds(10));
 
         //  SmartRangeCacheNew<String> cache
-        ListPaginator<T> frontend = ListPaginatorWithAdvancedCache.create(backend, builder);
+        ListPaginator<T> frontend = ListPaginatorWithAdvancedCache.create(cachableBackend, builder);
 
 
         for (int i = 0; i < numIterations; ++i) {
-            int size = Ints.saturatedCast(backend.fetchCount(null, null).blockingGet().lowerEndpoint());
+            int size = Ints.saturatedCast(cachableBackend.fetchCount(null, null).blockingGet().lowerEndpoint());
 
             int start = random.nextInt(size);
             int end = start + random.nextInt(size - start);
 
             Range<Long> requestRange = Range.closedOpen((long)start, (long)end);
 
-            List<T> expected = backend.fetchList(requestRange);
+            logger.info(String.format("Test %s - Iteration %d - Request range %s", testId, i, requestRange));
+            List<T> expected = referenceBackend.fetchList(requestRange);
             // List<String> actual = backend.fetchList(requestRange);
             List<T> actual = frontend.fetchList(requestRange);
 
             Assert.assertEquals(expected, actual);
 
-            // slice.sync();
+            slice.sync();
         }
     }
 }

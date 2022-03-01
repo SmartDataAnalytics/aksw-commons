@@ -17,7 +17,7 @@ import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
 public class KryoUtils {
-    public static KryoPool createKyroPool(Consumer<Kryo> customRegistrator) {
+    public static KryoPool createKryoPool(Consumer<Kryo> customRegistrator) {
         KryoFactory factory = new KryoFactory() {
             public Kryo create() {
                 Kryo kryo = new Kryo();

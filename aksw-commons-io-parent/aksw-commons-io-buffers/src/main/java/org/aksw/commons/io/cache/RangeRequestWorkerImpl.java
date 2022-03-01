@@ -236,6 +236,10 @@ public class RangeRequestWorkerImpl<A>
 
     @Override
     public void run() {
+//        if (offset == 4516) {
+//            System.out.println("debug point");
+//        }
+
         try {
             checkpoint();
             // If the checkpoint offset was not advanced then we reached end of data
@@ -448,9 +452,6 @@ public class RangeRequestWorkerImpl<A>
 
         pageRange.claimByOffsetRange(offset, offset + n);
 
-//        BulkingSink<A> sink = BulkingSink.create(bulkSize,
-//                (arr, start, len) -> pageRange.putAll(offset, arr, start, len));
-
         long numItemsUntilNextCheckpoint = nextCheckpointOffset - offset;
 
         long remainingReads = Math.min(n,
@@ -520,6 +521,10 @@ public class RangeRequestWorkerImpl<A>
                 }
 
                 if (logger.isTraceEnabled()) {
+//                    if (offset == 5799) {
+//                        System.out.println("debug point");
+//                    }
+
                     logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d", offset, numItemsProcessed, requestLimit));
                 }
 

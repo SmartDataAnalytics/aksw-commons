@@ -226,7 +226,7 @@ public class SliceBufferNew<A>
     }
 
     public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
-        KryoPool kryoPool = KryoUtils.createKyroPool(null);
+        KryoPool kryoPool = KryoUtils.createKryoPool(null);
         ObjectSerializer objectSerializer = ObjectSerializerKryo.create(kryoPool);
         ObjectStore objectStore = ObjectStoreImpl.create(repoPath, objectSerializer);
 

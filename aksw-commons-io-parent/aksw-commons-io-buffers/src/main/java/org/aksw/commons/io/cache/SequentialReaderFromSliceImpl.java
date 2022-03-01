@@ -86,15 +86,6 @@ public class SequentialReaderFromSliceImpl<A>
         this.nextCheckpointOffset = currentOffset;
     }
 
-//    public SequentialReaderFromSliceImpl(SmartRangeCacheNew<A> cache, long nextCheckpointOffset) {
-//        super();
-//        this.cache = cache;
-//        this.slice = cache.getSlice();
-//        this.pageRange = slice.newSliceAccessor();
-//        this.currentOffset = nextCheckpointOffset;
-//        this.nextCheckpointOffset = nextCheckpointOffset;
-//    }
-
     public long getNextCheckpointOffset() {
         return nextCheckpointOffset;
     }
@@ -145,12 +136,16 @@ public class SequentialReaderFromSliceImpl<A>
 
 
     public void clearPassedSlots() {
+        // Note: here, nextCheckpointOffset refers to the value just before
+        // the 'next' next checkpoint offset is computed
+        long currentOffset = nextCheckpointOffset;
+
         Iterator<Slot<Long>> it = workerToSlot.values().iterator();
         while (it.hasNext()) {
             Slot<Long> slot = it.next();
             Long value = slot.getSupplier().get();
             // long currentOffset = offsetSupplier.getAsLong();
-            long currentOffset = nextCheckpointOffset;
+
             if (value < currentOffset) {
                 logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
                 slot.close();
@@ -249,6 +244,10 @@ public class SequentialReaderFromSliceImpl<A>
             return 0;
         }
 
+//        if (requestRange.upperEndpoint() == 4525) {
+//            System.out.println("debug point");
+//        }
+
         // Schedule data fetching for length + maxReadAheadItemCount items
         long requestedEndOffset = currentOffset + length;
         // ContiguousSet<Long> cset = ContiguousSet.create(requestRange, DiscreteDomain.longs());
@@ -256,6 +255,10 @@ public class SequentialReaderFromSliceImpl<A>
 
         long maxEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
         long effectiveEndOffset = Math.min(requestedEndOffset, maxEndOffset);
+
+        if (currentOffset >= effectiveEndOffset) {
+            return -1;
+        }
 
         Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveEndOffset);
 

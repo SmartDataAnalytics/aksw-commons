@@ -21,6 +21,7 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.math.LongMath;
 
 public class RangeUtils {
@@ -380,64 +381,73 @@ public class RangeUtils {
 
         for (Range<Long> gap : gapSet) {
 
+            // We may need to schedule multiple workers if the gap is larger than a worker's maximum request range
+
             ContiguousSet<Long> tmp = ContiguousSet.create(gap, DiscreteDomain.longs());
             long gapStart = tmp.first();
             long gapEnd = LongMath.saturatedAdd(tmp.last(), 1);
 
-            if (bestOffset >= 0) {
-                // The gap's end must be within the worker's range
-                if (gapEnd < bestMaxEnd) {
-                    // And the distance to the so far bestCurEnd must not exceed maxRedundantSize
-                    long d = gapStart - bestCurEnd;
+            while (gapStart < gapEnd) {
 
-                    if (d <= maxRedundantSize) {
-                        bestCurEnd = gapEnd;
-                    } else {
-                        result.put(bestOffset, bestCurEnd);
-                        bestOffset = -1;
-                    }
-                } else {
-                    // The gap is outside of the worker range
-                    // 2 Options:
-                    // - Find another worker (with a lower offset) that covers the current range
-                    // - Finalize the current bestWorker assignment and find or create a new worker
-                    Long reallocateOffset = streamEnclosingRanges(offsetToEndpoint, bestOffset, gapEnd)
-                        .findFirst().orElse(null);
+                if (bestOffset >= 0) {
+                    // Check if the gap's end point is covered by a worker
+                    if (gapEnd < bestMaxEnd) {
+                        // And the distance to the so far bestCurEnd must not exceed maxRedundantSize
+                        long d = gapStart - bestCurEnd;
 
-                    if (reallocateOffset == null) {
-                        // Finalize the current best match (if there is one)
-                        if (bestOffset >= 0) {
+                        if (d <= maxRedundantSize) {
+                            bestCurEnd = gapEnd;
+                        } else {
                             result.put(bestOffset, bestCurEnd);
+                            bestOffset = -1;
+                        }
+                    } else {
+                        // The gap is outside of the worker range
+                        // 2 Options:
+                        // - Find another worker with a lower offset that covers the current range
+                        // - Finalize the current bestWorker assignment and find or create a new worker
+                        Long reallocateOffset = streamEnclosingRanges(offsetToEndpoint, bestOffset, gapEnd)
+                            .findFirst().orElse(null);
+
+                        if (reallocateOffset == null) {
+                            // Finalize the current best match (if there is one)
+                            if (bestOffset >= 0) {
+                                result.put(bestOffset, bestCurEnd);
+                            }
+
+                            bestOffset = -1;
+
+                        } else {
+                            bestOffset = reallocateOffset;
+                            bestMaxEnd = offsetToEndpoint.get(reallocateOffset);
+                            // bestCurEnd = gapEnd;
+                            bestCurEnd = Math.min(gapEnd, bestMaxEnd);
                         }
 
-                        bestOffset = -1;
+                    }
+                }
+
+                // Try to assign the gap to the current best worker
+                if (bestOffset < 0) {
+                    Long candOffset = streamEnclosingRanges(offsetToEndpoint, gapStart, gapEnd)
+                            .findFirst().orElse(null);
+
+                    if (candOffset != null) {
+                        bestOffset = candOffset;
+                        bestMaxEnd = offsetToEndpoint.get(candOffset);
+                        bestCurEnd = Math.min(gapEnd, bestMaxEnd);
 
                     } else {
-                        bestOffset = reallocateOffset;
-                        bestMaxEnd = offsetToEndpoint.get(reallocateOffset);
-                        bestCurEnd = gapEnd;
+                        // Allocate a new worker based on the current gap
+                        // int maxRequestLength = 0;
+                        bestOffset = gapStart;
+                        bestMaxEnd = LongMath.saturatedAdd(gapStart, maxSupplierRange); // -1; //gapStart + maxRequestLength;
+                        // bestCurEnd = gapEnd;
+                        bestCurEnd = Math.min(gapEnd, bestMaxEnd);
                     }
-
                 }
-            }
 
-            // Try to assign the gap to the current best worker
-            if (bestOffset < 0) {
-                Long candOffset = streamEnclosingRanges(offsetToEndpoint, gapStart, gapEnd)
-                        .findFirst().orElse(null);
-
-                if (candOffset != null) {
-                    bestOffset = candOffset;
-                    bestCurEnd = gapEnd;
-                    bestMaxEnd = offsetToEndpoint.get(candOffset);
-
-                } else {
-                    // Allocate a new worker based on the current gap
-                    // int maxRequestLength = 0;
-                    bestOffset = gapStart;
-                    bestCurEnd = gapEnd;
-                    bestMaxEnd = LongMath.saturatedAdd(gapStart, maxSupplierRange); // -1; //gapStart + maxRequestLength;
-                }
+                gapStart = bestCurEnd;
             }
         }
 
@@ -446,6 +456,19 @@ public class RangeUtils {
             result.put(bestOffset, bestCurEnd);
         }
 
+
+        boolean enableSanityCheck = true;
+        if (enableSanityCheck) {
+            RangeSet<Long> scheduledRanges = TreeRangeSet.create();
+            for (Entry<Long, Long> e : result.entrySet()) {
+                scheduledRanges.add(Range.closedOpen(e.getKey(), e.getValue()));
+            }
+
+            boolean isEveryGapCovered = scheduledRanges.enclosesAll(gapSet);
+            if (!isEveryGapCovered) {
+                throw new RuntimeException("Sanity check failed");
+            }
+        }
         return result;
     }
 
