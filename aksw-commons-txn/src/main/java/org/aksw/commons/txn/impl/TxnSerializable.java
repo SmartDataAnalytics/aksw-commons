@@ -18,11 +18,11 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.io.util.PathUtils;
-import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.lock.db.impl.LockFromFile;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.util.exception.FinallyRunAll;
+import org.aksw.commons.util.lock.LockUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

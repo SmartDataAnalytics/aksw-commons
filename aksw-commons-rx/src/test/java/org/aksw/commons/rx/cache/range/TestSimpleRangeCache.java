@@ -7,6 +7,6 @@ public class TestSimpleRangeCache
 {
     @Override
     protected <T> ListPaginator<T> wrapWithCache(String testId, ListPaginator<T> backend) {
-        return SimpleRangeCache.wrap(backend);
+        return ListPaginatorWithSimpleCache.wrap(backend);
     }
 }

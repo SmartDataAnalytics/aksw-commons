@@ -3,8 +3,8 @@ package org.aksw.commons.rx.io;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.aksw.commons.io.SequentialReader;
-import org.aksw.commons.util.array.ArrayOps;
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.SequentialReader;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 
 import io.reactivex.rxjava3.core.Flowable;

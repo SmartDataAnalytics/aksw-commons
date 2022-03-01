@@ -6,9 +6,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Stream;
 
 import org.aksw.commons.lock.LockBaseRepeat;
-import org.aksw.commons.lock.LockUtils;
 import org.aksw.commons.lock.db.api.ReadWriteLockWithOwnership;
 import org.aksw.commons.lock.db.api.ResourceLock;
+import org.aksw.commons.util.lock.LockUtils;
 
 
 /**

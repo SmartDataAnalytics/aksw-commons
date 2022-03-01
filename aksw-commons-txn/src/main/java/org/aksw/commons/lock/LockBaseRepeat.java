@@ -2,6 +2,8 @@ package org.aksw.commons.lock;
 
 import java.util.concurrent.TimeUnit;
 
+import org.aksw.commons.util.retry.RetryUtils;
+
 public abstract class LockBaseRepeat
     extends LockBase
 {

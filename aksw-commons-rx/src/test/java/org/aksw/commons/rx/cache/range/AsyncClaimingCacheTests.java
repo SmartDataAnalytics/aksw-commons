@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.aksw.commons.cache.async.AsyncClaimingCache;
+import org.aksw.commons.cache.async.AsyncClaimingCache3Impl;
 import org.aksw.commons.util.ref.RefFuture;
 import org.junit.Test;
 import org.slf4j.Logger;

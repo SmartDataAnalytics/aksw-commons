@@ -16,7 +16,11 @@
 		<dependency>
 			<groupId>com.github.ben-manes.caffeine</groupId>
 			<artifactId>caffeine</artifactId>
-			<version>3.0.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-io-buffers</artifactId>
 		</dependency>
 
 		<dependency>
@@ -50,13 +54,9 @@
 		<!-- <artifactId>aksw-commons-io-core</artifactId> -->
 		<!-- </dependency> -->
 
-		<!-- Kryo -->
-		<!-- Note: don't use versions above 0.43 for now, for whatever reason they 
-			depend on Kryo 5.0.0 RC1 which is binary incompatible and not used by Spark -->
 		<dependency>
 			<groupId>de.javakaffee</groupId>
 			<artifactId>kryo-serializers</artifactId>
-			<version>0.43</version>
 		</dependency>
 
 		<dependency>

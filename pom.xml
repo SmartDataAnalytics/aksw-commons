@@ -54,7 +54,7 @@
 		<xstream.version>1.4.16</xstream.version>
 		<commons-compress.version>1.21</commons-compress.version>
 		<picocli.version>4.6.2</picocli.version>
-		
+
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<slf4j.version>1.8.0-beta4</slf4j.version>
 		<log4j.version>2.17.1</log4j.version>
@@ -69,6 +69,8 @@
 		<module>aksw-commons-beans</module>
 		<module>aksw-commons-lambdas-parent</module>
 		<module>aksw-commons-collectors</module>
+		<module>aksw-commons-claimingcache</module>
+		<module>aksw-commons-objectstore</module>
 		<module>aksw-commons-io-parent</module>
 		<module>aksw-commons-entity-codecs-parent</module>
 		<module>aksw-commons-rx-ex</module>
@@ -199,6 +201,18 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-claimingcache</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-objectstore</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-io-core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -260,6 +274,12 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-buffers</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-index</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -270,6 +290,21 @@
 				<version>${project.version}</version>
 			</dependency>
 
+			<!-- Kryo -->
+			<!-- Note: don't use versions above 0.43 for now, for whatever reason 
+				they depend on Kryo 5.0.0 RC1 which is binary incompatible and not used by 
+				Spark -->
+			<dependency>
+				<groupId>de.javakaffee</groupId>
+				<artifactId>kryo-serializers</artifactId>
+				<version>0.43</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.github.ben-manes.caffeine</groupId>
+				<artifactId>caffeine</artifactId>
+				<version>3.0.3</version>
+			</dependency>
 
 
 			<!-- <dependency> <groupId>org.aksw.commons</groupId> <artifactId>aksw-commons-sparql</artifactId> 

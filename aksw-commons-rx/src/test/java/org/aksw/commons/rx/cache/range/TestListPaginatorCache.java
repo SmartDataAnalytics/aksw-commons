@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import org.aksw.commons.cache.range.AdvancedRangeCacheImpl;
-import org.aksw.commons.cache.range.AdvancedRangeCacheImpl.Builder;
-import org.aksw.commons.collection.slice.SliceBufferNew;
-import org.aksw.commons.collection.slice.SliceInMemory;
-import org.aksw.commons.collection.slice.SliceWithAutoSync;
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.buffer.plain.PagedBuffer;
+import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
+import org.aksw.commons.io.cache.AdvancedRangeCacheImpl.Builder;
+import org.aksw.commons.io.slice.SliceBufferNew;
+import org.aksw.commons.io.slice.SliceInMemory;
+import org.aksw.commons.io.slice.SliceWithAutoSync;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
@@ -20,7 +22,6 @@ import org.aksw.commons.store.object.key.api.ObjectStore;
 import org.aksw.commons.store.object.key.impl.KryoUtils;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
 import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
-import org.aksw.commons.util.array.ArrayOps;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class TestListPaginatorCache {
             .setTerminationDelay(Duration.ofSeconds(10));
 
         //  SmartRangeCacheNew<String> cache
-        ListPaginator<T> frontend = ListPaginatorCache.create(backend, builder);
+        ListPaginator<T> frontend = ListPaginatorWithAdvancedCache.create(backend, builder);
 
 
         for (int i = 0; i < numIterations; ++i) {
@@ -114,7 +115,7 @@ public class TestListPaginatorCache {
 
             Assert.assertEquals(expected, actual);
 
-            slice.sync();
+            // slice.sync();
         }
     }
 }

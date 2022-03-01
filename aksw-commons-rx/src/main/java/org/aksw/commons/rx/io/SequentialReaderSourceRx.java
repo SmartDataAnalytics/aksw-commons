@@ -1,10 +1,10 @@
 package org.aksw.commons.rx.io;
 
-import org.aksw.commons.io.SequentialReader;
-import org.aksw.commons.io.SequentialReaderFromStream;
-import org.aksw.commons.io.SequentialReaderSource;
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.SequentialReader;
+import org.aksw.commons.io.input.SequentialReaderFromStream;
+import org.aksw.commons.io.input.SequentialReaderSource;
 import org.aksw.commons.rx.lookup.ListPaginator;
-import org.aksw.commons.util.array.ArrayOps;
 
 import com.google.common.collect.Range;
 

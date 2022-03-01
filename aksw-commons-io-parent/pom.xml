@@ -14,6 +14,7 @@
 
 	<modules>
 		<module>aksw-commons-io-utils</module>
+		<module>aksw-commons-io-buffers</module>
 		<module>aksw-commons-io-syscalls</module>
 		<module>aksw-commons-io-process-pipes</module>
 	</modules>
