@@ -31,7 +31,6 @@ import com.esotericsoftware.kryo.pool.KryoPool;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
-import com.google.common.collect.TreeRangeSet;
 import com.google.common.primitives.Ints;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -166,7 +165,7 @@ public class TestListPaginatorCache {
 
             Assert.assertEquals(expected, actual);
 
-            slice.sync();
+            // slice.sync();
         }
     }
 }

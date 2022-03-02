@@ -88,7 +88,8 @@ public class ListPaginatorWithAdvancedCache<T>
 
     @Override
     public Flowable<T> apply(Range<Long> range) {
-        return adapt(core.getSlice().getArrayOps(), core, range);
+        return adapt(core.getSlice().getArrayOps(), core, range)
+                .doOnComplete(() -> core.getSlice().sync());
     }
 
 

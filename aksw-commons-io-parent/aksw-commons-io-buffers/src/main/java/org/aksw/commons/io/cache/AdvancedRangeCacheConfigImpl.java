@@ -6,7 +6,7 @@ public class AdvancedRangeCacheConfigImpl
     implements AdvancedRangeCacheConfig
 {
     protected int pageSize;
-    protected int maxRequestSize;
+    protected long maxRequestSize;
     protected Duration terminationDelay;
     protected int internalWorkerSize;
 
@@ -37,11 +37,11 @@ public class AdvancedRangeCacheConfigImpl
     }
 
     @Override
-    public int getMaxRequestSize() {
+    public long getMaxRequestSize() {
         return maxRequestSize;
     }
 
-    public AdvancedRangeCacheConfigImpl setMaxRequestSize(int maxRequestSize) {
+    public AdvancedRangeCacheConfigImpl setMaxRequestSize(long maxRequestSize) {
         this.maxRequestSize = maxRequestSize;
         return this;
     }
@@ -65,12 +65,13 @@ public class AdvancedRangeCacheConfigImpl
         this.internalWorkerSize = internalWorkerSize;
     }
 
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + internalWorkerSize;
-        result = prime * result + maxRequestSize;
+        result = prime * result + (int) (maxRequestSize ^ (maxRequestSize >>> 32));
         result = prime * result + pageSize;
         result = prime * result + ((terminationDelay == null) ? 0 : terminationDelay.hashCode());
         return result;

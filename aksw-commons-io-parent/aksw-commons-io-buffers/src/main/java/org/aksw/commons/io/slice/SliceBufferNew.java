@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -44,6 +42,7 @@ import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
 import org.aksw.commons.txn.api.TxnApi;
 import org.aksw.commons.txn.impl.PathDiffState;
 import org.aksw.commons.txn.impl.PathState;
+import org.aksw.commons.util.concurrent.ScheduleOnce;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.page.PageUtils;
 import org.aksw.commons.util.ref.RefFuture;
@@ -58,7 +57,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
-import com.google.common.util.concurrent.MoreExecutors;
+
 
 
 
@@ -70,6 +69,8 @@ public class SliceBufferNew<A>
 {
     protected Logger logger = LoggerFactory.getLogger(SliceBufferNew.class);
 
+    protected volatile Instant lastSyncRequestTime = null;
+    protected volatile Instant lastSyncExecTime = null;
 
     // Storage layer for transactional saving of buffers
     protected ObjectStore objectStore;
@@ -114,8 +115,9 @@ public class SliceBufferNew<A>
     protected SliceMetaDataWithPages syncMetaData;
     protected PathState metaDataIdentity; // When the metadata was loaded
 
-    protected Duration syncDelay;
-    protected volatile ScheduledFuture<?> syncFuture = null;
+    // protected Duration syncDelay;
+
+    protected ScheduleOnce syncScheduler;
 
     /**
      * Attribute for advertising detection of external changes to the base data.
@@ -135,14 +137,20 @@ public class SliceBufferNew<A>
 //	};
 
 
+    /*
     protected ScheduledExecutorService syncScheduler = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
 
     protected void scheduleSync() {
         if (syncFuture == null || syncFuture.isDone()) {
-            logger.info("Scheduled sync of slice in " + syncDelay);
-            syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+            if (lastSyncRequestTime == null || (lastSyncExecTime != null && lastSyncRequestTime.isAfter(lastSyncExecTime))) {
+                logger.info("Scheduled sync of slice in " + syncDelay);
+                lastSyncRequestTime = Instant.now();
+                lastSyncExecTime = null;
+                syncFuture = syncScheduler.schedule(() -> { sync(); return null; }, syncDelay.toMillis(), TimeUnit.MILLISECONDS);
+            }
         }
     }
+    */
 
     protected RangeBufferDelegateMutable<A> syncChanges = new RangeBufferDelegateMutableImpl<>();
 
@@ -155,12 +163,12 @@ public class SliceBufferNew<A>
 
     public void setMinimumKnownSize(long minimumKnownSize) {
         this.liveMetaData.setMinimumKnownSize(minimumKnownSize);
-        scheduleSync();
+        syncScheduler.scheduleTask();
     }
 
     public void setMaximumKnownSize(long maximumKnownSize) {
         this.liveMetaData.setMaximumKnownSize(maximumKnownSize);
-        scheduleSync();
+        syncScheduler.scheduleTask();
     }
 
 
@@ -174,7 +182,9 @@ public class SliceBufferNew<A>
         this.arrayOps = arrayOps;
         this.objectStore = objectStore;
         this.objectStoreBasePath = objectStoreBasePath;
-        this.syncDelay = syncDelay;
+
+        syncScheduler = ScheduleOnce.scheduleOneTaskAtATime(syncDelay, () -> { sync(); return null; });
+
         // this.pageSize = pageSize;
 
         // pageSize is only available after metadata is loaded
@@ -374,16 +384,16 @@ public class SliceBufferNew<A>
     }
 
     /** Only call this method after acquiring the write lock! */
-    public SliceWithAutoSync<A> updateMinimumKnownSize(long size) {
-        this.liveMetaData.updateMinimumKnownSize(size);
-        return this;
-    }
+//    public SliceWithAutoSync<A> updateMinimumKnownSize(long size) {
+//        this.liveMetaData.updateMinimumKnownSize(size);
+//        return this;
+//    }
 
     /** Only call this method after acquiring the write lock! */
-    public SliceWithAutoSync<A> updateMaximumKnownSize(long size) {
-        this.liveMetaData.updateMaximumKnownSize(size);
-        return this;
-    }
+//    public SliceWithAutoSync<A> updateMaximumKnownSize(long size) {
+//        this.liveMetaData.updateMaximumKnownSize(size);
+//        return this;
+//    }
 
     /** Loading a page requires locking the metadata file - by loading pages in batch we can reduce redundant locking and reduce the risk of in-between external changes */
     public BufferView<A> loadPages(boolean isEager, Set<Long> pageIds) {
@@ -436,6 +446,8 @@ public class SliceBufferNew<A>
 
     @Override
     public synchronized void sync() throws IOException {
+        lastSyncExecTime = Instant.now();
+
         // The somewhat complex part is now to compute the new metadata rangeset and making sure that
         // existing data on disk is still consistently described.
         // This means we need to ensure our in-memory copy of the metadata in up-to-date and then 'patch in'

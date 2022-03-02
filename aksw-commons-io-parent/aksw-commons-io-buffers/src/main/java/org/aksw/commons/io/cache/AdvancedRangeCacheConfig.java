@@ -4,7 +4,7 @@ import java.time.Duration;
 
 public interface AdvancedRangeCacheConfig {
     int getPageSize();
-    int getMaxRequestSize();
+    long getMaxRequestSize();
     Duration getTerminationDelay();
     int getInternalWorkerSize();
 }
