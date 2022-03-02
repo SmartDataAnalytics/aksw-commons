@@ -1,6 +1,5 @@
 package org.aksw.commons.io.slice;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -9,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.util.Sync;
 
 import com.google.common.collect.Range;
 
@@ -27,8 +27,8 @@ import com.google.common.collect.Range;
  *
  * @param <T>
  */
-public interface SliceWithAutoSync<T>
-    extends SliceMetaDataBasic
+public interface Slice<T>
+    extends SliceMetaDataBasic, Sync
     // extends ArrayPuttable
 {
     ReadWriteLock getReadWriteLock();
@@ -116,7 +116,6 @@ public interface SliceWithAutoSync<T>
     // void syncMetaData();
     // syncPages();
     // sync(); // Sync everything
-    void sync() throws IOException;
 
     /**
      * An accessor which allows for 'claiming' a sub-range of this slice. The claimed range can be incrementally

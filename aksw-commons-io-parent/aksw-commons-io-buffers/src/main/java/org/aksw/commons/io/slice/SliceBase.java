@@ -11,7 +11,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 
 public abstract class SliceBase<A>
-    implements SliceWithAutoSync<A>
+    implements Slice<A>
 {
 
     protected ArrayOps<A> arrayOps;

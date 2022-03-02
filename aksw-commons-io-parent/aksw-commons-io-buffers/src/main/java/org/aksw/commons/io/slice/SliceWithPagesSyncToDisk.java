@@ -63,11 +63,11 @@ import com.google.common.collect.TreeRangeSet;
 
 // The outside only sees a buffer - but internally it has a structure that enables serializing the changed regions
 
-public class SliceBufferNew<A>
+public class SliceWithPagesSyncToDisk<A>
     implements SliceWithPages<A>, Sync
     // implements SliceWithAutoSync<T>
 {
-    protected Logger logger = LoggerFactory.getLogger(SliceBufferNew.class);
+    protected Logger logger = LoggerFactory.getLogger(SliceWithPagesSyncToDisk.class);
 
     protected volatile Instant lastSyncRequestTime = null;
     protected volatile Instant lastSyncExecTime = null;
@@ -172,7 +172,7 @@ public class SliceBufferNew<A>
     }
 
 
-    public SliceBufferNew(
+    public SliceWithPagesSyncToDisk(
             ArrayOps<A> arrayOps,
             ObjectStore objectStore,
             org.aksw.commons.path.core.Path<String> objectStoreBasePath,
@@ -231,16 +231,16 @@ public class SliceBufferNew<A>
     }
 
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
-        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
+    public static <A> SliceWithPagesSyncToDisk<A> create(ArrayOps<A> arrayOps, ObjectStore objectStore, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
+        return new SliceWithPagesSyncToDisk<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
     }
 
-    public static <A> SliceBufferNew<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
+    public static <A> SliceWithPagesSyncToDisk<A> create(ArrayOps<A> arrayOps, Path repoPath, org.aksw.commons.path.core.Path<String> objectStoreBasePath, int pageSize, Duration syncDelay) {
         KryoPool kryoPool = KryoUtils.createKryoPool(null);
         ObjectSerializer objectSerializer = ObjectSerializerKryo.create(kryoPool);
         ObjectStore objectStore = ObjectStoreImpl.create(repoPath, objectSerializer);
 
-        return new SliceBufferNew<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
+        return new SliceWithPagesSyncToDisk<>(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
     }
 
 
@@ -674,7 +674,7 @@ public class SliceBufferNew<A>
         protected RangeBuffer<A> rangeBufferView;
 
         public InternalBufferView(
-                SliceBufferNew<A>.BufferWithAutoReloadOnAccess baseBuffer,
+                SliceWithPagesSyncToDisk<A>.BufferWithAutoReloadOnAccess baseBuffer,
                 RangeBuffer<A> rangeBufferView) {
             super();
             this.baseBuffer = baseBuffer;
@@ -733,7 +733,7 @@ public class SliceBufferNew<A>
         }
 
         public CompletableFuture<Buffer<A>> reloadIfNeeded() {
-            int generationNow = SliceBufferNew.this.liveGeneration;
+            int generationNow = SliceWithPagesSyncToDisk.this.liveGeneration;
             if (generationHere != generationNow || future == null) {
                 synchronized (this) {
                     if (generationHere != generationNow || future == null) {
@@ -793,7 +793,7 @@ public class SliceBufferNew<A>
                 return future.get();
                 // return reloadIfNeeded().get();
             } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             }
         }
     }

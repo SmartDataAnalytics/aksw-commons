@@ -15,7 +15,7 @@ import java.util.function.LongSupplier;
 
 import org.aksw.commons.io.input.SequentialReader;
 import org.aksw.commons.io.slice.SliceAccessor;
-import org.aksw.commons.io.slice.SliceWithAutoSync;
+import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.range.RangeUtils;
@@ -52,7 +52,7 @@ public class SequentialReaderFromSliceImpl<A>
 {
     private static final Logger logger = LoggerFactory.getLogger(SequentialReaderFromSliceImpl.class);
 
-    protected SliceWithAutoSync<A> slice;
+    protected Slice<A> slice;
     protected AdvancedRangeCacheImpl<A> cache;
     protected SliceAccessor<A> pageRange;
 

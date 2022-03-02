@@ -8,7 +8,7 @@ import java.util.function.LongUnaryOperator;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.SequentialReader;
 import org.aksw.commons.io.slice.SliceAccessor;
-import org.aksw.commons.io.slice.SliceWithAutoSync;
+import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
@@ -71,7 +71,7 @@ public class RangeRequestWorkerImpl<A>
     // protected Disposable disposable;
 
     /** The data slice */
-    protected SliceWithAutoSync<A> slice;
+    protected Slice<A> slice;
 
     /** The pages claimed by this worker; obtained from slice */
     protected SliceAccessor<A> pageRange;

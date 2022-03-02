@@ -12,9 +12,9 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.PagedBuffer;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl.Builder;
-import org.aksw.commons.io.slice.SliceBufferNew;
+import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
 import org.aksw.commons.io.slice.SliceInMemory;
-import org.aksw.commons.io.slice.SliceWithAutoSync;
+import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
@@ -135,9 +135,9 @@ public class TestListPaginatorCache {
 //        int pageSize = 100;
 
         ArrayOps<T[]> arrayOps = ArrayOps.createFor(clazz);
-        SliceWithAutoSync<T[]> slice = inMemory
+        Slice<T[]> slice = inMemory
                 ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
-                : SliceBufferNew.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, Duration.ofMillis(500));
+                : SliceWithPagesSyncToDisk.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, Duration.ofMillis(500));
 
         Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))

@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.aksw.commons.io.input.SequentialReader;
 import org.aksw.commons.io.input.SequentialReaderSource;
-import org.aksw.commons.io.slice.SliceWithAutoSync;
+import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class AdvancedRangeCacheImpl<T>
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheImpl.class);
 
     protected SequentialReaderSource<T> dataSource;
-    protected SliceWithAutoSync<T> slice;
+    protected Slice<T> slice;
 
     // protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
@@ -49,7 +49,7 @@ public class AdvancedRangeCacheImpl<T>
 
     public AdvancedRangeCacheImpl(
             SequentialReaderSource<T> dataSource,
-            SliceWithAutoSync<T> slice,
+            Slice<T> slice,
             long requestLimit,
             int workerBulkSize,
             Duration terminationDelay) {
@@ -65,7 +65,7 @@ public class AdvancedRangeCacheImpl<T>
 
     public static <A> AdvancedRangeCacheImpl<A> create(
             SequentialReaderSource<A> dataSource,
-            SliceWithAutoSync<A> slice,
+            Slice<A> slice,
             long requestLimit,
             int workerBulkSize,
             Duration terminationDelay) {
@@ -78,7 +78,7 @@ public class AdvancedRangeCacheImpl<T>
         return dataSource;
     }
 
-    public SliceWithAutoSync<T> getSlice() {
+    public Slice<T> getSlice() {
         return slice;
     }
 
@@ -156,7 +156,7 @@ public class AdvancedRangeCacheImpl<T>
 
     public static class Builder<A> {
         protected SequentialReaderSource<A> dataSource;
-        protected SliceWithAutoSync<A> slice;
+        protected Slice<A> slice;
 
         protected int workerBulkSize;
 
@@ -177,11 +177,11 @@ public class AdvancedRangeCacheImpl<T>
             return this;
         }
 
-        public SliceWithAutoSync<A> getSlice() {
+        public Slice<A> getSlice() {
             return slice;
         }
 
-        public Builder<A> setSlice(SliceWithAutoSync<A> slice) {
+        public Builder<A> setSlice(Slice<A> slice) {
             this.slice = slice;
             return this;
         }
