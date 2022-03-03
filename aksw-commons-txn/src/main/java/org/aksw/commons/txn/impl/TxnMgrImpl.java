@@ -248,7 +248,9 @@ public class TxnMgrImpl
                 MoreFiles.deleteRecursively(lockRepoRootPath);
             }
         } finally {
-            MoreFiles.deleteRecursively(txnBasePath);
+            if (Files.exists(txnBasePath)) {
+                MoreFiles.deleteRecursively(txnBasePath);
+            }
         }
     }
 }
