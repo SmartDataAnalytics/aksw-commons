@@ -135,7 +135,7 @@ public class TestListPaginatorCache {
     }
 
     // Large amount of data should spill to disk and not cause out of memory
-    @Test
+    // @Test
     public void testMemoryUsage() throws IOException {
         boolean isInMemory = false;
 
