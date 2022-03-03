@@ -79,7 +79,7 @@ public class TestListPaginatorCache {
         return new ListPaginatorFromList<>(list);
     }
 
-    @Test
+    // @Test
     public void testEssential() throws IOException {
         boolean isMemory = false;
 
@@ -98,7 +98,7 @@ public class TestListPaginatorCache {
     }
 
 
-    @Test
+    // @Test
     public void testRequestLimits() throws IOException {
         boolean isInMemory = false;
 
