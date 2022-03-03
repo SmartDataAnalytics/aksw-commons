@@ -1,15 +1,21 @@
 package org.aksw.commons.collections;
 
 import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 
 public class IterableUtils {
+    
+    public static <T> T expectOneItem(Iterable<T> iterable) {
+    	return IteratorUtils.expectOneItem(iterable.iterator());
+    }
 
+    public static <T> T expectZeroOrOneItems(Iterable<T> iterable) {
+    	return IteratorUtils.expectZeroOrOneItems(iterable.iterator());
+    }
+	
     /**
      * Will only compare as many items as there are in the shorter iterable
      * 

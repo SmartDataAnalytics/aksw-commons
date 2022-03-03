@@ -18,13 +18,8 @@ import org.aksw.commons.io.endpoint.FileCreation;
 import org.aksw.commons.io.process.pipe.PipeTransform;
 import org.aksw.commons.io.process.pipe.PipeTransformRx;
 import org.aksw.commons.io.process.pipe.ProcessPipeUtils;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
 
 import com.google.common.base.StandardSystemProperty;
-import com.google.common.io.ByteStreams;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -147,16 +142,16 @@ public class ProcessPipesTest {
 
         Path ntFile = Paths.get("/home/raven/Projects/Eclipse/blank-node-survey-parent/output.nt");
         if (false) {
-            Function<InputStream, InputStream> xform = ProcessPipeUtils.createPipedTransformer((in, out) -> {
-                Model model = ModelFactory.createDefaultModel();
-                RDFDataMgr.read(model, in, Lang.NTRIPLES);
-                RDFDataMgr.write(out, model, Lang.TURTLE);
-            });
-            // OutputStream out = new CloseShieldOutputStream(System.out);
-            try(InputStream in = Files.newInputStream(ntFile, StandardOpenOption.READ)) {
-                in.close();
-                ByteStreams.copy(xform.apply(in), System.out);
-            }
+//            Function<InputStream, InputStream> xform = ProcessPipeUtils.createPipedTransformer((in, out) -> {
+//                Model model = ModelFactory.createDefaultModel();
+//                RDFDataMgr.read(model, in, Lang.NTRIPLES);
+//                RDFDataMgr.write(out, model, Lang.TURTLE);
+//            });
+//            // OutputStream out = new CloseShieldOutputStream(System.out);
+//            try(InputStream in = Files.newInputStream(ntFile, StandardOpenOption.READ)) {
+//                in.close();
+//                ByteStreams.copy(xform.apply(in), System.out);
+//            }
         }
 
         if (false) {

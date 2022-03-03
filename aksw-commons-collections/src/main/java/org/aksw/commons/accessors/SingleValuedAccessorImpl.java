@@ -24,4 +24,9 @@ public class SingleValuedAccessorImpl<T>
     public void set(T value) {
         setter.accept(value);
     }
+
+	@Override
+	public String toString() {
+		return "ValueAccessor(" + get() + ")";
+	} 
 }

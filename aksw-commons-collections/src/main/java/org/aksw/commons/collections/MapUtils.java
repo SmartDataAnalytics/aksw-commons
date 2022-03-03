@@ -1,10 +1,14 @@
 package org.aksw.commons.collections;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.common.base.Objects;
@@ -285,7 +289,10 @@ public class MapUtils {
      * For all keys k, if either map contains a value for k, the returned map contains that value. If both maps
      * contain a value for the same key, the conflict is resolved with the provided function.
      */
-    public static <K, V> Map<K, V> union(Map<K, ? extends V> a, Map<K, ? extends V> b, BinaryOperator<V> conflictHandler) {
+    public static <K, V> Map<K, V> union(
+            Map<K, ? extends V> a,
+            Map<K, ? extends V> b,
+            BinaryOperator<V> conflictHandler) {
         return Maps.asMap(Sets.union(a.keySet(), b.keySet()),
                 (K k) -> {
                     V r;
@@ -300,6 +307,63 @@ public class MapUtils {
                     }
                     return r;
                 });
+    }
+
+    /**
+     * Returns a view of the map where all keys present in 'deletions' are hidden
+     */
+    public static <K, V> Map<K, V> difference(
+            Map<K, ? extends V> map,
+            Set<? super K> deletions) {
+        return Maps.asMap(Sets.difference(map.keySet(), deletions), map::get);
+    }
+
+
+    public static <K, V> Map<K, V> index(Collection<? extends K> keys, Function<K, V> fn) {
+        Map<K, V> result = index(keys, fn, new HashMap<>());
+        return result;
+    }
+
+    public static <K, V> Map<K, V> indexIdentity(Collection<? extends K> keys, Function<K, V> fn) {
+        Map<K, V> result = index(keys, fn, new IdentityHashMap<>());
+        return result;
+    }
+
+    public static <K, V> Map<K, V> index(Collection<? extends K> keys, Function<K, V> fn, Map<K, V> result) {
+        for(K key : keys) {
+            V value = fn.apply(key);
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public static <K, V> Map<K, V> transformKeys(Map<K, V> original,
+            Function<? super K, ? extends K> map) {
+        Map<K, V> result = new HashMap<>();
+
+        for (Entry<K, V> entry : original.entrySet()) {
+            K i = entry.getKey();
+            K o = map.apply(i);
+            if (o == null) {
+                o = i;
+            }
+
+            result.put(o, entry.getValue());
+        }
+
+        return result;
+    }
+
+    /** Put a key value pair. Removes the key if the value is null. Returns the prior value (null if there was none). */
+    public static <K, V> V putWithRemoveOnNull(Map<K, V> map, K key, V value) {
+        V result;
+        if (value == null) {
+            result = map.get(key);
+            map.remove(key);
+        } else {
+            result = map.put(key, value);
+        }
+        return result;
     }
 
 }

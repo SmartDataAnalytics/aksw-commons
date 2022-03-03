@@ -5,15 +5,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
- * PropertyOps implementation that delegates most calls 
- * 
+ * PropertyOps implementation that delegates most calls
+ *
  * @author raven
  *
  */
 public class PropertyModel
     implements PropertyOps
 {
-	// protected EntityModel entityModel;
+    // protected EntityModel entityModel;
     protected String name;
     protected Class<?> type;
     protected Function<Object, ?> getter;
@@ -22,7 +22,7 @@ public class PropertyModel
     protected Method readMethod;
     protected Method writeMethod;
     protected ConversionService conversionService;
-    
+
     public PropertyModel() {
     }
 
@@ -38,7 +38,7 @@ public class PropertyModel
         this.conversionService = conversionService;
         this.annotationFinder = annotationFinder;
     }
-    
+
     @Override
     public String getName() {
         return name;
@@ -48,7 +48,7 @@ public class PropertyModel
     public Class<?> getType() {
         return type;
     }
-    
+
     public Function<Object, ?> getGetter() {
         return getter;
     }
@@ -64,7 +64,7 @@ public class PropertyModel
     public void setSetter(BiConsumer<Object, Object> setter) {
         this.setter = setter;
     }
-   
+
     @Override
     public Object getValue(Object entity) {
         Object result = getter.apply(entity);
@@ -73,17 +73,17 @@ public class PropertyModel
 
     @Override
     public void setValue(Object entity, Object value) {
-    	if(value != null) {
-    		Class<?> valueClass = value.getClass();
-    		if(!type.isAssignableFrom(valueClass) && conversionService != null) {
-    			boolean canConvert = conversionService.canConvert(valueClass, type);
-    			if(canConvert) {
-    				value = conversionService.convert(value, type);
-    			}
-    		}
-    	}
+        if(value != null) {
+            Class<?> valueClass = value.getClass();
+            if (!type.isAssignableFrom(valueClass) && conversionService != null) {
+                boolean canConvert = conversionService.canConvert(valueClass, type);
+                if(canConvert) {
+                    value = conversionService.convert(value, type);
+                }
+            }
+        }
 
-    	setter.accept(entity, value);
+        setter.accept(entity, value);
     }
 
     @Override
@@ -102,8 +102,8 @@ public class PropertyModel
     public boolean isReadable() {
         boolean result = getter != null;
         return result;
-    }    
-    
+    }
+
     public Method getReadMethod() {
         return readMethod;
     }
@@ -140,12 +140,12 @@ public class PropertyModel
         this.type = type;
     }
 
-	@Override
-	public boolean acceptsType(Class<?> clazz) {
-		boolean isAssignable = type.isAssignableFrom(clazz);
-		boolean result = isAssignable ||
-				(conversionService != null && conversionService.canConvert(clazz, type));
-		return result;
-	}
-    
+    @Override
+    public boolean acceptsType(Class<?> clazz) {
+        boolean isAssignable = type.isAssignableFrom(clazz);
+        boolean result = isAssignable ||
+                (conversionService != null && conversionService.canConvert(clazz, type));
+        return result;
+    }
+
 }

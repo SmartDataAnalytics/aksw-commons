@@ -9,14 +9,19 @@
 	<parent>
 		<artifactId>aksw-commons-io-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<version>0.9.0</version>
+		<version>0.9.1</version>
 	</parent>
 
 	<dependencies>
 
 		<dependency>
 			<groupId>org.aksw.commons</groupId>
-			<artifactId>aksw-commons-util</artifactId>
+			<artifactId>aksw-commons-utils</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-lambdas-throwing</artifactId>
 		</dependency>
 
 		<dependency>

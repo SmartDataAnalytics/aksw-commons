@@ -1,6 +1,8 @@
 package org.aksw.commons.lambda.throwing;
 
+import java.io.Serializable;
+
 @FunctionalInterface
-public interface ThrowingBinaryOperator<T> {
-	T apply(T t, T u) throws Exception;
+public interface ThrowingBinaryOperator<T> extends Serializable {
+    T apply(T t, T u) throws Exception;
 }

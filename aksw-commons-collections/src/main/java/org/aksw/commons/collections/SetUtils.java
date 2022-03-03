@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+
+import com.google.common.collect.ForwardingSet;
 
 public class SetUtils {
 //    public static <T> Set<T> asSet(Iterable<T> c) {
@@ -46,4 +49,15 @@ public class SetUtils {
 
         return result;
     }
+
+    public static <T> Set<T> newForwardingSet(Supplier<? extends Set<T>> setSupplier) {
+    	return new ForwardingSet<T>() {
+			@Override
+			protected Set<T> delegate() {
+				return setSupplier.get();
+			}
+		};
+    }
+
 }
+
