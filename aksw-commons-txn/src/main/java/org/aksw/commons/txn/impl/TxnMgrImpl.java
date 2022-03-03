@@ -199,21 +199,28 @@ public class TxnMgrImpl
                 throw new IllegalArgumentException(String.format("A transaction with id %s already exists", txnId));
             }
 
-            try {
-                Files.createDirectories(txnFolder);
+            // A finishing txn may attempt to remove the txn folder just when we are about to create a new txn
+            result = FileUtilsExtra.ensureFolderExists(txnFolder, () -> {
 
-                if (isWrite) {
-                    Files.createFile(txnFolder.resolve("write"));
+                try {
+                    Files.createDirectories(txnFolder);
+
+                    if (isWrite) {
+                        Files.createFile(txnFolder.resolve("write"));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to lock txn folder; set useJournal=false if read only access with 'read uncommitted' isolation level is intended");
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to lock txn folder; set useJournal=false if read only access with 'read uncommitted' isolation level is intended");
-            }
 
-            logger.debug("Allocated txn folder: " + txnFolder);
-            result = new TxnSerializable(this, txnId, txnFolder);
-            if (!result.claim()) {
-                throw new RuntimeException("Failed to claim ownership of the recently created txn " + txnId);
-            }
+                logger.debug("Allocated txn folder: " + txnFolder);
+                Txn r = new TxnSerializable(this, txnId, txnFolder);
+                if (!r.claim()) {
+                    throw new RuntimeException("Failed to claim ownership of the recently created txn " + txnId);
+                }
+                return r;
+            });
+
+            return result;
         }
 
         return result;

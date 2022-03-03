@@ -79,7 +79,7 @@ public class TestListPaginatorCache {
         return new ListPaginatorFromList<>(list);
     }
 
-    // @Test
+    @Test
     public void testEssential() throws IOException {
         boolean isMemory = false;
 
@@ -98,7 +98,7 @@ public class TestListPaginatorCache {
     }
 
 
-    // @Test
+    @Test
     public void testRequestLimits() throws IOException {
         boolean isInMemory = false;
 
@@ -135,7 +135,7 @@ public class TestListPaginatorCache {
     }
 
     // Large amount of data should spill to disk and not cause out of memory
-    // @Test
+    @Test
     public void testMemoryUsage() throws IOException {
         boolean isInMemory = false;
 
