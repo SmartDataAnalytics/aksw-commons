@@ -30,8 +30,10 @@ public class ScheduleOnce {
     protected Callable<?> task;
 
     protected volatile Instant lastRequestTime = null;
-    protected volatile Instant lastExecTime = null;
-    protected volatile Future<?> runningTask = null;
+
+    // The first request time strictly greater than lastExecTime will trigger the task
+    protected volatile Instant lastExecTime = Instant.ofEpochSecond(0);
+    // protected volatile Future<?> runningTask = null;
 
     protected final Object lock = new Object();
 
@@ -51,28 +53,26 @@ public class ScheduleOnce {
     }
 
     public void scheduleTask() {
-        if (lastRequestTime == null || lastExecTime != null) {
-            synchronized (lock) {
-                if (lastRequestTime == null || (lastExecTime != null && lastRequestTime.isAfter(lastExecTime))) {
+        synchronized (lock) {
+            lastRequestTime = Instant.now();
+            if (lastExecTime != null && lastRequestTime.isAfter(lastExecTime)) {
 
-                    logger.info("Scheduled task with a delay of " + execDelay);
-                    lastRequestTime = Instant.now();
-                    lastExecTime = null;
-                    scheduledExecutorService.schedule(() -> {
-                        logger.info("Running task " + task);
+                logger.info("Scheduled task with a delay of " + execDelay);
+                lastExecTime = null;
+                scheduledExecutorService.schedule(() -> {
+                    logger.info("Running task " + task);
 
-                        synchronized (lock) {
-                            lastExecTime = Instant.now();
-                        }
+                    synchronized (lock) {
+                        lastExecTime = Instant.now();
+                    }
 
-                        try {
-                            return task.call();
-                        } catch (Exception e) {
-                            logger.warn("Task execution failed", e);
-                            throw new RuntimeException(e);
-                        }
-                    }, execDelay.toMillis(), TimeUnit.MILLISECONDS);
-                }
+                    try {
+                        return task.call();
+                    } catch (Exception e) {
+                        logger.warn("Task execution failed", e);
+                        throw new RuntimeException(e);
+                    }
+                }, execDelay.toMillis(), TimeUnit.MILLISECONDS);
             }
         }
     }

@@ -30,6 +30,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
+import com.google.common.collect.TreeRangeSet;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.Ints;
 
@@ -147,7 +148,7 @@ public class SequentialReaderFromSliceImpl<A>
             // long currentOffset = offsetSupplier.getAsLong();
 
             if (value < currentOffset) {
-                logger.info("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
+                logger.debug("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
                 slot.close();
                 it.remove();
             }
@@ -326,6 +327,17 @@ public class SequentialReaderFromSliceImpl<A>
                         long knownMaxSize;
                         while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
+
+                            boolean enableSanityCheck = false;
+                            if (enableSanityCheck) {
+                                TreeRangeSet<Long> sanityCheck = TreeRangeSet.create(loadedRanges.asRanges());
+                                Range<Long> f = sanityCheck.rangeContaining(currentOffset);
+                                System.out.println(String.format("%s.rangeContaining(%d) -> %s", sanityCheck, currentOffset, f));
+                                if (entry == null && f != null) {
+                                    throw new RuntimeException("bug in our range set view found: offset " + currentOffset + " incorrectly not in " + f);
+                                }
+                            }
+
                             try {
                                 if (logger.isTraceEnabled()) {
                                     logger.trace(String.format(

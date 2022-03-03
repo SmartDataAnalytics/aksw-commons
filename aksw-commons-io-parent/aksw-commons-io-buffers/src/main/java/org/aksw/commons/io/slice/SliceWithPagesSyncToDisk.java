@@ -18,6 +18,8 @@ import java.util.function.LongFunction;
 
 import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.cache.async.AsyncClaimingCacheImpl;
+import org.aksw.commons.collection.rangeset.ForwardingRangeSetImpl;
+import org.aksw.commons.collection.rangeset.RangeSetDelegate;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutable;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutableImpl;
 import org.aksw.commons.collection.rangeset.RangeSetOps;
@@ -69,9 +71,6 @@ public class SliceWithPagesSyncToDisk<A>
 {
     protected Logger logger = LoggerFactory.getLogger(SliceWithPagesSyncToDisk.class);
 
-    protected volatile Instant lastSyncRequestTime = null;
-    protected volatile Instant lastSyncExecTime = null;
-
     // Storage layer for transactional saving of buffers
     protected ObjectStore objectStore;
 
@@ -110,6 +109,15 @@ public class SliceWithPagesSyncToDisk<A>
     // protected RangeSet<Long> liveRangeChanges;
 
     protected SliceMetaDataWithPages liveMetaData;
+
+
+    // Cached view of the most recent loaded ranges
+    protected RangeSet<Long> liveMetaDataLoadedRangesView = new RangeSetDelegate<Long>() {
+        public RangeSet<Long> getDelegate() {
+            return liveMetaData.getLoadedRanges();
+        };
+    };
+
     //protected AsyncClaimingCache<Long, A> loadedPages;
 
     protected SliceMetaDataWithPages syncMetaData;
@@ -224,7 +232,7 @@ public class SliceWithPagesSyncToDisk<A>
         this.pageIdToFileName = pageId -> "segment-" + df.format(pageId) + ".ser";
 
         this.pageCache = AsyncClaimingCacheImpl
-                .<Long, BufferView<A>>newBuilder(Caffeine.newBuilder())
+                .<Long, BufferView<A>>newBuilder(Caffeine.newBuilder().maximumSize(100))
                 .setCacheLoader(this::loadPage)
                 .build();
                 ;
@@ -433,7 +441,6 @@ public class SliceWithPagesSyncToDisk<A>
 //    	sync();
 //    }
 
-
     public static SliceMetaDataWithPages copyWithNewRanges(SliceMetaDataWithPages base, RangeSet<Long> rangeSet) {
         return new SliceMetaDataWithPagesImpl(
                 base.getPageSize(),
@@ -446,8 +453,6 @@ public class SliceWithPagesSyncToDisk<A>
 
     @Override
     public synchronized void sync() throws IOException {
-        lastSyncExecTime = Instant.now();
-
         // The somewhat complex part is now to compute the new metadata rangeset and making sure that
         // existing data on disk is still consistently described.
         // This means we need to ensure our in-memory copy of the metadata in up-to-date and then 'patch in'
@@ -632,7 +637,8 @@ public class SliceWithPagesSyncToDisk<A>
 
     @Override
     public RangeSet<Long> getLoadedRanges() {
-        return liveMetaData.getLoadedRanges();
+        return liveMetaDataLoadedRangesView;
+        // return liveMetaData.getLoadedRanges();
     }
 
     @Override

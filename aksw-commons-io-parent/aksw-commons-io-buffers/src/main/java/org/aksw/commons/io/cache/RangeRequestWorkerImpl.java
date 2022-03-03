@@ -246,6 +246,10 @@ public class RangeRequestWorkerImpl<A>
             if (offset != nextCheckpointOffset) {
                 runCore();
             }
+
+            if (offset == 62997688) {
+                System.out.println("debug point");
+            }
             logger.debug("RangeRequestWorker normal termination at offset " + offset);
         } catch (Exception e) {
             logger.error("RangeRequestWorker exceptional termination at offset " + offset, e);
@@ -521,49 +525,14 @@ public class RangeRequestWorkerImpl<A>
                 }
 
                 if (logger.isTraceEnabled()) {
-//                    if (offset == 5799) {
+//                    if (offset == 63008072) {
 //                        System.out.println("debug point");
 //                    }
 
-                    logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d", offset, numItemsProcessed, requestLimit));
+                    logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d, loaded ranges: %4$s", offset, numItemsProcessed, requestLimit, slice.getLoadedRanges()));
                 }
 
                 slice.getHasDataCondition().signalAll();
-//        	});
-
-//            int i = 0;
-//            boolean hasNext;
-//            while ((hasNext = iterator.hasNext()) && i < limit && !isClosed && !Thread.interrupted()) {
-//                A item = iterator.next();
-//                ++i;
-//                sink.accept(item);
-//            }
-
-//            sink.flush();
-//            sink.close();
-
-//            slice.mutateMetaData(metaData -> {
-//                metaData.setMinimumKnownSize(offset);
-//
-//                // If there is no further item although the request range has not been covered
-//                // then we have detected the end
-//
-//                // Note: We may have also just hit the backend's result-set-limit
-//                // This is the case if there is
-//                // (1) a known result-set-limit value on the smart cache
-//                // (2) a known higher offset in the smart cache or
-//                // (3) another request with the same offset that yield results
-//
-//                // TODO set the known size if the page is full
-//                if (!hn && numItemsProcessed < requestLimit) {
-//                    if (metaData.getKnownSize() < 0) {
-//                        // long knownPageSize = offsetInPage + i;
-//                        // rangeBuffer.setKnownSize(knownPageSize);
-//                        metaData.setKnownSize(offset);
-//                    }
-//                }
-//                logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
-//            });
 
         } finally {
             // pageRange.unlock();
@@ -589,4 +558,42 @@ public class RangeRequestWorkerImpl<A>
         }
     }
 }
+
+
+
+//});
+
+//int i = 0;
+//boolean hasNext;
+//while ((hasNext = iterator.hasNext()) && i < limit && !isClosed && !Thread.interrupted()) {
+//  A item = iterator.next();
+//  ++i;
+//  sink.accept(item);
+//}
+
+//sink.flush();
+//sink.close();
+
+//slice.mutateMetaData(metaData -> {
+//  metaData.setMinimumKnownSize(offset);
+//
+//  // If there is no further item although the request range has not been covered
+//  // then we have detected the end
+//
+//  // Note: We may have also just hit the backend's result-set-limit
+//  // This is the case if there is
+//  // (1) a known result-set-limit value on the smart cache
+//  // (2) a known higher offset in the smart cache or
+//  // (3) another request with the same offset that yield results
+//
+//  // TODO set the known size if the page is full
+//  if (!hn && numItemsProcessed < requestLimit) {
+//      if (metaData.getKnownSize() < 0) {
+//          // long knownPageSize = offsetInPage + i;
+//          // rangeBuffer.setKnownSize(knownPageSize);
+//          metaData.setKnownSize(offset);
+//      }
+//  }
+//  logger.info("Signalling data condition to clients - " + hn + " - " + numItemsProcessed + " " + requestLimit);
+//});
 
