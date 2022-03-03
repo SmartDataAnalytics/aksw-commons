@@ -247,9 +247,9 @@ public class RangeRequestWorkerImpl<A>
                 runCore();
             }
 
-            if (offset == 62997688) {
-                System.out.println("debug point");
-            }
+//            if (offset == 62997688) {
+//                System.out.println("debug point");
+//            }
             logger.debug("RangeRequestWorker normal termination at offset " + offset);
         } catch (Exception e) {
             logger.error("RangeRequestWorker exceptional termination at offset " + offset, e);
