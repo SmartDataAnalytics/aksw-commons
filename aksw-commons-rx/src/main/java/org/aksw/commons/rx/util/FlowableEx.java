@@ -2,10 +2,11 @@ package org.aksw.commons.rx.util;
 
 import java.util.Iterator;
 
+import org.aksw.commons.accessors.SingleValuedAccessor;
+import org.aksw.commons.accessors.SingleValuedAccessorDirect;
 import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
-import org.aksw.commons.lambda.throwing.ThrowingPredicate;
 import org.aksw.commons.lambda.throwing.ThrowingSupplier;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -30,8 +31,6 @@ public class FlowableEx {
             ThrowingSupplier<I> itSupp,
             ThrowingConsumer<? super I> closer) {
 
-        ThrowingConsumer<? super I> closeAction = closer == null ? it -> {} : closer;
-
         return Flowable.<T, I>generate(
             itSupp::get,
             (it, e) -> {
@@ -46,7 +45,48 @@ public class FlowableEx {
                     e.onError(x);
                 }
             },
-            closeAction::accept);
+            it -> {
+                if (closer != null) {
+                    closer.accept(it);
+                }
+            });
+    }
+
+    /** Variant that initializes the iterator as part of the generator such that any
+     *  exception becomes available in the flow rather than on subscribe */
+    public static <T, I extends Iterator<T>> Flowable<T> fromIteratorSupplierLazyInit(
+            ThrowingSupplier<I> itSupp,
+            ThrowingConsumer<? super I> closer) {
+
+        return Flowable.<T, SingleValuedAccessor<I>>generate(
+            () -> new SingleValuedAccessorDirect<I>(),
+            (itHolder, e) -> {
+                try {
+                    // Initialize the iterator here so that any exception can be treated by the flow
+                    I it = itHolder.get();
+                    if (it == null) {
+                        it = itSupp.get();
+                        itHolder.set(it);
+                    }
+
+                    if (it.hasNext()) {
+                        T item = it.next();
+                        e.onNext(item);
+                    } else {
+                        e.onComplete();
+                    }
+                } catch (Exception x) {
+                    e.onError(x);
+                }
+            },
+            itHolder -> {
+                if (closer != null) {
+                    I it = itHolder.get();
+                    if (it != null) {
+                        closer.accept(it);
+                    }
+                }
+            });
     }
 
 
