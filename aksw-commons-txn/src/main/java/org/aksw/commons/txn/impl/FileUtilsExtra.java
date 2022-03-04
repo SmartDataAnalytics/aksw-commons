@@ -3,9 +3,10 @@ package org.aksw.commons.txn.impl;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
-import org.aksw.commons.lambda.throwing.ThrowingConsumer;
+import org.aksw.commons.util.function.ThrowingRunnable;
 
 /**
  * Eventually these file utils should be consolidated with those in aksw-commons-io.
@@ -22,18 +23,28 @@ public class FileUtilsExtra {
             .map(path -> path.resolveSibling(FileSyncImpl.getBaseName(path.getFileName().toString())));
     }
 
-    public static void ensureParentFolderExists(Path childPath, ThrowingConsumer<Path> action) throws IOException {
+    public static <T> T ensureParentFolderExists(Path childPath, ThrowingRunnable action) throws IOException {
+        return ensureParentFolderExists(childPath, () -> { action.run(); return null; });
+    }
+
+    public static <T> T ensureParentFolderExists(Path childPath, Callable<T> action) throws IOException {
+        T result;
         Path parentPath = childPath.getParent();
 
         if (parentPath == null) {
             try {
-                action.accept(childPath);
+                result = action.call();
             } catch (Exception e) {
                 throw new IOException(e);
             }
         } else {
-            ensureFolderExists(parentPath, tmpParentPath -> action.accept(childPath));
+            result = ensureFolderExists(parentPath, action);
         }
+        return result;
+    }
+
+    public static <T> T ensureFolderExists(Path folderPath, ThrowingRunnable action) throws IOException {
+        return ensureFolderExists(folderPath, () -> { action.run(); return null; });
     }
 
     /**
@@ -46,12 +57,14 @@ public class FileUtilsExtra {
      * @param action
      * @throws IOException
      */
-    public static void ensureFolderExists(Path folderPath, ThrowingConsumer<Path> action) throws IOException {
+    public static <T> T ensureFolderExists(Path folderPath, Callable<T> action) throws IOException {
         // FIXME Use our retry util instead and return a retry action which can be reconfigured
+        T result = null;
+
         for (int i = 0; i < 10; ++i) {
-            Files.createDirectories(folderPath);
             try {
-                action.accept(folderPath);
+                Files.createDirectories(folderPath);
+                result = action.call();
                 break;
             } catch (Exception e) {
                 if (!Files.exists(folderPath)) {
@@ -67,6 +80,8 @@ public class FileUtilsExtra {
                 }
             }
         }
+
+        return result;
     }
 
 

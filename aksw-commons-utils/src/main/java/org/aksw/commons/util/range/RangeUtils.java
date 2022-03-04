@@ -1,6 +1,7 @@
 package org.aksw.commons.util.range;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -53,9 +54,15 @@ public class RangeUtils {
         Range<Integer> listRange = Range.lessThan(list.size());
         Range<Integer> effectiveRange = listRange.intersection(subRange);
         ContiguousSet<Integer> set = ContiguousSet.create(effectiveRange, DiscreteDomain.integers());
-        int first = set.first();
-        int last = set.last();
-        List<T> result = list.subList(first, last + 1);
+        List<T> result;
+
+        if (set.isEmpty()) {
+            result = Collections.emptyList();
+        } else {
+            int first = set.first();
+            int last = set.last();
+            result = list.subList(first, last + 1);
+        }
         return result;
     }
 

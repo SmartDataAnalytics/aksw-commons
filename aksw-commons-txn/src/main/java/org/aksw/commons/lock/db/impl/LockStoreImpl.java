@@ -3,6 +3,7 @@ package org.aksw.commons.lock.db.impl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.Arrays;
@@ -166,7 +167,7 @@ public class LockStoreImpl
             try {
                 Path target = symbolicLinkStrategy.readSymbolicLink(linkFile);
                 result = linkTargetToKey(target);
-            } catch (FileNotFoundException e) {
+            } catch (FileNotFoundException | NoSuchFileException e) {
                 result = null;
             } catch (IOException e) {
                 throw new RuntimeException(e);

@@ -63,10 +63,10 @@ public class LockFromLink
 
         // Try to create the lock file
         try {
-            FileUtilsExtra.ensureParentFolderExists(path, p -> {
+            FileUtilsExtra.ensureParentFolderExists(path, () -> {
                 Path targetPath = ownerKeyToTarget.apply(ownerKey);
                 try {
-                    linkStrategy.createSymbolicLink(p, targetPath);
+                    linkStrategy.createSymbolicLink(path, targetPath);
                     result[0] = true;
                 } catch (FileAlreadyExistsException e) {
                     String currentOwnerKey = readOwnerKey();

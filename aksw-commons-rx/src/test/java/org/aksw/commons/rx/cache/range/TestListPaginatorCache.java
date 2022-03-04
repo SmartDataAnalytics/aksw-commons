@@ -79,7 +79,7 @@ public class TestListPaginatorCache {
         return new ListPaginatorFromList<>(list);
     }
 
-    // @Test
+    @Test
     public void testEssential() throws IOException {
         boolean isMemory = false;
 
@@ -98,7 +98,7 @@ public class TestListPaginatorCache {
     }
 
 
-    // @Test
+    @Test
     public void testRequestLimits() throws IOException {
         boolean isInMemory = false;
 
@@ -135,20 +135,21 @@ public class TestListPaginatorCache {
     }
 
     // Large amount of data should spill to disk and not cause out of memory
-    // @Test
+    @Test
     public void testMemoryUsage() throws IOException {
         boolean isInMemory = false;
 
         Stopwatch sw = Stopwatch.createStarted();
 
-        int expectedSize = 1000000000;
+        int expectedSize = 30000000;
         ListPaginator<String> backend = ListPaginatorFromList.wrap(createTestList(expectedSize));
         ListPaginator<String> frontend = createCachedListPaginator(String.class, backend, 10000, isInMemory, "test-large",
-                Duration.ofSeconds(1));
+                Duration.ofSeconds(5));
 
         long actualSize = frontend.apply(Range.atLeast(0l)).count().blockingGet();
         Assert.assertEquals(expectedSize, actualSize);
-        logger.info("Cache test took: " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f + " seconds");    }
+        logger.info("Cache test took: " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f + " seconds");
+    }
 
 
     public <T> void testOnce(
@@ -203,7 +204,7 @@ public class TestListPaginatorCache {
         Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
             .setRequestLimit(requestLimit)
-            .setWorkerBulkSize(128)
+            .setWorkerBulkSize(1024 * 4)
             .setSlice(slice)
             .setTerminationDelay(Duration.ofSeconds(5));
 

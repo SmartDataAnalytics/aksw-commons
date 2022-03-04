@@ -292,7 +292,16 @@ public class SliceWithPagesSyncToDisk<A>
 
 
     public RefFuture<BufferView<A>> getPageForPageId(long pageId) {
-        return pageCache.claim(pageId);
+        return pageCache.claim(pageId).acquireTransformedAndCloseThis(buf -> {
+            InternalBufferView bufferView = (InternalBufferView)buf;
+            bufferView.getBaseBuffer().reloadIfNeeded().whenComplete((b, t) -> {
+                if (t != null) {
+                    logger.error("Reloading buffer failed", t);
+                }
+            });
+            return buf;
+        });
+
     }
 
     @Override
@@ -367,11 +376,6 @@ public class SliceWithPagesSyncToDisk<A>
 
         BufferWithAutoReloadOnAccess baseBuffer = new BufferWithAutoReloadOnAccess(fileName);
 
-        baseBuffer.reloadIfNeeded().whenComplete((b, t) -> {
-            if (t != null) {
-                logger.error("Reloading buffer failed", t);
-            }
-        });
 
         long pageOffset = PageUtils.getPageOffsetForId(pageId, pageSize);
 
@@ -559,6 +563,8 @@ public class SliceWithPagesSyncToDisk<A>
 //                    }
                     InternalBufferView bufferView = (InternalBufferView) pageBuffer.await();
                     BufferWithAutoReloadOnAccess baseBuffer = bufferView.getBaseBuffer();
+                    // baseBuffer.forceLoadPage(conn)
+
 
                     // Synchronous update of the page (we could trigger async update on all first and then wait for all here)
                     LockUtils.runWithLock(getReadWriteLock().writeLock(), () -> {
@@ -741,40 +747,44 @@ public class SliceWithPagesSyncToDisk<A>
         public CompletableFuture<Buffer<A>> reloadIfNeeded() {
             int generationNow = SliceWithPagesSyncToDisk.this.liveGeneration;
             if (generationHere != generationNow || future == null) {
-                synchronized (this) {
-                    if (generationHere != generationNow || future == null) {
+                 // synchronized (this) {
+                    // if (generationHere != generationNow || future == null) {
                         ObjectStoreConnection conn = objectStore.getConnection();
                         conn.begin(false);
                         generationHere = lockAndSyncMetaData(conn, pageSize);
 
-                        ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(fileName));
+                        return forceLoadPage(conn);
+                     // }
+                 // }
+            }
+            return future;
+        }
 
-                        future = CompletableFuture.supplyAsync(() -> {
-                            @SuppressWarnings("unchecked")
-                            A array = (A)pageRes.loadNewInstance();
-                            if (array == null) {
-                                array = arrayOps.create(pageSize);
-                            }
+        public CompletableFuture<Buffer<A>> forceLoadPage(ObjectStoreConnection conn) {
+            ObjectResource pageRes = conn.access(objectStoreBasePath.resolve(fileName));
 
-                            Buffer<A> arrayBuffer = ArrayBuffer.create(arrayOps, array);
-                            return arrayBuffer;
-                        }).whenComplete((v, t) -> {
-                            try {
-                                conn.commit();
-                            } finally {
-                                try {
-                                    conn.close();
-                                } catch (Exception e) {
-                                    // TODO Because of async loading the exception may get swallowed - improve handling
-                                    e.printStackTrace();
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        });
-                        return future;
+            future = CompletableFuture.supplyAsync(() -> {
+                @SuppressWarnings("unchecked")
+                A array = (A)pageRes.loadNewInstance();
+                if (array == null) {
+                    array = arrayOps.create(pageSize);
+                }
+
+                Buffer<A> arrayBuffer = ArrayBuffer.create(arrayOps, array);
+                return arrayBuffer;
+            }).whenComplete((v, t) -> {
+                try {
+                    conn.commit();
+                } finally {
+                    try {
+                        conn.close();
+                    } catch (Exception e) {
+                        // TODO Because of async loading the exception may get swallowed - improve handling
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 }
-            }
+            });
             return future;
         }
 

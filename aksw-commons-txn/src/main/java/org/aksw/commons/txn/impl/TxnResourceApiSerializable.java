@@ -118,7 +118,7 @@ public class TxnResourceApiSerializable
                 }
             } else {
                 logger.debug("Declaring access from " + journalEntryFile + " to " + actualLinkTarget);
-                FileUtilsExtra.ensureParentFolderExists(journalEntryFile, f -> {
+                FileUtilsExtra.ensureParentFolderExists(journalEntryFile, () -> {
                     try {
                         txn.txnMgr.symlinkStrategy.createSymbolicLink(journalEntryFile, actualLinkTarget);
                     } catch (FileAlreadyExistsException e) {
