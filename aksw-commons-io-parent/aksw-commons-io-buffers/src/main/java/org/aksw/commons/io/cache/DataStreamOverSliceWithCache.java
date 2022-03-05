@@ -13,6 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.LongSupplier;
 
+import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.io.slice.Slice;
@@ -228,6 +229,11 @@ public class DataStreamOverSliceWithCache<A>
 
     protected void processGaps(RangeSet<Long> gaps, long start, long end) {
         scheduleWorkerToGaps(gaps);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return !isClosed;
     }
 
     protected void closeActual() {
@@ -448,6 +454,11 @@ public class DataStreamOverSliceWithCache<A>
 
 
         return result;
+    }
+
+    @Override
+    public ArrayOps<A> getArrayOps() {
+        return slice.getArrayOps();
     }
 
 

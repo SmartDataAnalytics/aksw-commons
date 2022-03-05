@@ -7,10 +7,10 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.collect.AbstractIterator;
 
-public class DataStreamOverIterator<T>
+public class IteratorOverDataStream<T>
     extends AbstractIterator<T>
 {
-    protected DataStream<T[]> reader;
+    protected DataStream<T[]> dataStream;
 
     protected ArrayOps<T[]> arrayOps;
     protected T[] array;
@@ -20,10 +20,10 @@ public class DataStreamOverIterator<T>
     protected int currentDataLength;
 
 
-    public DataStreamOverIterator(ArrayOps<T[]> arrayOps, DataStream<T[]> reader) {
+    public IteratorOverDataStream(ArrayOps<T[]> arrayOps, DataStream<T[]> reader) {
         super();
         this.arrayOps = arrayOps;
-        this.reader = reader;
+        this.dataStream = reader;
         this.arrayLength = 4096;
         this.array = arrayOps.create(arrayLength);
 
@@ -33,17 +33,11 @@ public class DataStreamOverIterator<T>
         this.currentOffset = 0;
     }
 
-
-    public static <T> Iterator<T> create(ArrayOps<T[]> arrayOps, DataStream<T[]> reader) {
-        return new DataStreamOverIterator<>(arrayOps, reader);
-    }
-
-
     @Override
     protected T computeNext() {
         if (currentOffset >= currentDataLength) {
             try {
-                currentDataLength = reader.read(array, 0, arrayLength);
+                currentDataLength = dataStream.read(array, 0, arrayLength);
                 currentOffset = 0;
             } catch (IOException e) {
                 throw new RuntimeException(e);

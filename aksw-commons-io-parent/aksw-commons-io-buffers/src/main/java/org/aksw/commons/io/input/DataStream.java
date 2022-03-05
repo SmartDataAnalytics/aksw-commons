@@ -3,9 +3,12 @@ package org.aksw.commons.io.input;
 import java.io.Closeable;
 import java.io.IOException;
 
+import org.aksw.commons.io.buffer.array.HasArrayOps;
+
 /**
  * A data stream allows for repeated retrieval of arrays of consecutive items.
- * Data streams can be seen as a low level generalizaton / unification of InputStream and Iterators.
+ * Data streams can be seen as a low level generalizaton / unification of Iterators and InputStreams.
+ * See {@link DataStreams#newIterator(DataStream)} and {@link DataStreams#newInputStream(DataStream)}.
  *
  * Akin to an InputStream, the {@link DataStream} interface does not provide a seek() method.
  * Usually there should be another factory that creates data streams
@@ -19,8 +22,10 @@ import java.io.IOException;
  * @param <A>
  */
 public interface DataStream<A>
-    extends Closeable
+    extends HasArrayOps<A>, Closeable
 {
+    boolean isOpen();
+
     /**
      * Read method following the usual InputStream protocol.
      *
