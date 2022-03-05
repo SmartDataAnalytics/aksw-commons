@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -14,12 +13,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.LongFunction;
 
 import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.cache.async.AsyncClaimingCacheImpl;
-import org.aksw.commons.collection.rangeset.ForwardingRangeSetImpl;
 import org.aksw.commons.collection.rangeset.RangeSetDelegate;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutable;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutableImpl;
@@ -34,7 +31,6 @@ import org.aksw.commons.io.buffer.range.RangeBufferDelegateMutable;
 import org.aksw.commons.io.buffer.range.RangeBufferDelegateMutableImpl;
 import org.aksw.commons.io.buffer.range.RangeBufferImpl;
 import org.aksw.commons.io.buffer.range.RangeBufferUnion;
-import org.aksw.commons.io.util.Sync;
 import org.aksw.commons.store.object.key.api.ObjectResource;
 import org.aksw.commons.store.object.key.api.ObjectStore;
 import org.aksw.commons.store.object.key.api.ObjectStoreConnection;
@@ -67,7 +63,8 @@ import com.google.common.collect.TreeRangeSet;
 // The outside only sees a buffer - but internally it has a structure that enables serializing the changed regions
 
 public class SliceWithPagesSyncToDisk<A>
-    implements SliceWithPages<A>, Sync
+    extends SliceBase<A>
+    implements SliceWithPages<A>
     // implements SliceWithAutoSync<T>
 {
     protected Logger logger = LoggerFactory.getLogger(SliceWithPagesSyncToDisk.class);
@@ -79,7 +76,7 @@ public class SliceWithPagesSyncToDisk<A>
 
     // Array abstraction; avoids having mainly used to abstract from byte[] and Object[] and consequently having to build
     // separate cache implementations
-    protected ArrayOps<A> arrayOps;
+    // protected ArrayOps<A> arrayOps;
 
 
     protected AsyncClaimingCache<Long, BufferView<A>> pageCache;
@@ -94,10 +91,10 @@ public class SliceWithPagesSyncToDisk<A>
 
 
     // A read/write lock for synchronizing reads/writes to the slice
-    protected ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    // protected ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     // A condition that is signalled whenever content or metadata changes
-    protected Condition hasDataCondition = readWriteLock.writeLock().newCondition();
+    // protected Condition hasDataCondition = readWriteLock.writeLock().newCondition();
 
     // protected SparseVersionedBuffer<T> changes;
 
@@ -192,8 +189,7 @@ public class SliceWithPagesSyncToDisk<A>
             org.aksw.commons.path.core.Path<String> objectStoreBasePath,
             int pageSize,
             Duration syncDelay) {
-        super();
-        this.arrayOps = arrayOps;
+        super(arrayOps);
         this.objectStore = objectStore;
         this.objectStoreBasePath = objectStoreBasePath;
 
@@ -205,6 +201,11 @@ public class SliceWithPagesSyncToDisk<A>
         loadMetaData(pageSize);
 
         this.syncChanges.setDelegate(newChangeBuffer());
+    }
+
+    @Override
+    protected SliceMetaDataBasic getMetaData() {
+        return liveMetaData;
     }
 
     public void loadMetaData(int pageSize) {
@@ -292,9 +293,9 @@ public class SliceWithPagesSyncToDisk<A>
     // protected Map<Long, Object[]>
 
 
-    public SliceAccessor<A> newSliceAccessor() {
-        return new SliceAccessorImpl<>(this);
-    }
+//    public SliceAccessor<A> newSliceAccessor() {
+//        return new SliceAccessorImpl<>(this);
+//    }
 
 
     public RefFuture<BufferView<A>> getPageForPageId(long pageId) {
@@ -718,10 +719,10 @@ public class SliceWithPagesSyncToDisk<A>
             return rangeBufferView.toString();
         }
 
-        @Override
-        public long getCapacity() {
-            return pageSize;
-        }
+//        @Override
+//        public long getCapacity() {
+//            return pageSize;
+//        }
 
         @Override
         public ReadWriteLock getReadWriteLock() {

@@ -6,9 +6,12 @@ import org.aksw.commons.util.ref.RefFuture;
 public interface SliceWithPages<T>
     extends Slice<T>, PageHelper
 {
-    // ConcurrentNavigableMap<Long, RefFuture<RangeBuffer<T>>> getClaimedPages();
     @Override
     long getPageSize();
+
+    default SliceAccessor<T> newSliceAccessor() {
+        return new SliceAccessorImpl<>(this);
+    }
 
     RefFuture<BufferView<T>> getPageForPageId(long pageId);
 }

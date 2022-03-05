@@ -1,7 +1,18 @@
 package org.aksw.commons.util.range;
 
+/**
+ * Interface to ease working with fixed size pages.
+ *
+ * @author raven
+ *
+ */
 public interface PageHelper {
     long getPageSize();
+
+    default long getPageOffsetForPageId(long pageId) {
+        long pageSize = getPageSize();
+        return getPageOffsetForPageId(pageId, pageSize);
+    }
 
     default long getPageIdForOffset(long offset) {
         long pageSize = getPageSize();
@@ -22,4 +33,7 @@ public interface PageHelper {
         return offset % pageSize;
     }
 
+    public static long getPageOffsetForPageId(long pageId, long pageSize) {
+        return pageId * pageSize;
+    }
 }

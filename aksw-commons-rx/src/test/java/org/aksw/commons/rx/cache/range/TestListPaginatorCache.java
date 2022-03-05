@@ -10,11 +10,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.buffer.plain.PagedBuffer;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl.Builder;
 import org.aksw.commons.io.slice.Slice;
-import org.aksw.commons.io.slice.SliceInMemory;
+import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginator;
@@ -37,6 +36,14 @@ import com.google.common.primitives.Ints;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 
+/**
+ * Tests for the cache wrapper of the {@link ListPaginator} interface.
+ * Effectively tests the functionality of the {@link AdvancedRangeCacheImpl}
+ * with buffers backed by arrays of strings.
+ *
+ * @author raven
+ *
+ */
 public class TestListPaginatorCache {
 
     private static final Logger logger = LoggerFactory.getLogger(TestListPaginatorCache.class);
@@ -157,14 +164,14 @@ public class TestListPaginatorCache {
             ListPaginator<T> referenceBackend,
             ListPaginator<T> cachableBackend,
             long requestLimit,
-            boolean inMemory,
+            boolean isInMemory,
             String testId,
             Random random,
             int numIterations,
             Duration syncDelay
             ) throws IOException {
 
-        ListPaginator<T> frontend = createCachedListPaginator(clazz, cachableBackend, requestLimit, inMemory, testId,
+        ListPaginator<T> frontend = createCachedListPaginator(clazz, cachableBackend, requestLimit, isInMemory, testId,
                 syncDelay);
 
         for (int i = 0; i < numIterations; ++i) {
@@ -198,8 +205,9 @@ public class TestListPaginatorCache {
 
         ArrayOps<T[]> arrayOps = ArrayOps.createFor(clazz);
         Slice<T[]> slice = inMemory
-                ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
-                : SliceWithPagesSyncToDisk.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, syncDelay);
+                // ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
+                ? SliceInMemoryCache.create(arrayOps, pageSize, 100)
+                : SliceWithPagesSyncToDisk.create(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
 
         Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))

@@ -22,7 +22,13 @@ public abstract class SliceBase<A>
     // A condition that is signalled whenever content or metadata changes
     protected Condition hasDataCondition = readWriteLock.writeLock().newCondition();
 
+    public SliceBase(ArrayOps<A> arrayOps) {
+        super();
+        this.arrayOps = arrayOps;
+    }
+
     protected abstract SliceMetaDataBasic getMetaData();
+
 
     @Override
     public RangeSet<Long> getLoadedRanges() {
