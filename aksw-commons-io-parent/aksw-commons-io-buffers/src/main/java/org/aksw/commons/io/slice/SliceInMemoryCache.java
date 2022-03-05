@@ -5,9 +5,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import org.aksw.commons.cache.async.AsyncClaimingCache;
 import org.aksw.commons.cache.async.AsyncClaimingCacheImpl;
-import org.aksw.commons.io.buffer.array.ArrayBuffer;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.Buffer;
+import org.aksw.commons.io.buffer.plain.BufferOverArray;
 import org.aksw.commons.io.buffer.range.RangeBuffer;
 import org.aksw.commons.io.buffer.range.RangeBufferImpl;
 import org.aksw.commons.util.lock.LockUtils;
@@ -66,7 +66,7 @@ public class SliceInMemoryCache<A>
     protected BufferView<A> loadPage(long pageId) {
         long pageOffset = getPageOffsetForPageId(pageId);
 
-        Buffer<A> buffer = ArrayBuffer.create(arrayOps, metaData.getPageSize());
+        Buffer<A> buffer = BufferOverArray.create(arrayOps, metaData.getPageSize());
         RangeBuffer<A> rangeBuffer = RangeBufferImpl.create(metaData.getLoadedRanges(), pageOffset, buffer);
 
         return new BufferView<A>() {

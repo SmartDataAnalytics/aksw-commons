@@ -13,7 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.LongSupplier;
 
-import org.aksw.commons.io.input.SequentialReader;
+import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
@@ -47,11 +47,11 @@ import com.google.common.primitives.Ints;
  *
  * @param <T>
  */
-public class SequentialReaderFromSliceImpl<A>
+public class DataStreamOverSliceWithCache<A>
     extends AutoCloseableWithLeakDetectionBase
-    implements SequentialReader<A>
+    implements DataStream<A>
 {
-    private static final Logger logger = LoggerFactory.getLogger(SequentialReaderFromSliceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataStreamOverSliceWithCache.class);
 
     protected Slice<A> slice;
     protected AdvancedRangeCacheImpl<A> cache;
@@ -74,7 +74,7 @@ public class SequentialReaderFromSliceImpl<A>
     protected long currentOffset;
     protected int maxReadAheadItemCount = 100;
 
-    public SequentialReaderFromSliceImpl(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
+    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
         super();
         this.requestRange = requestRange;
         this.cache = cache;
@@ -128,7 +128,7 @@ public class SequentialReaderFromSliceImpl<A>
     // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
-    public SequentialReaderFromSliceImpl(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();

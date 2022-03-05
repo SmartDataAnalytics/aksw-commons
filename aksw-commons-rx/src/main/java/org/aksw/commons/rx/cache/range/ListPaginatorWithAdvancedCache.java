@@ -4,8 +4,8 @@ import java.util.Iterator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
-import org.aksw.commons.io.input.SequentialReaderIterator;
-import org.aksw.commons.io.input.SequentialReaderSource;
+import org.aksw.commons.io.input.DataStreamOverIterator;
+import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.slice.SliceMetaDataBasic;
 import org.aksw.commons.rx.io.SequentialReaderSourceRx;
 import org.aksw.commons.rx.lookup.ListPaginator;
@@ -41,7 +41,7 @@ public class ListPaginatorWithAdvancedCache<T>
         this.backend = backend;
 
         ArrayOps<T[]> arrayOps = cacheBuilder.getSlice().getArrayOps();
-        SequentialReaderSource<T[]> source = SequentialReaderSourceRx.create(arrayOps, backend);
+        DataStreamSource<T[]> source = SequentialReaderSourceRx.create(arrayOps, backend);
         cacheBuilder.setDataSource(source);
         core = cacheBuilder.build();
 
@@ -93,10 +93,10 @@ public class ListPaginatorWithAdvancedCache<T>
     }
 
 
-    public static <T> Flowable<T> adapt(ArrayOps<T[]> arrayOps, SequentialReaderSource<T[]> source, Range<Long> range) {
+    public static <T> Flowable<T> adapt(ArrayOps<T[]> arrayOps, DataStreamSource<T[]> source, Range<Long> range) {
         return FlowableUtils.createFlowableFromResource(
-                () -> source.newInputStream(range),
-                in -> SequentialReaderIterator.create(arrayOps, in),
+                () -> source.newDataStream(range),
+                in -> DataStreamOverIterator.create(arrayOps, in),
                 Iterator::hasNext,
                 Iterator::next,
                 t -> {

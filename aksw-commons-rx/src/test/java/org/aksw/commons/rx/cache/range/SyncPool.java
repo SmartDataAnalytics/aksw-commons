@@ -10,8 +10,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.aksw.commons.io.buffer.array.ArrayBuffer;
 import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.buffer.plain.BufferOverArray;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.txn.api.Txn;

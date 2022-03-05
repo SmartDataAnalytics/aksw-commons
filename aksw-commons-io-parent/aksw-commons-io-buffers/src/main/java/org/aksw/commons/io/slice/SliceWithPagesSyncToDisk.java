@@ -21,11 +21,11 @@ import org.aksw.commons.collection.rangeset.RangeSetDelegate;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutable;
 import org.aksw.commons.collection.rangeset.RangeSetDelegateMutableImpl;
 import org.aksw.commons.collection.rangeset.RangeSetOps;
-import org.aksw.commons.io.buffer.array.ArrayBuffer;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.Buffer;
 import org.aksw.commons.io.buffer.plain.BufferDelegate;
-import org.aksw.commons.io.buffer.plain.PagedBuffer;
+import org.aksw.commons.io.buffer.plain.BufferOverArray;
+import org.aksw.commons.io.buffer.plain.BufferWithPages;
 import org.aksw.commons.io.buffer.range.RangeBuffer;
 import org.aksw.commons.io.buffer.range.RangeBufferDelegateMutable;
 import org.aksw.commons.io.buffer.range.RangeBufferDelegateMutableImpl;
@@ -260,7 +260,7 @@ public class SliceWithPagesSyncToDisk<A>
 
 
     protected RangeBuffer<A> newChangeBuffer() {
-        Buffer<A> actualBuffer = PagedBuffer.create(arrayOps, pageSize);
+        Buffer<A> actualBuffer = BufferWithPages.create(arrayOps, pageSize);
 
 
         // This is not the best place for scheduling sync because
@@ -585,7 +585,7 @@ public class SliceWithPagesSyncToDisk<A>
                     A array = arrayOps.create(pageSize);
 
                     // We need to wrap the array as a range buffer
-                    Buffer<A> newBaseBuffer = ArrayBuffer.create(arrayOps, array);
+                    Buffer<A> newBaseBuffer = BufferOverArray.create(arrayOps, array);
                     RangeBuffer<A> arrayWrapper = RangeBufferImpl.create(newBaseBuffer);
 
                     LockUtils.runWithLock(getReadWriteLock().readLock(), () -> {
@@ -777,7 +777,7 @@ public class SliceWithPagesSyncToDisk<A>
                     array = arrayOps.create(pageSize);
                 }
 
-                Buffer<A> arrayBuffer = ArrayBuffer.create(arrayOps, array);
+                Buffer<A> arrayBuffer = BufferOverArray.create(arrayOps, array);
                 return arrayBuffer;
             }).whenComplete((v, t) -> {
                 try {
@@ -804,7 +804,7 @@ public class SliceWithPagesSyncToDisk<A>
                     array = arrayOps.create(pageSize);
                 }
 
-                Buffer<A> arrayBuffer = ArrayBuffer.create(arrayOps, array);
+                Buffer<A> arrayBuffer = BufferOverArray.create(arrayOps, array);
                 future = CompletableFuture.completedFuture(arrayBuffer);
                 generationHere = generationNow;
             }

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.SequentialReader;
+import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -12,7 +12,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 
 public class SequentialReaderRx<A>
 	extends AutoCloseableWithLeakDetectionBase
-	implements SequentialReader<A>
+	implements DataStream<A>
 {
 	protected Flowable<?> flowable;
 	protected ArrayOps<A> arrayOps;

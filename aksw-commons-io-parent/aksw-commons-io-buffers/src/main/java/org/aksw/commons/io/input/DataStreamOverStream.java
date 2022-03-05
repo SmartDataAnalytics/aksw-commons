@@ -7,15 +7,15 @@ import java.util.stream.Stream;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 
-public class SequentialReaderFromStream<T>
+public class DataStreamOverStream<T>
 	extends AutoCloseableWithLeakDetectionBase
-	implements SequentialReader<T[]>
+	implements DataStream<T[]>
 {
 	protected ArrayOps<T[]> arrayOps;		
 	protected Stream<T> stream = null;
 	protected Iterator<T> iterator = null;
 
-	public SequentialReaderFromStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
+	public DataStreamOverStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
 		super();
 		this.arrayOps = arrayOps;
 		this.stream = stream;
