@@ -22,8 +22,13 @@ public class RetryUtils {
                 logger.trace(String.format("Retry attempt %d/%d succeeded", retryAttempt, retryCount));
                 break;
             } catch (Exception e) {
-                // logger.warn("Retry failed: " + ExceptionUtils.getRootCauseMessage(e));
-                logger.trace(String.format("Retry attempt %d/%d failed: ", retryAttempt + 1, retryCount) + ExceptionUtils.getRootCauseMessage(e), e);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Retry failed: " + ExceptionUtils.getRootCauseMessage(e));
+                }
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("Retry attempt %d/%d failed: ", retryAttempt + 1, retryCount) + ExceptionUtils.getRootCauseMessage(e), e);
+                }
                 if (retryAttempt + 1 == retryCount) {
                     throw new RuntimeException(e);
                 } else {

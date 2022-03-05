@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -116,6 +117,11 @@ public class SliceWithPagesSyncToDisk<A>
         public RangeSet<Long> getDelegate() {
             return liveMetaData.getLoadedRanges();
         };
+
+        @Override
+        public String toString() {
+            return Objects.toString(getDelegate());
+        }
     };
 
     //protected AsyncClaimingCache<Long, A> loadedPages;

@@ -106,8 +106,6 @@ public class SequentialReaderFromSliceImpl<A>
     protected void checkpoint(long n) {
         Preconditions.checkArgument(n >= 0, "Argument must not be negative");
 
-        clearPassedSlots();
-
         long start = nextCheckpointOffset;
         long end = start + n;
 
@@ -120,6 +118,8 @@ public class SequentialReaderFromSliceImpl<A>
             });
             nextCheckpointOffset = end;
         });
+
+        clearPassedSlots();
     }
 
     // This map holds a single client's requested slots across all tasked workers
@@ -136,16 +136,15 @@ public class SequentialReaderFromSliceImpl<A>
     }
 
 
+    /**
+     * Clear all slots of workers with a value less than the currentOffset.
+     * These are workers for which we did not schedule any further tasks
+     */
     public void clearPassedSlots() {
-        // Note: here, nextCheckpointOffset refers to the value just before
-        // the 'next' next checkpoint offset is computed
-        long currentOffset = nextCheckpointOffset;
-
         Iterator<Slot<Long>> it = workerToSlot.values().iterator();
         while (it.hasNext()) {
             Slot<Long> slot = it.next();
             Long value = slot.getSupplier().get();
-            // long currentOffset = offsetSupplier.getAsLong();
 
             if (value < currentOffset) {
                 logger.debug("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
@@ -184,6 +183,8 @@ public class SequentialReaderFromSliceImpl<A>
         }
 
         NavigableMap<Long, Long> workerSchedules = RangeUtils.scheduleRangeSupply(offsetToEndpoint, gaps, maxRedundantFetchSize, cache.requestLimit);
+//        System.out.println("Gaps:             " + gaps);
+//        System.out.println("Worker schedules: " + workerSchedules);
 
         for (Entry<Long, Long> schedule : workerSchedules.entrySet()) {
             long start = schedule.getKey();
@@ -207,10 +208,11 @@ public class SequentialReaderFromSliceImpl<A>
                 Entry<RangeRequestWorkerImpl<A>, Slot<Long>> workerAndSlot = cache.newExecutor(start, length);
                 workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
             } else {
+                // Get or create a slot on the worker for publishing our end point demand
                 Slot<Long> slot = workerToSlot.get(worker);
 
                 if (slot == null) {
-                    // We are reusing an existing worker; allocate a new slot on it
+                    // We are reusing an existing worker for which we don't have a slot yet
                     slot = worker.newDemandSlot();
                     workerToSlot.put(worker, slot);
                 }
@@ -251,25 +253,27 @@ public class SequentialReaderFromSliceImpl<A>
 
         // Schedule data fetching for length + maxReadAheadItemCount items
         long requestedEndOffset = currentOffset + length;
-        // ContiguousSet<Long> cset = ContiguousSet.create(requestRange, DiscreteDomain.longs());
-        // long requestRangeSize = cset.size();
+        long readAheadEndOffset = requestedEndOffset + maxReadAheadItemCount;
 
-        long maxEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
-        long effectiveEndOffset = Math.min(requestedEndOffset, maxEndOffset);
+        long maxAllowedEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
+        long effectiveRequestEndOffset = Math.min(requestedEndOffset, maxAllowedEndOffset);
+        long effectiveReadAheadEndOffset = Math.min(readAheadEndOffset, maxAllowedEndOffset);
 
-        if (currentOffset >= effectiveEndOffset) {
+        // If we effectively can read zero bytes then we are at the end of data
+        if (currentOffset >= effectiveRequestEndOffset) {
             return -1;
+            // System.out.println("debug point");
         }
 
-        Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveEndOffset);
+        Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveRequestEndOffset);
 
-        if (effectiveEndOffset >= nextCheckpointOffset) {
+        if (effectiveReadAheadEndOffset >= nextCheckpointOffset) {
 
             try {
-                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(effectiveEndOffset - nextCheckpointOffset);
+                int numExtraItemsSinceLastCheckpoint = Ints.saturatedCast(effectiveReadAheadEndOffset - nextCheckpointOffset);
 
                 // Read up length + maxReadAheadItemCount
-                int n = Math.min(length + maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
+                int n = Math.max(0, numExtraItemsSinceLastCheckpoint);
 
                 // Increments nextCheckpointOffset by n
                 checkpoint(n);
@@ -286,7 +290,7 @@ public class SequentialReaderFromSliceImpl<A>
 
         int result;
 
-        pageRange.claimByOffsetRange(currentOffset, effectiveEndOffset);
+        pageRange.claimByOffsetRange(currentOffset, effectiveReadAheadEndOffset);
 
         ReadWriteLock rwl = slice.getReadWriteLock();
         Lock readLock = rwl.readLock();
@@ -325,6 +329,7 @@ public class SequentialReaderFromSliceImpl<A>
 
                     try {
                         long knownMaxSize;
+                        // TODO We need to ensure the whole read range is covered
                         while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
 

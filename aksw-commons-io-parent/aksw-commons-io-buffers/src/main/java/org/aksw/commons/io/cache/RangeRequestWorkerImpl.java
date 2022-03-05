@@ -520,7 +520,7 @@ public class RangeRequestWorkerImpl<A>
                     if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
-                        slice.setMaximumKnownSize(offset);
+                        slice.updateMaximumKnownSize(offset);
                     }
                 }
 

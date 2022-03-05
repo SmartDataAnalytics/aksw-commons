@@ -117,12 +117,18 @@ public class AdvancedRangeCacheImpl<T>
             slot = worker.newDemandSlot();
             slot.set(offset + initialLength);
 
-//            if (offset == 63000000) {
-//                System.out.println("debug point");
-//            }
+//			if (offset == 63000000) {
+//				System.out.println("debug point");
+//			}
+//			if (initialLength == 5) {
+//				System.out.println("debug point");
+//			}
 
             executors.add(worker);
-            logger.debug(String.format("New worker created with initial schedule of offset %1$d and length %2$d", offset, initialLength));
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("New worker created with initial schedule of offset %1$d and length %2$d", offset, initialLength));
+            }
             executorService.submit(worker);
         } finally {
             // executorCreationLock.writeLock().unlock();
