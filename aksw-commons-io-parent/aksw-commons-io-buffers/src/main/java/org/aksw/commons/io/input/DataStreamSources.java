@@ -5,8 +5,10 @@ import java.nio.file.Files;
 import java.util.function.Consumer;
 
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfig;
+import org.aksw.commons.io.cache.AdvancedRangeCacheConfigImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
 import org.aksw.commons.path.core.Path;
 import org.aksw.commons.path.core.PathOpsStr;
@@ -33,6 +35,14 @@ public class DataStreamSources {
     public static DataStreamSource<byte[]> of(java.nio.file.Path path, boolean cacheSize) throws IOException {
         long cachedSize = cacheSize ? Files.size(path) : -1;
         return new DataStreamSourceOverPath(path, cachedSize);
+    }
+
+    /** Simple mem-cache setup */
+    public static <A> DataStreamSource<A> cacheInMemory(DataStreamSource<A> source, int pageSize, int maxPages, long maxRequestSize) {
+        return DataStreamSources.cache(
+                source,
+                SliceInMemoryCache.create(source.getArrayOps(), pageSize, maxPages),
+                AdvancedRangeCacheConfigImpl.newDefaultForObjects(maxRequestSize));
     }
 
     public static <A> DataStreamSource<A> cache(

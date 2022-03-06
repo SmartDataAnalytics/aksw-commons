@@ -158,6 +158,13 @@ public class DataStreamOverSliceWithCache<A>
 
     protected void scheduleWorkerToGaps(RangeSet<Long> gaps) {
 
+        // TODO Take the readBeforeSize attribute into account
+        // If a new worker has to be created then check if there is capacity
+        // to extend its starting range to the 'left'
+        // The question is whether to take this into account here for scheduling
+        // or whether the newWorker method should take care of that
+        // I think we can handle this in the newWorker method
+
         // Index workers by offset
         // If multiple workers have the same offset then only pick the first one with the highest request range
 

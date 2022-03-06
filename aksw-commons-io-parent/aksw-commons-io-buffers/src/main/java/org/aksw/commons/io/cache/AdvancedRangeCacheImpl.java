@@ -15,6 +15,7 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ public class AdvancedRangeCacheImpl<T>
 
     protected Set<RangeRequestWorkerImpl<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
+    protected long readBeforeSize;
     protected long requestLimit;
     protected Duration terminationDelay;
 
@@ -82,9 +84,35 @@ public class AdvancedRangeCacheImpl<T>
         return dataSource;
     }
 
+
+    /**
+     * If the size is requested but not yet known then try to obtain it
+     * from the dataSource and if this knows it then cache it with the slice
+     */
     @Override
     public long size() {
-        return slice.getKnownSize();
+        long result = slice.getKnownSize();
+
+        if (result == -1) {
+            try {
+                result = dataSource.size();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            if (result >= 0) {
+                Lock lock = slice.getReadWriteLock().writeLock();
+                lock.lock();
+                try {
+                    slice.updateMinimumKnownSize(result);
+                    slice.updateMaximumKnownSize(result);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        }
+
+        return result;
     }
 
     public Slice<T> getSlice() {

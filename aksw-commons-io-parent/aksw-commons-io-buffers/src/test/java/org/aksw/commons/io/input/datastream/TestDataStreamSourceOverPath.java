@@ -66,13 +66,13 @@ public class TestDataStreamSourceOverPath {
         DataStreamSource<byte[]> cached;
 
         boolean useDisk = true;
-        AdvancedRangeCacheConfig cacheConfig = AdvancedRangeCacheConfigImpl.createDefault();
+        AdvancedRangeCacheConfig cacheConfig = AdvancedRangeCacheConfigImpl.newDefaultsForObjects();
         if (useDisk) {
             cached = DataStreamSources.cache(source, tmpDir, "filecache", cacheConfig);
         } else {
             cached = DataStreamSources.cache(
                     source,
-                    SliceInMemoryCache.create(ArrayOps.BYTE, 4096, 100), AdvancedRangeCacheConfigImpl.createDefault());
+                    SliceInMemoryCache.create(ArrayOps.BYTE, 4096, 100), AdvancedRangeCacheConfigImpl.newDefaultsForObjects());
         }
 
         Random random = new Random();

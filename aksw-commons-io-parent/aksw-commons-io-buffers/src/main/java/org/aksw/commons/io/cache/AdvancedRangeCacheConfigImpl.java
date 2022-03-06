@@ -10,10 +10,13 @@ public class AdvancedRangeCacheConfigImpl
     protected Duration terminationDelay;
     protected int internalWorkerSize;
 
+    // Not yet wired up
+    protected long readBeforeSize;
+
     public AdvancedRangeCacheConfigImpl() {
     }
 
-    public AdvancedRangeCacheConfigImpl(int pageSize, int maxRequestSize, Duration terminationDelay,
+    public AdvancedRangeCacheConfigImpl(int pageSize, long maxRequestSize, Duration terminationDelay,
             int internalWorkerSize) {
         super();
         this.pageSize = pageSize;
@@ -22,12 +25,40 @@ public class AdvancedRangeCacheConfigImpl
         this.internalWorkerSize = internalWorkerSize;
     }
 
-    public static AdvancedRangeCacheConfigImpl createDefault() {
-        return new AdvancedRangeCacheConfigImpl(1024 * 48, 10000, Duration.ofSeconds(5), 1024 * 4);
+    /**
+     * PageSize            : 100000 objects
+     * MaxRequestsize      : unlimited
+     * Sync delay          : 5 seconds
+     * Internal buffer size: 1024 objects
+     *
+     * Values subject to change.
+     *
+     * @return
+     */
+    public static AdvancedRangeCacheConfigImpl newDefaultsForObjects() {
+        return newDefaultForBytes(Long.MAX_VALUE);
     }
 
-    public static AdvancedRangeCacheConfigImpl createDefault(int requestSize) {
-        return new AdvancedRangeCacheConfigImpl(1024 * 48, requestSize, Duration.ofSeconds(5), 1024 * 4);
+    public static AdvancedRangeCacheConfigImpl newDefaultForObjects(long requestSize) {
+        return new AdvancedRangeCacheConfigImpl(100000, requestSize, Duration.ofSeconds(5), 1024);
+    }
+
+    /**
+     * PageSize            : 16MB
+     * MaxRequestsize      : unlimited
+     * Sync delay          : 5 seconds
+     * Internal buffer size: 8KB
+     *
+     * Values subject to change.
+     *
+     * @return
+     */
+    public static AdvancedRangeCacheConfigImpl newDefaultForBytes() {
+        return newDefaultForBytes(Long.MAX_VALUE);
+    }
+
+    public static AdvancedRangeCacheConfigImpl newDefaultForBytes(long requestSize) {
+        return new AdvancedRangeCacheConfigImpl(16 * 1024 * 1024, requestSize, Duration.ofSeconds(5), 1024 * 8);
     }
 
     @Override
@@ -69,6 +100,14 @@ public class AdvancedRangeCacheConfigImpl
         this.internalWorkerSize = internalWorkerSize;
     }
 
+    @Override
+    public long getReadBeforeSize() {
+        return getReadBeforeSize();
+    }
+
+    public void setReadBeforeSize(long readBeforeSize) {
+        this.readBeforeSize = readBeforeSize;
+    }
 
     @Override
     public int hashCode() {
@@ -77,6 +116,7 @@ public class AdvancedRangeCacheConfigImpl
         result = prime * result + internalWorkerSize;
         result = prime * result + (int) (maxRequestSize ^ (maxRequestSize >>> 32));
         result = prime * result + pageSize;
+        result = prime * result + (int) (readBeforeSize ^ (readBeforeSize >>> 32));
         result = prime * result + ((terminationDelay == null) ? 0 : terminationDelay.hashCode());
         return result;
     }
@@ -96,6 +136,8 @@ public class AdvancedRangeCacheConfigImpl
             return false;
         if (pageSize != other.pageSize)
             return false;
+        if (readBeforeSize != other.readBeforeSize)
+            return false;
         if (terminationDelay == null) {
             if (other.terminationDelay != null)
                 return false;
@@ -107,6 +149,7 @@ public class AdvancedRangeCacheConfigImpl
     @Override
     public String toString() {
         return "AdvancedRangeCacheConfigImpl [pageSize=" + pageSize + ", maxRequestSize=" + maxRequestSize
-                + ", terminationDelay=" + terminationDelay + ", internalWorkerSize=" + internalWorkerSize + "]";
+                + ", terminationDelay=" + terminationDelay + ", internalWorkerSize=" + internalWorkerSize
+                + ", readBeforeSize=" + readBeforeSize + "]";
     }
 }
