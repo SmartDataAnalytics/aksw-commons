@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.pool.KryoPool;
+import com.google.common.base.StandardSystemProperty;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -196,7 +197,8 @@ public class TestListPaginatorCache {
     public static <T> ListPaginator<T> createCachedListPaginator(Class<T> clazz, ListPaginator<T> cachableBackend,
             long requestLimit, boolean inMemory, String testId, Duration syncDelay) {
         KryoPool kryoPool = KryoUtils.createKryoPool(null);
-        ObjectStore objectStore = ObjectStoreImpl.create(Path.of("/tmp/aksw-commons-cache-test"), ObjectSerializerKryo.create(kryoPool));
+        Path tmpDir = Path.of(StandardSystemProperty.JAVA_IO_TMPDIR.value());
+        ObjectStore objectStore = ObjectStoreImpl.create(tmpDir.resolve("aksw-commons-tests"), ObjectSerializerKryo.create(kryoPool));
 
         org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
 
