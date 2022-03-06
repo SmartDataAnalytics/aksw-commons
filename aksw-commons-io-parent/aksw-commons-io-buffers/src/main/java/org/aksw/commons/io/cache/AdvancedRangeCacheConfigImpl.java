@@ -23,7 +23,11 @@ public class AdvancedRangeCacheConfigImpl
     }
 
     public static AdvancedRangeCacheConfigImpl createDefault() {
-        return new AdvancedRangeCacheConfigImpl(10000, 10000, Duration.ofSeconds(2), 128);
+        return new AdvancedRangeCacheConfigImpl(1024 * 48, 10000, Duration.ofSeconds(5), 1024 * 4);
+    }
+
+    public static AdvancedRangeCacheConfigImpl createDefault(int requestSize) {
+        return new AdvancedRangeCacheConfigImpl(1024 * 48, requestSize, Duration.ofSeconds(5), 1024 * 4);
     }
 
     @Override

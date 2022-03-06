@@ -209,7 +209,7 @@ public class TestListPaginatorCache {
                 ? SliceInMemoryCache.create(arrayOps, pageSize, 100)
                 : SliceWithPagesSyncToDisk.create(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
 
-        Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
+        Builder<T[]> builder = AdvancedRangeCacheImpl.<T[]>newBuilder()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
             .setRequestLimit(requestLimit)
             .setWorkerBulkSize(1024 * 4)

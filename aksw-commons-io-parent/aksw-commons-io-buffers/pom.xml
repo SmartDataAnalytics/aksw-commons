@@ -49,6 +49,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-resources-test-config</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>

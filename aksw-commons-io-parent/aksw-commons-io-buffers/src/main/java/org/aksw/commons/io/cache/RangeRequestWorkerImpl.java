@@ -1,5 +1,6 @@
 package org.aksw.commons.io.cache;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -219,7 +220,7 @@ public class RangeRequestWorkerImpl<A>
     }
 
 
-    protected synchronized void initBackendRequest() {
+    protected synchronized void initBackendRequest() throws IOException {
         // Synchronize because abort may be called concurrently
         if (!isClosed) {
             // Flowable<A> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));

@@ -15,8 +15,8 @@ import java.util.function.LongSupplier;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.range.RangeUtils;
@@ -273,6 +273,10 @@ public class DataStreamOverSliceWithCache<A>
 
         Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveRequestEndOffset);
 
+        // It is important to claim the pages before we schedule the workers
+        // Otherwise pages may get evicted before we can read them
+        pageRange.claimByOffsetRange(currentOffset, effectiveReadAheadEndOffset);
+
         if (effectiveReadAheadEndOffset >= nextCheckpointOffset) {
 
             try {
@@ -296,7 +300,6 @@ public class DataStreamOverSliceWithCache<A>
 
         int result;
 
-        pageRange.claimByOffsetRange(currentOffset, effectiveReadAheadEndOffset);
 
         ReadWriteLock rwl = slice.getReadWriteLock();
         Lock readLock = rwl.readLock();

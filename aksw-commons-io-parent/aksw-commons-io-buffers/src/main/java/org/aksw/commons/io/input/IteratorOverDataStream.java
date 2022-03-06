@@ -1,7 +1,6 @@
 package org.aksw.commons.io.input;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 

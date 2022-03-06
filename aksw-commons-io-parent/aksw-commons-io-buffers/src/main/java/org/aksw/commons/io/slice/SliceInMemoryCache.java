@@ -42,9 +42,9 @@ public class SliceInMemoryCache<A>
                 .build();
     }
 
-    public static <A> Slice<A> create(ArrayOps<A> arrayOps, int pageSize, int maximumSize) {
+    public static <A> Slice<A> create(ArrayOps<A> arrayOps, int pageSize, int maxCachedPages) {
         AsyncClaimingCacheImpl.Builder<Long, BufferView<A>> cacheBuilder = AsyncClaimingCacheImpl.newBuilder(
-            Caffeine.newBuilder().maximumSize(maximumSize));
+            Caffeine.newBuilder().maximumSize(maxCachedPages));
 
         return new SliceInMemoryCache<>(arrayOps, pageSize, cacheBuilder);
     }
@@ -54,13 +54,16 @@ public class SliceInMemoryCache<A>
         int pageSize = metaData.getPageSize();
 
         Range<Long> pageRange = Range.closedOpen(pageOffset, pageOffset + pageSize);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to evice page " + pageId + " with range " + pageRange);
+        }
         LockUtils.runWithLock(readWriteLock.writeLock(), () -> {
             metaData.getLoadedRanges().remove(pageRange);
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("Eviced page " + pageId + " with range " + pageRange);
-            }
         });
+        if (logger.isDebugEnabled()) {
+            logger.debug("Eviced page " + pageId + " with range " + pageRange);
+        }
+
     }
 
     protected BufferView<A> loadPage(long pageId) {

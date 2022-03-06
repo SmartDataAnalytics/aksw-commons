@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.slice.Slice;
@@ -61,6 +62,10 @@ public class AdvancedRangeCacheImpl<T>
         this.terminationDelay = terminationDelay;
     }
 
+    @Override
+    public ArrayOps<T> getArrayOps() {
+        return slice.getArrayOps();
+    }
 
     public static <A> AdvancedRangeCacheImpl<A> create(
             DataStreamSource<A> dataSource,
@@ -169,6 +174,9 @@ public class AdvancedRangeCacheImpl<T>
         return result;
     }
 
+    public static <A> Builder<A> newBuilder() {
+        return new Builder<A>();
+    }
 
     public static class Builder<A> {
         protected DataStreamSource<A> dataSource;
@@ -179,10 +187,6 @@ public class AdvancedRangeCacheImpl<T>
         protected long requestLimit;
         // protected Duration syncDelay;
         protected Duration terminationDelay;
-
-        public static <A> Builder<A> create() {
-            return new Builder<A>();
-        }
 
         public DataStreamSource<A> getDataSource() {
             return dataSource;

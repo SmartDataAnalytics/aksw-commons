@@ -5,11 +5,9 @@ import java.util.Iterator;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 
 public class DataStreamOverStream<T>
-    extends AutoCloseableWithLeakDetectionBase
-    implements DataStream<T[]>
+    extends DataStreamBase<T[]>
 {
     protected ArrayOps<T[]> arrayOps;
     protected Stream<T> stream = null;
@@ -43,10 +41,6 @@ public class DataStreamOverStream<T>
         return result;
     }
 
-    @Override
-    public boolean isOpen() {
-        return !isClosed;
-    }
     @Override
     public ArrayOps<T[]> getArrayOps() {
         return arrayOps;
