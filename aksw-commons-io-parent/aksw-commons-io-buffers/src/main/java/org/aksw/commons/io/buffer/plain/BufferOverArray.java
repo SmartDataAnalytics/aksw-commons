@@ -45,9 +45,16 @@ public class BufferOverArray<A>
 
     @Override
     public int readInto(A tgt, int tgtOffset, long srcOffset, int length) {
+        int capacityInt = arrayOps.length(array);
         int srcOffsetInt = Ints.checkedCast(srcOffset);
-        arrayOps.copy(array, srcOffsetInt, tgt, tgtOffset, length);
-        return length;
+        int result = Math.max(Math.min(capacityInt - srcOffsetInt, length), 0);
+        arrayOps.copy(array, srcOffsetInt, tgt, tgtOffset, result);
+
+        if (result == 0 && length > 0) {
+            result = -1;
+        }
+
+        return result;
     }
 
     @Override

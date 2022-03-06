@@ -13,6 +13,7 @@ import org.aksw.commons.io.buffer.plain.BufferOverArray;
 import com.google.common.collect.Streams;
 
 public class DataStreams {
+    public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
     public static <A> DataStream<A> limit(DataStream<A> dataStream, long limit) {
         return new DataStreamLimit<>(dataStream, limit);
@@ -20,6 +21,10 @@ public class DataStreams {
 
     public static <A> DataStream<A> empty(ArrayOps<A> arrayOps) {
         return new DataStreamOverBuffer<>(BufferOverArray.create(arrayOps, 0), 0);
+    }
+
+    public static <A> DataStream<A> of(ArrayOps<A> arrayOps, A array) {
+        return new DataStreamOverBuffer<>(BufferOverArray.create(arrayOps, array), 0);
     }
 
     public static DataStream<byte[]> wrap(ReadableByteChannel channel) {
@@ -35,12 +40,39 @@ public class DataStreams {
     }
 
     public static <T> Iterator<T> newIterator(DataStream<T[]> dataStream) {
-        return new IteratorOverDataStream<>(dataStream.getArrayOps(), dataStream);
+        return newIterator(dataStream, DEFAULT_BUFFER_SIZE);
+    }
+
+    public static <T> Iterator<T> newIterator(DataStream<T[]> dataStream, int internalBufferSize) {
+        return new IteratorOverDataStream<>(dataStream.getArrayOps(), dataStream, internalBufferSize);
     }
 
     /** Wrap as a java8 stream. Closing the returned stream also closes the dataStream. */
     public static <T> Stream<T> newStream(DataStream<T[]> dataStream) {
         return Streams.stream(newIterator(dataStream)).onClose(() -> {
+            try {
+                dataStream.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static <T> Iterator<T> newBoxedIterator(DataStream<?> dataStream) {
+        return newBoxedIterator(dataStream, DEFAULT_BUFFER_SIZE);
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static <T> Iterator<T> newBoxedIterator(DataStream<?> dataStream, int internalBufferSize) {
+        return new IteratorOverDataStream(dataStream.getArrayOps(), dataStream, internalBufferSize);
+    }
+
+    public static <T> Stream<T> newBoxedStream(DataStream<?> dataStream) {
+        return newBoxedStream(dataStream, DEFAULT_BUFFER_SIZE);
+    }
+
+    public static <T> Stream<T> newBoxedStream(DataStream<?> dataStream, int internalBufferSize) {
+        return Streams.<T>stream(newBoxedIterator(dataStream, internalBufferSize)).onClose(() -> {
             try {
                 dataStream.close();
             } catch (IOException e) {

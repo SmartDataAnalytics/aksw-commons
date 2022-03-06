@@ -2,6 +2,7 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
@@ -16,10 +17,18 @@ public class DataStreamSourceOverPath
     implements DataStreamSource<byte[]>
 {
     protected Path path;
+    protected long predefinedSize;
 
-    public DataStreamSourceOverPath(Path path) {
+    /**
+     *
+     * @param path
+     * @param predefinedSize If the value is non-negative then {@link #size()}
+     *   returns this value rather than invoking {@link Files#size(Path)}.
+     */
+    public DataStreamSourceOverPath(Path path, long predefinedSize) {
         super();
         this.path = path;
+        this.predefinedSize = predefinedSize;
     }
 
     @Override
@@ -40,9 +49,21 @@ public class DataStreamSourceOverPath
 
             FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
             fc.position(pos);
-            long len = set.size();
-            result = DataStreams.limit(DataStreams.wrap(fc), len);
+            result = DataStreams.wrap(fc);
+
+            if (range.hasUpperBound()) {
+                long len = set.last() - pos;
+                result = DataStreams.limit(result, len);
+            }
         }
+        return result;
+    }
+
+    @Override
+    public long size() throws IOException {
+        long result = predefinedSize >= 0
+                ? predefinedSize
+                : Files.size(path);
         return result;
     }
 }

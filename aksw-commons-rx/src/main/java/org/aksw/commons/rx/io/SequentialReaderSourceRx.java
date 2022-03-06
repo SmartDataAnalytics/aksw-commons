@@ -5,6 +5,8 @@ import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.input.DataStreamOverStream;
 import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.rx.lookup.ListPaginator;
+import org.aksw.commons.util.range.CountInfo;
+import org.aksw.commons.util.range.RangeUtils;
 
 import com.google.common.collect.Range;
 
@@ -32,5 +34,13 @@ public class SequentialReaderSourceRx<T>
     @Override
     public DataStream<T[]> newDataStream(Range<Long> range) {
         return new DataStreamOverStream<T>(arrayOps, listPaginator.apply(range).blockingStream());
+    }
+
+    @Override
+    public long size() {
+        Range<Long> tmp = listPaginator.fetchCount(null, null).blockingGet();
+        CountInfo ci = RangeUtils.toCountInfo(tmp);
+        long result = ci.isHasMoreItems() ? -1 : ci.getCount();
+        return result;
     }
 }

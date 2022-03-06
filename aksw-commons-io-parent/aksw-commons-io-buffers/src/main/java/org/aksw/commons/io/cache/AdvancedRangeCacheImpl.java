@@ -82,6 +82,11 @@ public class AdvancedRangeCacheImpl<T>
         return dataSource;
     }
 
+    @Override
+    public long size() {
+        return slice.getKnownSize();
+    }
+
     public Slice<T> getSlice() {
         return slice;
     }

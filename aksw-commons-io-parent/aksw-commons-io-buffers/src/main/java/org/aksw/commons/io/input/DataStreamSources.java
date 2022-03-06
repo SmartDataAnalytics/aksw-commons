@@ -1,5 +1,7 @@
 package org.aksw.commons.io.input;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.function.Consumer;
 
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfig;
@@ -17,8 +19,20 @@ import com.esotericsoftware.kryo.Kryo;
 
 public class DataStreamSources {
 
-    public static DataStreamSource<byte[]> of(java.nio.file.Path path) {
-        return new DataStreamSourceOverPath(path);
+    public static DataStreamSource<byte[]> of(java.nio.file.Path path) throws IOException {
+        return of(path, true);
+    }
+
+    /**
+     * @param path The path which to wrap as a DataStreamSource
+     * @param cacheSize If true the file size will be cached.
+     *        If false every size request delegates to Files.size(path) which can massively degrade performance.
+     * @return
+     * @throws IOException
+     */
+    public static DataStreamSource<byte[]> of(java.nio.file.Path path, boolean cacheSize) throws IOException {
+        long cachedSize = cacheSize ? Files.size(path) : -1;
+        return new DataStreamSourceOverPath(path, cachedSize);
     }
 
     public static <A> DataStreamSource<A> cache(

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +31,19 @@ public class TestDataStreamSourceOverPath {
     private static final Logger logger = LoggerFactory.getLogger(TestDataStreamSourceOverPath.class);
 
     @Test
-    public void test() throws IOException {
+    public void testIteratorOverByteDataStream() {
+        DataStream<byte[]> xxx = DataStreams.of(ArrayOps.BYTE, new byte[] {'a', 'b', 'c'});
+        Iterator<Byte> it = DataStreams.newBoxedIterator(xxx);
+        while (it.hasNext()) {
+            System.out.println((char)it.next().byteValue());
+        }
+    }
+
+
+    /** Test case that generates an uncached DataSTreamSource over a file and then
+     *  compares the result of range queries with the cache wrapper  */
+    @Test
+    public void testCachingOfDataStreamSources() throws IOException {
         Path tmpDir = Path.of(StandardSystemProperty.JAVA_IO_TMPDIR.value()).resolve("aksw-commons-tests");
         Files.createDirectories(tmpDir);
 
@@ -48,7 +61,7 @@ public class TestDataStreamSourceOverPath {
 
         logger.info("Created test data file " + testData + " of size " + size);
 
-        DataStreamSource<byte[]> source = DataStreamSources.of(testData);
+        DataStreamSource<byte[]> source = DataStreamSources.of(testData, true);
 
         DataStreamSource<byte[]> cached;
 

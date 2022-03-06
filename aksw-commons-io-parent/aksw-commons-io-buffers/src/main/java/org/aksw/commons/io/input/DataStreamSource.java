@@ -11,4 +11,7 @@ public interface DataStreamSource<A>
 {
     /** Offsets typically start with 0 but the interface contract leaves that unspecified */
     DataStream<A> newDataStream(Range<Long> range) throws IOException;
+
+    /** The size; -1 if unknown */
+    long size() throws IOException;
 }

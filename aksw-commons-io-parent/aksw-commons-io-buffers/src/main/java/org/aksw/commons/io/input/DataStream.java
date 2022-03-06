@@ -36,5 +36,10 @@ public interface DataStream<A>
      *
      * @throws IOException
      */
-    int read(A array, int position, int length) throws IOException ;
+    int read(A array, int position, int length) throws IOException;
+
+    @SuppressWarnings("unchecked")
+    default int readRaw(Object array, int position, int length) throws IOException {
+        return read((A)array, position, length);
+    }
 }
