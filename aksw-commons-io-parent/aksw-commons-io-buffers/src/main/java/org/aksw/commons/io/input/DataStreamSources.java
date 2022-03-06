@@ -28,7 +28,7 @@ public class DataStreamSources {
     /**
      * @param path The path which to wrap as a DataStreamSource
      * @param cacheSize If true the file size will be cached.
-     *        If false every size request delegates to Files.size(path) which can massively degrade performance.
+     *        If false then every size request delegates to Files.size(path) which can massively degrade performance.
      * @return
      * @throws IOException
      */
@@ -92,6 +92,7 @@ public class DataStreamSources {
         return cache(source, slice, cacheConfig);
     }
 
+    /** Set up an advanced range cache with a certain slice backend */
     public static <A> DataStreamSource<A> cache(
             DataStreamSource<A> source,
             Slice<A> slice,

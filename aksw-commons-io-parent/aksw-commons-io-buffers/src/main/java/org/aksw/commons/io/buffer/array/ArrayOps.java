@@ -52,5 +52,6 @@ public interface ArrayOps<A> {
 
 
     public static final ArrayOpsByte BYTE = new ArrayOpsByte();
+    public static final ArrayOpsByteBuffer BYTE_BUFFER = new ArrayOpsByteBuffer();
     public static final ArrayOpsObject<Object> OBJECT = createFor(Object.class);
 }
