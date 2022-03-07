@@ -333,10 +333,12 @@ public class RangeRequestWorkerImpl<A>
         firstItemTime = stopwatch.elapsed();
 
         // pauseLock.writeLock().newCondition();
+        boolean pendingShutdown = false;
+
         while (true) {
 
             if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay.toMillis()) {
-                break;
+                pendingShutdown = true;
             }
 
             if (offset == nextCheckpointOffset) {
@@ -344,18 +346,18 @@ public class RangeRequestWorkerImpl<A>
 
                 // No progress after checkpoint - we have reached the end of data
                 if (offset == nextCheckpointOffset) {
-                    break;
+                    pendingShutdown = true;;
                 }
             }
 
-            boolean hasNext;
+            boolean hasMoreData;
             try {
                 // Align with bulk size; this should give more aesthetic numbers in debugging and logging
                 if (isFirstRun) {
                     isFirstRun = false;
-                    hasNext = process(buffer, 1, bulkSize - 1) >= 0;
+                    hasMoreData = process(buffer, 1, bulkSize - 1) >= 0;
                 } else {
-                    hasNext = process(buffer, 0, bulkSize) >= 0;
+                    hasMoreData = process(buffer, 0, bulkSize) >= 0;
                 }
 
             } catch (Exception e) {
@@ -363,7 +365,7 @@ public class RangeRequestWorkerImpl<A>
             }
 
 
-            if (hasNext) {
+            if (hasMoreData) {
 
                 // Shut down if there is no pending request for further data
                 synchronized (endpointDemands)  {
@@ -397,13 +399,13 @@ public class RangeRequestWorkerImpl<A>
                     }
                 }
 
-                // If there are no more slots or we have reached to known size then terminate
+                // If there are no more slots or if we have reached the known size then terminate
                 Lock readLock = slice.getReadWriteLock().readLock();
                 readLock.lock();
                 try {
                     long knownSize = slice.getKnownSize();
                     if (knownSize >= 0 && offset >= knownSize) {
-                        break;
+                        pendingShutdown = true;
                     }
                 } finally {
                     readLock.unlock();
@@ -413,7 +415,7 @@ public class RangeRequestWorkerImpl<A>
                     synchronized (endpointDemands) {
                         long maxEndpoint = endpointDemands.build();
                         if (maxEndpoint < 0) {
-                            break;
+                            pendingShutdown = true;;
                         }
     //                    if (offset >= maxEndpoint) {
     //                        break;
@@ -423,9 +425,35 @@ public class RangeRequestWorkerImpl<A>
 
             } else {
                 // If there is no more data then terminate immediately
-                break;
+                pendingShutdown = true;
             }
+
+
+
+            if (pendingShutdown) {
+                // We need to ensure there is no last-split-second concurrent demand while we shut down
+                boolean shutDownDone = LockUtils.runWithLock(cacheSystem.getExecutorCreationReadLock(), () -> {
+                    boolean r = false;
+                    synchronized (endpointDemands) {
+                        long maxEndpoint = endpointDemands.build();
+                        if (offset >= maxEndpoint) { // || (knownSize >= 0 && offset >= knownSize)) {
+                            cacheSystem.removeExecutor(this);
+                            r = true;
+                        }
+                    }
+                    return r;
+                });
+
+
+                if (shutDownDone) {
+                    break;
+                } else {
+                    pendingShutdown = false;
+                }
+            }
+
         }
+
     }
 
 

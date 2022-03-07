@@ -42,7 +42,7 @@ public class DataStreamSources {
         return DataStreamSources.cache(
                 source,
                 SliceInMemoryCache.create(source.getArrayOps(), pageSize, maxPages),
-                AdvancedRangeCacheConfigImpl.newDefaultForObjects(maxRequestSize));
+                AdvancedRangeCacheConfigImpl.newDefaultsForObjects(maxRequestSize));
     }
 
     public static <A> DataStreamSource<A> cache(

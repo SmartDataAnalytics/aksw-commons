@@ -36,10 +36,10 @@ public class AdvancedRangeCacheConfigImpl
      * @return
      */
     public static AdvancedRangeCacheConfigImpl newDefaultsForObjects() {
-        return newDefaultForBytes(Long.MAX_VALUE);
+        return newDefaultsForObjects(Long.MAX_VALUE);
     }
 
-    public static AdvancedRangeCacheConfigImpl newDefaultForObjects(long requestSize) {
+    public static AdvancedRangeCacheConfigImpl newDefaultsForObjects(long requestSize) {
         return new AdvancedRangeCacheConfigImpl(100000, requestSize, Duration.ofSeconds(5), 1024);
     }
 

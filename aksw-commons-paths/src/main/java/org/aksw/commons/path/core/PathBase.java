@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.function.Function;
 
 
 /**
@@ -48,38 +49,38 @@ import java.util.Objects;
 public class PathBase<T, P extends Path<T>>
     implements Path<T>, Serializable
 {
-	private static final long serialVersionUID = 1L;
-	
-	protected boolean isAbsolute;
+    private static final long serialVersionUID = 1L;
+
+    protected boolean isAbsolute;
     protected transient List<T> segments;
     protected transient List<T> segmentsView;
 
     protected PathOps<T, P> pathOps;
 
-    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException 
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException
     {
-    	this.pathOps = (PathOps<T, P>)in.readObject();
-    	String str = in.readUTF();
-    	
-    	PathBase<T, P> tmp = (PathBase<T, P>)pathOps.fromString(str);
-    	
-    	this.isAbsolute = tmp.isAbsolute;
-    	this.segments = tmp.segments;
-    	this.segmentsView = Collections.unmodifiableList(segments);
+        this.pathOps = (PathOps<T, P>)in.readObject();
+        String str = in.readUTF();
+
+        PathBase<T, P> tmp = (PathBase<T, P>)pathOps.fromString(str);
+
+        this.isAbsolute = tmp.isAbsolute;
+        this.segments = tmp.segments;
+        this.segmentsView = Collections.unmodifiableList(segments);
     }
-    
- 
-    private void writeObject(ObjectOutputStream out) throws IOException 
+
+
+    private void writeObject(ObjectOutputStream out) throws IOException
     {
-    	out.writeObject(pathOps);
+        out.writeObject(pathOps);
         out.writeUTF(pathOps.toStringRaw(this));
     }
-    
+
     /* For (de)serialization */
     PathBase() {
-    	
+
     }
-    
+
     public PathBase(PathOps<T, P> pathOps, boolean isAbsolute, List<T> segments) {
         super();
         this.pathOps = pathOps;
@@ -213,6 +214,7 @@ public class PathBase<T, P extends Path<T>>
         for (int i = 0; i < n; ++i) {
             Path<T> tmp = path.getName(i);
             T segment = tmp.getSegments().get(0);
+            // T segment = tmp.getLastSegment();
             result.add(segment);
         }
 

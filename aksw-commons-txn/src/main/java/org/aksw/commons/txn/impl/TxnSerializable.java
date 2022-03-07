@@ -328,7 +328,7 @@ public class TxnSerializable
             Path resRelPath = txnMgr.getRootPath().relativize(resAbsPath);
             String[] array = PathUtils.getPathSegments(resRelPath);
 
-            org.aksw.commons.path.core.Path<String> result = PathOpsStr.get().newPath(false, Arrays.asList(array));
+            org.aksw.commons.path.core.Path<String> result = PathOpsStr.newRelativePath(array);
 
             return result;
         } catch (IOException e) {
