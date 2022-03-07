@@ -36,4 +36,8 @@ public interface PageHelper {
     public static long getPageOffsetForPageId(long pageId, long pageSize) {
         return pageId * pageSize;
     }
+
+    public static long getLastPageId(long size, long pageSize) {
+        return size / pageSize;
+    }
 }

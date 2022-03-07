@@ -37,7 +37,7 @@ public class ReadableByteChannelOverDataStream
         int r;
         int n = dst.remaining();
         if (dst.hasArray()) {
-            r = dataStream.read(dst.array(), dst.position(), n);
+            r = dataStream.read(dst.array(), dst.arrayOffset() + dst.position(), n);
             if (r >= 0) {
                 dst.position(dst.position() + r);
             }

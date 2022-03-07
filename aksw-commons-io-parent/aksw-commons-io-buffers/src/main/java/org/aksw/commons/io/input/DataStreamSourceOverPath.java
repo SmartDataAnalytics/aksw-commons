@@ -52,7 +52,8 @@ public class DataStreamSourceOverPath
             result = DataStreams.wrap(fc);
 
             if (range.hasUpperBound()) {
-                long len = set.last() - pos;
+                // End offset is exclusive so we have to add 1 to the last element contained in the set
+                long len = set.last() + 1 - pos;
                 result = DataStreams.limit(result, len);
             }
         }

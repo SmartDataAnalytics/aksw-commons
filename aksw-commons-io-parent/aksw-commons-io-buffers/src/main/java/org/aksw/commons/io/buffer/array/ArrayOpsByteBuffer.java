@@ -34,9 +34,9 @@ public class ArrayOpsByteBuffer
     public void fill(ByteBuffer buffer, int offset, int length, Object value) {
         if (buffer.hasArray()) {
             byte[] array = buffer.array();
-            int arrOffset = buffer.arrayOffset();
+            int effectiveOffset = buffer.arrayOffset() + buffer.position() + offset;
 
-            ArrayOps.BYTE.fill(array, arrOffset, length, value);
+            ArrayOps.BYTE.fill(array, effectiveOffset, length, value);
         } else {
             byte b = ((Byte)value).byteValue();
 
