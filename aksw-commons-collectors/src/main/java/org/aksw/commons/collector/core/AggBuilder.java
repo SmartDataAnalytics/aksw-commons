@@ -62,6 +62,7 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
      */
 
 
+    /** Pass on input to sub-acc if the predicate evaluates to true*/
     public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggInputFilter<I, O, ACC, AGG>
         inputFilter(SerializablePredicate<? super I> inputFilter, AGG state) {
          return new AggInputFilter<>(state, inputFilter);

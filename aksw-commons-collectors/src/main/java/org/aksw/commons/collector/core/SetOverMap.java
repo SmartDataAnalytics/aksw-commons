@@ -18,6 +18,11 @@ public class SetOverMap<K, V>
 {
     protected Map<K, V> delegate;
 
+    /** For (de)serialization */
+    SetOverMap() {
+        super();
+    }
+
     public SetOverMap(Map<K, V> delegate) {
         super();
         this.delegate = delegate;
@@ -29,8 +34,11 @@ public class SetOverMap<K, V>
 
     @Override
     public boolean add(Entry<K, V> e) {
+        Objects.requireNonNull(e, "Entry must not be null");
+        K key = e.getKey();
+
         V now = e.getValue();
-        V old = delegate.put(e.getKey(), now);
+        V old = delegate.put(key, now);
         boolean result = !Objects.equals(now, old);
         return result;
     }
