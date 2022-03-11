@@ -96,7 +96,7 @@ public class ClassUtils {
             Object obj,
             String fieldName,
             Object value) {
-        setFieldValue(obj.getClass(), fieldName, value);
+        setFieldValue(obj.getClass(), fieldName, null, value);
     }
 
     public static Object forceInvoke(Method m, Object[] args)
