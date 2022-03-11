@@ -17,7 +17,7 @@ public class PicocliMixinCsvw<D extends DialectMutable>
         super(delegate);
     }
 
-    public static PicocliMixinCsvw<?> create(DialectMutable delegate) {
+    public static PicocliMixinCsvw<?> of(DialectMutable delegate) {
         return new PicocliMixinCsvw<DialectMutable>(delegate);
     }
 
@@ -45,7 +45,7 @@ public class PicocliMixinCsvw<D extends DialectMutable>
         return this;
     }
 
-    @Option(names={"-d", "--quotechar"}, description="Quote character")
+    @Option(names={"-q", "--quotechar"}, description="Quote character")
     @Override
     public DialectMutable setQuoteChar(String quoteChar) { return super.setQuoteChar(quoteChar); }
 
