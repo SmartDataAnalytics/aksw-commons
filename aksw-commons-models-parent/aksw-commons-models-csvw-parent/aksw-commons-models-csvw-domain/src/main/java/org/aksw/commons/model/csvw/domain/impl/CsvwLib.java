@@ -52,15 +52,19 @@ public class CsvwLib {
         return dest;
     }
 
-    public static Charset getEncoding(Dialect dialect) {
-        return getEncoding(dialect.getEncoding());
+    public static Charset getEncoding(Dialect dialect, Charset fallback) {
+        return getEncoding(dialect.getEncoding(), fallback);
     }
 
-    public static Charset getEncoding(String encoding) {
+    /** Raises IllegalArgumentException if neither encoding nor fallback is specified */
+    public static Charset getEncoding(String encoding, Charset fallback) {
         Charset result;
 
         if (!CsvwLib.isPresent(encoding)) {
-            result = StandardCharsets.UTF_8;
+            result = fallback;
+            if (fallback == null) {
+                throw new IllegalArgumentException("No charset specified");
+            }
         } else {
             result = Charset.forName(encoding);
         }
