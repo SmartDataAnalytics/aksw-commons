@@ -17,4 +17,7 @@ public class CsvwTerms
     public static final String skipInitialSpace = NS + "skipInitialSpace";
     public static final String skipRows         = NS + "skipRows";
     public static final String trim             = NS + "trim";
+
+
+    public static final String quoteEscapeChar  = NS + "quoteEscapeChar";
 }

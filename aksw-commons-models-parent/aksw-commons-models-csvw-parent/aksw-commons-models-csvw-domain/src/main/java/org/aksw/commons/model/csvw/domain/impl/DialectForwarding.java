@@ -20,5 +20,6 @@ public interface DialectForwarding<D extends Dialect>
     default Boolean getSkipInitialSpace() { return getDelegate().getSkipInitialSpace(); }
     default Long    getSkipRows()         { return getDelegate().getSkipRows(); }
     default String  getTrim()             { return getDelegate().getTrim(); }
+    default String  getQuoteEscapeChar()  { return getDelegate().getQuoteEscapeChar(); }
 
 }

@@ -23,6 +23,7 @@ public class DialectImpl
     protected Long    skipRows;
     protected String  trim;
 
+    protected String quoteEscapeChar;
 
     @Override
     public String getCommentPrefix() {
@@ -164,6 +165,17 @@ public class DialectImpl
     @Override
     public DialectMutable setTrim(String trim) {
         this.trim = trim;
+        return this;
+    }
+
+    @Override
+    public String getQuoteEscapeChar() {
+        return quoteEscapeChar;
+    }
+
+    @Override
+    public DialectMutable setQuoteEscapeChar(String quoteEscapeChar) {
+        this.quoteEscapeChar = quoteEscapeChar;
         return this;
     }
 }

@@ -21,4 +21,5 @@ public interface DialectMutableForwarding<D extends DialectMutable>
     default DialectMutable setSkipInitialSpace(Boolean skipInitialSpace) { getDelegate().setSkipInitialSpace(skipInitialSpace); return this; }
     default DialectMutable setSkipRows(Long skipRows)                    { getDelegate().setSkipRows(skipRows); return this; }
     default DialectMutable setTrim(String trim)                          { getDelegate().setTrim(trim); return this; }
+    default DialectMutable setQuoteEscapeChar(String quoteEscapeChar)    { getDelegate().setQuoteEscapeChar(quoteEscapeChar); return this; }
 }

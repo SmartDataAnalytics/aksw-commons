@@ -16,4 +16,22 @@ public interface DialectMutable
     DialectMutable setSkipInitialSpace(Boolean skipInitialSpace);
     DialectMutable setSkipRows(Long skipRows);
     DialectMutable setTrim(String trim);
+    DialectMutable setQuoteEscapeChar(String quoteEscapeChar);
+
+    default void copyFrom(Dialect src) {
+        setCommentPrefix(getCommentPrefix());
+        setDelimiter(getDelimiter());
+        setDoubleQuote(isDoubleQuote());
+        setEncoding(getEncoding());
+        setHeader(getHeader());
+        setHeaderRowCount(getHeaderRowCount());
+        setLineTerminators(getLineTerminators());
+        setQuoteChar(getQuoteChar());
+        setQuoteEscapeChar(getQuoteEscapeChar());
+        setSkipBlankRows(getSkipBlankRows());
+        setSkipColumns(getSkipColumns());
+        setSkipInitialSpace(getSkipInitialSpace());
+        setSkipRows(getSkipRows());
+        setTrim(getTrim());
+    }
 }

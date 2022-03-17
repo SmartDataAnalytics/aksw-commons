@@ -6,14 +6,14 @@ import org.aksw.commons.model.csvw.domain.impl.DialectMutableForwardingBase;
 import picocli.CommandLine.Option;
 
 /**
- * Mixin for csv configuration with picocli. Aimed for drop-in replacement with tarql.
+ * Mixin for csv configuration with picocli. Aimed for compatibility with tarql.
  *
  */
 public class PicocliMixinCsvw<D extends DialectMutable>
     extends DialectMutableForwardingBase<D>
 {
 
-    public PicocliMixinCsvw(D delegate) {
+    protected PicocliMixinCsvw(D delegate) {
         super(delegate);
     }
 
@@ -48,7 +48,4 @@ public class PicocliMixinCsvw<D extends DialectMutable>
     @Option(names={"-q", "--quotechar"}, description="Quote character")
     @Override
     public DialectMutable setQuoteChar(String quoteChar) { return super.setQuoteChar(quoteChar); }
-
-
-
 }
