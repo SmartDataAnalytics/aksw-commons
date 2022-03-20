@@ -2,6 +2,7 @@ package org.aksw.commons.io.cache;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
@@ -66,7 +67,7 @@ public class RangeRequestWorkerImpl<A>
      */
     // protected Iterator<T> iterator = null;
 
-    protected DataStream<A> sequentialReader;
+    protected DataStream<A> dataStream;
 
     /** The disposable of the data supplier */
     // protected Disposable disposable;
@@ -207,9 +208,9 @@ public class RangeRequestWorkerImpl<A>
     @Override
     protected void closeActual() {
         // Cancel the backend process
-        if (sequentialReader != null) {
+        if (dataStream != null) {
             try {
-                sequentialReader.close();
+                dataStream.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -228,7 +229,7 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-            sequentialReader = cacheSystem.getDataSource().newDataStream(Range.atLeast(requestOffset));
+            dataStream = cacheSystem.getDataSource().newDataStream(Range.atLeast(requestOffset));
 
         } else {
             return; // Exit immediately due to abort
@@ -509,20 +510,26 @@ public class RangeRequestWorkerImpl<A>
         int remainingReadsInt = Ints.checkedCast(remainingReads);
         int numItemsOfLastRead = 0;
         int result = 0;
+        Throwable failure = null;
         try {
-            // Note: Read should never return 0!
-            while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
-                    !isClosed && !Thread.interrupted() &&
-                    (numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
-                pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
+            try {
+                // Note: Read should never return 0!
+                while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
+                        !isClosed && !Thread.interrupted() &&
+                        (numItemsOfLastRead = dataStream.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
+                    pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
 
-                remainingReadsInt -= numItemsOfLastRead;
-                result += numItemsOfLastRead;
-                bufferOffset += numItemsOfLastRead;
-                offset += numItemsOfLastRead;
-                // System.out.println("write at offset " + offset);
-                // itemsProcessedNow += numItemsReadTmp;
+                    remainingReadsInt -= numItemsOfLastRead;
+                    result += numItemsOfLastRead;
+                    bufferOffset += numItemsOfLastRead;
+                    offset += numItemsOfLastRead;
+                    // System.out.println("write at offset " + offset);
+                    // itemsProcessedNow += numItemsReadTmp;
+                }
+            } catch (Throwable e) {
+                failure = e;
             }
+
             // offset += result;
             numItemsProcessed += result;
 
@@ -561,9 +568,19 @@ public class RangeRequestWorkerImpl<A>
                     logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d, loaded ranges: %4$s", offset, numItemsProcessed, requestLimit, slice.getLoadedRanges()));
                 }
 
-                slice.getHasDataCondition().signalAll();
+
+                if (failure != null) {
+                    slice.getFailedRanges().put(Range.closedOpen(offset, offset + remainingReadsInt),
+                            Collections.singletonList(failure));
+                    throw new RuntimeException(failure);
+                }
+
 
         } finally {
+            if (result != 0 || failure != null) {
+                slice.getHasDataCondition().signalAll();
+            }
+
             // pageRange.unlock();
             writeLock.unlock();
         }

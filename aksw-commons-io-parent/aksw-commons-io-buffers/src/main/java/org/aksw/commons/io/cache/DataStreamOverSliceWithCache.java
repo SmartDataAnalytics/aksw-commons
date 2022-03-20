@@ -316,7 +316,7 @@ public class DataStreamOverSliceWithCache<A>
             RangeSet<Long> loadedRanges = slice.getLoadedRanges();
 
             // FIXME - Add failed ranges again
-            RangeMap<Long, List<Throwable>> failedRanges = TreeRangeMap.create(); // ;metaData.getFailedRanges();
+            RangeMap<Long, List<Throwable>> failedRanges = slice.getFailedRanges(); // TreeRangeMap.create(); // ;metaData.getFailedRanges();
 
             Range<Long> entry = null;
             List<Throwable> failures = null;
@@ -384,8 +384,8 @@ public class DataStreamOverSliceWithCache<A>
             }
 
             if (failures != null && !failures.isEmpty()) {
-                throw new RuntimeException("Attempt to read a range of data marked with an error",
-                        failures.get(0));
+                Throwable failure = failures.get(0);
+                throw new RuntimeException("Attempt to read a range of data marked with an error: " + failure.getMessage(), failure);
             }
 
 

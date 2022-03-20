@@ -25,7 +25,7 @@ public class PicocliMixinCsvw<D extends DialectMutable>
     @Override
     public DialectMutable setDelimiter(String delimiter) { return super.setDelimiter(delimiter); }
 
-    @Option(names={"-e", "--encoding"}, description="Encoding")
+    @Option(names={"-e", "--encoding"}, description="Encoding (e.g. UTF-8, ISO-8859-1)")
     @Override
     public DialectMutable setEncoding(String encoding) {return super.setEncoding(encoding); }
 
@@ -48,4 +48,8 @@ public class PicocliMixinCsvw<D extends DialectMutable>
     @Option(names={"-q", "--quotechar"}, description="Quote character")
     @Override
     public DialectMutable setQuoteChar(String quoteChar) { return super.setQuoteChar(quoteChar); }
+
+    @Option(names={"-p", "--escapechar"}, description="Quote escape character")
+    @Override
+    public DialectMutable setQuoteEscapeChar(String quoteEscapeChar) { return super.setQuoteEscapeChar(quoteEscapeChar); }
 }

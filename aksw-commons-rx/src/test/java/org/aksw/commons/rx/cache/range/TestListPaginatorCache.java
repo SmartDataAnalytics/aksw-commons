@@ -106,6 +106,40 @@ public class TestListPaginatorCache {
     }
 
 
+    /** Test that simulates backend failure */
+    @Test(expected = RuntimeException.class)
+    public void testFailure() {
+        Random random = new Random(0);
+
+
+        ListPaginator<String> referenceBackend = createListWithRandomItems(random);
+        // long count = referenceBackend.fetchCount(null, null).blockingGet().lowerEndpoint();
+
+        ListPaginator<String> restrictedBackend = new ListPaginator<String>() {
+            protected ListPaginator<String> backend = referenceBackend;
+
+            @Override
+            public Flowable<String> apply(Range<Long> t) {
+                // After n items yield an error
+                int n = 500;
+                Range<Long> c = t.canonical(DiscreteDomain.longs());
+                Range<Long> restriction = Range.closedOpen(c.lowerEndpoint(), c.lowerEndpoint() + n);
+                return Flowable.concat(backend.apply(restriction), Flowable.error(new RuntimeException("simulated failure")));
+            }
+
+            @Override
+            public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
+                return backend.fetchCount(itemLimit, rowLimit);
+            }
+        };
+
+        ListPaginator<String> frontend = createCachedListPaginator(String.class, restrictedBackend, 128, true, "test-failure",
+                Duration.ofSeconds(1));
+
+        // This line is expected to fail - rather than hang indefinitely!
+        frontend.fetchList(Range.atLeast(0l));
+    }
+
     @Test
     public void testRequestLimits() throws IOException {
         boolean isInMemory = false;

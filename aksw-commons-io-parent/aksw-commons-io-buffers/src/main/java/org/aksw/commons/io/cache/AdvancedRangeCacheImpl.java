@@ -15,7 +15,6 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.slice.Slice;
-import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
