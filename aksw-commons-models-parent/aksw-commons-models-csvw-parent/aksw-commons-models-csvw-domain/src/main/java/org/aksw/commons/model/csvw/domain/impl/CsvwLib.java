@@ -20,12 +20,25 @@ public class CsvwLib {
 //        return value.charAt(0);
 //    }
 
+    public static Character expectAtMostOneChar(String contextLabel, String str, Character fallbackChar) {
+        Character result;
+        if (str == null) {
+            result = fallbackChar;
+            if (result == null) {
+                throw new RuntimeException(contextLabel + ": Expected a character but none given (and no fallback specified)");
+            }
+        } else {
+            result = expectAtMostOneChar(contextLabel, str);
+        }
+        return result;
+    }
+
     public static Character expectAtMostOneChar(String contextLabel, String str) {
         Character result = null;
         if (str != null) {
             int n = str.length();
             if (n > 1) {
-                throw new IllegalArgumentException(contextLabel+ ": At most one character expected, got: " + str);
+                throw new IllegalArgumentException(contextLabel + ": At most one character expected, got: " + str);
             } else if (n == 1) {
                 result = str.charAt(0);
             }
