@@ -14,7 +14,7 @@ import java.util.function.Function;
  * Getter/setter view over an observable collection.
  * If that collection has a single item then {@link #get()} method returns it. Otherwise, if there are
  * no or multiple items then the method returns null.
- * 
+ *
  * @author raven
  *
  * @param <T>
@@ -27,9 +27,9 @@ public class ObservableValueFromObservableCollection<T, U>
     protected Function<? super T, ? extends U> valueToItem;
 
     public ObservableValueFromObservableCollection(
-    		ObservableCollection<U> delegate,
-    		Function<? super Collection<? extends U>, ? extends T> xform,
-    		Function<? super T, ? extends U> valueToItem) {
+            ObservableCollection<U> delegate,
+            Function<? super Collection<? extends U>, ? extends T> xform,
+            Function<? super T, ? extends U> valueToItem) {
         super();
         this.delegate = delegate;
         this.xform = xform;
@@ -69,22 +69,22 @@ public class ObservableValueFromObservableCollection<T, U>
      */
     @Override
     public void set(T value) {
-    	T oldValue = get();
-    	if (!Objects.equals(oldValue, value)) {    	
-	        delegate.clear();
-	        U item = valueToItem.apply(value);
-	        if (item != null) {
-	        	delegate.add(item);
-	        }
-    	}
+        T oldValue = get();
+        if (!Objects.equals(oldValue, value)) {
+            delegate.clear();
+            U item = valueToItem.apply(value);
+            if (item != null) {
+                delegate.add(item);
+            }
+        }
     }
 
     /** Wrap the listener so that the set-based property change event is
      * converted to a single value based on */
     public static <T, U> PropertyChangeListener wrapListener(
-    		Object self, PropertyChangeListener listener,
-    		Function<? super Collection<? extends U>, ? extends T> xform
-    		) {
+            Object self, PropertyChangeListener listener,
+            Function<? super Collection<? extends U>, ? extends T> xform
+            ) {
         return ev -> {
             T oldValue = Optional.ofNullable((Collection<U>)ev.getOldValue())
 //                    .map(ObservableValueFromObservableCollection::getOnlyElementOrNull)
@@ -102,13 +102,13 @@ public class ObservableValueFromObservableCollection<T, U>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         return delegate.addPropertyChangeListener(wrapListener(this, listener, xform));
     }
 
     @Override
     public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
-    	throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException();
     }
 
     public static <T> ObservableValue<T> decorate(ObservableCollection<T> delegate) {

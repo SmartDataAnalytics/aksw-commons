@@ -30,12 +30,12 @@ public class ObservableValueImpl<T>
 
     @Override
     public void set(T value) {
-        T before = delegate.get();        
+        T before = delegate.get();
         try {
-			vcs.fireVetoableChange(new PropertyChangeEvent(this, "value", before, value));
-		} catch (PropertyVetoException e) {
-			throw new RuntimeException(e);
-		}
+            vcs.fireVetoableChange(new PropertyChangeEvent(this, "value", before, value));
+        } catch (PropertyVetoException e) {
+            throw new RuntimeException(e);
+        }
         delegate.set(value);
         pcs.firePropertyChange(new PropertyChangeEvent(this, "value", before, value));
     }
@@ -47,9 +47,15 @@ public class ObservableValueImpl<T>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);
-        return () -> pcs.removePropertyChangeListener(listener);
+        // return () -> pcs.removePropertyChangeListener(listener);
+        return Registration.from(
+                () -> {
+                    T value = get();
+                    listener.propertyChange(new PropertyChangeEvent(this, "value", value, value));
+                },
+                () -> pcs.removePropertyChangeListener(listener));
     }
 
     @Override
@@ -59,11 +65,11 @@ public class ObservableValueImpl<T>
     }
 
     public static <T> ObservableValue<T> create(T initialValue) {
-    	return new ObservableValueImpl<>(new SingleValuedAccessorDirect<>(initialValue));
+        return new ObservableValueImpl<>(new SingleValuedAccessorDirect<>(initialValue));
     }
-    
+
     @Override
-	public String toString() {
-    	return delegate.toString();
-	}
+    public String toString() {
+        return delegate.toString();
+    }
 }

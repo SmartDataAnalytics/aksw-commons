@@ -43,12 +43,27 @@ public class ObservableSetDifference<T>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
+        /*
         Runnable a = lhs.addPropertyChangeListener(convertPropertyChangeListener(this, rhs, listener));
         Runnable b = rhs.addPropertyChangeListener(convertPropertyChangeListener(this, lhs, listener));
 
         // Return a runnable that deregister both listeners
         return () -> { a.run(); b.run(); };
+        */
+
+        Registration a = lhs.addPropertyChangeListener(convertPropertyChangeListener(this, rhs, listener));
+        Registration b = rhs.addPropertyChangeListener(convertPropertyChangeListener(this, lhs, listener));
+
+        // Return a runnable that deregister both listeners
+        // return () -> { a.run(); b.run(); };
+        return Registration.from(
+            () -> { listener.propertyChange(new CollectionChangedEventImpl<T>(
+                    this, this, this,
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet())); },
+            () -> { a.remove(); b.remove(); }
+        );
+
     }
 
     @SuppressWarnings("unchecked")

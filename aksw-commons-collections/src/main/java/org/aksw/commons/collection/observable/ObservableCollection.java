@@ -19,7 +19,7 @@ public interface ObservableCollection<T>
 //    Runnable addListener(Consumer<CollectionChangedEvent<? super T>> listener);
 
     Runnable addVetoableChangeListener(VetoableChangeListener listener);
-    Runnable addPropertyChangeListener(PropertyChangeListener listener);
+    Registration addPropertyChangeListener(PropertyChangeListener listener);
 
     /** Replace the content of this collection thereby firing only a single event */
 //    boolean replace(Collection<? extends T> newValues);

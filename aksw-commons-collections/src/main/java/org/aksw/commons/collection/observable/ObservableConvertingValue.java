@@ -33,7 +33,7 @@ public class ObservableConvertingValue<F, B>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         return delegate.addPropertyChangeListener(ev -> {
             B rawOldValue = (B)ev.getOldValue();
             B rawNewValue = (B)ev.getNewValue();
@@ -46,10 +46,10 @@ public class ObservableConvertingValue<F, B>
             }
         });
     }
-    
+
     @Override
     public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
-    	throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException();
     }
 
 }

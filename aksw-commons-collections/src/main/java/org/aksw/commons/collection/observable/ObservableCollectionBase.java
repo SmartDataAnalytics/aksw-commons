@@ -32,12 +32,16 @@ public abstract class ObservableCollectionBase<T, C extends Collection<T>>
         return () -> vcs.removeVetoableChangeListener(listener);
     }
 
+    /*
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);
-        return () -> pcs.removePropertyChangeListener(listener);
-    }
+        // return () -> pcs.removePropertyChangeListener(listener);
 
+        return Registration.from(
+            () -> listener.propertyChange(null)
+    }
+*/
 }
 
 
