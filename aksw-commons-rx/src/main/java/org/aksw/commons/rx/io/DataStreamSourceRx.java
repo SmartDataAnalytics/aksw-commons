@@ -10,13 +10,13 @@ import org.aksw.commons.util.range.RangeUtils;
 
 import com.google.common.collect.Range;
 
-public class SequentialReaderSourceRx<T>
+public class DataStreamSourceRx<T>
     implements DataStreamSource<T[]>
 {
     protected ArrayOps<T[]> arrayOps;
     protected ListPaginator<T> listPaginator;
 
-    public SequentialReaderSourceRx(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
+    public DataStreamSourceRx(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
         super();
         this.arrayOps = arrayOps;
         this.listPaginator = listPaginator;
@@ -28,7 +28,7 @@ public class SequentialReaderSourceRx<T>
     }
 
     public static <T> DataStreamSource<T[]> create(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
-        return new SequentialReaderSourceRx<>(arrayOps, listPaginator);
+        return new DataStreamSourceRx<>(arrayOps, listPaginator);
     }
 
     @Override

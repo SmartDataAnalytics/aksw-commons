@@ -7,7 +7,7 @@ import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
 import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.input.DataStreams;
 import org.aksw.commons.io.slice.SliceMetaDataBasic;
-import org.aksw.commons.rx.io.SequentialReaderSourceRx;
+import org.aksw.commons.rx.io.DataStreamSourceRx;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.util.FlowableUtils;
 import org.aksw.commons.util.range.CountInfo;
@@ -41,7 +41,7 @@ public class ListPaginatorWithAdvancedCache<T>
         this.backend = backend;
 
         ArrayOps<T[]> arrayOps = cacheBuilder.getSlice().getArrayOps();
-        DataStreamSource<T[]> source = SequentialReaderSourceRx.create(arrayOps, backend);
+        DataStreamSource<T[]> source = DataStreamSourceRx.create(arrayOps, backend);
         cacheBuilder.setDataSource(source);
         core = cacheBuilder.build();
 
