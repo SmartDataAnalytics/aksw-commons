@@ -16,35 +16,17 @@ import com.google.common.collect.Range;
 /**
  * A concurrently accessible sequence of data of possibly unknown size.
  *
- * The interface is meant to support auto-syncing as follows:
- * References to metadata and content can be made.
- * Once all references are released a sync-task can be scheduled the persists
- * the updated state. Implementations may delay syncing if within a certain time
- * window another content/metadata block is referenced.
- *
- *
  * @author raven
  *
  * @param <T>
  */
 public interface Slice<T>
     extends SliceMetaDataBasic, Sync
-    // extends ArrayPuttable
 {
     ReadWriteLock getReadWriteLock();
     Condition getHasDataCondition();
 
     ArrayOps<T> getArrayOps();
-    // void checkForUpdate();
-
-    /**
-     * Obtain a new reference to the metadata. The referent may be loaded lazily.
-     * The reference must be closed after use in order to allow sync to trigger.
-     *
-     * @return
-     */
-    // RefFuture<SliceMetaData> getMetaData();
-
 
     /**
      * Read the metadata and check whether the slice has a known size and
@@ -105,19 +87,6 @@ public interface Slice<T>
     }
 
     /**
-     * Return an iterator initialized at the given offset
-     * which blocks upon accessing an index outside of the data or failure ranges.
-     *
-     * @param offset
-     * @return
-     */
-    // Iterator<T> blockingIterator(long offset);
-
-    // void syncMetaData();
-    // syncPages();
-    // sync(); // Sync everything
-
-    /**
      * An accessor which allows for 'claiming' a sub-range of this slice. The claimed range can be incrementally
      * modified which may re-use already allocated resources (e.g. claimed pages) and thus improve performance.
      *
@@ -125,18 +94,4 @@ public interface Slice<T>
      * The sub-ranges can be modified dynamically.
      */
     SliceAccessor<T> newSliceAccessor();
-
-    /**
-     * A lock that when held prevents creation of workers that put data into the slice.
-     * This allows for analyzing all existing workers during scheduling; i.e. when deciding
-     * whether for a data demand any new workers need to be created or existing ones can be reused.
-     *
-     *
-     * Note: This might not be the best place for the lock because it
-     * seems better to have that lock on a data producer system (e.g. the SmartRangeCache impl).
-     * The slice itself is no data producer but rather a data collection.
-     *
-     *
-     */
-    // Lock getWorkerCreationLock();
 }

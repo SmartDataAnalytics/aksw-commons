@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 
 import org.aksw.commons.collection.observable.ObservableValue;
 import org.aksw.commons.collection.observable.ObservableValueImpl;
+import org.aksw.commons.collection.observable.Registration;
 
 public class ObservableSlottedValueImpl<W, P>
     extends SlottedBuilderDelegateBase<W, P>
@@ -55,17 +56,17 @@ public class ObservableSlottedValueImpl<W, P>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         return cachedValue.addPropertyChangeListener(listener);
     }
 
-	@Override
-	public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
+    @Override
+    public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
         return cachedValue.addVetoableChangeListener(listener);
-	}
-	
-	@Override
-	public String toString() {
-		return cachedValue.toString();
-	}
+    }
+
+    @Override
+    public String toString() {
+        return cachedValue.toString();
+    }
 }

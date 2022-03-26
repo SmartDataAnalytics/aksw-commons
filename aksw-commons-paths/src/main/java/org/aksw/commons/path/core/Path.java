@@ -20,6 +20,7 @@ public interface Path<T>
     Path<T> toAbsolutePath();
     boolean isAbsolute();
     List<T> getSegments();
+    // T getLastSegment();
     Path<T> getRoot();
     Path<T> getFileName();
     Path<T> getParent();

@@ -33,17 +33,23 @@ public class ObservableSetUnion<T>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         // FIXME Create a union event - i.e. cross check additions / deletions against the values
         // in the sets:
         // - suppress an added value if it was already present (in the other set)
         // - suppress a deleted value if it is present in the other set
 
-        Runnable a = lhs.addPropertyChangeListener(convertListener(this, rhs, listener));
-        Runnable b = rhs.addPropertyChangeListener(convertListener(this, lhs, listener));
+        Registration a = lhs.addPropertyChangeListener(convertListener(this, rhs, listener));
+        Registration b = rhs.addPropertyChangeListener(convertListener(this, lhs, listener));
 
         // Return a runnable that deregister both listeners
-        return () -> { a.run(); b.run(); };
+        // return () -> { a.run(); b.run(); };
+        return Registration.from(
+            () -> { listener.propertyChange(new CollectionChangedEventImpl<T>(
+                    this, this, this,
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet())); },
+            () -> { a.remove(); b.remove(); }
+        );
     }
 
 

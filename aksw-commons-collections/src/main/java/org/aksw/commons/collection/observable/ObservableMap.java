@@ -27,7 +27,7 @@ public interface ObservableMap<K, V>
 //    ObservableCollection<V> values();
 
     Runnable addVetoableChangeListener(VetoableChangeListener listener);
-    Runnable addPropertyChangeListener(PropertyChangeListener listener);
+    Registration addPropertyChangeListener(PropertyChangeListener listener);
 
 
     /**
@@ -65,7 +65,7 @@ public interface ObservableMap<K, V>
             }
 
             @Override
-            public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+            public Registration addPropertyChangeListener(PropertyChangeListener listener) {
                 return ObservableMap.this.addPropertyChangeListener(ev -> {
                     V oldValue = ((Map<K, V>)ev.getOldValue()).getOrDefault(key, defaultValue);
                     V newValue = ((Map<K, V>)ev.getNewValue()).getOrDefault(key, defaultValue);
@@ -76,10 +76,10 @@ public interface ObservableMap<K, V>
 
                 });
             }
-            
+
             @Override
             public Runnable addVetoableChangeListener(VetoableChangeListener listener) {
-            	throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException();
             }
         };
     }

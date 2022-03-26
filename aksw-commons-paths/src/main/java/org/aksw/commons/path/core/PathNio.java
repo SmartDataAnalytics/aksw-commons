@@ -1,5 +1,6 @@
 package org.aksw.commons.path.core;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +46,19 @@ public class PathNio implements Path<String>
 
     @Override
     public List<String> getSegments() {
-        return PathBase.toList(this);
+        // This is a copy of the code in PathUtils.getPathSegments
+        // in order to avoid the dependency to the utils package
+        int n = getDelegate().getNameCount();
+
+        String[] result = new String[n];
+
+        // The iterator is expected to yield n items
+        Iterator<java.nio.file.Path> it = getDelegate().iterator();
+        for (int i = 0; i < n; ++i) {
+            String segment = it.next().toString();
+            result[i] = segment;
+        }
+        return Arrays.asList(result);
     }
 
     @Override
@@ -137,9 +150,9 @@ public class PathNio implements Path<String>
             .iterator();
     }
 
-	@Override
-	public int compareTo(Path<String> that) {
-		return Comparator.nullsFirst((x, y) -> x.toString().compareTo(y.toString())).compare(this, that);
-	}
+    @Override
+    public int compareTo(Path<String> that) {
+        return Comparator.nullsFirst((x, y) -> x.toString().compareTo(y.toString())).compare(this, that);
+    }
 
 }

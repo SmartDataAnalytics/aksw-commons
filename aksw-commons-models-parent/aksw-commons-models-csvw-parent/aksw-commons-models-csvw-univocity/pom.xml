@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>aksw-commons-models-csvw-univocity</artifactId>
+	<packaging>jar</packaging>
+
+	<parent>
+		<artifactId>aksw-commons-models-csvw-parent</artifactId>
+		<groupId>org.aksw.commons</groupId>
+		<version>0.9.3</version>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-models-csvw-domain</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.univocity</groupId>
+			<artifactId>univocity-parsers</artifactId>
+		</dependency>
+	</dependencies>
+</project>

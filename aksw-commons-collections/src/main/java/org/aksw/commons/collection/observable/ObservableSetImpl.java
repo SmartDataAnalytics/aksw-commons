@@ -1,6 +1,8 @@
 package org.aksw.commons.collection.observable;
 
+import java.beans.PropertyChangeListener;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 public class ObservableSetImpl<T>
@@ -29,5 +31,17 @@ public class ObservableSetImpl<T>
                true,
                rawAdditions, rawRemovals);
    }
+
+    @Override
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
+        pcs.addPropertyChangeListener(listener);
+        // return () -> pcs.removePropertyChangeListener(listener);
+
+        return Registration.from(
+            () ->  { listener.propertyChange(new CollectionChangedEventImpl<T>(
+                    this, this, this,
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet())); },
+            () -> pcs.removePropertyChangeListener(listener));
+    }
 
 }

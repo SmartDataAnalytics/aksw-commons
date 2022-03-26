@@ -9,7 +9,10 @@ public interface BufferView<A> {
     // ReadWriteLock getReadWriteLock();
     long getGeneration();
 
-    long getCapacity();
+//    default long getCapacity() {
+//        long result = getRangeBuffer().getCapacity();
+//        return result;
+//    }
 
     ReadWriteLock getReadWriteLock();
 //	protected RangeBuffer rangeBuffer;

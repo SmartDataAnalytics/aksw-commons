@@ -7,6 +7,15 @@ import org.aksw.commons.io.buffer.plain.Buffer;
 
 import com.google.common.collect.Range;
 
+/**
+ * Slice implementation backed only by a single {@link Buffer}.
+ * This implementation never evicts data hence using it with large
+ * amounts of data is subject to out of memory issues.
+ *
+ * @author raven
+ *
+ * @param <A>
+ */
 public class SliceInMemory<A>
     extends SliceBase<A>
 {
@@ -15,9 +24,8 @@ public class SliceInMemory<A>
     protected Buffer<A> buffer;
 
     protected SliceInMemory(ArrayOps<A> arrayOps, Buffer<A> buffer) {
-        super();
+        super(arrayOps);
         this.metaData = new SliceMetaDataImpl();
-        this.arrayOps = arrayOps;
         this.buffer = buffer;
     }
 

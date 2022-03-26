@@ -72,10 +72,13 @@ public class FilteredObservableCollection<T>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         return getBackend().addPropertyChangeListener(event -> {
-            CollectionChangedEvent<T> newEv = filter(this, (CollectionChangedEvent<T>)event, predicate);
-            if (newEv.hasChanges()) {
+            CollectionChangedEvent<T> raw = (CollectionChangedEvent<T>)event;
+
+            CollectionChangedEvent<T> newEv = filter(this, raw, predicate);
+            // If there were no changes before we assume a forced refresh
+            if (!raw.hasChanges() || newEv.hasChanges()) {
                 listener.propertyChange(newEv);
             }
         });

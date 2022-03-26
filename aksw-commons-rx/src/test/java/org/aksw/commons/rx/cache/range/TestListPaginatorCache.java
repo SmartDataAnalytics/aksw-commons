@@ -10,11 +10,10 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.buffer.plain.PagedBuffer;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl.Builder;
 import org.aksw.commons.io.slice.Slice;
-import org.aksw.commons.io.slice.SliceInMemory;
+import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
 import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginator;
@@ -29,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.pool.KryoPool;
+import com.google.common.base.StandardSystemProperty;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
@@ -37,6 +37,14 @@ import com.google.common.primitives.Ints;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 
+/**
+ * Tests for the cache wrapper of the {@link ListPaginator} interface.
+ * Effectively tests the functionality of the {@link AdvancedRangeCacheImpl}
+ * with buffers backed by arrays of strings.
+ *
+ * @author raven
+ *
+ */
 public class TestListPaginatorCache {
 
     private static final Logger logger = LoggerFactory.getLogger(TestListPaginatorCache.class);
@@ -98,6 +106,40 @@ public class TestListPaginatorCache {
     }
 
 
+    /** Test that simulates backend failure */
+    @Test(expected = RuntimeException.class)
+    public void testFailure() {
+        Random random = new Random(0);
+
+
+        ListPaginator<String> referenceBackend = createListWithRandomItems(random);
+        // long count = referenceBackend.fetchCount(null, null).blockingGet().lowerEndpoint();
+
+        ListPaginator<String> restrictedBackend = new ListPaginator<String>() {
+            protected ListPaginator<String> backend = referenceBackend;
+
+            @Override
+            public Flowable<String> apply(Range<Long> t) {
+                // After n items yield an error
+                int n = 500;
+                Range<Long> c = t.canonical(DiscreteDomain.longs());
+                Range<Long> restriction = Range.closedOpen(c.lowerEndpoint(), c.lowerEndpoint() + n);
+                return Flowable.concat(backend.apply(restriction), Flowable.error(new RuntimeException("simulated failure")));
+            }
+
+            @Override
+            public Single<Range<Long>> fetchCount(Long itemLimit, Long rowLimit) {
+                return backend.fetchCount(itemLimit, rowLimit);
+            }
+        };
+
+        ListPaginator<String> frontend = createCachedListPaginator(String.class, restrictedBackend, 128, true, "test-failure",
+                Duration.ofSeconds(1));
+
+        // This line is expected to fail - rather than hang indefinitely!
+        frontend.fetchList(Range.atLeast(0l));
+    }
+
     @Test
     public void testRequestLimits() throws IOException {
         boolean isInMemory = false;
@@ -157,14 +199,14 @@ public class TestListPaginatorCache {
             ListPaginator<T> referenceBackend,
             ListPaginator<T> cachableBackend,
             long requestLimit,
-            boolean inMemory,
+            boolean isInMemory,
             String testId,
             Random random,
             int numIterations,
             Duration syncDelay
             ) throws IOException {
 
-        ListPaginator<T> frontend = createCachedListPaginator(clazz, cachableBackend, requestLimit, inMemory, testId,
+        ListPaginator<T> frontend = createCachedListPaginator(clazz, cachableBackend, requestLimit, isInMemory, testId,
                 syncDelay);
 
         for (int i = 0; i < numIterations; ++i) {
@@ -189,7 +231,8 @@ public class TestListPaginatorCache {
     public static <T> ListPaginator<T> createCachedListPaginator(Class<T> clazz, ListPaginator<T> cachableBackend,
             long requestLimit, boolean inMemory, String testId, Duration syncDelay) {
         KryoPool kryoPool = KryoUtils.createKryoPool(null);
-        ObjectStore objectStore = ObjectStoreImpl.create(Path.of("/tmp/aksw-commons-cache-test"), ObjectSerializerKryo.create(kryoPool));
+        Path tmpDir = Path.of(StandardSystemProperty.JAVA_IO_TMPDIR.value());
+        ObjectStore objectStore = ObjectStoreImpl.create(tmpDir.resolve("aksw-commons-tests"), ObjectSerializerKryo.create(kryoPool));
 
         org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
 
@@ -198,10 +241,11 @@ public class TestListPaginatorCache {
 
         ArrayOps<T[]> arrayOps = ArrayOps.createFor(clazz);
         Slice<T[]> slice = inMemory
-                ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
-                : SliceWithPagesSyncToDisk.create(ArrayOps.createFor(clazz), objectStore, objectStoreBasePath, pageSize, syncDelay);
+                // ? SliceInMemory.create(arrayOps, new PagedBuffer<>(arrayOps, pageSize))
+                ? SliceInMemoryCache.create(arrayOps, pageSize, 100)
+                : SliceWithPagesSyncToDisk.create(arrayOps, objectStore, objectStoreBasePath, pageSize, syncDelay);
 
-        Builder<T[]> builder = AdvancedRangeCacheImpl.Builder.<T[]>create()
+        Builder<T[]> builder = AdvancedRangeCacheImpl.<T[]>newBuilder()
             // .setDataSource(SequentialReaderSourceRx.create(ArrayOps.createFor(String.class), backend))
             .setRequestLimit(requestLimit)
             .setWorkerBulkSize(1024 * 4)

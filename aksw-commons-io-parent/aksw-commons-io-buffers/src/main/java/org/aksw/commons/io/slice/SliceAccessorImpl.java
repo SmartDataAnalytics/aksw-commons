@@ -257,11 +257,12 @@ public class SliceAccessorImpl<A>
                 RefFuture<BufferView<A>> currentPageRef = getClaimedPages().get(pageId);
 
                 BufferView<A> buffer = currentPageRef.await();
+                long bufferCapacity = buffer.getRangeBuffer().getCapacity();
 
     //            BulkingSink<T> sink = new BulkingSink<>(bulkSize,
     //                    (arr, start, len) -> BufferWithGeneration.putAll(offsetInPage, arr, start, len));
 
-                long numItemsUntilPageEnd = buffer.getCapacity() - offsetInPage;
+                long numItemsUntilPageEnd = bufferCapacity - offsetInPage;
                 // long numItemsUntilPageKnownSize = cache.getMetaData().getMaximumKnownSize(); // BufferWithGeneration.getKnownSize() >= 0 ? BufferWithGeneration.getKnownSize() : BufferWithGeneration.getCapacity();
 
                 long numItemsUntilPageKnownSize = knownSize < 0 ? Long.MAX_VALUE : knownSize - offset;

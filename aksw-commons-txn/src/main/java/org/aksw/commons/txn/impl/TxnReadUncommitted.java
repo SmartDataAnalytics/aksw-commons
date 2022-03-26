@@ -95,7 +95,7 @@ public class TxnReadUncommitted
 
         // The root path may not exist if the store is empty
         Path basePath = PathUtils.resolve(rootPath, prefix.getSegments());
-        
+
         // isVisible filters out graphs that were created after the transaction start
         Stream<TxnResourceApi> result;
         try {
@@ -105,7 +105,7 @@ public class TxnReadUncommitted
                         // No longer valid: We are interested in the folder - not the file itself: Get the parent
                         // .map(Path::getParent)
                         .map(path -> rootPath.relativize(path))
-                        .map(relPath -> PathOpsStr.newAbsolutePath().resolve(PathNio.wrap(relPath)))
+                        .map(relPath -> PathOpsStr.newRelativePath().resolve(PathNio.wrap(relPath)))
                         // .map(PathUtils::getPathSegments)
                         .map(this::getResourceApi)
                         .filter(TxnResourceApi::isVisible)

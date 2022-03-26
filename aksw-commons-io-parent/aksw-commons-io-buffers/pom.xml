@@ -9,7 +9,7 @@
 	<parent>
 		<artifactId>aksw-commons-io-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<version>0.9.2</version>
+		<version>0.9.3</version>
 	</parent>
 
 	<dependencies>
@@ -46,6 +46,12 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-resources-test-config</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>

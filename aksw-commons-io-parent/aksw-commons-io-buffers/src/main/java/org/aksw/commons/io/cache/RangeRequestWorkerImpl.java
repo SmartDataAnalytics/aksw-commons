@@ -1,12 +1,14 @@
 package org.aksw.commons.io.cache;
 
+import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.SequentialReader;
+import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
@@ -65,7 +67,7 @@ public class RangeRequestWorkerImpl<A>
      */
     // protected Iterator<T> iterator = null;
 
-    protected SequentialReader<A> sequentialReader;
+    protected DataStream<A> dataStream;
 
     /** The disposable of the data supplier */
     // protected Disposable disposable;
@@ -206,9 +208,9 @@ public class RangeRequestWorkerImpl<A>
     @Override
     protected void closeActual() {
         // Cancel the backend process
-        if (sequentialReader != null) {
+        if (dataStream != null) {
             try {
-                sequentialReader.close();
+                dataStream.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -219,7 +221,7 @@ public class RangeRequestWorkerImpl<A>
     }
 
 
-    protected synchronized void initBackendRequest() {
+    protected synchronized void initBackendRequest() throws IOException {
         // Synchronize because abort may be called concurrently
         if (!isClosed) {
             // Flowable<A> backendFlow = cacheSystem.getBackend().apply(Range.atLeast(offset));
@@ -227,7 +229,7 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-            sequentialReader = cacheSystem.getDataSource().newInputStream(Range.atLeast(requestOffset));
+            dataStream = cacheSystem.getDataSource().newDataStream(Range.atLeast(requestOffset));
 
         } else {
             return; // Exit immediately due to abort
@@ -332,10 +334,12 @@ public class RangeRequestWorkerImpl<A>
         firstItemTime = stopwatch.elapsed();
 
         // pauseLock.writeLock().newCondition();
+        boolean pendingShutdown = false;
+
         while (true) {
 
             if (terminationTimer.isRunning() && terminationTimer.elapsed(TimeUnit.MILLISECONDS) > terminationDelay.toMillis()) {
-                break;
+                pendingShutdown = true;
             }
 
             if (offset == nextCheckpointOffset) {
@@ -343,18 +347,18 @@ public class RangeRequestWorkerImpl<A>
 
                 // No progress after checkpoint - we have reached the end of data
                 if (offset == nextCheckpointOffset) {
-                    break;
+                    pendingShutdown = true;;
                 }
             }
 
-            boolean hasNext;
+            boolean hasMoreData;
             try {
                 // Align with bulk size; this should give more aesthetic numbers in debugging and logging
                 if (isFirstRun) {
                     isFirstRun = false;
-                    hasNext = process(buffer, 1, bulkSize - 1) >= 0;
+                    hasMoreData = process(buffer, 1, bulkSize - 1) >= 0;
                 } else {
-                    hasNext = process(buffer, 0, bulkSize) >= 0;
+                    hasMoreData = process(buffer, 0, bulkSize) >= 0;
                 }
 
             } catch (Exception e) {
@@ -362,7 +366,7 @@ public class RangeRequestWorkerImpl<A>
             }
 
 
-            if (hasNext) {
+            if (hasMoreData) {
 
                 // Shut down if there is no pending request for further data
                 synchronized (endpointDemands)  {
@@ -396,13 +400,13 @@ public class RangeRequestWorkerImpl<A>
                     }
                 }
 
-                // If there are no more slots or we have reached to known size then terminate
+                // If there are no more slots or if we have reached the known size then terminate
                 Lock readLock = slice.getReadWriteLock().readLock();
                 readLock.lock();
                 try {
                     long knownSize = slice.getKnownSize();
                     if (knownSize >= 0 && offset >= knownSize) {
-                        break;
+                        pendingShutdown = true;
                     }
                 } finally {
                     readLock.unlock();
@@ -412,7 +416,7 @@ public class RangeRequestWorkerImpl<A>
                     synchronized (endpointDemands) {
                         long maxEndpoint = endpointDemands.build();
                         if (maxEndpoint < 0) {
-                            break;
+                            pendingShutdown = true;;
                         }
     //                    if (offset >= maxEndpoint) {
     //                        break;
@@ -422,9 +426,35 @@ public class RangeRequestWorkerImpl<A>
 
             } else {
                 // If there is no more data then terminate immediately
-                break;
+                pendingShutdown = true;
             }
+
+
+
+            if (pendingShutdown) {
+                // We need to ensure there is no last-split-second concurrent demand while we shut down
+                boolean shutDownDone = LockUtils.runWithLock(cacheSystem.getExecutorCreationReadLock(), () -> {
+                    boolean r = false;
+                    synchronized (endpointDemands) {
+                        long maxEndpoint = endpointDemands.build();
+                        if (offset >= maxEndpoint) { // || (knownSize >= 0 && offset >= knownSize)) {
+                            cacheSystem.removeExecutor(this);
+                            r = true;
+                        }
+                    }
+                    return r;
+                });
+
+
+                if (shutDownDone) {
+                    break;
+                } else {
+                    pendingShutdown = false;
+                }
+            }
+
         }
+
     }
 
 
@@ -480,20 +510,26 @@ public class RangeRequestWorkerImpl<A>
         int remainingReadsInt = Ints.checkedCast(remainingReads);
         int numItemsOfLastRead = 0;
         int result = 0;
+        Throwable failure = null;
         try {
-            // Note: Read should never return 0!
-            while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
-                    !isClosed && !Thread.interrupted() &&
-                    (numItemsOfLastRead = sequentialReader.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
-                pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
+            try {
+                // Note: Read should never return 0!
+                while (numItemsOfLastRead >= 0 && remainingReadsInt != 0 &&
+                        !isClosed && !Thread.interrupted() &&
+                        (numItemsOfLastRead = dataStream.read(buffer, bufferOffset, remainingReadsInt)) >= 0) {
+                    pageRange.write(offset, buffer, bufferOffset, numItemsOfLastRead);
 
-                remainingReadsInt -= numItemsOfLastRead;
-                result += numItemsOfLastRead;
-                bufferOffset += numItemsOfLastRead;
-                offset += numItemsOfLastRead;
-                // System.out.println("write at offset " + offset);
-                // itemsProcessedNow += numItemsReadTmp;
+                    remainingReadsInt -= numItemsOfLastRead;
+                    result += numItemsOfLastRead;
+                    bufferOffset += numItemsOfLastRead;
+                    offset += numItemsOfLastRead;
+                    // System.out.println("write at offset " + offset);
+                    // itemsProcessedNow += numItemsReadTmp;
+                }
+            } catch (Throwable e) {
+                failure = e;
             }
+
             // offset += result;
             numItemsProcessed += result;
 
@@ -520,7 +556,7 @@ public class RangeRequestWorkerImpl<A>
                     if (slice.getKnownSize() < 0) {
                         // long knownPageSize = offsetInPage + i;
                         // rangeBuffer.setKnownSize(knownPageSize);
-                        slice.setMaximumKnownSize(offset);
+                        slice.updateMaximumKnownSize(offset);
                     }
                 }
 
@@ -532,9 +568,19 @@ public class RangeRequestWorkerImpl<A>
                     logger.trace(String.format("Signalling data condition to clients - offset: %1$d, processed: %2$d, limit:  %3$d, loaded ranges: %4$s", offset, numItemsProcessed, requestLimit, slice.getLoadedRanges()));
                 }
 
-                slice.getHasDataCondition().signalAll();
+
+                if (failure != null) {
+                    slice.getFailedRanges().put(Range.closedOpen(offset, offset + remainingReadsInt),
+                            Collections.singletonList(failure));
+                    throw new RuntimeException(failure);
+                }
+
 
         } finally {
+            if (result != 0 || failure != null) {
+                slice.getHasDataCondition().signalAll();
+            }
+
             // pageRange.unlock();
             writeLock.unlock();
         }

@@ -13,9 +13,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.LongSupplier;
 
-import org.aksw.commons.io.input.SequentialReader;
-import org.aksw.commons.io.slice.SliceAccessor;
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.range.RangeUtils;
@@ -47,11 +48,11 @@ import com.google.common.primitives.Ints;
  *
  * @param <T>
  */
-public class SequentialReaderFromSliceImpl<A>
+public class DataStreamOverSliceWithCache<A>
     extends AutoCloseableWithLeakDetectionBase
-    implements SequentialReader<A>
+    implements DataStream<A>
 {
-    private static final Logger logger = LoggerFactory.getLogger(SequentialReaderFromSliceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataStreamOverSliceWithCache.class);
 
     protected Slice<A> slice;
     protected AdvancedRangeCacheImpl<A> cache;
@@ -74,7 +75,7 @@ public class SequentialReaderFromSliceImpl<A>
     protected long currentOffset;
     protected int maxReadAheadItemCount = 100;
 
-    public SequentialReaderFromSliceImpl(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
+    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
         super();
         this.requestRange = requestRange;
         this.cache = cache;
@@ -106,8 +107,6 @@ public class SequentialReaderFromSliceImpl<A>
     protected void checkpoint(long n) {
         Preconditions.checkArgument(n >= 0, "Argument must not be negative");
 
-        clearPassedSlots();
-
         long start = nextCheckpointOffset;
         long end = start + n;
 
@@ -120,6 +119,8 @@ public class SequentialReaderFromSliceImpl<A>
             });
             nextCheckpointOffset = end;
         });
+
+        clearPassedSlots();
     }
 
     // This map holds a single client's requested slots across all tasked workers
@@ -128,7 +129,7 @@ public class SequentialReaderFromSliceImpl<A>
     // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
-    public SequentialReaderFromSliceImpl(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
@@ -136,16 +137,15 @@ public class SequentialReaderFromSliceImpl<A>
     }
 
 
+    /**
+     * Clear all slots of workers with a value less than the currentOffset.
+     * These are workers for which we did not schedule any further tasks
+     */
     public void clearPassedSlots() {
-        // Note: here, nextCheckpointOffset refers to the value just before
-        // the 'next' next checkpoint offset is computed
-        long currentOffset = nextCheckpointOffset;
-
         Iterator<Slot<Long>> it = workerToSlot.values().iterator();
         while (it.hasNext()) {
             Slot<Long> slot = it.next();
             Long value = slot.getSupplier().get();
-            // long currentOffset = offsetSupplier.getAsLong();
 
             if (value < currentOffset) {
                 logger.debug("Clearing slot for offset " + slot.getSupplier().get() + " because current offset " + currentOffset + " is higher");
@@ -157,6 +157,13 @@ public class SequentialReaderFromSliceImpl<A>
 
 
     protected void scheduleWorkerToGaps(RangeSet<Long> gaps) {
+
+        // TODO Take the readBeforeSize attribute into account
+        // If a new worker has to be created then check if there is capacity
+        // to extend its starting range to the 'left'
+        // The question is whether to take this into account here for scheduling
+        // or whether the newWorker method should take care of that
+        // I think we can handle this in the newWorker method
 
         // Index workers by offset
         // If multiple workers have the same offset then only pick the first one with the highest request range
@@ -184,6 +191,8 @@ public class SequentialReaderFromSliceImpl<A>
         }
 
         NavigableMap<Long, Long> workerSchedules = RangeUtils.scheduleRangeSupply(offsetToEndpoint, gaps, maxRedundantFetchSize, cache.requestLimit);
+//        System.out.println("Gaps:             " + gaps);
+//        System.out.println("Worker schedules: " + workerSchedules);
 
         for (Entry<Long, Long> schedule : workerSchedules.entrySet()) {
             long start = schedule.getKey();
@@ -207,10 +216,11 @@ public class SequentialReaderFromSliceImpl<A>
                 Entry<RangeRequestWorkerImpl<A>, Slot<Long>> workerAndSlot = cache.newExecutor(start, length);
                 workerToSlot.put(workerAndSlot.getKey(), workerAndSlot.getValue());
             } else {
+                // Get or create a slot on the worker for publishing our end point demand
                 Slot<Long> slot = workerToSlot.get(worker);
 
                 if (slot == null) {
-                    // We are reusing an existing worker; allocate a new slot on it
+                    // We are reusing an existing worker for which we don't have a slot yet
                     slot = worker.newDemandSlot();
                     workerToSlot.put(worker, slot);
                 }
@@ -226,6 +236,11 @@ public class SequentialReaderFromSliceImpl<A>
 
     protected void processGaps(RangeSet<Long> gaps, long start, long end) {
         scheduleWorkerToGaps(gaps);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return !isClosed;
     }
 
     protected void closeActual() {
@@ -251,25 +266,31 @@ public class SequentialReaderFromSliceImpl<A>
 
         // Schedule data fetching for length + maxReadAheadItemCount items
         long requestedEndOffset = currentOffset + length;
-        // ContiguousSet<Long> cset = ContiguousSet.create(requestRange, DiscreteDomain.longs());
-        // long requestRangeSize = cset.size();
+        long readAheadEndOffset = requestedEndOffset + maxReadAheadItemCount;
 
-        long maxEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
-        long effectiveEndOffset = Math.min(requestedEndOffset, maxEndOffset);
+        long maxAllowedEndOffset = LongMath.saturatedAdd(ContiguousSet.create(requestRange, DiscreteDomain.longs()).last(), 1);
+        long effectiveRequestEndOffset = Math.min(requestedEndOffset, maxAllowedEndOffset);
+        long effectiveReadAheadEndOffset = Math.min(readAheadEndOffset, maxAllowedEndOffset);
 
-        if (currentOffset >= effectiveEndOffset) {
+        // If we effectively can read zero bytes then we are at the end of data
+        if (currentOffset >= effectiveRequestEndOffset) {
             return -1;
+            // System.out.println("debug point");
         }
 
-        Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveEndOffset);
+        Range<Long> totalReadRange = Range.closedOpen(currentOffset, effectiveRequestEndOffset);
 
-        if (effectiveEndOffset >= nextCheckpointOffset) {
+        // It is important to claim the pages before we schedule the workers
+        // Otherwise pages may get evicted before we can read them
+        pageRange.claimByOffsetRange(currentOffset, effectiveReadAheadEndOffset);
+
+        if (effectiveReadAheadEndOffset >= nextCheckpointOffset) {
 
             try {
-                int numItemsUntilRequestRangeEnd = Ints.saturatedCast(effectiveEndOffset - nextCheckpointOffset);
+                int numExtraItemsSinceLastCheckpoint = Ints.saturatedCast(effectiveReadAheadEndOffset - nextCheckpointOffset);
 
                 // Read up length + maxReadAheadItemCount
-                int n = Math.min(length + maxReadAheadItemCount, numItemsUntilRequestRangeEnd);
+                int n = Math.max(0, numExtraItemsSinceLastCheckpoint);
 
                 // Increments nextCheckpointOffset by n
                 checkpoint(n);
@@ -286,7 +307,6 @@ public class SequentialReaderFromSliceImpl<A>
 
         int result;
 
-        pageRange.claimByOffsetRange(currentOffset, effectiveEndOffset);
 
         ReadWriteLock rwl = slice.getReadWriteLock();
         Lock readLock = rwl.readLock();
@@ -296,7 +316,7 @@ public class SequentialReaderFromSliceImpl<A>
             RangeSet<Long> loadedRanges = slice.getLoadedRanges();
 
             // FIXME - Add failed ranges again
-            RangeMap<Long, List<Throwable>> failedRanges = TreeRangeMap.create(); // ;metaData.getFailedRanges();
+            RangeMap<Long, List<Throwable>> failedRanges = slice.getFailedRanges(); // TreeRangeMap.create(); // ;metaData.getFailedRanges();
 
             Range<Long> entry = null;
             List<Throwable> failures = null;
@@ -325,6 +345,7 @@ public class SequentialReaderFromSliceImpl<A>
 
                     try {
                         long knownMaxSize;
+                        // TODO We need to ensure the whole read range is covered
                         while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
 
@@ -363,8 +384,8 @@ public class SequentialReaderFromSliceImpl<A>
             }
 
             if (failures != null && !failures.isEmpty()) {
-                throw new RuntimeException("Attempt to read a range of data marked with an error",
-                        failures.get(0));
+                Throwable failure = failures.get(0);
+                throw new RuntimeException("Attempt to read a range of data marked with an error: " + failure.getMessage(), failure);
             }
 
 
@@ -443,6 +464,11 @@ public class SequentialReaderFromSliceImpl<A>
 
 
         return result;
+    }
+
+    @Override
+    public ArrayOps<A> getArrayOps() {
+        return slice.getArrayOps();
     }
 
 

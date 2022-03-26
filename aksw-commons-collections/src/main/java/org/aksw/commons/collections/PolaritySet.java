@@ -1,5 +1,6 @@
 package org.aksw.commons.collections;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -16,10 +17,12 @@ import com.google.common.collect.Sets;
  * @param <T>
  */
 public class PolaritySet<T>
-    implements Cloneable
+    implements Cloneable, Serializable
 {
-    private Set<T> values;
-    private boolean isPositive;
+    private static final long serialVersionUID = 1L;
+
+    protected Set<T> values;
+    protected boolean isPositive;
 
     public PolaritySet(Set<T> values) {
         this.values = values;
@@ -61,6 +64,11 @@ public class PolaritySet<T>
     /** Immutable union; returns a view */
     public PolaritySet<T> intersect(PolaritySet<T> that) {
         return createIntersectionView(this, that);
+    }
+
+    /** Immutable union; returns a view */
+    public PolaritySet<T> difference(PolaritySet<T> that) {
+        return createDifferenceView(this, that);
     }
 
     /** Immutable negate; returns a view */
@@ -195,6 +203,50 @@ public class PolaritySet<T>
     }
 
 
+
+    /**
+     * case: positive - positive
+     *     Simply take the difference
+     *
+     * case: positive - negative
+     *     {1, 2, 3} difference {not {3}}: -> { 3 } (intersection)
+     *
+     * case: negative - positive
+     *     {not {3} } difference {1, 2, 3}:
+     *
+     * case: negative - negative
+     *     Simply take the intersection
+     *
+     *
+     * @param other
+     * @return
+     */
+    public static <T> PolaritySet<T> createDifferenceView(PolaritySet<T> self, PolaritySet<T> that) {
+        if (true) {
+            throw new RuntimeException("not implemented yet");
+        }
+        Set<T> set;
+        boolean isPos = true;
+
+        if(self.isPositive) {
+            if(that.isPositive) {
+                set = Sets.difference(self.values, that.values);
+            } else {
+                set = Sets.intersection(self.values, that.values);
+            }
+        } else {
+            // TODO This part is probably wrong
+            if(that.isPositive) {
+                set = Sets.union(that.values, self.values);
+            } else {
+                set = Sets.union(self.values, that.values);
+                isPos = false;
+            }
+        }
+
+        PolaritySet<T> result = new PolaritySet<T>(isPos, set);
+        return result;
+    }
     /**
      * case: positive - positive
      *     Simply take the intersection

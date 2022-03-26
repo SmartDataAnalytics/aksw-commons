@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +34,8 @@ import org.aksw.commons.util.serializable.SerializableDoubleSummaryStatistics;
 import org.aksw.commons.util.serializable.SerializableIntSummaryStatistics;
 import org.aksw.commons.util.serializable.SerializableLongSummaryStatistics;
 
+
+
 /**
  * Builder for parallel aggregators.
  *
@@ -52,12 +55,14 @@ import org.aksw.commons.util.serializable.SerializableLongSummaryStatistics;
  */
 public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> {
 
+
     /*
      * Static constructors - allow for for a more natural read order (outer-to-inner)
      * but not for fluent-style chaining.
      */
 
 
+    /** Pass on input to sub-acc if the predicate evaluates to true*/
     public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggInputFilter<I, O, ACC, AGG>
         inputFilter(SerializablePredicate<? super I> inputFilter, AGG state) {
          return new AggInputFilter<>(state, inputFilter);
@@ -108,7 +113,10 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
         return new AggInputTransform<>(state, inputTransform);
     }
 
-
+    public static <I, J, O, ACC extends Accumulator<J, O>, AGG extends ParallelAggregator<J, O, ACC>> AggInputFlatMap<I, J, O, ACC, AGG>
+        inputFlatMap(SerializableFunction<I, Iterator<J>> inputTransform, AGG state) {
+        return new AggInputFlatMap<>(state, inputTransform);
+    }
 
     public static <I, O, P, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggOutputTransform<I, O, P, ACC, AGG>
         outputTransform(AGG state, SerializableFunction<? super O, ? extends P> outputTransform) {
@@ -132,6 +140,14 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
         ParallelAggregator<T, Set<T>, Accumulator<T, Set<T>>> setSupplier(SerializableSupplier<? extends Set<T>> setSupplier)
     {
         return collectionSupplier(setSupplier);
+    }
+
+    /** We provide the SetOverMap collection type which transparently gives access to the underlying map
+     * This way we can reuse the collection machinery for accumulation and still type-safely extract the map eventually */
+    public static <K, V>
+        ParallelAggregator<Entry<K, V>, SetOverMap<K, V>, Accumulator<Entry<K, V>, SetOverMap<K, V>>> mapSupplier(SerializableSupplier<? extends Map<K, V>> mapSupplier)
+    {
+        return naturalAccumulator(() -> new AccCollection<>(new SetOverMap<K, V>(mapSupplier.get())));
     }
 
     public static <T, C extends Collection<T>>

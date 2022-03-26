@@ -206,7 +206,7 @@ public class ObservableConvertingCollection<F, B, C extends ObservableCollection
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         return getBackend().addPropertyChangeListener(ev -> {
             CollectionChangedEvent<F> newEv = convertEvent(this, (CollectionChangedEvent<B>)ev, converter);
 

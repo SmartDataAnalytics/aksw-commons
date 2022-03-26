@@ -61,9 +61,14 @@ public class ObservableMapImpl<K, V>
     }
 
     @Override
-    public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+    public Registration addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);
-        return () -> pcs.removePropertyChangeListener(listener);
+        // return () -> pcs.removePropertyChangeListener(listener);
+        return Registration.from(
+            () -> listener.propertyChange(new CollectionChangedEventImpl<>(
+                    this, this, this,
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet())),
+            () -> pcs.removePropertyChangeListener(listener));
     }
 
     @Override
@@ -284,7 +289,7 @@ public class ObservableMapImpl<K, V>
         }
 
         @Override
-        public Runnable addPropertyChangeListener(PropertyChangeListener listener) {
+        public Registration addPropertyChangeListener(PropertyChangeListener listener) {
             return ObservableMapImpl.this.addPropertyChangeListener(event -> {
                 CollectionChangedEvent<K> newEv = convertEvent(event);
                 if (newEv.hasChanges()) {

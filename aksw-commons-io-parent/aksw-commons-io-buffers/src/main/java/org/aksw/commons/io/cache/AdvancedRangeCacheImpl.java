@@ -11,8 +11,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.aksw.commons.io.input.SequentialReader;
-import org.aksw.commons.io.input.SequentialReaderSource;
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.DataStream;
+import org.aksw.commons.io.input.DataStreamSource;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
@@ -24,12 +25,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 
 public class AdvancedRangeCacheImpl<T>
-    implements SequentialReaderSource<T>
-//     implements ListPaginator<T>
+    implements DataStreamSource<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheImpl.class);
 
-    protected SequentialReaderSource<T> dataSource;
+    protected DataStreamSource<T> dataSource;
     protected Slice<T> slice;
 
     // protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
@@ -38,6 +38,7 @@ public class AdvancedRangeCacheImpl<T>
 
     protected Set<RangeRequestWorkerImpl<T>> executors = Collections.synchronizedSet(Sets.newIdentityHashSet());
 
+    protected long readBeforeSize;
     protected long requestLimit;
     protected Duration terminationDelay;
 
@@ -48,7 +49,7 @@ public class AdvancedRangeCacheImpl<T>
             MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
 
     public AdvancedRangeCacheImpl(
-            SequentialReaderSource<T> dataSource,
+            DataStreamSource<T> dataSource,
             Slice<T> slice,
             long requestLimit,
             int workerBulkSize,
@@ -62,9 +63,13 @@ public class AdvancedRangeCacheImpl<T>
         this.terminationDelay = terminationDelay;
     }
 
+    @Override
+    public ArrayOps<T> getArrayOps() {
+        return slice.getArrayOps();
+    }
 
     public static <A> AdvancedRangeCacheImpl<A> create(
-            SequentialReaderSource<A> dataSource,
+            DataStreamSource<A> dataSource,
             Slice<A> slice,
             long requestLimit,
             int workerBulkSize,
@@ -74,8 +79,39 @@ public class AdvancedRangeCacheImpl<T>
     }
 
 
-    public SequentialReaderSource<T> getDataSource() {
+    public DataStreamSource<T> getDataSource() {
         return dataSource;
+    }
+
+
+    /**
+     * If the size is requested but not yet known then try to obtain it
+     * from the dataSource and if this knows it then cache it with the slice
+     */
+    @Override
+    public long size() {
+        long result = slice.getKnownSize();
+
+        if (result == -1) {
+            try {
+                result = dataSource.size();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            if (result >= 0) {
+                Lock lock = slice.getReadWriteLock().writeLock();
+                lock.lock();
+                try {
+                    slice.updateMinimumKnownSize(result);
+                    slice.updateMaximumKnownSize(result);
+                } finally {
+                    lock.unlock();
+                }
+            }
+        }
+
+        return result;
     }
 
     public Slice<T> getSlice() {
@@ -86,6 +122,13 @@ public class AdvancedRangeCacheImpl<T>
         return executors;
     }
 
+
+    /**
+     * A lock that when held prevents creation of workers that put data into the slice.
+     * This allows for analyzing all existing workers during scheduling; i.e. when deciding
+     * whether for a data demand any new workers need to be created or existing ones can be reused.
+     *
+     */
     public Lock getExecutorCreationReadLock() {
         return workerCreationLock;
     }
@@ -117,12 +160,18 @@ public class AdvancedRangeCacheImpl<T>
             slot = worker.newDemandSlot();
             slot.set(offset + initialLength);
 
-//            if (offset == 63000000) {
-//                System.out.println("debug point");
-//            }
+//			if (offset == 63000000) {
+//				System.out.println("debug point");
+//			}
+//			if (initialLength == 5) {
+//				System.out.println("debug point");
+//			}
 
             executors.add(worker);
-            logger.debug(String.format("New worker created with initial schedule of offset %1$d and length %2$d", offset, initialLength));
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("New worker created with initial schedule of offset %1$d and length %2$d", offset, initialLength));
+            }
             executorService.submit(worker);
         } finally {
             // executorCreationLock.writeLock().unlock();
@@ -150,16 +199,19 @@ public class AdvancedRangeCacheImpl<T>
      * @param requestRange
      */
     @Override
-    public SequentialReader<T> newInputStream(Range<Long> range) {
-        SequentialReaderFromSliceImpl<T> result = new SequentialReaderFromSliceImpl<>(this, range);
+    public DataStream<T> newDataStream(Range<Long> range) {
+        DataStreamOverSliceWithCache<T> result = new DataStreamOverSliceWithCache<>(this, range);
         // RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
     }
 
+    public static <A> Builder<A> newBuilder() {
+        return new Builder<A>();
+    }
 
     public static class Builder<A> {
-        protected SequentialReaderSource<A> dataSource;
+        protected DataStreamSource<A> dataSource;
         protected Slice<A> slice;
 
         protected int workerBulkSize;
@@ -168,15 +220,11 @@ public class AdvancedRangeCacheImpl<T>
         // protected Duration syncDelay;
         protected Duration terminationDelay;
 
-        public static <A> Builder<A> create() {
-            return new Builder<A>();
-        }
-
-        public SequentialReaderSource<A> getDataSource() {
+        public DataStreamSource<A> getDataSource() {
             return dataSource;
         }
 
-        public Builder<A> setDataSource(SequentialReaderSource<A> dataSource) {
+        public Builder<A> setDataSource(DataStreamSource<A> dataSource) {
             this.dataSource = dataSource;
             return this;
         }
