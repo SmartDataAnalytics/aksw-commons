@@ -2,6 +2,7 @@ package org.aksw.commons.collection.observable;
 
 /** A listener registration */
 public interface Registration{
+    /** Experimental: Trigger the listener with the current value */
     Registration fire();
     Registration remove();
 
