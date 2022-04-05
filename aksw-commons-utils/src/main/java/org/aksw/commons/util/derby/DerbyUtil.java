@@ -13,4 +13,8 @@ public class DerbyUtil {
     public static final OutputStream DEV_NULL = new OutputStream() {
         public void write(int b) {}
     };
+
+    public static void disableDerbyLog() {
+        System.setProperty("derby.stream.error.field", "org.aksw.commons.util.derby.DerbyUtil.DEV_NULL");
+    }
 }
