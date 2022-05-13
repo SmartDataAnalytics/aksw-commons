@@ -346,7 +346,9 @@ public class DataStreamOverSliceWithCache<A>
                     try {
                         long knownMaxSize;
                         // TODO We need to ensure the whole read range is covered
-                        while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                        while (
+                        		(failures = failedRanges.get(currentOffset)) == null &&
+                        		(entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
 
                             boolean enableSanityCheck = false;

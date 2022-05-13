@@ -10,6 +10,8 @@ import org.aksw.commons.util.range.RangeUtils;
 
 import com.google.common.collect.Range;
 
+import io.reactivex.rxjava3.core.Flowable;
+
 public class DataStreamSourceRx<T>
     implements DataStreamSource<T[]>
 {
@@ -33,7 +35,8 @@ public class DataStreamSourceRx<T>
 
     @Override
     public DataStream<T[]> newDataStream(Range<Long> range) {
-        return new DataStreamOverStream<T>(arrayOps, listPaginator.apply(range).blockingStream());
+    	Flowable<T> flowable = listPaginator.apply(range);
+        return new DataStreamOverStream<T>(arrayOps, flowable.blockingStream());
     }
 
     @Override

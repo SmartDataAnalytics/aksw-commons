@@ -229,7 +229,8 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-            dataStream = cacheSystem.getDataSource().newDataStream(Range.atLeast(requestOffset));
+        	Range<Long> range = Range.atLeast(requestOffset);
+            dataStream = cacheSystem.getDataSource().newDataStream(range);
 
         } else {
             return; // Exit immediately due to abort

@@ -10,7 +10,7 @@ public class AdvancedRangeCacheConfigImpl
     protected Duration terminationDelay;
     protected int internalWorkerSize;
 
-    // Not yet wired up
+    // Not yet wired up; read items before the requested offset
     protected long readBeforeSize;
 
     public AdvancedRangeCacheConfigImpl() {
