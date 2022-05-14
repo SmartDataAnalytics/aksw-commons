@@ -9,8 +9,8 @@ import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
@@ -229,7 +229,9 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-        	Range<Long> range = Range.atLeast(requestOffset);
+        	Range<Long> range = requestLimit == 0 || requestLimit == Long.MAX_VALUE
+        			? Range.atLeast(requestOffset)
+        			: Range.closedOpen(requestOffset, LongMath.saturatedAdd(requestOffset, requestLimit));
             dataStream = cacheSystem.getDataSource().newDataStream(range);
 
         } else {
