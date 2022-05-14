@@ -1,5 +1,7 @@
 package org.aksw.commons.rx.io;
 
+import java.util.stream.Stream;
+
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.DataStream;
 import org.aksw.commons.io.input.DataStreamOverStream;
@@ -36,7 +38,8 @@ public class DataStreamSourceRx<T>
     @Override
     public DataStream<T[]> newDataStream(Range<Long> range) {
     	Flowable<T> flowable = listPaginator.apply(range);
-        return new DataStreamOverStream<T>(arrayOps, flowable.blockingStream());
+		Stream<T> stream = flowable.blockingStream();
+        return new DataStreamOverStream<T>(arrayOps, stream);
     }
 
     @Override

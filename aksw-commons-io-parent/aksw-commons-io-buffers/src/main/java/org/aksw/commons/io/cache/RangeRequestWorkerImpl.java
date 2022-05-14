@@ -534,14 +534,17 @@ public class RangeRequestWorkerImpl<A>
             // offset += result;
             numItemsProcessed += result;
 
+            // Only update the minimum known size to offset if we saw at least one item
+            if (result > 0) {
+                slice.updateMinimumKnownSize(offset);
+            }
+
             // result becomes -1 if it is 0 for a non-zero length
             result = result == 0 && n != 0 ? -1 : result;
 
             // int numItemsRead = numItemsProcessed;
 
 //        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
-
-                slice.updateMinimumKnownSize(offset);
 
                 // If there is no further item although the request range has not been covered
                 // then we have detected the end
