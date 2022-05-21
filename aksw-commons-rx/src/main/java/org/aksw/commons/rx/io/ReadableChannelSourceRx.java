@@ -3,9 +3,9 @@ package org.aksw.commons.rx.io;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.input.DataStreamOverStream;
-import org.aksw.commons.io.input.DataStreamSource;
+import org.aksw.commons.io.input.ReadableChannel;
+import org.aksw.commons.io.input.ReadableChannelOverStream;
+import org.aksw.commons.io.input.ReadableChannelSource;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.util.range.CountInfo;
 import org.aksw.commons.util.range.RangeUtils;
@@ -14,13 +14,13 @@ import com.google.common.collect.Range;
 
 import io.reactivex.rxjava3.core.Flowable;
 
-public class DataStreamSourceRx<T>
-    implements DataStreamSource<T[]>
+public class ReadableChannelSourceRx<T>
+    implements ReadableChannelSource<T[]>
 {
     protected ArrayOps<T[]> arrayOps;
     protected ListPaginator<T> listPaginator;
 
-    public DataStreamSourceRx(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
+    public ReadableChannelSourceRx(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
         super();
         this.arrayOps = arrayOps;
         this.listPaginator = listPaginator;
@@ -31,15 +31,15 @@ public class DataStreamSourceRx<T>
         return arrayOps;
     }
 
-    public static <T> DataStreamSource<T[]> create(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
-        return new DataStreamSourceRx<>(arrayOps, listPaginator);
+    public static <T> ReadableChannelSource<T[]> create(ArrayOps<T[]> arrayOps, ListPaginator<T> listPaginator) {
+        return new ReadableChannelSourceRx<>(arrayOps, listPaginator);
     }
 
     @Override
-    public DataStream<T[]> newDataStream(Range<Long> range) {
+    public ReadableChannel<T[]> newReadableChannel(Range<Long> range) {
     	Flowable<T> flowable = listPaginator.apply(range);
 		Stream<T> stream = flowable.blockingStream();
-        return new DataStreamOverStream<T>(arrayOps, stream);
+        return new ReadableChannelOverStream<T>(arrayOps, stream);
     }
 
     @Override

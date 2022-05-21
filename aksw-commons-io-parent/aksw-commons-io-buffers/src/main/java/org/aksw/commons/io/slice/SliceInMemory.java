@@ -43,6 +43,11 @@ public class SliceInMemory<A>
     public SliceAccessor<A> newSliceAccessor() {
         return new SliceAccessor<A>() {
 
+        	@Override
+        	public Slice<A> getSlice() {
+        		return SliceInMemory.this;
+        	}
+
             @Override
             public void claimByOffsetRange(long startOffset, long endOffset) {
             }

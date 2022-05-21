@@ -8,7 +8,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.DataStream;
+import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
@@ -67,7 +67,7 @@ public class RangeRequestWorkerImpl<A>
      */
     // protected Iterator<T> iterator = null;
 
-    protected DataStream<A> dataStream;
+    protected ReadableChannel<A> dataStream;
 
     /** The disposable of the data supplier */
     // protected Disposable disposable;
@@ -232,7 +232,7 @@ public class RangeRequestWorkerImpl<A>
         	Range<Long> range = requestLimit == 0 || requestLimit == Long.MAX_VALUE
         			? Range.atLeast(requestOffset)
         			: Range.closedOpen(requestOffset, LongMath.saturatedAdd(requestOffset, requestLimit));
-            dataStream = cacheSystem.getDataSource().newDataStream(range);
+            dataStream = cacheSystem.getDataSource().newReadableChannel(range);
 
         } else {
             return; // Exit immediately due to abort

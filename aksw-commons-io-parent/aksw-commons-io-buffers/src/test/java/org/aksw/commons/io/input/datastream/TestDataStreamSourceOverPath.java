@@ -11,10 +11,10 @@ import java.util.concurrent.TimeUnit;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfig;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfigImpl;
-import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.input.DataStreamSource;
-import org.aksw.commons.io.input.DataStreamSources;
-import org.aksw.commons.io.input.DataStreams;
+import org.aksw.commons.io.input.ReadableChannel;
+import org.aksw.commons.io.input.ReadableChannelSource;
+import org.aksw.commons.io.input.ReadableChannelSources;
+import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -32,8 +32,8 @@ public class TestDataStreamSourceOverPath {
 
     @Test
     public void testIteratorOverByteDataStream() {
-        DataStream<byte[]> xxx = DataStreams.of(ArrayOps.BYTE, new byte[] {'a', 'b', 'c'});
-        Iterator<Byte> it = DataStreams.newBoxedIterator(xxx);
+        ReadableChannel<byte[]> xxx = ReadableChannels.of(ArrayOps.BYTE, new byte[] {'a', 'b', 'c'});
+        Iterator<Byte> it = ReadableChannels.newBoxedIterator(xxx);
         while (it.hasNext()) {
             System.out.println((char)it.next().byteValue());
         }
@@ -61,16 +61,16 @@ public class TestDataStreamSourceOverPath {
 
         logger.info("Created test data file " + testData + " of size " + size);
 
-        DataStreamSource<byte[]> source = DataStreamSources.of(testData, true);
+        ReadableChannelSource<byte[]> source = ReadableChannelSources.of(testData, true);
 
-        DataStreamSource<byte[]> cached;
+        ReadableChannelSource<byte[]> cached;
 
         boolean useDisk = true;
         AdvancedRangeCacheConfig cacheConfig = AdvancedRangeCacheConfigImpl.newDefaultsForObjects();
         if (useDisk) {
-            cached = DataStreamSources.cache(source, tmpDir, "filecache", cacheConfig);
+            cached = ReadableChannelSources.cache(source, tmpDir, "filecache", cacheConfig);
         } else {
-            cached = DataStreamSources.cache(
+            cached = ReadableChannelSources.cache(
                     source,
                     SliceInMemoryCache.create(ArrayOps.BYTE, 4096, 100), AdvancedRangeCacheConfigImpl.newDefaultsForObjects());
         }
@@ -87,11 +87,11 @@ public class TestDataStreamSourceOverPath {
             logger.debug("Request range: " + range + " (length: " + len + ")");
 
             try(
-                DataStream<byte[]> sourceStream = source.newDataStream(range);
-                DataStream<byte[]> cachedStream = cached.newDataStream(range)) {
+                ReadableChannel<byte[]> sourceStream = source.newReadableChannel(range);
+                ReadableChannel<byte[]> cachedStream = cached.newReadableChannel(range)) {
 
-                byte[] expected = IOUtils.toByteArray(DataStreams.newInputStream(sourceStream));
-                byte[] actual = IOUtils.toByteArray(DataStreams.newInputStream(cachedStream));
+                byte[] expected = IOUtils.toByteArray(ReadableChannels.newInputStream(sourceStream));
+                byte[] actual = IOUtils.toByteArray(ReadableChannels.newInputStream(cachedStream));
 
                 logger.debug(String.format("DataStreamSource uncached/cached comparison iteration %d took %f seconds", i, sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f));
 

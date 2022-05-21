@@ -12,8 +12,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.input.DataStreamSource;
+import org.aksw.commons.io.input.ReadableChannel;
+import org.aksw.commons.io.input.ReadableChannelSource;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.util.slot.Slot;
 import org.slf4j.Logger;
@@ -25,11 +25,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 
 public class AdvancedRangeCacheImpl<T>
-    implements DataStreamSource<T>
+    implements ReadableChannelSource<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRangeCacheImpl.class);
 
-    protected DataStreamSource<T> dataSource;
+    protected ReadableChannelSource<T> dataSource;
     protected Slice<T> slice;
 
     // protected Set<RangeRequestIterator<T>> activeRequests = Collections.synchronizedSet(Sets.newIdentityHashSet());
@@ -49,7 +49,7 @@ public class AdvancedRangeCacheImpl<T>
             MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
 
     public AdvancedRangeCacheImpl(
-            DataStreamSource<T> dataSource,
+            ReadableChannelSource<T> dataSource,
             Slice<T> slice,
             long requestLimit,
             int workerBulkSize,
@@ -69,7 +69,7 @@ public class AdvancedRangeCacheImpl<T>
     }
 
     public static <A> AdvancedRangeCacheImpl<A> create(
-            DataStreamSource<A> dataSource,
+            ReadableChannelSource<A> dataSource,
             Slice<A> slice,
             long requestLimit,
             int workerBulkSize,
@@ -79,7 +79,7 @@ public class AdvancedRangeCacheImpl<T>
     }
 
 
-    public DataStreamSource<T> getDataSource() {
+    public ReadableChannelSource<T> getDataSource() {
         return dataSource;
     }
 
@@ -199,8 +199,8 @@ public class AdvancedRangeCacheImpl<T>
      * @param requestRange
      */
     @Override
-    public DataStream<T> newDataStream(Range<Long> range) {
-        DataStreamOverSliceWithCache<T> result = new DataStreamOverSliceWithCache<>(this, range);
+    public ReadableChannel<T> newReadableChannel(Range<Long> range) {
+        ReadableChannelOverSliceWithCache<T> result = new ReadableChannelOverSliceWithCache<>(this, range);
         // RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
@@ -211,7 +211,7 @@ public class AdvancedRangeCacheImpl<T>
     }
 
     public static class Builder<A> {
-        protected DataStreamSource<A> dataSource;
+        protected ReadableChannelSource<A> dataSource;
         protected Slice<A> slice;
 
         protected int workerBulkSize;
@@ -220,11 +220,11 @@ public class AdvancedRangeCacheImpl<T>
         // protected Duration syncDelay;
         protected Duration terminationDelay;
 
-        public DataStreamSource<A> getDataSource() {
+        public ReadableChannelSource<A> getDataSource() {
             return dataSource;
         }
 
-        public Builder<A> setDataSource(DataStreamSource<A> dataSource) {
+        public Builder<A> setDataSource(ReadableChannelSource<A> dataSource) {
             this.dataSource = dataSource;
             return this;
         }

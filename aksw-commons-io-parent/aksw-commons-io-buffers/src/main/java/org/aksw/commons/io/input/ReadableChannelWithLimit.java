@@ -6,21 +6,21 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.primitives.Ints;
 
-public class DataStreamLimit<A>
-    implements DataStream<A>
+public class ReadableChannelWithLimit<A>
+    implements ReadableChannel<A>
 {
-    protected DataStream<A> delegate;
+    protected ReadableChannel<A> delegate;
     protected long limit;
     protected long remaining;
 
-    public DataStreamLimit(DataStream<A> backend, long limit) {
+    public ReadableChannelWithLimit(ReadableChannel<A> backend, long limit) {
         super();
         this.delegate = backend;
         this.limit = limit;
         this.remaining = limit;
     }
 
-    public DataStream<A> getDelegate() {
+    public ReadableChannel<A> getDelegate() {
         return delegate;
     }
 

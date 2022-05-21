@@ -6,14 +6,15 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
-public class DataStreamOverStream<T>
-    extends DataStreamBase<T[]>
+// TODO Rename to .OverIterator and add a close action argument
+public class ReadableChannelOverStream<T>
+    extends ReadableChannelBase<T[]>
 {
     protected ArrayOps<T[]> arrayOps;
     protected Stream<T> stream = null;
     protected Iterator<T> iterator = null;
 
-    public DataStreamOverStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
+    public ReadableChannelOverStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
         super();
         this.arrayOps = arrayOps;
         this.stream = stream;

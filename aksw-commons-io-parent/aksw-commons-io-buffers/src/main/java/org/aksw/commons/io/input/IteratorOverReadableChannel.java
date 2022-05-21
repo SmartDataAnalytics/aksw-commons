@@ -2,15 +2,17 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 
+import org.aksw.commons.collections.CloseableIterator;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
 
-public class IteratorOverDataStream<T>
+public class IteratorOverReadableChannel<T>
     extends AbstractIterator<T>
+	implements CloseableIterator<T>
 {
-    protected DataStream<T[]> dataStream;
+    protected ReadableChannel<T[]> dataStream;
 
     protected ArrayOps<T[]> arrayOps;
 
@@ -29,7 +31,7 @@ public class IteratorOverDataStream<T>
      * @param dataStream
      * @param internalBufferSize The number of items to read from the dataStream at once.
      */
-    public IteratorOverDataStream(ArrayOps<T[]> arrayOps, DataStream<T[]> dataStream, int internalBufferSize) {
+    public IteratorOverReadableChannel(ArrayOps<T[]> arrayOps, ReadableChannel<T[]> dataStream, int internalBufferSize) {
         super();
         Preconditions.checkArgument(internalBufferSize >= 0, "Internal buffer size must be greater than 0");
 
@@ -70,5 +72,14 @@ public class IteratorOverDataStream<T>
         @SuppressWarnings("unchecked")
         T result = (T)tmp;
         return result;
+    }
+
+    @Override
+    public void close() {
+    	try {
+			dataStream.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
     }
 }

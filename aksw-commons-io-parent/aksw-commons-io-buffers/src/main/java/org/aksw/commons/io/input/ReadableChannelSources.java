@@ -19,9 +19,9 @@ import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
 
 import com.esotericsoftware.kryo.Kryo;
 
-public class DataStreamSources {
+public class ReadableChannelSources {
 
-    public static DataStreamSource<byte[]> of(java.nio.file.Path path) throws IOException {
+    public static ReadableChannelSource<byte[]> of(java.nio.file.Path path) throws IOException {
         return of(path, true);
     }
 
@@ -32,21 +32,21 @@ public class DataStreamSources {
      * @return
      * @throws IOException
      */
-    public static DataStreamSource<byte[]> of(java.nio.file.Path path, boolean cacheSize) throws IOException {
+    public static ReadableChannelSource<byte[]> of(java.nio.file.Path path, boolean cacheSize) throws IOException {
         long cachedSize = cacheSize ? Files.size(path) : -1;
-        return new DataStreamSourceOverPath(path, cachedSize);
+        return new ReadableChannelSourceOverPath(path, cachedSize);
     }
 
     /** Simple mem-cache setup */
-    public static <A> DataStreamSource<A> cacheInMemory(DataStreamSource<A> source, int pageSize, int maxPages, long maxRequestSize) {
-        return DataStreamSources.cache(
+    public static <A> ReadableChannelSource<A> cacheInMemory(ReadableChannelSource<A> source, int pageSize, int maxPages, long maxRequestSize) {
+        return ReadableChannelSources.cache(
                 source,
                 SliceInMemoryCache.create(source.getArrayOps(), pageSize, maxPages),
                 AdvancedRangeCacheConfigImpl.newDefaultsForObjects(maxRequestSize));
     }
 
-    public static <A> DataStreamSource<A> cache(
-            DataStreamSource<A> source,
+    public static <A> ReadableChannelSource<A> cache(
+            ReadableChannelSource<A> source,
             java.nio.file.Path cacheBaseFolder,
             String cacheEntryId,
             AdvancedRangeCacheConfig cacheConfig) {
@@ -58,16 +58,16 @@ public class DataStreamSources {
         return cache(source, cacheBaseFolder, relPath, cacheConfig);
     }
 
-    public static <A> DataStreamSource<A> cache(
-            DataStreamSource<A> source,
+    public static <A> ReadableChannelSource<A> cache(
+            ReadableChannelSource<A> source,
             java.nio.file.Path cacheBaseFolder,
             Path<String> cacheEntryId,
             AdvancedRangeCacheConfig cacheConfig) {
         return cache(source, cacheBaseFolder, cacheEntryId, cacheConfig, null);
     }
 
-    public static <A> DataStreamSource<A> cache(
-            DataStreamSource<A> source,
+    public static <A> ReadableChannelSource<A> cache(
+            ReadableChannelSource<A> source,
             java.nio.file.Path cacheBaseFolder,
             Path<String> cacheEntryId,
             AdvancedRangeCacheConfig cacheConfig,
@@ -79,8 +79,8 @@ public class DataStreamSources {
         return cache(source, objectStore, cacheEntryId, cacheConfig);
     }
 
-    public static <A> DataStreamSource<A> cache(
-            DataStreamSource<A> source,
+    public static <A> ReadableChannelSource<A> cache(
+            ReadableChannelSource<A> source,
             ObjectStore objectStore,
             Path<String> cacheEntryId,
             AdvancedRangeCacheConfig cacheConfig) {
@@ -93,8 +93,8 @@ public class DataStreamSources {
     }
 
     /** Set up an advanced range cache with a certain slice backend */
-    public static <A> DataStreamSource<A> cache(
-            DataStreamSource<A> source,
+    public static <A> ReadableChannelSource<A> cache(
+            ReadableChannelSource<A> source,
             Slice<A> slice,
             AdvancedRangeCacheConfig cacheConfig) {
 

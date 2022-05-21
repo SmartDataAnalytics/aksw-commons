@@ -7,7 +7,7 @@ import java.nio.channels.ReadableByteChannel;
 /**
  * Wrapper to treat a DataStream<byte[]> as a {@link ReadableByteChannel}.
  * Use with {@link java.nio.channels.Channels#newInputStream(ReadableByteChannel)} to obtain
- * a conventional {@link java.io.InputStream} over a a {@link DataStream}.
+ * a conventional {@link java.io.InputStream} over a a {@link ReadableChannel}.
  *
  * @author raven
  *
@@ -15,9 +15,9 @@ import java.nio.channels.ReadableByteChannel;
 public class ReadableByteChannelOverDataStream
     implements ReadableByteChannel
 {
-    protected DataStream<byte[]> dataStream;
+    protected ReadableChannel<byte[]> dataStream;
 
-    public ReadableByteChannelOverDataStream(DataStream<byte[]> dataStream) {
+    public ReadableByteChannelOverDataStream(ReadableChannel<byte[]> dataStream) {
         super();
         this.dataStream = dataStream;
     }

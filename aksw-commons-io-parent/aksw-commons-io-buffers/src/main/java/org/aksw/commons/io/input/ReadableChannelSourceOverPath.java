@@ -13,8 +13,8 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 
-public class DataStreamSourceOverPath
-    implements DataStreamSource<byte[]>
+public class ReadableChannelSourceOverPath
+    implements ReadableChannelSource<byte[]>
 {
     protected Path path;
     protected long predefinedSize;
@@ -25,7 +25,7 @@ public class DataStreamSourceOverPath
      * @param predefinedSize If the value is non-negative then {@link #size()}
      *   returns this value rather than invoking {@link Files#size(Path)}.
      */
-    public DataStreamSourceOverPath(Path path, long predefinedSize) {
+    public ReadableChannelSourceOverPath(Path path, long predefinedSize) {
         super();
         this.path = path;
         this.predefinedSize = predefinedSize;
@@ -37,24 +37,24 @@ public class DataStreamSourceOverPath
     }
 
     @Override
-    public DataStream<byte[]> newDataStream(Range<Long> range) throws IOException {
-        DataStream<byte[]> result;
+    public ReadableChannel<byte[]> newReadableChannel(Range<Long> range) throws IOException {
+        ReadableChannel<byte[]> result;
 
         ContiguousSet<Long> set = ContiguousSet.create(range, DiscreteDomain.longs());
         if (set.isEmpty()) {
-            result = DataStreams.empty(ArrayOps.BYTE);
+            result = ReadableChannels.empty(ArrayOps.BYTE);
         } else {
             long pos = set.first();
             Preconditions.checkArgument(pos >= 0, "Ranges must start with 0 or greater");
 
             FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
             fc.position(pos);
-            result = DataStreams.wrap(fc);
+            result = ReadableChannels.wrap(fc);
 
             if (range.hasUpperBound()) {
                 // End offset is exclusive so we have to add 1 to the last element contained in the set
                 long len = set.last() + 1 - pos;
-                result = DataStreams.limit(result, len);
+                result = ReadableChannels.limit(result, len);
             }
         }
         return result;

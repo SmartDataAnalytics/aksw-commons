@@ -7,23 +7,23 @@ import java.util.TreeSet;
 
 public class WindowedSorterIterator<T>
 	extends SinglePrefetchIterator<T>
-	implements IClosableIterator<T>
+	implements CloseableIterator<T>
 {
 	private NavigableSet<T> buffer;
 	private int maxBufferSize;
 	private Iterator<T> it;
-	
-	public static <T> IClosableIterator<T> wrap(Iterator<T> it, int maxBufferSize, Comparator<T> comparator) {
+
+	public static <T> CloseableIterator<T> wrap(Iterator<T> it, int maxBufferSize, Comparator<T> comparator) {
 		return new WindowedSorterIterator<T>(it, maxBufferSize, comparator);
 	}
-	
-	public WindowedSorterIterator(Iterator<T> it, int maxBufferSize, Comparator<T> comparator) 
+
+	public WindowedSorterIterator(Iterator<T> it, int maxBufferSize, Comparator<T> comparator)
 	{
 		this.buffer = new TreeSet<T>(comparator);
 		this.it = it;
 		this.maxBufferSize = maxBufferSize;
 	}
-	
+
 	@Override
 	protected T prefetch() throws Exception
 	{
@@ -33,12 +33,16 @@ public class WindowedSorterIterator<T>
 
 		return buffer.isEmpty() ? finish() : buffer.pollFirst();
 	}
-	
+
 	@Override
 	public void close()
 	{
-		if(it != null && it instanceof IClosable) {
-			((IClosable)it).close();
+		if(it != null && it instanceof AutoCloseable) {
+			try {
+				((AutoCloseable)it).close();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }
