@@ -1,6 +1,6 @@
 package org.aksw.commons.util.apache;
 
-import org.aksw.commons.collections.IClosableIterator;
+import org.aksw.commons.collections.CloseableIterator;
 import org.aksw.commons.collections.SinglePrefetchIterator;
 import org.aksw.commons.collections.WindowedSorterIterator;
 
@@ -14,7 +14,7 @@ public class ApacheLogRangeEntryIterator
 	private Iterator<Map.Entry<Date, File>> itFile;
 	
 	//private ApacheLogEntryIterator itEntry;
-	private IClosableIterator<ApacheLogEntry> itEntry;
+	private CloseableIterator<ApacheLogEntry> itEntry;
 	
 	
 	private NavigableMap<Date, ApacheLogEntry> sortedBuffer = new TreeMap<Date, ApacheLogEntry>();

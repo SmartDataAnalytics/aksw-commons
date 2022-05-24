@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.LongSupplier;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.DataStream;
+import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
@@ -48,11 +48,11 @@ import com.google.common.primitives.Ints;
  *
  * @param <T>
  */
-public class DataStreamOverSliceWithCache<A>
+public class ReadableChannelOverSliceWithCache<A>
     extends AutoCloseableWithLeakDetectionBase
-    implements DataStream<A>
+    implements ReadableChannel<A>
 {
-    private static final Logger logger = LoggerFactory.getLogger(DataStreamOverSliceWithCache.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadableChannelOverSliceWithCache.class);
 
     protected Slice<A> slice;
     protected AdvancedRangeCacheImpl<A> cache;
@@ -75,7 +75,7 @@ public class DataStreamOverSliceWithCache<A>
     protected long currentOffset;
     protected int maxReadAheadItemCount = 100;
 
-    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
+    public ReadableChannelOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
         super();
         this.requestRange = requestRange;
         this.cache = cache;
@@ -129,7 +129,7 @@ public class DataStreamOverSliceWithCache<A>
     // protected LongSupplier offsetSupplier;
     protected long maxRedundantFetchSize = 1000;
 
-    public DataStreamOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
+    public ReadableChannelOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, long nextCheckpointOffset, LongSupplier offsetSupplier) {
         this.cache = cache;
         this.slice = cache.getSlice();
         this.pageRange = slice.newSliceAccessor();
@@ -346,7 +346,9 @@ public class DataStreamOverSliceWithCache<A>
                     try {
                         long knownMaxSize;
                         // TODO We need to ensure the whole read range is covered
-                        while ((entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                        while (
+                        		(failures = failedRanges.get(currentOffset)) == null &&
+                        		(entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
 
                             boolean enableSanityCheck = false;

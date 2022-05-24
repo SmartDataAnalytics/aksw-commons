@@ -101,7 +101,10 @@ public class TxnReadUncommitted
         try {
             result = Files.exists(basePath)
                     ? Files.walk(basePath)
-                        .filter(pathMatcher::matches)
+                        .filter(path -> {
+                            boolean r = pathMatcher.matches(path);
+                            return r;
+                        })
                         // No longer valid: We are interested in the folder - not the file itself: Get the parent
                         // .map(Path::getParent)
                         .map(path -> rootPath.relativize(path))

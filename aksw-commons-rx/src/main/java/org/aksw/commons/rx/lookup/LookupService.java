@@ -29,6 +29,10 @@ public interface LookupService<K, V>
         return LookupServiceTransformKey.create(this, fn);
     }
 
+    default LookupService<K, V> defaultForAbsentKeys(Function<? super K, ? extends V> defaultValueGenerator) {
+        return new LookupServiceAddAbsentKeys<K, V>(this, defaultValueGenerator);
+    }
+
     default LookupService<K, V> cache() {
         return LookupServiceCacheMem.create(this);
     }

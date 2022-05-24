@@ -62,6 +62,11 @@ public class SliceAccessorImpl<A>
         this.slice = cache;
     }
 
+    @Override
+    public Slice<A> getSlice() {
+    	return slice;
+    }
+
     public Range<Long> getOffsetRange() {
         return offsetRange;
     }

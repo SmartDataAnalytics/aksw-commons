@@ -8,9 +8,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.function.LongUnaryOperator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.input.DataStream;
-import org.aksw.commons.io.slice.SliceAccessor;
+import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.slice.Slice;
+import org.aksw.commons.io.slice.SliceAccessor;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.slot.ObservableSlottedValue;
@@ -67,7 +67,7 @@ public class RangeRequestWorkerImpl<A>
      */
     // protected Iterator<T> iterator = null;
 
-    protected DataStream<A> dataStream;
+    protected ReadableChannel<A> dataStream;
 
     /** The disposable of the data supplier */
     // protected Disposable disposable;
@@ -229,7 +229,10 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-            dataStream = cacheSystem.getDataSource().newDataStream(Range.atLeast(requestOffset));
+        	Range<Long> range = requestLimit == 0 || requestLimit == Long.MAX_VALUE
+        			? Range.atLeast(requestOffset)
+        			: Range.closedOpen(requestOffset, LongMath.saturatedAdd(requestOffset, requestLimit));
+            dataStream = cacheSystem.getDataSource().newReadableChannel(range);
 
         } else {
             return; // Exit immediately due to abort
@@ -533,14 +536,17 @@ public class RangeRequestWorkerImpl<A>
             // offset += result;
             numItemsProcessed += result;
 
+            // Only update the minimum known size to offset if we saw at least one item
+            if (result > 0) {
+                slice.updateMinimumKnownSize(offset);
+            }
+
             // result becomes -1 if it is 0 for a non-zero length
             result = result == 0 && n != 0 ? -1 : result;
 
             // int numItemsRead = numItemsProcessed;
 
 //        	LockUtils.runWithLock(slice.getReadWriteLock().writeLock(), () -> {
-
-                slice.updateMinimumKnownSize(offset);
 
                 // If there is no further item although the request range has not been covered
                 // then we have detected the end

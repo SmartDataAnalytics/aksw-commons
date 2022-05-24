@@ -3,13 +3,15 @@ package org.aksw.commons.util.jdbc;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
 
-import com.google.common.collect.HashMultimap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 
 /**
@@ -20,6 +22,8 @@ import com.google.common.collect.Multimap;
  */
 public class Schema {
 
+	private static final Logger logger = LoggerFactory.getLogger(Schema.class);
+	
     // All maps are based on the relation name!
     private Map<String, Relation> relations;
     private Map<String, PrimaryKey> primaryKeys;
@@ -97,11 +101,21 @@ public class Schema {
             tableNames = JdbcUtils.fetchRelationNames(meta, catalog);
         }
 
+        logger.info("Starting retrieval of database metadata for " + Iterables.size(tableNames) + " tables");
+        
+        logger.info("Retrieving columns");
         Map<String, Relation> relations = JdbcUtils.fetchColumns(meta, catalog, schema, tableNames);
+        
+        logger.info("Retrieving primary keys");
         Map<String, PrimaryKey> primaryKeys = JdbcUtils.fetchPrimaryKeys(meta, catalog, schema, tableNames);
+        
+        logger.info("Retrieving foreign keys");
         Multimap<String, ForeignKey> foreignKeys = JdbcUtils.fetchForeignKeys(meta, catalog, schema, tableNames);
         Set<String> tNames = relations.keySet(); // should be equal to tableNames, unless tableNames was null
+
+        logger.info("Retrieving indexes");
         Multimap<String, Index> indexes = JdbcUtils.fetchIndexes(meta, catalog, schema, tNames, true);
+        logger.info("Finished retrieval of database metadata.");
 
         Schema result = new Schema(relations, primaryKeys, foreignKeys, indexes);
         return result;

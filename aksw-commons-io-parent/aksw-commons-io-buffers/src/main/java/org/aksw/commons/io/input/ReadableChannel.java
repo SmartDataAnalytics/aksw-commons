@@ -1,16 +1,16 @@
 package org.aksw.commons.io.input;
 
-import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.Channel;
 
 import org.aksw.commons.io.buffer.array.HasArrayOps;
 
 /**
  * A data stream allows for repeated retrieval of arrays of consecutive items.
  * Data streams can be seen as a low level generalizaton / unification of Iterators and InputStreams.
- * See {@link DataStreams#newIterator(DataStream)} and {@link DataStreams#newInputStream(DataStream)}.
+ * See {@link ReadableChannels#newIterator(ReadableChannel)} and {@link ReadableChannels#newInputStream(ReadableChannel)}.
  *
- * Akin to an InputStream, the {@link DataStream} interface does not provide a seek() method.
+ * Akin to an InputStream, the {@link ReadableChannel} interface does not provide a seek() method.
  * Usually there should be another factory that creates data streams
  * for given offsets. The reason is, that a sequential reader is typically backed by a stream of items
  * (such as a http response, or a sql/sparql result set) and that stream needs to be re-created when
@@ -21,10 +21,9 @@ import org.aksw.commons.io.buffer.array.HasArrayOps;
  *
  * @param <A>
  */
-public interface DataStream<A>
-    extends HasArrayOps<A>, Closeable
+public interface ReadableChannel<A>
+    extends HasArrayOps<A>, Channel
 {
-    boolean isOpen();
 
     /**
      * Read method following the usual InputStream protocol.

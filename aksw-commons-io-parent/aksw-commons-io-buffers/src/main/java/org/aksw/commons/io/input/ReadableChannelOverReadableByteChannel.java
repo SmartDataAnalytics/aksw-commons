@@ -6,12 +6,12 @@ import java.nio.channels.ReadableByteChannel;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
-public class DataStreamOverReadableByteChannel
-    implements DataStream<byte[]>
+public class ReadableChannelOverReadableByteChannel
+    implements ReadableChannel<byte[]>
 {
     protected ReadableByteChannel channel;
 
-    public DataStreamOverReadableByteChannel(ReadableByteChannel channel) {
+    public ReadableChannelOverReadableByteChannel(ReadableByteChannel channel) {
         super();
         this.channel = channel;
     }

@@ -22,6 +22,8 @@ import java.io.IOException;
 public interface SliceAccessor<A>
     extends AutoCloseable
 {
+	Slice<A> getSlice();
+
     // ConcurrentNavigableMap<Long, RefFuture<BufferView<A>>> getClaimedPages();
 
 

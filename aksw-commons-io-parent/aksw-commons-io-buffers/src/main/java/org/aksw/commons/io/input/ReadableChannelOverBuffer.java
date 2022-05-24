@@ -5,13 +5,13 @@ import java.io.IOException;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.Buffer;
 
-public class DataStreamOverBuffer<A>
-    extends DataStreamBase<A>
+public class ReadableChannelOverBuffer<A>
+    extends ReadableChannelBase<A>
 {
     protected Buffer<A> buffer;
     protected long offset;
 
-    public DataStreamOverBuffer(Buffer<A> buffer, long offset) {
+    public ReadableChannelOverBuffer(Buffer<A> buffer, long offset) {
         super();
         this.buffer = buffer;
         this.offset = offset;

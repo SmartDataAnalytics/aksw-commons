@@ -28,7 +28,7 @@ public class UriUtils {
         return result;
     }
 
-      public static URI newURI(String uri) {
+    public static URI newURI(String uri) {
         URI result;
         try {
             result = new URI(uri);

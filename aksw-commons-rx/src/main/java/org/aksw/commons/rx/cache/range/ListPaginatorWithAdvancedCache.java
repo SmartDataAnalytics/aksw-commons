@@ -4,10 +4,10 @@ import java.util.Iterator;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
-import org.aksw.commons.io.input.DataStreamSource;
-import org.aksw.commons.io.input.DataStreams;
+import org.aksw.commons.io.input.ReadableChannelSource;
+import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.slice.SliceMetaDataBasic;
-import org.aksw.commons.rx.io.DataStreamSourceRx;
+import org.aksw.commons.rx.io.ReadableChannelSourceRx;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.util.FlowableUtils;
 import org.aksw.commons.util.range.CountInfo;
@@ -41,7 +41,7 @@ public class ListPaginatorWithAdvancedCache<T>
         this.backend = backend;
 
         ArrayOps<T[]> arrayOps = cacheBuilder.getSlice().getArrayOps();
-        DataStreamSource<T[]> source = DataStreamSourceRx.create(arrayOps, backend);
+        ReadableChannelSource<T[]> source = ReadableChannelSourceRx.create(arrayOps, backend);
         cacheBuilder.setDataSource(source);
         core = cacheBuilder.build();
 
@@ -93,10 +93,10 @@ public class ListPaginatorWithAdvancedCache<T>
     }
 
 
-    public static <T> Flowable<T> adapt(ArrayOps<T[]> arrayOps, DataStreamSource<T[]> source, Range<Long> range) {
+    public static <T> Flowable<T> adapt(ArrayOps<T[]> arrayOps, ReadableChannelSource<T[]> source, Range<Long> range) {
         return FlowableUtils.createFlowableFromResource(
-                () -> source.newDataStream(range),
-                DataStreams::newIterator,
+                () -> source.newReadableChannel(range),
+                ReadableChannels::newIterator,
                 Iterator::hasNext,
                 Iterator::next,
                 t -> {

@@ -64,6 +64,8 @@ public class JdbcUtils {
     {
         Multimap<String, ForeignKey> result = HashMultimap.create();
         
+        logger.debug("Fetching foreign keys of table " + table + " in schema " + schema);
+        
         ResultSet rs;
         try {
             rs = meta.getExportedKeys(catalog, schema, table);

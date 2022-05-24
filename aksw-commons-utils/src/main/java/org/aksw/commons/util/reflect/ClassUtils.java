@@ -104,7 +104,7 @@ public class ClassUtils {
         return forceInvoke(null, m, args);
     }
 
-    public static Object forceInvoke(Object o, Method m, Object[] args)
+    public static Object forceInvoke(Object o, Method m, Object... args)
     {
         // FIXME Not multithreading safe
         boolean isAccessible = m.isAccessible();

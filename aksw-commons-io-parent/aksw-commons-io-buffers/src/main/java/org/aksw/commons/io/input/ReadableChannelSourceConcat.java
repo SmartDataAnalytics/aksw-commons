@@ -9,10 +9,10 @@ import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import com.google.common.collect.Range;
 
 
-public class DataStreamSourceConcat<A>
-    implements DataStreamSource<A>
+public class ReadableChannelSourceConcat<A>
+    implements ReadableChannelSource<A>
 {
-    protected List<DataStreamSource<A>> members;
+    protected List<ReadableChannelSource<A>> members;
     protected ArrayOps<A> arrayOps;
 
     @Override
@@ -21,14 +21,14 @@ public class DataStreamSourceConcat<A>
     }
 
     @Override
-    public DataStream<A> newDataStream(Range<Long> range) throws IOException {
+    public ReadableChannel<A> newReadableChannel(Range<Long> range) throws IOException {
         return new DataStreamConcat(range);
     }
 
     @Override
     public long size() throws IOException {
         long result = 0;
-        for (DataStreamSource<A> member : members) {
+        for (ReadableChannelSource<A> member : members) {
             long contrib = member.size();
             if (contrib < 0) {
                 throw new IllegalStateException("Encountered member with unknown size in concat data stream source");
@@ -41,10 +41,10 @@ public class DataStreamSourceConcat<A>
 
     class DataStreamConcat
         extends AutoCloseableWithLeakDetectionBase
-        implements DataStream<A>
+        implements ReadableChannel<A>
     {
         protected Range<Long> range;
-        protected DataStream<A> current;
+        protected ReadableChannel<A> current;
         protected long currentOffset;
         protected long currentExpectedSize;
 
