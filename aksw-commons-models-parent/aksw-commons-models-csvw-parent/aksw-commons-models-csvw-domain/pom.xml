@@ -9,7 +9,7 @@
 	<parent>
 		<artifactId>aksw-commons-models-csvw-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<version>0.9.4-SNAPSHOT</version>
+		<version>0.9.4</version>
 	</parent>
 
 </project>
