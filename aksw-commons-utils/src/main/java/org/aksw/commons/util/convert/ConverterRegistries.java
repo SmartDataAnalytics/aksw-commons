@@ -11,7 +11,7 @@ public class ConverterRegistries {
 		Class<?> wrappedTo = Primitives.wrap(to);
 
 		if (wrappedFrom != from || wrappedTo != to) {
-			result = registry.getConverter(from, to);
+			result = registry.getConverter(wrappedFrom, wrappedTo);
 		}
 
 		return result;
