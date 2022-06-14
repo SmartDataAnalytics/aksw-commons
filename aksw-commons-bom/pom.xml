@@ -271,6 +271,25 @@
 				<version>${project.version}</version>
 			</dependency>
 
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-process-pipes</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-beans</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-syscalls</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+
 			<!-- Kryo -->
 			<!-- Note: don't use versions above 0.43 for now, for whatever reason 
 				they depend on Kryo 5.0.0 RC1 which is binary incompatible and not used by 

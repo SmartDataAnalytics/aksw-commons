@@ -14,11 +14,34 @@ public class ListOverBuffer<T>
     extends AbstractList<T>
 {
     protected Buffer<?> buffer;
+    protected int size;
 
     public ListOverBuffer(Buffer<?> buffer) {
+        this(buffer, 0);
+    }
+
+    public ListOverBuffer(Buffer<?> buffer, int size) {
         super();
         this.buffer = buffer;
+        this.size = size;
     }
+
+    @Override
+    public boolean add(T e) {
+        set(size, e);
+        ++size;
+        return true;
+    }
+
+// TODO shift left
+//    @Override
+//    public T remove(int index) {
+//        Object value = buffer.getArrayOps().getDefaultValue();
+//        if (index + 1 == size) {
+//            --size;
+//        }
+//        set(index, value);
+//    }
 
     @Override
     public T get(int index) {
@@ -35,8 +58,17 @@ public class ListOverBuffer<T>
     }
 
     @Override
+    public T set(int index, T element) {
+        try {
+            buffer.put(index, element);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return element;
+    }
+
+    @Override
     public int size() {
-        long capacity = buffer.getCapacity();
-        return Ints.saturatedCast(capacity);
+        return size;
     }
 }
