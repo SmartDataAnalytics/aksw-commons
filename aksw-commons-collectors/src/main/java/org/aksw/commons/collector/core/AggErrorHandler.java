@@ -30,7 +30,9 @@ public class AggErrorHandler<I, O,
     protected Function<AccError<I, O, SUBACC> , O> errorValueExtractor;
     protected Consumer<? super Throwable> errorCallback;
 
-    /** Whether to delegate accumulate calls to the sub-accumulator despite error */
+    /** Whether to delegate accumulate calls to the sub-accumulator despite error.
+     * BEWARE when using en errorValueExtractor: If subAccDespiteError is false then combining accumulators will result in a null accumulator
+     */
     protected boolean subAccDespiteError;
 
     public AggErrorHandler(
@@ -60,7 +62,7 @@ public class AggErrorHandler<I, O,
         SUBACC accB = b.getSubAcc();
 
         long totalErrorCount = a.getErrorCount() + b.getErrorCount(); // Should be saturated add
-        SUBACC subAcc = totalErrorCount == 0
+        SUBACC subAcc = totalErrorCount == 0 || subAccDespiteError
                 ? subAgg.combine(accA, accB)
                 : null;
 
