@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
+import org.aksw.commons.collector.core.AggErrorHandler.AccError;
 import org.aksw.commons.collector.core.AggInputFilter.AccInputFilter;
 import org.aksw.commons.collector.core.AggInputSplit.AccInputSplit;
 import org.aksw.commons.collector.core.AggInputTransform.AccInputTransform;
@@ -24,6 +25,7 @@ import org.aksw.commons.lambda.serializable.SerializableBiConsumer;
 import org.aksw.commons.lambda.serializable.SerializableBiFunction;
 import org.aksw.commons.lambda.serializable.SerializableBinaryOperator;
 import org.aksw.commons.lambda.serializable.SerializableCollector;
+import org.aksw.commons.lambda.serializable.SerializableConsumer;
 import org.aksw.commons.lambda.serializable.SerializableFunction;
 import org.aksw.commons.lambda.serializable.SerializablePredicate;
 import org.aksw.commons.lambda.serializable.SerializableSupplier;
@@ -111,6 +113,16 @@ public class AggBuilder<I, O, ACC extends Accumulator<I, O>, AGG extends Paralle
     public static <I, J, O, ACC extends Accumulator<J, O>, AGG extends ParallelAggregator<J, O, ACC>> AggInputTransform<I, J, O, ACC, AGG>
         inputTransform(SerializableFunction<? super I, ? extends J> inputTransform, AGG state) {
         return new AggInputTransform<>(state, inputTransform);
+    }
+
+    public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggErrorHandler<I, O, ACC, AGG>
+        errorHandler(AGG state) {
+        return new AggErrorHandler<>(state, false, null, null);
+    }
+
+    public static <I, O, ACC extends Accumulator<I, O>, AGG extends ParallelAggregator<I, O, ACC>> AggErrorHandler<I, O, ACC, AGG>
+        errorHandler(AGG state, boolean accDespiteError, SerializableConsumer<? super Throwable> errorCallback, SerializableFunction<AccError<I, O, ACC>, O> errorValueExtractor) {
+        return new AggErrorHandler<>(state, accDespiteError, errorCallback, errorValueExtractor);
     }
 
     public static <I, J, O, ACC extends Accumulator<J, O>, AGG extends ParallelAggregator<J, O, ACC>> AggInputFlatMap<I, J, O, ACC, AGG>

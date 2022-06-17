@@ -2,6 +2,7 @@ package org.aksw.commons.collections;
 
 import java.io.Closeable;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An abstract base class for iterating over containers of unknown size. This
@@ -59,7 +60,7 @@ public abstract class SinglePrefetchIterator<T>
     public boolean hasNext()
     {
         wasNextCalled = false;
-        if(advance) {
+        if (advance) {
             _prefetch();
             advance = false;
         }
@@ -72,11 +73,11 @@ public abstract class SinglePrefetchIterator<T>
     {
         wasNextCalled = true;
 
-        if(finished) {
-            throw new IndexOutOfBoundsException();
+        if (finished) {
+            throw new NoSuchElementException();
         }
 
-        if(advance) {
+        if (advance) {
             _prefetch();
         }
 
@@ -84,6 +85,28 @@ public abstract class SinglePrefetchIterator<T>
         return current;
     }
 
+    public T current() {
+        T result;
+        if (hasNext()) {
+            result = current;
+        } else {
+            throw new NoSuchElementException();
+        }
+        return result;
+    }
+
+    /** Whether the next call to next() or hasNext() will trigger loading the next element */
+    protected boolean willAdvance() {
+        return advance;
+    }
+
+    protected boolean wasNextCalled() {
+        return wasNextCalled;
+    }
+
+    protected boolean wasHasNextCalled() {
+        return !finished && !wasNextCalled && !advance;
+    }
 
     /**
      * An iterator must always free all resources once done with iteration.
@@ -98,7 +121,7 @@ public abstract class SinglePrefetchIterator<T>
     @Override
     public final void remove()
     {
-        if(!wasNextCalled) {
+        if (!wasNextCalled) {
             throw new RuntimeException("remove must not be called after .hasNext() - invoke .next() first");
         }
 
