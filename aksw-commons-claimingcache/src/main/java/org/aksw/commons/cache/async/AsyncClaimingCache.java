@@ -1,7 +1,9 @@
 package org.aksw.commons.cache.async;
 
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.ref.RefFuture;
 
 /**
@@ -26,6 +28,11 @@ public interface AsyncClaimingCache<K, V> {
 
     /** Cannot raise an ExecutionException because it does not trigger loading */
     RefFuture<V> claimIfPresent(K key);
+
+    /**
+     * Protect eviction of certain keys as long as the guard is not disposed.
+     * Disposable may immediately evict all no longer guarded items */
+    Disposable addEvictionGuard(Predicate<? super K> predicate);
 
     /**
      * Get a resource without claiming it. Its cache entry may get evicted any time such that

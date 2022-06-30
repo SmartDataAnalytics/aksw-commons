@@ -20,6 +20,7 @@ public class SliceMetaDataWithPagesImpl
     public SliceMetaDataWithPagesImpl(int pageSize, RangeSet<Long> loadedRanges,
             RangeMap<Long, List<Throwable>> failedRanges, long minimumKnownSize, long maximumKnownSize) {
         super(loadedRanges, failedRanges, minimumKnownSize, maximumKnownSize);
+
         this.pageSize = pageSize;
     }
 

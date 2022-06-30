@@ -1,7 +1,9 @@
 package org.aksw.commons.cache.async;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.ref.RefFuture;
 
 public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
@@ -38,5 +40,10 @@ public class AsyncClaimingCacheWithTransformValue<K, V1, V2>
     @Override
     public void invalidateAll() {
         delegate.invalidateAll();
+    }
+
+    @Override
+    public Disposable addEvictionGuard(Predicate<? super K> predicate) {
+        return delegate.addEvictionGuard(predicate);
     }
 }

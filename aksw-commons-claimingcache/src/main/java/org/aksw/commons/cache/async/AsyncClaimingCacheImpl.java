@@ -1,14 +1,19 @@
 package org.aksw.commons.cache.async;
 
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
@@ -20,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.github.benmanes.caffeine.cache.Scheduler;
 
@@ -52,6 +58,9 @@ public class AsyncClaimingCacheImpl<K, V>
     // level2: the caffine cache - items in this cache are not claimed are subject to eviction according to configuration
     protected AsyncLoadingCache<K, V> level2;
 
+    // level3: items evicted from level2 but caught be eviction protection
+    protected Map<K, V> level3;
+
     // Runs atomically in the claim action after the entry exists in level1
     protected BiConsumer<K, RefFuture<V>> claimListener;
 
@@ -61,13 +70,27 @@ public class AsyncClaimingCacheImpl<K, V>
     // A lock that prevents invalidation while entries are being loaded
     protected ReentrantReadWriteLock invalidationLock = new ReentrantReadWriteLock();
 
-    public AsyncClaimingCacheImpl(Map<K, RefFuture<V>> level1, AsyncLoadingCache<K, V> level2,
-            BiConsumer<K, RefFuture<V>> claimListener, BiConsumer<K, RefFuture<V>> unclaimListener) {
+    protected LinkedList<Predicate<? super K>> evictionGuards;
+
+    protected RemovalListener<K, V> evictionListener;
+
+
+    public AsyncClaimingCacheImpl(
+            Map<K, RefFuture<V>> level1,
+            AsyncLoadingCache<K, V> level2,
+            Map<K, V> level3,
+            LinkedList<Predicate<? super K>> evictionGuards,
+            BiConsumer<K, RefFuture<V>> claimListener,
+            BiConsumer<K, RefFuture<V>> unclaimListener,
+            RemovalListener<K, V> evictionListener) {
         super();
         this.level1 = level1;
         this.level2 = level2;
+        this.level3 = level3;
+        this.evictionGuards = evictionGuards;
         this.claimListener = claimListener;
         this.unclaimListener = unclaimListener;
+        this.evictionListener = evictionListener;
     }
 
     // Inner class use to synchronize per-key access
@@ -93,6 +116,42 @@ public class AsyncClaimingCacheImpl<K, V>
 //	public CompletableFuture<V> get(K key) {
 //		return level2.get(key);
 //	}
+
+
+    /**
+     * Registers a predicate that 'caches' entries about to be evicted
+     * When closing the registration then keys that have not moved back into the ache
+     * by reference will be immediately evicted.
+     */
+    @Override
+    public Disposable addEvictionGuard(Predicate<? super K> predicate) {
+        ListIterator<?> removalPointer;
+        synchronized (evictionGuards) {
+            evictionGuards.add(predicate);
+            removalPointer = evictionGuards.listIterator(evictionGuards.size());
+            removalPointer.previous();
+        }
+
+        return () -> {
+            synchronized (evictionGuards) {
+                removalPointer.remove();
+                runLevel3Eviction();
+            }
+        };
+    }
+
+    protected void runLevel3Eviction() {
+        for (Entry<K, V> e : level3.entrySet()) {
+            K k = e.getKey();
+            V v = e.getValue();
+            boolean isGuarded = evictionGuards.stream().anyMatch(p -> p.test(k));
+            if (!isGuarded) {
+                evictionListener.onRemoval(k, v, RemovalCause.COLLECTED);
+            }
+        }
+    }
+
+
 
     public RefFuture<V> claim(K key) {
         RefFuture<V> result;
@@ -168,7 +227,7 @@ public class AsyncClaimingCacheImpl<K, V>
         protected CacheLoader<K, V> cacheLoader;
         protected BiConsumer<K, RefFuture<V>> claimListener;
         protected BiConsumer<K, RefFuture<V>> unclaimListener;
-        protected RemovalListener<K, V> evictionListener;
+        protected RemovalListener<K, V> userEvictionListener;
 
         Builder<K, V> setCaffeine(Caffeine<Object, Object> caffeine) {
             this.caffeine = caffeine;
@@ -191,7 +250,7 @@ public class AsyncClaimingCacheImpl<K, V>
         }
 
         public Builder<K, V> setEvictionListener(RemovalListener<K, V> evictionListener) {
-            this.evictionListener = evictionListener;
+            this.userEvictionListener = evictionListener;
             return this;
         }
 
@@ -199,21 +258,61 @@ public class AsyncClaimingCacheImpl<K, V>
         public AsyncClaimingCacheImpl<K, V> build() {
 
             Map<K, RefFuture<V>> level1 = new ConcurrentHashMap<>();
+            Map<K, V> level3 = new ConcurrentHashMap<>();
+            LinkedList<Predicate<? super K>> evictionGuards = new LinkedList<>();
 
-            if (evictionListener != null) {
-
-                caffeine.evictionListener((k, v, c) -> {
-                    // Check for actual removal - key no longer present in level1
-                    if (!level1.containsKey(k)) {
-                        evictionListener.onRemoval((K)k, (V)v, c);
+            RemovalListener<K, V> level3AwareEvictionListener = (k, v, c) -> {
+                boolean isGuarded = false;
+                synchronized (evictionGuards) {
+                    // Check for an eviction guard
+                    for (Predicate<? super K> evictionGuard : evictionGuards) {
+                        isGuarded = evictionGuard.test(k);
+                        if (isGuarded) {
+                            logger.debug("Protecting from eviction: " + k + " - " + level3.size() + " items protected");
+                            level3.put(k, v);
+                            break;
+                        }
                     }
+                }
+
+                if (!isGuarded) {
+                    if (userEvictionListener != null) {
+                        userEvictionListener.onRemoval((K)k, (V)v, c);
+                    }
+                }
+            };
+
+            caffeine.evictionListener((k, v, c) -> {
+                K kk = (K)k;
+                V vv = (V)v;
+
+                // Check for actual removal - key no longer present in level1
+                if (!level1.containsKey(k)) {
+                    level3AwareEvictionListener.onRemoval(kk, vv, c);
+                }
+            });
+
+
+            // Cache loader that checks for existing items in level
+            CacheLoader<K, V> level3AwareCacheLoader = k -> {
+                Object[] tmp = new Object[] { null };
+                // Atomically get and remove an existing key from level3
+                level3.compute(k, (kk, v) -> {
+                    tmp[0] = v;
+                    return null;
                 });
-            }
 
-            AsyncLoadingCache<K, V> level2 = caffeine.buildAsync(cacheLoader);
+                V r = (V)tmp[0];
+                if (r == null) {
+                    r = cacheLoader.load(k);
+                }
+                return r;
+            };
+
+            AsyncLoadingCache<K, V> level2 = caffeine.buildAsync(level3AwareCacheLoader);
 
 
-            return new AsyncClaimingCacheImpl<K, V>(level1, level2, claimListener, unclaimListener);
+            return new AsyncClaimingCacheImpl<K, V>(level1, level2, level3, evictionGuards, claimListener, unclaimListener, level3AwareEvictionListener);
         }
     }
 
@@ -236,10 +335,21 @@ public class AsyncClaimingCacheImpl<K, V>
 
         RefFuture<String> ref = cache.claim("hell");
 
+        Disposable disposable = cache.addEvictionGuard(k -> k.contains("hell"));
+
         System.out.println(ref.await());
         ref.close();
 
         TimeUnit.SECONDS.sleep(5);
+
+        RefFuture<String> reclaim = cache.claim("hell");
+
+        disposable.close();
+
+        reclaim.close();
+
+        TimeUnit.SECONDS.sleep(5);
+
         System.out.println("done");
     }
 

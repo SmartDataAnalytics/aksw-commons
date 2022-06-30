@@ -8,9 +8,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
 import org.aksw.commons.util.ref.RefFutureImpl;
@@ -272,17 +274,17 @@ public class AsyncClaimingCache3Impl<K, V> implements AsyncClaimingCache<K, V> {
                 // We need to acquire the ref because the level1 map only holds closed alive refs
                 // And get() failes for closed refs
                 try (RefFuture<V> tmp = ref.acquire()) {
-	                
-	                CompletableFuture<V> future = tmp.get();
-	                if (future.isDone()) {
-	                    V value;
-	                    try {
-	                        value = future.get();
-	                    } catch (InterruptedException | ExecutionException e) {
-	                        throw new RuntimeException();
-	                    }
-	                    level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
-	                }
+
+                    CompletableFuture<V> future = tmp.get();
+                    if (future.isDone()) {
+                        V value;
+                        try {
+                            value = future.get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            throw new RuntimeException();
+                        }
+                        level2RemovalListener.onRemoval(key, value, RemovalCause.EXPLICIT);
+                    }
                 }
             }
         }
@@ -313,53 +315,53 @@ public class AsyncClaimingCache3Impl<K, V> implements AsyncClaimingCache<K, V> {
         // We need this synchronized block because to avoid concurrency issue
         // with the close action of a Reference
         synchronized (level1) {
-	
-	        // The block below atomically creates the root ref for the key as needed
-	        // Any further claimInternal call acquires a child ref from the root ref
-	        // The invocation of claimInternal that triggers computeIfAbsent
-	        // acquires a child ref of the root one and closes the root.
-	
-	        boolean[] isFreshSecondaryRef = { false };
-	        RefFuture<V> secondaryRef = level1.computeIfAbsent(key, k -> {
-	            // Wrap the loaded reference such that closing the fully loaded reference adds it to level 2
-	
-	            SingleValuedAccessor<CompletableFuture<V>> holder = level2.getIfPresent(key);
-	            CompletableFuture<V> tmpRefFuture = holder == null ? null : holder.get();
-	            if (tmpRefFuture != null) {
-	                logger.trace("Claiming item [" + key + "] from level2");
-	                // Unset the value of the holder such that invalidation does not apply the close action
-	                holder.set(null);
-	                level2.invalidate(key);
-	            } else {
-	                logger.trace("Claiming item [" + key + "] from level3");
-	                tmpRefFuture = level3.get(key);
-	            }
-	
-	
-	            final CompletableFuture<V> refFuture = tmpRefFuture;
-	            Ref<CompletableFuture<V>> freshSecondaryRef =
+
+            // The block below atomically creates the root ref for the key as needed
+            // Any further claimInternal call acquires a child ref from the root ref
+            // The invocation of claimInternal that triggers computeIfAbsent
+            // acquires a child ref of the root one and closes the root.
+
+            boolean[] isFreshSecondaryRef = { false };
+            RefFuture<V> secondaryRef = level1.computeIfAbsent(key, k -> {
+                // Wrap the loaded reference such that closing the fully loaded reference adds it to level 2
+
+                SingleValuedAccessor<CompletableFuture<V>> holder = level2.getIfPresent(key);
+                CompletableFuture<V> tmpRefFuture = holder == null ? null : holder.get();
+                if (tmpRefFuture != null) {
+                    logger.trace("Claiming item [" + key + "] from level2");
+                    // Unset the value of the holder such that invalidation does not apply the close action
+                    holder.set(null);
+                    level2.invalidate(key);
+                } else {
+                    logger.trace("Claiming item [" + key + "] from level3");
+                    tmpRefFuture = level3.get(key);
+                }
+
+
+                final CompletableFuture<V> refFuture = tmpRefFuture;
+                Ref<CompletableFuture<V>> freshSecondaryRef =
                     RefImpl.create(tmpRefFuture, level1, () -> {
                         RefFutureImpl.cancelFutureOrCloseValue(refFuture, null);
                         level1.remove(key);
                         logger.trace("Item [" + key + "] was unclaimed. Transferring to level2.");
                         level2.put(key, new SingleValuedAccessorDirect<>(refFuture));
                     });
-	            isFreshSecondaryRef[0] = true;
-	
-	            return RefFutureImpl.wrap(freshSecondaryRef);
-	        });
-	        
-	        // If a key was freshly claimed then just return the fresh reference
-	        // otherwise acquire it
-	        
+                isFreshSecondaryRef[0] = true;
+
+                return RefFutureImpl.wrap(freshSecondaryRef);
+            });
+
+            // If a key was freshly claimed then just return the fresh reference
+            // otherwise acquire it
+
 //	        result = isFreshSecondaryRef[0]
 //	        		? secondaryRef
 //	        		: secondaryRef.acquire();
-	        
-	        result = secondaryRef.acquire();
-	        if (isFreshSecondaryRef[0]) {
-	            secondaryRef.close();
-	        }
+
+            result = secondaryRef.acquire();
+            if (isFreshSecondaryRef[0]) {
+                secondaryRef.close();
+            }
 
         }
 
@@ -423,11 +425,11 @@ public class AsyncClaimingCache3Impl<K, V> implements AsyncClaimingCache<K, V> {
         return result;
     }
 
-    
+
     /**
      * Invalidates all items in level3
      * Items that are currently referenced (level 1) or scheduled for sync (level 2) are unaffected.
-     * 
+     *
      */
     @Override
     public void invalidateAll() {
@@ -449,7 +451,13 @@ public class AsyncClaimingCache3Impl<K, V> implements AsyncClaimingCache<K, V> {
     }
 
     public Ref<V> hideInnerRef(Ref<? extends Ref<V>> refToRef) {
-        return hideInnerRef(refToRef, level1);        
+        return hideInnerRef(refToRef, level1);
+    }
+
+
+    @Override
+    public Disposable addEvictionGuard(Predicate<? super K> predicate) {
+        throw new UnsupportedOperationException();
     }
 
 }

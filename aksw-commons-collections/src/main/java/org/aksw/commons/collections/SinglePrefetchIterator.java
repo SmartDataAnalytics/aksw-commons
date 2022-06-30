@@ -51,7 +51,7 @@ public abstract class SinglePrefetchIterator<T>
         }
         catch(Exception e) {
             current = null;
-            throw new RuntimeException("Error prefetching data", e);
+            throw new RuntimeException("Prefetching data failed. Reason: " + e.getMessage(), e);
 //            logger.error("Error prefetching data", e);
         }
     }
