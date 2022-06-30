@@ -41,6 +41,7 @@ import org.aksw.commons.store.object.path.impl.ObjectSerializerKryo;
 import org.aksw.commons.txn.api.TxnApi;
 import org.aksw.commons.txn.impl.PathDiffState;
 import org.aksw.commons.txn.impl.PathState;
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.concurrent.ScheduleOnce;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.page.PageUtils;
@@ -824,6 +825,11 @@ public class SliceWithPagesSyncToDisk<A>
     @Override
     public RangeMap<Long, List<Throwable>> getFailedRanges() {
         return liveMetaData.getFailedRanges();
+    }
+
+    @Override
+    public Disposable addEvictionGuard(RangeSet<Long> range) {
+        return null;
     }
 }
 

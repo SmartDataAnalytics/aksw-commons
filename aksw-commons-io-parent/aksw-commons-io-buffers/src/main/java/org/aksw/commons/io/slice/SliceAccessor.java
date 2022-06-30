@@ -2,6 +2,10 @@ package org.aksw.commons.io.slice;
 
 import java.io.IOException;
 
+import com.google.common.collect.ImmutableRangeSet;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+
 /**
  * Abstraction over a sequence of pages to view their content as
  * consecutive items. The underlying pages may be claimed by multiple page ranges held by different clients.
@@ -31,6 +35,10 @@ public interface SliceAccessor<A>
     // Range<Long> getEnclosingPageRange(long offset);
 
     /**
+     * Adds an eviction guard (if the slice support it) and couples it's life cycle
+     * to this accessor.
+     * Closing an accessor also removes all eviction guards created by it.
+     *
      * This method must be called after acquiring a read lock on the slice's metadata.
      * Protects
      *
@@ -38,7 +46,11 @@ public interface SliceAccessor<A>
      * @param startOffset
      * @param endOffset
      */
-    // void suppressEviction(long startOffset, long endOffset);
+     void addEvictionGuard(RangeSet<Long> ranges);
+
+     default void addEvictionGuard(Range<Long> range) {
+         addEvictionGuard(ImmutableRangeSet.of(range));
+     }
 
     /**
      * Set or update the claimed range - this will immediately request references to any pages providing the data for that range.

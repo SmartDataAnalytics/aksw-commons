@@ -9,8 +9,10 @@ import java.util.function.Function;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.util.Sync;
+import org.aksw.commons.util.closeable.Disposable;
 
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 
 
 /**
@@ -27,6 +29,17 @@ public interface Slice<T>
     Condition getHasDataCondition();
 
     ArrayOps<T> getArrayOps();
+
+    /**
+     * Protect a set of ranges from eviction.
+     * If the slice does make use of eviction then this method can return null.
+     * Otherwise, a disposable must be returned. As long as it is not disposed, the
+     * no data in the range may get lost due to eviction.
+     *
+     * This method should not be used directly but via {@link SliceAccessor#addEvictionGuard(RangeSet))}.
+     *
+     */
+    Disposable addEvictionGuard(RangeSet<Long> range);
 
     /**
      * Read the metadata and check whether the slice has a known size and

@@ -10,6 +10,7 @@ import org.aksw.commons.io.buffer.plain.Buffer;
 import org.aksw.commons.io.buffer.plain.BufferOverArray;
 import org.aksw.commons.io.buffer.range.RangeBuffer;
 import org.aksw.commons.io.buffer.range.RangeBufferImpl;
+import org.aksw.commons.util.closeable.Disposable;
 import org.aksw.commons.util.lock.LockUtils;
 import org.aksw.commons.util.ref.RefFuture;
 import org.slf4j.Logger;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 
 /**
  * A slice implementation that starts to discard pages once there are too many.
@@ -111,5 +113,10 @@ public class SliceInMemoryCache<A>
     @Override
     public RefFuture<BufferView<A>> getPageForPageId(long pageId) {
         return pageCache.claim(pageId);
+    }
+
+    @Override
+    public Disposable addEvictionGuard(RangeSet<Long> ranges) {
+        return pageCache.addEvictionGuard(key -> ranges.contains(key));
     }
 }
