@@ -117,8 +117,8 @@ public interface SliceAccessor<A>
     void releaseAll();
 
     /**
-     * Closes the page range. Implementations should call {{@link #releaseAll()} and prevent any further
-     * claims.
+     * Closes the page range. Implementations of this method should call
+     * {{@link #releaseAll()} and an addition prevent any further claims.
      */
     void close();
 }

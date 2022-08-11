@@ -23,9 +23,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.aksw.commons.index.util.Streamer;
 import org.aksw.commons.tuple.TupleAccessor;
 import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.util.stream.Streamer;
 
 /**
  * A StorageNode can express nested storage such as nested maps, lists and sets for tuples.

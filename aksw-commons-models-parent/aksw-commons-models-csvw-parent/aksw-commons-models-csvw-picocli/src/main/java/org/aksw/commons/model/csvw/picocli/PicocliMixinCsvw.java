@@ -38,8 +38,8 @@ public class PicocliMixinCsvw<D extends DialectMutable>
     }
 
     @Option(names={"--header-row"}, description="Input file's first row is a header with variable names (default)")
-    public DialectMutable setHeaderRow(Boolean noHeader) {
-        if (!Boolean.FALSE.equals(noHeader)) {
+    public DialectMutable setHeaderRow(Boolean headerRow) {
+        if (!Boolean.FALSE.equals(headerRow)) {
             setHeaderRowCount(1l);
         }
         return this;

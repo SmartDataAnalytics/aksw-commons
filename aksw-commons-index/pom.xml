@@ -20,8 +20,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-utils</artifactId>
 		</dependency>
 
 		<dependency>

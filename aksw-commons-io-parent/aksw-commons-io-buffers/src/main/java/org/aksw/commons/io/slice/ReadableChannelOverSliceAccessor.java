@@ -7,34 +7,34 @@ import org.aksw.commons.io.input.ReadableChannelBase;
 
 
 public class ReadableChannelOverSliceAccessor<A>
-	extends ReadableChannelBase<A>
+    extends ReadableChannelBase<A>
 {
-	protected SliceAccessor<A> accessor;
-	protected long posInSlice;
+    protected SliceAccessor<A> accessor;
+    protected long posInSlice;
 
-	public ReadableChannelOverSliceAccessor(SliceAccessor<A> accessor, long posInSlice) {
-		super();
-		this.accessor = accessor;
-		this.posInSlice = posInSlice;
-	}
+    public ReadableChannelOverSliceAccessor(SliceAccessor<A> accessor, long posInSlice) {
+        super();
+        this.accessor = accessor;
+        this.posInSlice = posInSlice;
+    }
 
-	@Override
-	public ArrayOps<A> getArrayOps() {
-		return accessor.getSlice().getArrayOps();
-	}
+    @Override
+    public ArrayOps<A> getArrayOps() {
+        return accessor.getSlice().getArrayOps();
+    }
 
-	@Override
-	public void closeActual() throws IOException {
-		accessor.close();
-	}
+    @Override
+    public void closeActual() throws IOException {
+        accessor.close();
+    }
 
-	@Override
-	public int read(A array, int position, int length) throws IOException {
-		accessor.claimByOffsetRange(position, length);
-		int result = accessor.unsafeRead(array, position, posInSlice, length);
-		if (result > 0) {
-			posInSlice += result;
-		}
-		return result;
-	}
+    @Override
+    public int read(A array, int position, int length) throws IOException {
+        accessor.claimByOffsetRange(posInSlice, posInSlice + length);
+        int result = accessor.unsafeRead(array, position, posInSlice, length);
+        if (result > 0) {
+            posInSlice += result;
+        }
+        return result;
+    }
 }

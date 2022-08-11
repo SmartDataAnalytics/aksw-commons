@@ -24,10 +24,10 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.ListSupplier;
-import org.aksw.commons.index.util.Streamer;
 import org.aksw.commons.index.util.TupleValueFunction;
 import org.aksw.commons.tuple.TupleAccessor;
 import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.Maps;
 

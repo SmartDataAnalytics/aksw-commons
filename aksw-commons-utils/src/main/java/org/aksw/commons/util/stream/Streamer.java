@@ -15,7 +15,7 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.index.util;
+package org.aksw.commons.util.stream;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -46,7 +46,7 @@ public interface Streamer<V, T> {
      * @param streamTransform
      * @return
      */
-    default <U> Streamer<V, U> mapStream(StreamTransform<T, U> streamTransform) {
+    default <U> Streamer<V, U> mapStream(StreamFunction<T, U> streamTransform) {
         return store -> streamTransform.apply(stream(store));
     }
 

@@ -40,7 +40,7 @@ public class SliceInMemoryCache<A>
         this.metaData = new SliceMetaDataWithPagesImpl(pageSize);
         this.pageCache = cacheBuilder
                 .setCacheLoader(this::loadPage)
-                .setEvictionListener((k, v, c) -> evicePage(k))
+                .setEvictionListener((k, v, c) -> evictPage(k))
                 .build();
     }
 
@@ -51,7 +51,7 @@ public class SliceInMemoryCache<A>
         return new SliceInMemoryCache<>(arrayOps, pageSize, cacheBuilder);
     }
 
-    protected void evicePage(long pageId) {
+    protected void evictPage(long pageId) {
         long pageOffset = getPageOffsetForPageId(pageId);
         int pageSize = metaData.getPageSize();
 

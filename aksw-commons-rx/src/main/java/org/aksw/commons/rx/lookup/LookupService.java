@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -19,6 +20,10 @@ public interface LookupService<K, V>
 
     default LookupService<K, V> partition(int k) {
         return LookupServicePartition.create(this, k);
+    }
+
+    default LookupService<K, V> filterKeys(Predicate<? super K> filter) {
+        return LookupServiceFilterKey.create(this, filter);
     }
 
     default <W> LookupService<K, W> mapValues(BiFunction<K, V, W> fn) {
