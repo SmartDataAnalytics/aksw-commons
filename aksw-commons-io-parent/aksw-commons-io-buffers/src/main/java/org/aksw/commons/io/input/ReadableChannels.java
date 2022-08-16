@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.collections.CloseableIterator;
 import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.buffer.array.ArrayReadable;
 import org.aksw.commons.io.buffer.plain.BufferOverArray;
 
 import com.google.common.collect.Streams;
@@ -21,15 +22,31 @@ public class ReadableChannels {
     }
 
     public static <A> ReadableChannel<A> empty(ArrayOps<A> arrayOps) {
-        return new ReadableChannelOverBuffer<>(BufferOverArray.create(arrayOps, 0), 0);
+        return newChannel(BufferOverArray.create(arrayOps, 0), 0);
     }
 
     public static <A> ReadableChannel<A> of(ArrayOps<A> arrayOps, A array) {
-        return new ReadableChannelOverBuffer<>(BufferOverArray.create(arrayOps, array), 0);
+        return newChannel(BufferOverArray.create(arrayOps, array), 0);
+    }
+
+    public static <A> ReadableChannel<A> of(ArrayOps<A> arrayOps, A array, int pos) {
+        return newChannel(BufferOverArray.create(arrayOps, array), pos);
     }
 
     public static ReadableChannel<byte[]> wrap(ReadableByteChannel channel) {
         return new ReadableChannelOverReadableByteChannel(channel);
+    }
+
+    public static ReadableChannel<byte[]> wrap(InputStream inputStream) {
+        return wrap(Channels.newChannel(inputStream));
+    }
+
+    public static <A> ReadableChannel<A> newChannel(ArrayReadable<A> arrayReadable) {
+        return newChannel(arrayReadable, 0);
+    }
+
+    public static <A> ReadableChannel<A> newChannel(ArrayReadable<A> arrayReadable, long pos) {
+        return new ReadableChannelOverBuffer<>(arrayReadable, pos);
     }
 
     public static ReadableByteChannel newChannel(ReadableChannel<byte[]> dataStream) {

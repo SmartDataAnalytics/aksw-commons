@@ -3,15 +3,15 @@ package org.aksw.commons.io.input;
 import java.io.IOException;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
-import org.aksw.commons.io.buffer.plain.Buffer;
+import org.aksw.commons.io.buffer.array.ArrayReadable;
 
 public class ReadableChannelOverBuffer<A>
     extends ReadableChannelBase<A>
 {
-    protected Buffer<A> buffer;
+    protected ArrayReadable<A> buffer;
     protected long offset;
 
-    public ReadableChannelOverBuffer(Buffer<A> buffer, long offset) {
+    public ReadableChannelOverBuffer(ArrayReadable<A> buffer, long offset) {
         super();
         this.buffer = buffer;
         this.offset = offset;

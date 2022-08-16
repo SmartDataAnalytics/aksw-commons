@@ -10,6 +10,9 @@ public interface ArrayWritable<A>
     /** The method that needs to be implemented; all other methods default-delegate to this one. */
     void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException;
 
+    // void write(long offsetInBuffer, ReadableChannel<A> source, int amount) throws IOException;
+
+
     default void put(long offset, Object item) throws IOException {
         ArrayOps<A> arrayOps = getArrayOps();
         A singleton = arrayOps.create(1);

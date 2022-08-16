@@ -17,7 +17,7 @@ public interface Buffer<A>
 
         // TODO If this buffer is already a sub-buffer then prevent wrapping it again for performance
 
-        return new SubBuffer<A>(this, offset, length);
+        return new SubBufferImpl<A>(this, offset, length);
     }
 
     /**

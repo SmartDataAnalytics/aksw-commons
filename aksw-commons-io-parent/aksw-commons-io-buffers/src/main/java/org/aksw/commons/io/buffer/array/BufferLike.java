@@ -7,10 +7,8 @@ package org.aksw.commons.io.buffer.array;
  * A range buffer only allows for reading within valid ranges and raises an exception upon violation.
  */
 public interface BufferLike<A>
-    extends ArrayWritable<A>, ArrayReadable<A>, HasArrayOps<A>
+    extends ArrayWritable<A>, ArrayReadable<A>
 {
-    ArrayOps<A> getArrayOps();
-
     /** Buffers with 'unlimited' capacity should return Long.MAX_VALUE */
     long getCapacity();
 

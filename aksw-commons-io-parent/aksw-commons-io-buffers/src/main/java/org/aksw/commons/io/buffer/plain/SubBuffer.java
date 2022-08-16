@@ -6,58 +6,67 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.math.LongMath;
 
-public class SubBuffer<A>
-	implements Buffer<A>
+public interface SubBuffer<A>
+    extends Buffer<A>
 {
-	protected Buffer<A> backend;
-	protected long start;
-	protected long length;
-	
-	public SubBuffer(Buffer<A> backend, long start, long length) {
-		super();
-		this.backend = backend;
-		this.start = start;
-		this.length = length;
-	}
+    Buffer<A> getBackend();
+    long getStart();
+    long getLength();
 
-	@Override
-	public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
-		if (offsetInBuffer - start + arrLength > length) {
-			throw new RuntimeException("Attempt to read beyond buffer capacity");
-		}
-		
-		backend.write(LongMath.checkedAdd(start, offsetInBuffer), arrayWithItemsOfTypeT, arrOffset, arrLength);
-	}
+    @Override
+    default void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
+        Buffer<A> backend = getBackend();
+        long start = getStart();
+        long length = getCapacity();
+        if (offsetInBuffer - start + arrLength > length) {
+            throw new RuntimeException("Attempt to read beyond buffer capacity");
+        }
 
-	@Override
-	public int readInto(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
-		return backend.readInto(tgt, tgtOffset, LongMath.checkedAdd(start, srcOffset), length);
-	}
+        backend.write(LongMath.checkedAdd(start, offsetInBuffer), arrayWithItemsOfTypeT, arrOffset, arrLength);
+    }
 
-	@Override
-	public long getCapacity() {
-		return length;
-	}
+    @Override
+    default int readInto(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
+        Buffer<A> backend = getBackend();
+        long start = getStart();
+        long subLen = getLength();
 
-	
-	@Override
-	public ArrayOps<A> getArrayOps() {
-		return backend.getArrayOps();
-	}
-	
-	@Override
-	public Buffer<A> slice(long offset, long length) {
-		throw new UnsupportedOperationException();	
-	}
-	
-	@Override
-	public void put(long offset, Object item) {
-		throw new UnsupportedOperationException();	
-	}
-	
-	@Override
-	public Object get(long index) {
-		throw new UnsupportedOperationException();	
-	}
+        long s = LongMath.checkedAdd(start, srcOffset);
+        long maxLength = srcOffset >= subLen ? 0 : subLen - srcOffset;
+        int l = (int)Math.min(length, maxLength);
+        return backend.readInto(tgt, tgtOffset, s, l);
+    }
+
+    @Override
+    default long getCapacity() {
+        Buffer<A> backend = getBackend();
+        long start = getStart();
+        long length = getLength();
+        // Cap the backend capacity by the length
+        long result = Math.max(0, Math.min(backend.getCapacity() - start, length));
+        return result;
+    }
+
+
+
+    @Override
+    default ArrayOps<A> getArrayOps() {
+        Buffer<A> backend = getBackend();
+        return backend.getArrayOps();
+    }
+
+    @Override
+    default Buffer<A> slice(long offset, long length) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default void put(long offset, Object item) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default Object get(long index) {
+        throw new UnsupportedOperationException();
+    }
 }
-
