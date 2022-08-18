@@ -17,6 +17,10 @@ import com.google.common.collect.Streams;
 public class ReadableChannels {
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
+    public static <A> SeekableReadableChannel<A> shift(SeekableReadableChannel<A> dataStream, long offset) {
+        return new SeekableReadableChannelWithOffset<>(dataStream, offset);
+    }
+
     public static <A> ReadableChannel<A> limit(ReadableChannel<A> dataStream, long limit) {
         return new ReadableChannelWithLimit<>(dataStream, limit);
     }
@@ -41,12 +45,12 @@ public class ReadableChannels {
         return wrap(Channels.newChannel(inputStream));
     }
 
-    public static <A> ReadableChannel<A> newChannel(ArrayReadable<A> arrayReadable) {
+    public static <A> SeekableReadableChannelOverBuffer<A> newChannel(ArrayReadable<A> arrayReadable) {
         return newChannel(arrayReadable, 0);
     }
 
-    public static <A> ReadableChannel<A> newChannel(ArrayReadable<A> arrayReadable, long pos) {
-        return new ReadableChannelOverBuffer<>(arrayReadable, pos);
+    public static <A> SeekableReadableChannelOverBuffer<A> newChannel(ArrayReadable<A> arrayReadable, long pos) {
+        return new SeekableReadableChannelOverBuffer<>(arrayReadable, pos);
     }
 
     public static ReadableByteChannel newChannel(ReadableChannel<byte[]> dataStream) {
@@ -99,4 +103,16 @@ public class ReadableChannels {
         });
     }
 
+    /** Returns a char sequence over the given channel where the current position in the channel
+     * corresponds to byte 0 */
+    public static CharSequence asCharSequence(SeekableReadableChannel<byte[]> channel) {
+        long pos = channel.position();
+        SeekableReadableChannel<byte[]> shifted = shift(channel, pos);
+        return asCharSequence(shifted, Integer.MAX_VALUE);
+    }
+
+    /** Ensure that the length is NOT greater than the amount of available data! */
+    public static CharSequence asCharSequence(SeekableReadableChannel<byte[]> channel, int length) {
+        return new CharSequenceOverSeekableReadableChannelOfBytes(channel, length);
+    }
 }

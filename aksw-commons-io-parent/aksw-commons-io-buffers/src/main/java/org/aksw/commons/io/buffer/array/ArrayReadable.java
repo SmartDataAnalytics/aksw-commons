@@ -2,20 +2,25 @@ package org.aksw.commons.io.buffer.array;
 
 import java.io.IOException;
 
-import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannels;
+import org.aksw.commons.io.input.SeekableReadableChannel;
+import org.aksw.commons.io.input.SeekableReadableChannelSource;
 
 public interface ArrayReadable<A>
-    extends HasArrayOps<A>
+    extends SeekableReadableChannelSource<A>
 {
     int readInto(A tgt, int tgtOffset, long srcOffset, int length) throws IOException;
 
-    default ReadableChannel<A> newReadChannel() {
-        return newReadChannel(0l);
-    }
-
-    default ReadableChannel<A> newReadChannel(long offset) {
-        return ReadableChannels.newChannel(this, offset);
+    // TODO start and end are bounds, but we use start also as the initial position - we shouldn't conflate these concepts
+    @Override
+    default SeekableReadableChannel<A> newReadableChannel() throws IOException {
+        // Preconditions.checkArgument(start <= end, String.format("Start (%d) must be <= end (%d)", start, end));
+        SeekableReadableChannel<A> result = ReadableChannels.newChannel(this, 0);
+//        if (Long.MAX_VALUE != end) {
+//            long length = end - start;
+//            result = ReadableChannels.ra(result, length);
+//        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
@@ -29,6 +34,11 @@ public interface ArrayReadable<A>
         readInto(singleton, 0, index, 1);
         Object result = arrayOps.get(singleton, 0);
         return result;
+    }
+
+    @Override
+    default long size() throws IOException {
+        return -1;
     }
 
     // T get(long index);

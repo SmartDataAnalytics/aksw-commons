@@ -9,6 +9,10 @@ public class ArrayOpsByte
     public static final int SYSTEM_THRESHOLD = 16;
     public static final Byte ZERO = Byte.valueOf((byte)0);
 
+    @Override
+    public Class<?> getArrayClass() {
+        return byte[].class;
+    }
 
     @Override
     public byte[] create(int size) {
@@ -32,12 +36,12 @@ public class ArrayOpsByte
 
     @Override
     public Object get(byte[] array, int index) {
-        return array[index];
+        return getByte(array, index);
     }
 
     @Override
     public void set(byte[] array, int index, Object value) {
-        array[index] = unbox(value);
+        setByte(array, index, unbox(value));
     }
 
     @Override
@@ -56,8 +60,9 @@ public class ArrayOpsByte
     @Override
     public void copy(byte[] src, int srcPos, byte[] dest, int destPos, int length) {
         if (length < SYSTEM_THRESHOLD) {
-            for (int i = 0; i < length; ++i) {
-                dest[destPos + i] = src[srcPos + i];
+            int sp = srcPos;
+            for (int i = destPos; i < destPos + length; ++i) {
+                dest[i] = src[sp++];
             }
         } else {
             System.arraycopy(src, srcPos, dest, destPos, length);
@@ -67,5 +72,15 @@ public class ArrayOpsByte
     @Override
     public int length(byte[] array) {
         return array.length;
+    }
+
+    @Override
+    public byte getByte(byte[] array, int index) {
+        return array[index];
+    }
+
+    @Override
+    public void setByte(byte[] array, int index, byte value) {
+        array[index] = value;
     }
 }

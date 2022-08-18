@@ -5,13 +5,13 @@ import java.io.IOException;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.array.ArrayReadable;
 
-public class ReadableChannelOverBuffer<A>
-    extends ReadableChannelBase<A>
+public class SeekableReadableChannelOverBuffer<A>
+    extends SeekableReadableChannelBase<A>
 {
     protected ArrayReadable<A> buffer;
     protected long offset;
 
-    public ReadableChannelOverBuffer(ArrayReadable<A> buffer, long offset) {
+    public SeekableReadableChannelOverBuffer(ArrayReadable<A> buffer, long offset) {
         super();
         this.buffer = buffer;
         this.offset = offset;
@@ -29,5 +29,20 @@ public class ReadableChannelOverBuffer<A>
             offset += n;
         }
         return n;
+    }
+
+    @Override
+    public SeekableReadableChannel<A> cloneObject() { // throws CloneNotSupportedException {
+        return new SeekableReadableChannelOverBuffer<>(buffer, offset);
+    }
+
+    @Override
+    public long position() {
+        return offset;
+    }
+
+    @Override
+    public void position(long position) {
+        this.offset = position;
     }
 }

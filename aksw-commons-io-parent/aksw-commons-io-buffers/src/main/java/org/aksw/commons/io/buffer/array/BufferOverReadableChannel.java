@@ -1,11 +1,13 @@
 package org.aksw.commons.io.buffer.array;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -14,6 +16,7 @@ import org.aksw.commons.io.buffer.plain.Buffer;
 import org.aksw.commons.io.buffer.plain.SubBuffer;
 import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannels;
+import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.shared.ChannelBase;
 import org.apache.commons.io.input.BoundedInputStream;
 
@@ -106,10 +109,17 @@ public class BufferOverReadableChannel<A>
     }
 
     /**
-     * Return the data supplier
+     * Return the data supplier. The data supplier usually needs to be closed
+     * when it is no longer needed.
      */
     public ReadableChannel<A> getDataSupplier() {
         return dataSupplier;
+    }
+
+    /** Set a new data supplier whose data can be appended to this buffer on demand */
+    public void setDataSupplier(ReadableChannel<A> dataSupplier) {
+        this.dataSupplier = dataSupplier;
+        this.isDataSupplierConsumed = false;
     }
 
     public static <A> long getPosition(ArrayOps<A> arrayOps, A[] buckets, int idx, int pos) {
@@ -123,20 +133,19 @@ public class BufferOverReadableChannel<A>
     }
 
     public static class BucketPointer {
-        public BucketPointer(int idx, int pos) {
+        public BucketPointer(int bucketIdx, int itemIdx) {
             super();
-            this.idx = idx;
-            this.pos = pos;
+            this.bucketIdx = bucketIdx;
+            this.itemIdx = itemIdx;
         }
 
-        int idx;
-        int pos;
+        int bucketIdx;
+        int itemIdx;
         @Override
         public String toString() {
-            return "BucketPointer [idx=" + idx + ", pos=" + pos + "]";
+            return "BucketPointer [buckedIdx=" + bucketIdx + ", itemIdx=" + itemIdx + "]";
         }
     }
-
 
     /**
      *
@@ -149,8 +158,8 @@ public class BufferOverReadableChannel<A>
         long tmp = pos;
         int i;
 
-        int eidx = end.idx;
-        int epos = end.pos;
+        int eidx = end.bucketIdx;
+        int epos = end.itemIdx;
         for(i = 0; i < eidx; ++i) {
             A bucket = buckets[i];
             int n = arrayOps.length(bucket);
@@ -162,17 +171,17 @@ public class BufferOverReadableChannel<A>
             }
         }
 
-        BucketPointer result = i == end.idx && tmp > epos
+        BucketPointer result = i == end.bucketIdx && tmp > epos
                 ? null
                 : new BucketPointer(i, Ints.checkedCast(tmp));
         return result;
     }
 
-
     public BufferOverReadableChannel(
             ArrayOps<A> arrayOps,
             int initialBucketSize,
-            ReadableChannel<A> dataSupplier) {
+            ReadableChannel<A> dataSupplier,
+            int minReadSize) {
         if (initialBucketSize <= 0) {
             throw new IllegalArgumentException("Bucket size must not be 0");
         }
@@ -180,14 +189,14 @@ public class BufferOverReadableChannel<A>
         this.arrayOps = arrayOps;
         this.buckets = (A[])new Object[8];
         buckets[0] = arrayOps.create(initialBucketSize);
-        this.minReadSize = 8192;
-        this.maxReadSize = 8192;
+        this.minReadSize = minReadSize;
+        this.maxReadSize = minReadSize;
         this.activeEnd = new BucketPointer(0, 0);
         this.dataSupplier = dataSupplier;
     }
 
     protected int nextBucketSize() {
-        long activeSize = arrayOps.length(buckets[activeEnd.idx]);
+        long activeSize = arrayOps.length(buckets[activeEnd.bucketIdx]);
 
         int maxBucketSize = Integer.MAX_VALUE / 2;
         int nextSize = Math.min(Ints.saturatedCast(activeSize * 2), maxBucketSize);
@@ -227,8 +236,8 @@ public class BufferOverReadableChannel<A>
             reader.pointer = pointer;
         }
 
-        int bucketIdx = pointer.idx;
-        int bucketPos = pointer.pos;
+        int bucketIdx = pointer.bucketIdx;
+        int bucketPos = pointer.itemIdx;
 
         for(;;) {
             int remainingDstLen = dst.remaining();
@@ -245,9 +254,9 @@ public class BufferOverReadableChannel<A>
             // its two attributes
             BucketPointer end = activeEnd;
 
-            boolean isInLastBucket = bucketIdx == end.idx;
+            boolean isInLastBucket = bucketIdx == end.bucketIdx;
             int remainingBucketLen = isInLastBucket
-                ? end.pos - bucketPos
+                ? end.itemIdx - bucketPos
                 : arrayOps.length(currentBucket) - bucketPos
                 ;
 
@@ -260,7 +269,7 @@ public class BufferOverReadableChannel<A>
                         // We reached the bucket end and have not read anything so far
                         if(!isDataSupplierConsumed) {
                             synchronized(this) {
-                                if (bucketPos == end.pos && bucketIdx == end.idx && !isDataSupplierConsumed) {
+                                if (bucketPos == end.itemIdx && bucketIdx == end.bucketIdx && !isDataSupplierConsumed) {
                                     loadData(dst.limit());
                                     continue;
                                 }
@@ -279,9 +288,9 @@ public class BufferOverReadableChannel<A>
             int n = Math.min(remainingDstLen, remainingBucketLen);
             dst.put(currentBucket, bucketPos, n);
             result += n;
-            pointer.pos = bucketPos += n;
+            pointer.itemIdx = bucketPos += n;
             reader.pos += n;
-            pointer.idx = bucketIdx;
+            pointer.bucketIdx = bucketIdx;
             //pos += n;
         }
 
@@ -313,23 +322,23 @@ public class BufferOverReadableChannel<A>
         if (!isDataSupplierConsumed) {
             ensureCapacityInActiveBucket();
 
-            A activeBucket = buckets[activeEnd.idx];
+            A activeBucket = buckets[activeEnd.bucketIdx];
 
             int len = Math.min(needed, maxReadSize);
 
             len = Math.max(len, minReadSize);
-            len = Math.min(len, arrayOps.length(activeBucket) - activeEnd.pos);
+            len = Math.min(len, arrayOps.length(activeBucket) - activeEnd.itemIdx);
 
             if(len != 0) {
                 int n;
                 try {
-                    n = dataSupplier.read(activeBucket, activeEnd.pos, len);
+                    n = dataSupplier.read(activeBucket, activeEnd.itemIdx, len);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
                 if(n > 0) {
-                    activeEnd.pos += n;
+                    activeEnd.itemIdx += n;
                     knownDataSize += n;
                 } else if (n == -1) {
                     isDataSupplierConsumed = true;
@@ -343,15 +352,15 @@ public class BufferOverReadableChannel<A>
     }
 
     protected void ensureCapacityInActiveBucket() {
-        A activeBucket = buckets[activeEnd.idx];
-        int capacity = arrayOps.length(activeBucket) - activeEnd.pos;
+        A activeBucket = buckets[activeEnd.bucketIdx];
+        int capacity = arrayOps.length(activeBucket) - activeEnd.itemIdx;
         if (capacity == 0) {
             int nextBucketSize = nextBucketSize();
             if(nextBucketSize == 0) {
                 throw new IllegalStateException("Bucket of size 0 generated");
             }
 
-            int newEndIdx = activeEnd.idx + 1;
+            int newEndIdx = activeEnd.bucketIdx + 1;
             if (newEndIdx >= buckets.length) {
                 // Double number of buckets if possible
                 int numNewBuckets = buckets.length * 2;
@@ -392,22 +401,22 @@ public class BufferOverReadableChannel<A>
         // int offset = arrOffset;
         int remainingInputLen = amount;
         for (;;) {
-            if (pointer.idx == activeEnd.idx) {
+            if (pointer.bucketIdx == activeEnd.bucketIdx) {
                 ensureCapacityInActiveBucket();
             }
 
-            A bucket = buckets[pointer.idx];
-            int remainingBucketLen = arrayOps.length(bucket) - pointer.pos;
+            A bucket = buckets[pointer.bucketIdx];
+            int remainingBucketLen = arrayOps.length(bucket) - pointer.itemIdx;
             int readLen = Math.min(remainingInputLen, remainingBucketLen);
-            int n = source.read(bucket, pointer.pos, readLen);
+            int n = source.read(bucket, pointer.itemIdx, readLen);
             if (n < 0) {
                 break;
             }
 
             remainingInputLen -= n;
             if (remainingInputLen > 0) {
-                ++pointer.idx;
-                pointer.pos = 0;
+                ++pointer.bucketIdx;
+                pointer.itemIdx = 0;
             } else {
                 break;
             }
@@ -426,17 +435,23 @@ public class BufferOverReadableChannel<A>
 
     @Override
     public int readInto(A tgt, int tgtOffset, long srcOffset, int length) throws IOException {
-        return newReadChannel(srcOffset).read(tgt, tgtOffset, length);
+        int result;
+        // FIXME If the jvm's assert switch is enabled (-ea) then
+        // the channel's leak detection makes things awfully slow
+        try (SeekableReadableChannel<A> channel = new Channel(false, srcOffset, null)) {
+            result = channel.read(tgt, tgtOffset, length);
+        }
+        return result;
     }
 
     @Override
-    public ReadableChannel<A> newReadChannel(long offset) {
-        return new Channel(offset);
+    public SeekableReadableChannel<A> newReadableChannel() throws IOException {
+        return new Channel(0l);
     }
 
     public class Channel
         extends ChannelBase
-        implements ReadableChannel<A>
+        implements SeekableReadableChannel<A>
     {
         protected BucketPointer pointer;
         protected long pos;
@@ -446,7 +461,11 @@ public class BufferOverReadableChannel<A>
         }
 
         public Channel(long pos, BucketPointer pointer) {
-            super();
+            this(true, pos, pointer);
+        }
+
+        public Channel(boolean enableInitializationStackTrace, long pos, BucketPointer pointer) {
+            super(enableInitializationStackTrace);
             this.pointer = pointer;
             this.pos = pos;
         }
@@ -463,19 +482,89 @@ public class BufferOverReadableChannel<A>
             int result = doRead(sink, this);
             return result;
         }
+
+        @Override
+        public long position() {
+            return pos;
+        }
+
+        @Override
+        public void position(long pos) {
+            this.pos = pos;
+
+            // TODO For small differences in pos we should adjust the pos relatively to the old position
+            this.pointer = null;
+        }
+
+        @Override
+        public SeekableReadableChannel<A> cloneObject() { // throws CloneNotSupportedException {
+            return new Channel(pos, pointer);
+        }
     }
 
     public static BufferOverReadableChannel<byte[]> createForBytes() {
-        ReadableChannel<byte[]> channel = ReadableChannels.wrap(new ByteArrayInputStream(new byte[0]));
-        return new BufferOverReadableChannel<>(ArrayOps.BYTE, 4096, channel);
+        return createForBytes(InputStream.nullInputStream());
     }
 
     public static BufferOverReadableChannel<byte[]> createForBytes(InputStream in) {
-        ReadableChannel<byte[]> channel = ReadableChannels.wrap(in);
-        return new BufferOverReadableChannel<>(ArrayOps.BYTE, 4096, channel);
+        return createForBytes(in, 8192);
     }
 
+    public static BufferOverReadableChannel<byte[]> createForBytes(InputStream in, int minReadSize) {
+        ReadableChannel<byte[]> channel = ReadableChannels.wrap(in);
+        return new BufferOverReadableChannel<>(ArrayOps.BYTE, 8, channel, minReadSize);
+    }
+
+
     public static void main(String[] args) throws IOException {
+        Random random = new Random();
+        Path path = Path.of("/tmp/test.ttl");
+        try (FileChannel fc = FileChannel.open(path);
+            InputStream in = Files.newInputStream(path)) {
+            BufferOverReadableChannel<byte[]> buffer = BufferOverReadableChannel.createForBytes(in);
+
+            long size = fc.size();
+
+            System.out.println("Size:" + size);
+            for (int i = 0; i < 50000; ++i) {
+
+                long pos = Math.abs(random.nextLong()) % size;
+                pos %= Integer.MAX_VALUE;
+
+                System.out.println(String.format("Iteration %d, pos %d", i, pos));
+
+                fc.position(pos);
+                ByteBuffer bb = ByteBuffer.allocate(1);
+                fc.read(bb);
+                byte expected = bb.get(0);
+                byte actual;
+
+                try (SeekableReadableChannel<byte[]> bc = buffer.newReadableChannel()) {
+                    byte[] b = new byte[1];
+                    bc.position(pos);
+                    bc.read(b, 0, 1);
+                    bc.position(pos);
+                    //actual = b[0];
+
+                    try (SeekableReadableChannel<byte[]> bc2 = bc.cloneObject()) {
+                        // bc.position(pos);
+                        //bc.read(b, 0, 1);
+                        // actual = b[0];
+                        CharSequence cs = ReadableChannels.asCharSequence(bc2, Ints.saturatedCast(size));
+                        actual = (byte)cs.charAt(Ints.checkedCast(pos));
+                    }
+
+                }
+
+                if (expected != actual) {
+                    throw new RuntimeException("Results differ at position " + pos);
+                }
+                //Assert.assertEquals(expected, actual);
+            }
+        }
+    }
+
+    public static void main2(String[] args) throws IOException {
         // BufferedInputStream bin = new BufferedInputStream(in);
         //bin.mark(Integer.MAX_VALUE);
 
@@ -497,7 +586,7 @@ public class BufferOverReadableChannel<A>
                 channel = ReadableChannels.wrap(in);
             } else {
                 bufferedChannel = BufferOverReadableChannel.createForBytes(in);
-                channel = bufferedChannel.newReadChannel();
+                channel = bufferedChannel.newReadableChannel();
             }
 
             // ReadableChannel<byte[]> channel = ReadableChannels.wrap(in);
@@ -511,7 +600,7 @@ public class BufferOverReadableChannel<A>
             if (bufferedChannel != null) {
                 Hasher hasher = Hashing.sha256().newHasher();
                 Buffer<byte[]> memBuffer = bufferedChannel.getBuffer();
-                channel = memBuffer.newReadChannel();
+                channel = memBuffer.newReadableChannel();
                 ByteStreams.copy(ReadableChannels.newInputStream(channel), Funnels.asOutputStream(hasher));
                 String hash = hasher.hash().toString();
                 System.out.println("Hash2: " + hash);

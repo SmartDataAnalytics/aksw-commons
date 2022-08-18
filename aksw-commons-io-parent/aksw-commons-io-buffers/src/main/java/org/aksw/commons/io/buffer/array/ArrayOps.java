@@ -4,6 +4,9 @@ import java.lang.reflect.Array;
 import java.util.function.IntFunction;
 
 public interface ArrayOps<A> {
+    /** Return the array class (if known) - such as byte[].class */
+    Class<?> getArrayClass();
+
     A create(int size);
 
     Object get(A array, int index);
@@ -54,4 +57,25 @@ public interface ArrayOps<A> {
     public static final ArrayOpsByte BYTE = new ArrayOpsByte();
     public static final ArrayOpsByteBuffer BYTE_BUFFER = new ArrayOpsByteBuffer();
     public static final ArrayOpsObject<Object> OBJECT = createFor(Object.class);
+
+    /** Experimental primitive access methods. May improve single item operation performance
+     * at the expense of somewhat cluttering up the API.  */
+
+    default byte getByte(A array, int index) {
+        return (byte)get(array, index);
+    }
+
+    default void setByte(A array, int index, byte value) {
+        set(array, index, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    default byte getByteRaw(Object array, int index) {
+        return getByte((A)array, index);
+    }
+
+    @SuppressWarnings("unchecked")
+    default void setByteRaw(Object array, int index, byte value) {
+        setByte((A)array, index, value);
+    }
 }

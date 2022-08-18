@@ -9,6 +9,11 @@ public class ArrayOpsByteBuffer
     implements ArrayOps<ByteBuffer>
 {
     @Override
+    public Class<?> getArrayClass() {
+        return ByteBuffer.class;
+    }
+
+    @Override
     public ByteBuffer create(int size) {
         return ByteBuffer.allocate(size);
     }

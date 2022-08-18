@@ -21,7 +21,17 @@ public class AutoCloseableWithLeakDetectionBase
 {
     private static final Logger logger = LoggerFactory.getLogger(AutoCloseableWithLeakDetectionBase.class);
 
-    protected final StackTraceElement[] instantiationStackTrace = StackTraceUtils.getStackTraceIfEnabled();
+    protected final StackTraceElement[] instantiationStackTrace;
+
+    public AutoCloseableWithLeakDetectionBase() {
+        this(true);
+    }
+
+    public AutoCloseableWithLeakDetectionBase(boolean enableInstantiationStackTrace) {
+        this.instantiationStackTrace = enableInstantiationStackTrace
+                ? StackTraceUtils.getStackTraceIfEnabled()
+                : null;
+    }
 
     public StackTraceElement[] getInstantiationStackTrace() {
         return instantiationStackTrace;
