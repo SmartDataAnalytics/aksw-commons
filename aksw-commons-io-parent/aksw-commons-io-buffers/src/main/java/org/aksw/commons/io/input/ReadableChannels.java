@@ -11,6 +11,7 @@ import org.aksw.commons.collections.CloseableIterator;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.array.ArrayReadable;
 import org.aksw.commons.io.buffer.plain.BufferOverArray;
+import org.aksw.commons.io.util.channel.ReadableByteChannelWithoutCloseOnInterrupt;
 
 import com.google.common.collect.Streams;
 
@@ -42,7 +43,8 @@ public class ReadableChannels {
     }
 
     public static ReadableChannel<byte[]> wrap(InputStream inputStream) {
-        return wrap(Channels.newChannel(inputStream));
+        return wrap(new ReadableByteChannelWithoutCloseOnInterrupt(inputStream));
+        // return wrap(Channels.newChannel(inputStream));
     }
 
     public static <A> SeekableReadableChannelOverBuffer<A> newChannel(ArrayReadable<A> arrayReadable) {
