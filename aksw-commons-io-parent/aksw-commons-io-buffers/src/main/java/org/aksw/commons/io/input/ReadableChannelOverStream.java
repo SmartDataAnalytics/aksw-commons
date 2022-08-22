@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
-// TODO Rename to .OverIterator and add a close action argument
 public class ReadableChannelOverStream<T>
     extends ReadableChannelBase<T[]>
 {
@@ -20,6 +19,11 @@ public class ReadableChannelOverStream<T>
         this.stream = stream;
         this.iterator = stream.iterator();
     }
+
+    public Stream<T> getStream() {
+        return stream;
+    }
+
     @Override
     public void closeActual() throws IOException {
         if (stream != null) {

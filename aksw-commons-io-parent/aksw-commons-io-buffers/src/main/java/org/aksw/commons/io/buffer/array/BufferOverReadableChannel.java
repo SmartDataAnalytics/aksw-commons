@@ -7,24 +7,31 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.aksw.commons.io.buffer.plain.Buffer;
 import org.aksw.commons.io.buffer.plain.SubBuffer;
 import org.aksw.commons.io.input.ReadableChannel;
+import org.aksw.commons.io.input.ReadableChannelSwitchable;
+import org.aksw.commons.io.input.ReadableChannelWithCounter;
+import org.aksw.commons.io.input.ReadableChannelWithValue;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.shared.ChannelBase;
 import org.apache.commons.io.input.BoundedInputStream;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
+import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
 
 /**
@@ -119,7 +126,7 @@ public class BufferOverReadableChannel<A>
     /** Set a new data supplier whose data can be appended to this buffer on demand */
     public void setDataSupplier(ReadableChannel<A> dataSupplier) {
         this.dataSupplier = dataSupplier;
-        this.isDataSupplierConsumed = false;
+        this.isDataSupplierConsumed = dataSupplier == null;
     }
 
     public static <A> long getPosition(ArrayOps<A> arrayOps, A[] buckets, int idx, int pos) {
@@ -132,7 +139,7 @@ public class BufferOverReadableChannel<A>
         return result;
     }
 
-    public static class BucketPointer {
+    public static class BucketPointer implements Comparable<BucketPointer> {
         public BucketPointer(int bucketIdx, int itemIdx) {
             super();
             this.bucketIdx = bucketIdx;
@@ -141,9 +148,19 @@ public class BufferOverReadableChannel<A>
 
         int bucketIdx;
         int itemIdx;
+
         @Override
         public String toString() {
             return "BucketPointer [buckedIdx=" + bucketIdx + ", itemIdx=" + itemIdx + "]";
+        }
+
+        @Override
+        public int compareTo(BucketPointer o) {
+            int result = o.bucketIdx - itemIdx;
+            if (result == 0) {
+                result = o.itemIdx - itemIdx;
+            }
+            return result;
         }
     }
 
@@ -193,6 +210,7 @@ public class BufferOverReadableChannel<A>
         this.maxReadSize = minReadSize;
         this.activeEnd = new BucketPointer(0, 0);
         this.dataSupplier = dataSupplier;
+        this.isDataSupplierConsumed = dataSupplier == null;
     }
 
     protected int nextBucketSize() {
@@ -270,7 +288,7 @@ public class BufferOverReadableChannel<A>
                         if(!isDataSupplierConsumed) {
                             synchronized(this) {
                                 if (bucketPos == end.itemIdx && bucketIdx == end.bucketIdx && !isDataSupplierConsumed) {
-                                    loadData(dst.limit());
+                                    loadData(dst.limit(), false);
                                     continue;
                                 }
                             }
@@ -309,16 +327,54 @@ public class BufferOverReadableChannel<A>
                 if (!isDataSupplierConsumed && knownDataSize <= requestedPos) {
                     // System.out.println("load upto " + requestedPos);
                     int needed = Ints.saturatedCast(requestedPos - knownDataSize);
-                    loadData(needed);
+                    loadData(needed, false);
                 }
             }
         }
     }
 
     /**
+     * Sets the end marker to position 0 effectively resizing the buffer to size 0.
+     * Allocated resources remain untouched.
+     */
+    public void truncate() {
+        activeEnd.bucketIdx = 0;
+        activeEnd.itemIdx = 0;
+        knownDataSize = 0;
+    }
+
+    /**
+     * Transfer the given amount of data from the supplier to the end of the buffer.
+     * Returns the transferred amount or -1 if no data was transferred - should never return 0.
+     *
+     * @param amount
+     * @param exact If true then the requested amount is not subject to adjustment by
+     *              the minimum read length
+     * @return
+     */
+    public int loadFully(int amount, boolean exact) {
+        Preconditions.checkArgument(amount >= 0);
+        int result = -1;
+        if (!isDataSupplierConsumed) {
+            int remaining = amount;
+            while (remaining > 0) {
+                int n = loadData(remaining, exact);
+                if (n >= 0) {
+                    result += n;
+                    remaining -= n;
+                } else {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * fetch a chunk from the input stream
      */
-    protected void loadData(int needed) {
+    protected int loadData(int needed, boolean exact) {
+        int n = -1;
         if (!isDataSupplierConsumed) {
             ensureCapacityInActiveBucket();
 
@@ -326,11 +382,13 @@ public class BufferOverReadableChannel<A>
 
             int len = Math.min(needed, maxReadSize);
 
-            len = Math.max(len, minReadSize);
+            if (!exact) {
+                len = Math.max(len, minReadSize);
+            }
+
             len = Math.min(len, arrayOps.length(activeBucket) - activeEnd.itemIdx);
 
             if(len != 0) {
-                int n;
                 try {
                     n = dataSupplier.read(activeBucket, activeEnd.itemIdx, len);
                 } catch (IOException e) {
@@ -349,6 +407,7 @@ public class BufferOverReadableChannel<A>
                 }
             }
         }
+        return n;
     }
 
     protected void ensureCapacityInActiveBucket() {
@@ -363,10 +422,10 @@ public class BufferOverReadableChannel<A>
             int newEndIdx = activeEnd.bucketIdx + 1;
             if (newEndIdx >= buckets.length) {
                 // Double number of buckets if possible
-                int numNewBuckets = buckets.length * 2;
-                if (numNewBuckets < buckets.length) {
-                    numNewBuckets = Integer.MAX_VALUE;
-                }
+                int numNewBuckets = IntMath.saturatedMultiply(buckets.length, 2);
+//                if (numNewBuckets < buckets.length) {
+//                    numNewBuckets = Integer.MAX_VALUE;
+//                }
 
                 A[] newBuckets = (A[])new Object[numNewBuckets];
                 System.arraycopy(buckets, 0, newBuckets, 0, buckets.length);
@@ -502,6 +561,11 @@ public class BufferOverReadableChannel<A>
         }
     }
 
+    public static <T> BufferOverReadableChannel<T[]> createForObjects(int initialCapacity) {
+        ArrayOps<T[]> arrayOps = ArrayOps.forObjects();
+        return new BufferOverReadableChannel<>(arrayOps, initialCapacity, null, 1);
+    }
+
     public static BufferOverReadableChannel<byte[]> createForBytes() {
         return createForBytes(InputStream.nullInputStream());
     }
@@ -512,9 +576,12 @@ public class BufferOverReadableChannel<A>
 
     public static BufferOverReadableChannel<byte[]> createForBytes(InputStream in, int minReadSize) {
         ReadableChannel<byte[]> channel = ReadableChannels.wrap(in);
-        return new BufferOverReadableChannel<>(ArrayOps.BYTE, 8, channel, minReadSize);
+        return createForBytes(channel, minReadSize);
     }
 
+    public static BufferOverReadableChannel<byte[]> createForBytes(ReadableChannel<byte[]> channel, int minReadSize) {
+        return new BufferOverReadableChannel<>(ArrayOps.BYTE, 8, channel, minReadSize);
+    }
 
     public static void main(String[] args) throws IOException {
         Random random = new Random();
@@ -613,6 +680,53 @@ public class BufferOverReadableChannel<A>
             // bin.reset();
             System.out.println("Bytes read on interation " + i + " " + r + " " + sw.elapsed(TimeUnit.MILLISECONDS) * 0.001f);
             channel.close();
+        }
+    }
+
+
+    /** Create a switchable buffered channel where the buffering can be disabled later */
+    public static <A> ReadableChannelSwitchable<A> newBufferedChannel(BufferOverReadableChannel<A> buffer) {
+        ReadableChannel<A> channel;
+        try {
+            channel = buffer.newReadableChannel();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return new ReadableChannelSwitchable<>(
+                   new ReadableChannelWithValue<>(
+                       new ReadableChannelWithCounter<>(
+                           channel), buffer));
+    }
+
+    /** Remove the buffer of channel created with newBufferedChannel */
+    public static <A> void debuffer(ReadableChannel<A> channel) {
+        ReadableChannelSwitchable<A> switchable = (ReadableChannelSwitchable<A>)channel;
+        @SuppressWarnings("unchecked")
+        ReadableChannelWithValue<A, BufferOverReadableChannel<A>, ReadableChannelWithCounter<A, ?>> c =
+                (ReadableChannelWithValue<A, BufferOverReadableChannel<A>, ReadableChannelWithCounter<A, ?>>)switchable.getDecoratee();
+
+        Lock writeLock = switchable.getReadWriteLock().writeLock();
+        try {
+            writeLock.lock();
+            BufferOverReadableChannel<A> borc = c.getValue();
+            Buffer<A> buffer = borc.getBuffer();
+            long bufferSize = buffer.size();
+
+            long pos = c.getDecoratee().getReadCount();
+            ReadableChannel<A> dataSupplier = borc.getDataSupplier();
+            ReadableChannel<A> newChannel;
+            if (pos < bufferSize) {
+                newChannel = ReadableChannels.concat(Arrays.asList(
+                        buffer.newReadableChannel(pos), dataSupplier));
+            } else {
+                newChannel = dataSupplier;
+            }
+            switchable.setDecoratee(newChannel);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            writeLock.unlock();
         }
     }
 }

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.aksw.commons.collections.CloseableIterator;
@@ -13,6 +14,7 @@ import org.aksw.commons.io.buffer.array.ArrayReadable;
 import org.aksw.commons.io.buffer.plain.BufferOverArray;
 import org.aksw.commons.io.util.channel.ReadableByteChannelWithoutCloseOnInterrupt;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
 
 public class ReadableChannels {
@@ -42,9 +44,18 @@ public class ReadableChannels {
         return new ReadableChannelOverReadableByteChannel(channel);
     }
 
+    /** Note: The inputStream is internally wrapped with custom readable byte channel
+     * that does not close the input stream when a thread gets interrupted.
+     * This is essential when probing a seekable input stream for record offsets.
+     * Channels.newChannel does close streams on interrupt.
+     */
     public static ReadableChannel<byte[]> wrap(InputStream inputStream) {
         return wrap(new ReadableByteChannelWithoutCloseOnInterrupt(inputStream));
         // return wrap(Channels.newChannel(inputStream));
+    }
+
+    public static <T> ReadableChannel<T[]> wrap(Stream<T> stream, ArrayOps<T[]> arrayOps) {
+        return new ReadableChannelOverStream<>(arrayOps, stream);
     }
 
     public static <A> SeekableReadableChannelOverBuffer<A> newChannel(ArrayReadable<A> arrayReadable) {
@@ -116,5 +127,23 @@ public class ReadableChannels {
     /** Ensure that the length is NOT greater than the amount of available data! */
     public static CharSequence asCharSequence(SeekableReadableChannel<byte[]> channel, int length) {
         return new CharSequenceOverSeekableReadableChannelOfBytes(channel, length);
+    }
+
+
+    public static <A, X extends ReadableChannel<A>> ReadableChannelWithCounter<A, X> withCounter(X decoratee) {
+        return new ReadableChannelWithCounter<>(decoratee);
+    }
+
+    public static <A, T, X extends ReadableChannel<A>> ReadableChannelWithValue<A, T, X> withValue(X decoratee, T value) {
+        return new ReadableChannelWithValue<>(decoratee, value);
+    }
+
+    public static <A> ReadableChannel<A> concat(List<ReadableChannel<A>> channels) {
+        Preconditions.checkArgument(!channels.isEmpty());
+        return concat(channels.get(0).getArrayOps(), channels);
+    }
+
+    public static <A> ReadableChannel<A> concat(ArrayOps<A> arrayOps, List<ReadableChannel<A>> channels) {
+        return new ReadableChannelConcat<>(arrayOps, channels);
     }
 }

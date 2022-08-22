@@ -28,6 +28,7 @@ public class AutoCloseableWithLeakDetectionBase
     }
 
     public AutoCloseableWithLeakDetectionBase(boolean enableInstantiationStackTrace) {
+        super(enableInstantiationStackTrace);
         this.instantiationStackTrace = enableInstantiationStackTrace
                 ? StackTraceUtils.getStackTraceIfEnabled()
                 : null;

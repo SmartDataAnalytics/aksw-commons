@@ -58,6 +58,12 @@ public interface ArrayOps<A> {
     public static final ArrayOpsByteBuffer BYTE_BUFFER = new ArrayOpsByteBuffer();
     public static final ArrayOpsObject<Object> OBJECT = createFor(Object.class);
 
+    public static <T> ArrayOps<T[]> forObjects() {
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        ArrayOps<T[]> result = (ArrayOps)ArrayOps.OBJECT;
+        return result;
+    }
+
     /** Experimental primitive access methods. May improve single item operation performance
      * at the expense of somewhat cluttering up the API.  */
 

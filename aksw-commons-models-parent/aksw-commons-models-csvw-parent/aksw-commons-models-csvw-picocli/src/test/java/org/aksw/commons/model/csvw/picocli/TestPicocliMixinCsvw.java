@@ -6,15 +6,29 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Mixin;
 
 public class TestPicocliMixinCsvw {
+
+    public static class MyTestCommand
+        implements Runnable
+    {
+        @Mixin
+        PicocliMixinCsvw csvw;
+
+        @Override
+        public void run() {
+        }
+    }
 
     /** Test whether passing cli arguments to the delegate via picocli works */
     @Test
     public void test1() {
         String encoding = "ISO-8859-1";
+        MyTestCommand cmd = new MyTestCommand();
         DialectMutable state = new DialectMutableImpl();
-        new CommandLine(PicocliMixinCsvw.of(state)).execute("-e", encoding);
+        cmd.csvw = PicocliMixinCsvw.of(state);
+        new CommandLine(cmd).execute("-e", encoding);
         Assert.assertEquals(encoding, state.getEncoding());
     }
 }

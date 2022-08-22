@@ -2,6 +2,7 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 import java.nio.channels.Channel;
+import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.HasArrayOps;
 
@@ -41,4 +42,13 @@ public interface ReadableChannel<A>
     default int readRaw(Object array, int position, int length) throws IOException {
         return read((A)array, position, length);
     }
+
+    /** Returns a stream over the elements of the channel.
+     * Closing the stream closes the channel. */
+    /*
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    default <T> Stream<T> asStream() {
+        return ReadableChannels.newStream((ReadableChannel)this);
+    }
+    */
 }
