@@ -6,6 +6,8 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
+import com.google.common.collect.Streams;
+
 public class ReadableChannelOverStream<T>
     extends ReadableChannelBase<T[]>
 {
@@ -20,8 +22,18 @@ public class ReadableChannelOverStream<T>
         this.iterator = stream.iterator();
     }
 
+    /*
     public Stream<T> getStream() {
         return stream;
+    }
+    */
+
+    public Iterator<T> getIterator() {
+        return iterator;
+    }
+
+    public Stream<T> getIteratorAsStream() {
+        return Streams.stream(iterator).onClose(stream::close);
     }
 
     @Override

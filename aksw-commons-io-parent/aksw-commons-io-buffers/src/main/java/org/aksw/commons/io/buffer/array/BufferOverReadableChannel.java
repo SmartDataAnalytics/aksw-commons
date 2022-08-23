@@ -19,7 +19,6 @@ import org.aksw.commons.io.buffer.plain.SubBuffer;
 import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSwitchable;
 import org.aksw.commons.io.input.ReadableChannelWithCounter;
-import org.aksw.commons.io.input.ReadableChannelWithValue;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.shared.ChannelBase;
@@ -497,7 +496,7 @@ public class BufferOverReadableChannel<A>
         int result;
         // FIXME If the jvm's assert switch is enabled (-ea) then
         // the channel's leak detection makes things awfully slow
-        try (SeekableReadableChannel<A> channel = new Channel(false, srcOffset, null)) {
+        try (SeekableReadableChannel<A> channel = new Channel<>(this, false, srcOffset, null)) {
             result = channel.read(tgt, tgtOffset, length);
         }
         return result;
@@ -505,40 +504,48 @@ public class BufferOverReadableChannel<A>
 
     @Override
     public SeekableReadableChannel<A> newReadableChannel() throws IOException {
-        return new Channel(0l);
+        return new Channel<>(this, 0l);
     }
 
-    public class Channel
+    public static class Channel<A>
         extends ChannelBase
         implements SeekableReadableChannel<A>
     {
+        protected BufferOverReadableChannel<A> owner;
+
         protected BucketPointer pointer;
         protected long pos;
 
-        public Channel(long pos) {
-            this(pos, null);
+        public BufferOverReadableChannel<A> getOwner() {
+            return owner;
+
         }
 
-        public Channel(long pos, BucketPointer pointer) {
-            this(true, pos, pointer);
+        public Channel(BufferOverReadableChannel<A> owner, long pos) {
+            this(owner, pos, null);
         }
 
-        public Channel(boolean enableInitializationStackTrace, long pos, BucketPointer pointer) {
+        public Channel(BufferOverReadableChannel<A> owner, long pos, BucketPointer pointer) {
+            this(owner, true, pos, pointer);
+        }
+
+        public Channel(BufferOverReadableChannel<A> owner, boolean enableInitializationStackTrace, long pos, BucketPointer pointer) {
             super(enableInitializationStackTrace);
+            this.owner = owner;
             this.pointer = pointer;
             this.pos = pos;
         }
 
         @Override
         public ArrayOps<A> getArrayOps() {
-            return arrayOps;
+            return owner.arrayOps;
         }
 
         @Override
         public int read(A array, int position, int length) throws IOException {
             ensureOpen();
-            ArraySink<A> sink = new ArraySink.ArraySinkArray<>(arrayOps, array, position, position + length);
-            int result = doRead(sink, this);
+            ArraySink<A> sink = new ArraySink.ArraySinkArray<>(owner.arrayOps, array, position, position + length);
+            int result = owner.doRead(sink, this);
             return result;
         }
 
@@ -557,7 +564,7 @@ public class BufferOverReadableChannel<A>
 
         @Override
         public SeekableReadableChannel<A> cloneObject() { // throws CloneNotSupportedException {
-            return new Channel(pos, pointer);
+            return new Channel(owner, pos, pointer);
         }
     }
 
@@ -693,27 +700,25 @@ public class BufferOverReadableChannel<A>
             throw new RuntimeException(e);
         }
 
-        return new ReadableChannelSwitchable<>(
-                   new ReadableChannelWithValue<>(
-                       new ReadableChannelWithCounter<>(
-                           channel), buffer));
+        return new ReadableChannelSwitchable<>(new ReadableChannelWithCounter<>(channel));
     }
 
     /** Remove the buffer of channel created with newBufferedChannel */
     public static <A> void debuffer(ReadableChannel<A> channel) {
         ReadableChannelSwitchable<A> switchable = (ReadableChannelSwitchable<A>)channel;
         @SuppressWarnings("unchecked")
-        ReadableChannelWithValue<A, BufferOverReadableChannel<A>, ReadableChannelWithCounter<A, ?>> c =
-                (ReadableChannelWithValue<A, BufferOverReadableChannel<A>, ReadableChannelWithCounter<A, ?>>)switchable.getDecoratee();
+        ReadableChannelWithCounter<A, Channel<A>> c = (ReadableChannelWithCounter<A, Channel<A>>)switchable.getDecoratee();
 
         Lock writeLock = switchable.getReadWriteLock().writeLock();
         try {
             writeLock.lock();
-            BufferOverReadableChannel<A> borc = c.getValue();
+            Channel<A> core = c.getDecoratee();
+
+            BufferOverReadableChannel<A> borc = core.getOwner();
             Buffer<A> buffer = borc.getBuffer();
             long bufferSize = buffer.size();
 
-            long pos = c.getDecoratee().getReadCount();
+            long pos = c.getReadCount();
             ReadableChannel<A> dataSupplier = borc.getDataSupplier();
             ReadableChannel<A> newChannel;
             if (pos < bufferSize) {
