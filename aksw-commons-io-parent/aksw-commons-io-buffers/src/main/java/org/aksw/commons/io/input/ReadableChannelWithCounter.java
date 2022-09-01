@@ -15,7 +15,7 @@ public class ReadableChannelWithCounter<A, X extends ReadableChannel<A>>
     public int read(A array, int position, int length) throws IOException {
         int n = decoratee.read(array, position, length);
         if (n > 0) {
-            ++count;
+            count += n;
         }
         return n;
     }

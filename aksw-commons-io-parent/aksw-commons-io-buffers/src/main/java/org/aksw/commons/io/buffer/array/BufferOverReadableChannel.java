@@ -101,6 +101,11 @@ public class BufferOverReadableChannel<A>
         public long getLength() {
             return knownDataSize;
         }
+
+        @Override
+        public long size() throws IOException {
+            return getLength();
+        }
     }
 
     public long getKnownDataSize() {
@@ -707,18 +712,18 @@ public class BufferOverReadableChannel<A>
     public static <A> void debuffer(ReadableChannel<A> channel) {
         ReadableChannelSwitchable<A> switchable = (ReadableChannelSwitchable<A>)channel;
         @SuppressWarnings("unchecked")
-        ReadableChannelWithCounter<A, Channel<A>> c = (ReadableChannelWithCounter<A, Channel<A>>)switchable.getDecoratee();
+        Channel<A> core = (Channel<A>)switchable.getDecoratee();
 
         Lock writeLock = switchable.getReadWriteLock().writeLock();
         try {
             writeLock.lock();
-            Channel<A> core = c.getDecoratee();
+            // Channel<A> core = c.getDecoratee();
 
             BufferOverReadableChannel<A> borc = core.getOwner();
             Buffer<A> buffer = borc.getBuffer();
             long bufferSize = buffer.size();
 
-            long pos = c.getReadCount();
+            long pos = core.position();
             ReadableChannel<A> dataSupplier = borc.getDataSupplier();
             ReadableChannel<A> newChannel;
             if (pos < bufferSize) {
@@ -728,6 +733,8 @@ public class BufferOverReadableChannel<A>
                 newChannel = dataSupplier;
             }
             switchable.setDecoratee(newChannel);
+
+            core.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {

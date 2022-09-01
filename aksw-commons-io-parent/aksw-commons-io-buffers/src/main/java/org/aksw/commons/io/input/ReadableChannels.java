@@ -55,7 +55,7 @@ public class ReadableChannels {
     }
 
     public static <T> ReadableChannel<T[]> wrap(Stream<T> stream, ArrayOps<T[]> arrayOps) {
-        return new ReadableChannelOverStream<>(arrayOps, stream);
+        return new ReadableChannelOverIterator<>(arrayOps, stream.iterator(), stream::close);
     }
 
     public static <A> SeekableReadableChannelOverBuffer<A> newChannel(ArrayReadable<A> arrayReadable) {

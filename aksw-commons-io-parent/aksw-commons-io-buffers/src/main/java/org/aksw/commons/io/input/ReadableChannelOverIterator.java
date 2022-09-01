@@ -8,38 +8,39 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.collect.Streams;
 
-public class ReadableChannelOverStream<T>
+public class ReadableChannelOverIterator<T>
     extends ReadableChannelBase<T[]>
 {
     protected ArrayOps<T[]> arrayOps;
-    protected Stream<T> stream = null;
     protected Iterator<T> iterator = null;
+    protected Runnable closeAction;
 
-    public ReadableChannelOverStream(ArrayOps<T[]> arrayOps, Stream<T> stream) {
+    public ReadableChannelOverIterator(ArrayOps<T[]> arrayOps, Iterator<T> it, Runnable closeAction) {
         super();
         this.arrayOps = arrayOps;
-        this.stream = stream;
-        this.iterator = stream.iterator();
+        this.iterator = it;
+        this.closeAction = closeAction;
     }
 
-    /*
-    public Stream<T> getStream() {
-        return stream;
+
+    public void setCloseAction(Runnable closeAction) {
+        this.closeAction = closeAction;
     }
-    */
+
+    /** Returns this channel as a stream - closing the stream closes this channel */
+    public Stream<T> toStream() {
+        return Streams.stream(iterator).onClose(this::close);
+    }
 
     public Iterator<T> getIterator() {
         return iterator;
     }
 
-    public Stream<T> getIteratorAsStream() {
-        return Streams.stream(iterator).onClose(stream::close);
-    }
 
     @Override
     public void closeActual() throws IOException {
-        if (stream != null) {
-            stream.close();
+        if (closeAction != null) {
+            closeAction.run();
         }
     }
 
