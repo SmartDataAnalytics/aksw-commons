@@ -17,6 +17,7 @@
 		<module>aksw-commons-io-buffers</module>
 		<module>aksw-commons-io-syscalls</module>
 		<module>aksw-commons-io-process-pipes</module>
+		<module>aksw-commons-io-hadoop</module>
 	</modules>
 
 	<dependencies>

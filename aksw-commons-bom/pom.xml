@@ -55,6 +55,7 @@
 		<commons-compress.version>1.21</commons-compress.version>
 		<picocli.version>4.6.2</picocli.version>
 		<univocity.version>2.9.0</univocity.version>
+		<hadoop.version>3.3.4</hadoop.version>
 
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<slf4j.version>2.0.0</slf4j.version>
@@ -261,6 +262,12 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-io-hadoop</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-index</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -420,10 +427,17 @@
 				<artifactId>aksw-commons-models-csvw-domain</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
 			<dependency>
 				<groupId>com.univocity</groupId>
 				<artifactId>univocity-parsers</artifactId>
 				<version>${univocity.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>${hadoop.version}</version>
 			</dependency>
 
 		</dependencies>
