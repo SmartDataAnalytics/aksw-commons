@@ -7,6 +7,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
+import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.SeekableReadableChannel;
+import org.aksw.commons.io.input.SeekableReadableChannelBase;
 import org.aksw.commons.io.util.channel.ReadableByteChannelDecoratorBase;
 import org.apache.hadoop.fs.Seekable;
 
@@ -43,6 +46,37 @@ public class SeekableInputStreams
                 position -> setPosition.apply(channel, position));
 
     }
+
+    /** Bridge SeekableInputStream to the channel API */
+    public static SeekableReadableChannel<byte[]> wrap(SeekableInputStream in) {
+        return new SeekableReadableChannelBase<>() {
+            @Override
+            public SeekableReadableChannel<byte[]> cloneObject() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public int read(byte[] array, int position, int length) throws IOException {
+                return in.read(array, position, length);
+            }
+
+            @Override
+            public ArrayOps<byte[]> getArrayOps() {
+                return ArrayOps.BYTE;
+            }
+
+            @Override
+            public long position() {
+                return in.position();
+            }
+
+            @Override
+            public void position(long pos) {
+                in.position(pos);
+            }
+        };
+    }
+
 
 
     public static <T extends ReadableByteChannel> SeekableInputStream create(

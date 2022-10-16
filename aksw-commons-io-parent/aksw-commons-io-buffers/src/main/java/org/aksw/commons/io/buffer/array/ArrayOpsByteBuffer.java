@@ -51,6 +51,7 @@ public class ArrayOpsByteBuffer
                     buffer.put(i, b);
                 }
             } else {
+                // TODO Change implementation to just loop ; without creating an intermediary array
                 byte[] tmp = new byte[length];
                 if (b != 0) {
                     Arrays.fill(tmp, b);

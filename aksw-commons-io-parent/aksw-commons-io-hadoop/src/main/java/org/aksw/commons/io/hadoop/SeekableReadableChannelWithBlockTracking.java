@@ -1,4 +1,4 @@
-package org.aksw.commons.io.hadoop.binseach.bz2;
+package org.aksw.commons.io.hadoop;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

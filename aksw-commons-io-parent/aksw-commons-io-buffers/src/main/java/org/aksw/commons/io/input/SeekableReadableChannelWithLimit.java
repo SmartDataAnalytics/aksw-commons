@@ -35,7 +35,10 @@ public class SeekableReadableChannelWithLimit<A, X extends SeekableReadableChann
     public int read(A array, int position, int length) throws IOException {
         long pos = decoratee.position();
         int l = Math.max(0, (int)Math.min(limit - pos, length));
-        return decoratee.read(array, position, l);
+        int result = l == 0
+                ? length == 0 ? 0 : -1
+                : decoratee.read(array, position, l);
+        return result;
     }
 
     @Override

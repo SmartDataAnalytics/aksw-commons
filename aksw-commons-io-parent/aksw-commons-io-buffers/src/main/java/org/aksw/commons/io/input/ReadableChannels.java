@@ -6,6 +6,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.aksw.commons.collections.CloseableIterator;
@@ -119,6 +120,7 @@ public class ReadableChannels {
     /** Returns a char sequence over the given channel where the current position in the channel
      * corresponds to byte 0 */
     public static CharSequence asCharSequence(SeekableReadableChannel<byte[]> channel) {
+        Objects.requireNonNull(channel);
         long pos = channel.position();
         SeekableReadableChannel<byte[]> shifted = shift(channel, pos);
         return asCharSequence(shifted, Integer.MAX_VALUE);

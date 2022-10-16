@@ -217,6 +217,14 @@ public class BufferOverReadableChannel<A>
         this.isDataSupplierConsumed = dataSupplier == null;
     }
 
+    /**
+     * If this method returns true then further reads will not increase the known size
+     * unless a new data supplier is set.
+     */
+    public boolean isDataSupplierConsumed() {
+        return isDataSupplierConsumed;
+    }
+
     protected int nextBucketSize() {
         long activeSize = arrayOps.length(buckets[activeEnd.bucketIdx]);
 
