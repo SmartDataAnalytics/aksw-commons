@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -18,9 +19,9 @@ import org.aksw.commons.io.buffer.plain.Buffer;
 import org.aksw.commons.io.buffer.plain.SubBuffer;
 import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSwitchable;
-import org.aksw.commons.io.input.ReadableChannelWithCounter;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
+import org.aksw.commons.io.input.SeekableReadableChannelSwitchable;
 import org.aksw.commons.io.shared.ChannelBase;
 import org.apache.commons.io.input.BoundedInputStream;
 
@@ -153,6 +154,10 @@ public class BufferOverReadableChannel<A>
         int bucketIdx;
         int itemIdx;
 
+        public BucketPointer cloneObject() {
+            return new BucketPointer(bucketIdx, itemIdx);
+        }
+
         @Override
         public String toString() {
             return "BucketPointer [buckedIdx=" + bucketIdx + ", itemIdx=" + itemIdx + "]";
@@ -173,7 +178,7 @@ public class BufferOverReadableChannel<A>
      *
      * @param buckets
      * @param pos
-     * @return Pointer to a valid location in the know data block or null
+     * @return Pointer to a valid location in the known data block or null
      */
     public static <A> BucketPointer getPointer(ArrayOps<A> arrayOps, A[] buckets, BucketPointer end, long pos) {
         long tmp = pos;
@@ -184,8 +189,9 @@ public class BufferOverReadableChannel<A>
         for(i = 0; i < eidx; ++i) {
             A bucket = buckets[i];
             int n = arrayOps.length(bucket);
-            long r = tmp - n;
-            if(r < 0) {
+            // long r = tmp - n;
+            // if(r < 0) {
+            if (n > tmp) {
                 break;
             } else {
                 tmp -= n;
@@ -197,6 +203,70 @@ public class BufferOverReadableChannel<A>
                 : new BucketPointer(i, Ints.checkedCast(tmp));
         return result;
     }
+
+
+    // Relative get pointer
+    public static <A> BucketPointer getPointerRel(ArrayOps<A> arrayOps, A[] buckets, BucketPointer end, long startPos, BucketPointer startPtr, long pos) {
+//        long testPos = getPosition(arrayOps, buckets, startPtr.bucketIdx, startPtr.itemIdx);
+//        if (startPos != testPos) {
+//            throw new RuntimeException("Desync");
+//        }
+
+        Preconditions.checkArgument(pos >= 0, "Encountered negative position");
+
+        BucketPointer result;
+
+        int i = startPtr.bucketIdx;
+        int p = startPtr.itemIdx;
+
+        long delta = pos - startPos;
+
+        if (delta > 0) {
+             // if (true) { return getPointer(arrayOps, buckets, end, pos); }
+            int eidx = end.bucketIdx;
+            int epos = end.itemIdx;
+            while (i < eidx) {
+                A bucket = buckets[i];
+                int n = arrayOps.length(bucket);
+                // Note: p must never be greater than the current bucket size n
+                int a = n - p;
+                if (delta < a) {
+                    break;
+                } else {
+                    delta -= a;
+                    p = 0;
+                    ++i;
+                }
+            }
+            p += delta;
+            result = (i == eidx && p > epos)
+                    ? null
+                    : new BucketPointer(i, p);
+        } else if (delta < 0) {
+            delta = -delta;
+            for (;;) {
+                if (delta <= p) {
+                    p -= delta;
+                    break;
+                } else {
+                    delta -= p;
+                    --i;
+                    if (i < 0) {
+                        // This can only happen if startPos and startPtr were not in sync
+                        throw new IllegalStateException("Should never happen");
+                    }
+                    A bucket = buckets[i];
+                    p = arrayOps.length(bucket);
+                }
+            }
+            result = new BucketPointer(i, p);
+        } else {
+            result = startPtr;
+        }
+
+        return result;
+    }
+
 
     public BufferOverReadableChannel(
             ArrayOps<A> arrayOps,
@@ -231,26 +301,29 @@ public class BufferOverReadableChannel<A>
         int maxBucketSize = Integer.MAX_VALUE / 2;
         int nextSize = Math.min(Ints.saturatedCast(activeSize * 2), maxBucketSize);
         return nextSize;
-
     }
 
     public int doRead(ArraySink<A> dst, Channel reader) { // ByteArrayChannel reader, ByteBuffer dst) {
         int result = 0;
 
         BucketPointer pointer = reader.pointer;
-        if (pointer == null) {
+        // if (pointer == null) {
+        long requestedPos = reader.requestedPos;
+        if (requestedPos >= 0) {
             BucketPointer end = activeEnd;
 
             // Try to translate the logical linear position to a physical pointer
-            pointer = getPointer(arrayOps, buckets, end, reader.pos);
+            // pointer = getPointer(arrayOps, buckets, end, requestedPos);
+            pointer = getPointerRel(arrayOps, buckets, end, reader.pos, reader.pointer, requestedPos);
             if (pointer == null) {
                 if(isDataSupplierConsumed) {
                     return -1;
                 } else {
-                    long requestedPos = reader.pos;
                     loadDataUpTo(requestedPos);
                     end = activeEnd;
-                    pointer = getPointer(arrayOps, buckets, end, reader.pos);
+                    // pointer = getPointer(arrayOps, buckets, end, reader.pos);
+                    // pointer = getPointer(arrayOps, buckets, end, requestedPos);
+                    pointer = getPointerRel(arrayOps, buckets, end, reader.pos, reader.pointer, requestedPos);
 
                     if(pointer == null) {
                         if(isDataSupplierConsumed) {
@@ -262,8 +335,13 @@ public class BufferOverReadableChannel<A>
                 }
             }
 
+            // pointer is non-null here!
+            Objects.requireNonNull(pointer);
+
             // Cache a valid pointer with the channel
             reader.pointer = pointer;
+            reader.pos = reader.requestedPos;
+            reader.requestedPos = -1;
         }
 
         int bucketIdx = pointer.bucketIdx;
@@ -318,10 +396,10 @@ public class BufferOverReadableChannel<A>
             int n = Math.min(remainingDstLen, remainingBucketLen);
             dst.put(currentBucket, bucketPos, n);
             result += n;
-            pointer.itemIdx = bucketPos += n;
+            bucketPos += n;
+            pointer.itemIdx = bucketPos;
             reader.pos += n;
             pointer.bucketIdx = bucketIdx;
-            //pos += n;
         }
 
         return result;
@@ -509,7 +587,7 @@ public class BufferOverReadableChannel<A>
         int result;
         // FIXME If the jvm's assert switch is enabled (-ea) then
         // the channel's leak detection makes things awfully slow
-        try (SeekableReadableChannel<A> channel = new Channel<>(this, false, srcOffset, null)) {
+        try (Channel<A> channel = new Channel<>(this, false, 0, new BucketPointer(0, 0), srcOffset)) {
             result = channel.read(tgt, tgtOffset, length);
         }
         return result;
@@ -517,7 +595,7 @@ public class BufferOverReadableChannel<A>
 
     @Override
     public SeekableReadableChannel<A> newReadableChannel() throws IOException {
-        return new Channel<>(this, 0l);
+        return new Channel<>(this, true, 0, new BucketPointer(0, 0), -1);
     }
 
     public static class Channel<A>
@@ -529,24 +607,27 @@ public class BufferOverReadableChannel<A>
         protected BucketPointer pointer;
         protected long pos;
 
+        protected long requestedPos = -1;
+
         public BufferOverReadableChannel<A> getOwner() {
             return owner;
 
         }
 
-        public Channel(BufferOverReadableChannel<A> owner, long pos) {
-            this(owner, pos, null);
-        }
+//        public Channel(BufferOverReadableChannel<A> owner, long pos) {
+//            this(owner, pos, null);
+//        }
 
-        public Channel(BufferOverReadableChannel<A> owner, long pos, BucketPointer pointer) {
-            this(owner, true, pos, pointer);
-        }
+//        public Channel(BufferOverReadableChannel<A> owner, long pos, BucketPointer pointer) {
+//            this(owner, true, pos, pointer);
+//        }
 
-        public Channel(BufferOverReadableChannel<A> owner, boolean enableInitializationStackTrace, long pos, BucketPointer pointer) {
+        public Channel(BufferOverReadableChannel<A> owner, boolean enableInitializationStackTrace, long pos, BucketPointer pointer, long requestedPos) {
             super(enableInitializationStackTrace);
             this.owner = owner;
             this.pointer = pointer;
             this.pos = pos;
+            this.requestedPos = requestedPos;
         }
 
         @Override
@@ -564,20 +645,21 @@ public class BufferOverReadableChannel<A>
 
         @Override
         public long position() {
-            return pos;
+            return requestedPos >= 0 ? requestedPos : pos;
         }
 
         @Override
         public void position(long pos) {
-            this.pos = pos;
+            this.requestedPos = pos;
 
             // TODO For small differences in pos we should adjust the pos relatively to the old position
-            this.pointer = null;
+            // this.po = null;
         }
 
         @Override
         public SeekableReadableChannel<A> cloneObject() { // throws CloneNotSupportedException {
-            return new Channel(owner, pos, pointer);
+            Channel<A> result = new Channel<>(owner, true, pos, pointer.cloneObject(), requestedPos);
+            return result;
         }
     }
 
@@ -713,7 +795,8 @@ public class BufferOverReadableChannel<A>
             throw new RuntimeException(e);
         }
 
-        return new ReadableChannelSwitchable<>(new ReadableChannelWithCounter<>(channel));
+        // return new SeekableReadableChannelSwitchable<>(new ReadableChannelWithCounter<>(channel));
+        return new ReadableChannelSwitchable<>(channel);
     }
 
     /** Remove the buffer of channel created with newBufferedChannel */

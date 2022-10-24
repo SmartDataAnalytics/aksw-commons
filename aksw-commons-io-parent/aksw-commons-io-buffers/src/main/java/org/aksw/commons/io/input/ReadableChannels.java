@@ -17,6 +17,7 @@ import org.aksw.commons.io.util.channel.ReadableByteChannelWithoutCloseOnInterru
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
+import com.google.common.primitives.Ints;
 
 public class ReadableChannels {
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
@@ -147,5 +148,24 @@ public class ReadableChannels {
 
     public static <A> ReadableChannel<A> concat(ArrayOps<A> arrayOps, List<ReadableChannel<A>> channels) {
         return new ReadableChannelConcat<>(arrayOps, channels);
+    }
+
+    public static <A> long skip(ReadableChannel<A> channel, long req, A array, int position, int length) throws IOException {
+        if (length == 0) {
+            // TODO Create a temp buffer when that happens
+            throw new IllegalStateException("Must not be called with length 0");
+        }
+
+        long result = 0;
+        while (result < req) {
+            int l = Ints.saturatedCast(Math.min(req - result, length));
+            int n = channel.read(array, position, l);
+            if (n < 0) {
+                break;
+            }
+            result += n;
+        }
+
+        return result;
     }
 }
