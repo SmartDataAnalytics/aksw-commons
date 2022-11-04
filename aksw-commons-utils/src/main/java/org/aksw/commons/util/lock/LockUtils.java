@@ -44,8 +44,8 @@ public class LockUtils {
      */
     public static <T> T runWithLock(Lock lock, Callable<T> action) {
         T result = null;
+        lock.lock();
         try {
-            lock.lock();
             result = action.call();
         } catch (Exception e) {
             throw new RuntimeException(e);

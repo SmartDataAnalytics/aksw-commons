@@ -6,6 +6,7 @@ import java.io.PushbackInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Objects;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.SeekableReadableChannel;
@@ -49,6 +50,7 @@ public class SeekableInputStreams
 
     /** Bridge SeekableInputStream to the channel API */
     public static SeekableReadableChannel<byte[]> wrap(SeekableInputStream in) {
+        Objects.requireNonNull(in);
         return new SeekableReadableChannelBase<>() {
             @Override
             public SeekableReadableChannel<byte[]> cloneObject() {

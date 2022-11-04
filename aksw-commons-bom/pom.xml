@@ -194,6 +194,12 @@
 			</dependency>
 
 			<dependency>
+                                <groupId>org.aksw.commons</groupId>
+                                <artifactId>aksw-commons-picocli</artifactId>
+                                <version>${project.version}</version>
+                        </dependency>
+
+			<dependency>
 				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-io-core</artifactId>
 				<version>${project.version}</version>
