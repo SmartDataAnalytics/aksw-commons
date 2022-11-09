@@ -17,7 +17,7 @@ public interface Buffer<A>
 
         // TODO If this buffer is already a sub-buffer then prevent wrapping it again for performance
 
-        return new SubBufferImpl<A>(this, offset, length);
+        return new SubBufferImpl<>(this, offset, length);
     }
 
     /**
@@ -25,6 +25,6 @@ public interface Buffer<A>
      * For this reason, it's recommended to use appropriately sliced buffers
      */
     default <T> List<T> asList() {
-        return new ListOverBuffer<T>(this);
+        return new ListOverBuffer<>(this);
     }
 }

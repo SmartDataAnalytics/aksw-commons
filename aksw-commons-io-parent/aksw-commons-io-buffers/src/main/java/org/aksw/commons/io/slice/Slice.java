@@ -33,7 +33,7 @@ public interface Slice<T>
     /**
      * Protect a set of ranges from eviction.
      * If the slice does make use of eviction then this method can return null.
-     * Otherwise, a disposable must be returned. As long as it is not disposed, the
+     * Otherwise, a disposable must be returned. As long as it is not disposed
      * no data in the range may get lost due to eviction.
      *
      * This method should not be used directly but via {@link SliceAccessor#addEvictionGuard(RangeSet))}.

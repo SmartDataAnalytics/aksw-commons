@@ -22,7 +22,7 @@ import com.google.common.primitives.Ints;
 public class ReadableChannels {
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
-    public static <A> SeekableReadableChannel<A> shift(SeekableReadableChannel<A> dataStream, long offset) {
+    public static <A> SeekableReadableChannel<A> shiftOffset(SeekableReadableChannel<A> dataStream, long offset) {
         return new SeekableReadableChannelWithOffset<>(dataStream, offset);
     }
 
@@ -123,7 +123,7 @@ public class ReadableChannels {
     public static CharSequence asCharSequence(SeekableReadableChannel<byte[]> channel) {
         Objects.requireNonNull(channel);
         long pos = channel.position();
-        SeekableReadableChannel<byte[]> shifted = shift(channel, pos);
+        SeekableReadableChannel<byte[]> shifted = shiftOffset(channel, pos);
         return asCharSequence(shifted, Integer.MAX_VALUE);
     }
 
@@ -167,5 +167,21 @@ public class ReadableChannels {
         }
 
         return result;
+    }
+
+    public static <A> int readFully(ReadableChannel<A> channel, A array, int position, int length) throws IOException {
+    	int result = 0;
+    	int l = length;
+    	int p = position;
+    	while (l > 0) {
+    		int n = channel.read(array, p, l);
+    		if (n < 0) {
+    			break;
+    		}
+    		result += n;
+    		l -= n;
+    		p += n;
+    	}
+    	return result;
     }
 }
