@@ -50,23 +50,23 @@ public class CsvwUnivocityUtils {
 
         return affectedTerms;
     }
-    
+
     public static Set<String> configureDetection(CsvParserSettings settings, Dialect dialect) {
         Set<String> affectedTerms = new HashSet<>();
-        
+
         if (dialect.getLineTerminators() == null) {
-        	settings.setLineSeparatorDetectionEnabled(true);
-        	affectedTerms.add(CsvwTerms.lineTerminators);
+            settings.setLineSeparatorDetectionEnabled(true);
+            affectedTerms.add(CsvwTerms.lineTerminators);
         }
-        
+
         if (dialect.getDelimiter() == null) {
-        	settings.setDelimiterDetectionEnabled(true);
-        	affectedTerms.add(CsvwTerms.delimiter);
+            settings.setDelimiterDetectionEnabled(true);
+            affectedTerms.add(CsvwTerms.delimiter);
         }
 
         if (dialect.getQuoteChar() == null) {
-        	settings.setQuoteDetectionEnabled(true);
-        	affectedTerms.add(CsvwTerms.quoteChar);
+            settings.setQuoteDetectionEnabled(true);
+            affectedTerms.add(CsvwTerms.quoteChar);
         }
 
         return affectedTerms;
@@ -103,69 +103,74 @@ public class CsvwUnivocityUtils {
 
         return affectedTerms;
     }
-    
+
     /** Configure a dialect with the attributes detected by univocity */
     public static Set<String> configureDialect(DialectMutable dialect, CsvFormat format) {
-    	Set<String> affectedTerms = new LinkedHashSet<>();
-    	String str;
-    	
-    	if ((str = format.getDelimiterString()) != null && !Objects.equals(str, dialect.getDelimiter())) {
-    		dialect.setDelimiter(str);
-    		affectedTerms.add(CsvwTerms.delimiter);
-    	}
-    	
-    	// FIXME Line terminators need to be a json array
-    	if ((str = format.getLineSeparatorString()) != null && !Objects.equals(str, dialect.getLineTerminators())) {
-    		dialect.setLineTerminators(str);
-    		affectedTerms.add(CsvwTerms.lineTerminators);
-    	}
-    	
-    	str = Character.toString(format.getQuote());
-    	if (!Objects.equals(str, dialect.getQuoteChar())) {
-    		dialect.setQuoteChar(str);
-    		affectedTerms.add(CsvwTerms.quoteChar);
-    	}
+        Set<String> affectedTerms = new LinkedHashSet<>();
+        String str;
 
-    	str = Character.toString(format.getQuoteEscape());
-    	if (!Objects.equals(str, dialect.getQuoteEscapeChar())) {
-    		dialect.setQuoteEscapeChar(str);
-    		affectedTerms.add(CsvwTerms.quoteEscapeChar);
-    	}
-    	
-    	return affectedTerms;
+        if ((str = format.getDelimiterString()) != null && !Objects.equals(str, dialect.getDelimiter())) {
+            dialect.setDelimiter(str);
+            affectedTerms.add(CsvwTerms.delimiter);
+        }
+
+        // FIXME Line terminators need to be a json array
+        if ((str = format.getLineSeparatorString()) != null && !Objects.equals(str, dialect.getLineTerminators())) {
+            dialect.setLineTerminators(str);
+            affectedTerms.add(CsvwTerms.lineTerminators);
+        }
+
+        str = Character.toString(format.getQuote());
+        if (!Objects.equals(str, dialect.getQuoteChar())) {
+            dialect.setQuoteChar(str);
+            affectedTerms.add(CsvwTerms.quoteChar);
+        }
+
+        str = Character.toString(format.getQuoteEscape());
+        if (!Objects.equals(str, dialect.getQuoteEscapeChar())) {
+            dialect.setQuoteEscapeChar(str);
+            affectedTerms.add(CsvwTerms.quoteEscapeChar);
+        }
+
+        return affectedTerms;
     }
-    
-    public static boolean isDetectionNeeded(CsvParserSettings settings) {
-    	boolean result = settings.isLineSeparatorDetectionEnabled()
-    			|| settings.isDelimiterDetectionEnabled()
-    			|| settings.isQuoteDetectionEnabled();
 
-    	return result;
+    public static boolean isDetectionNeeded(CsvParserSettings settings) {
+        boolean result = settings.isLineSeparatorDetectionEnabled()
+                || settings.isDelimiterDetectionEnabled()
+                || settings.isQuoteDetectionEnabled();
+
+        return result;
     }
 
     public static boolean isDetectionNeeded(CommonParserSettings<?> settings) {
-    	boolean result = settings.isLineSeparatorDetectionEnabled();
-    	return result;
+        boolean result = settings.isLineSeparatorDetectionEnabled();
+        return result;
     }
 
     public static CsvFormat detectFormat(CsvParser parser, Callable<Reader> readerSupp) throws Exception {
-    	CsvFormat result;
-    	try (Reader reader = readerSupp.call()) {
-	         parser.beginParsing(reader);
-	         result = parser.getDetectedFormat();
+        CsvFormat result;
+        try (Reader reader = readerSupp.call()) {
+             parser.beginParsing(reader);
+             result = parser.getDetectedFormat();
         } finally {
-	         parser.stopParsing();	    	
-	    }
-    	return result;
+             parser.stopParsing();
+        }
+        return result;
     }
-    
+
+    /** Checks for certain non-configured univocity settings and if there are any then
+     * a parser is started for probing.
+     * Those settings are: line terminators, field delimiters and quote char.
+     * If they are given then nothing is done.
+     */
     public static Set<String> configureDialect(DialectMutable dialect, CsvParserSettings settings, Callable<CsvParser> parserFactory, Callable<Reader> readerSupp) throws Exception {
-		Set<String> result = Collections.emptySet();
-    	if (isDetectionNeeded(settings)) {
-			CsvParser parser = parserFactory.call();
-			CsvFormat format = detectFormat(parser, readerSupp);
-			result = configureDialect(dialect, format);
-		}
-    	return result;
+        Set<String> result = Collections.emptySet();
+        if (isDetectionNeeded(settings)) {
+            CsvParser parser = parserFactory.call();
+            CsvFormat format = detectFormat(parser, readerSupp);
+            result = configureDialect(dialect, format);
+        }
+        return result;
     }
 }

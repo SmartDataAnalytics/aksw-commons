@@ -3,53 +3,58 @@ package org.aksw.commons.collections.utils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.aksw.commons.collections.IteratorUtils;
+import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
+import org.aksw.commons.lambda.throwing.ThrowingFunction;
+import org.aksw.commons.lambda.throwing.ThrowingSupplier;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;
 
 public class StreamUtils {
-	
-	/**
-	 * Create a single-use {@link Iterable} from a stream. Allows for easier use of Streams in
-	 * for-loops:
-	 * 
-	 * <pre>{@code
-	 *   Stream<T> stream = ...;
-	 *   for (T item : StreamUtils.iterableOf(stream)) {
-	 *   }
-	 * }</pre>
-	 * 
-	 * @param <T>
-	 * @param stream
-	 * @return
-	 */
-	public static <T> Iterable<T> iterable(Stream<T> stream) {
-		Iterable<T> result = () -> stream.iterator();
-		return result;
-	}
 
-	
+    /**
+     * Create a single-use {@link Iterable} from a stream. Allows for easier use of Streams in
+     * for-loops:
+     *
+     * <pre>{@code
+     *   Stream<T> stream = ...;
+     *   for (T item : StreamUtils.iterableOf(stream)) {
+     *   }
+     * }</pre>
+     *
+     * @param <T>
+     * @param stream
+     * @return
+     */
+    public static <T> Iterable<T> iterable(Stream<T> stream) {
+        Iterable<T> result = () -> stream.iterator();
+        return result;
+    }
+
+
     public static <T> T expectOneItem(Stream<T> stream) {
-    	try {
-    		return IteratorUtils.expectOneItem(stream.iterator());
-    	} finally {
-    		stream.close();
-    	}
+        try {
+            return IteratorUtils.expectOneItem(stream.iterator());
+        } finally {
+            stream.close();
+        }
     }
 
     public static <T> T expectZeroOrOneItems(Stream<T> stream) {
-    	try {
-    		return IteratorUtils.expectZeroOrOneItems(stream.iterator());
-    	} finally {
-    		stream.close();
-    	}
+        try {
+            return IteratorUtils.expectZeroOrOneItems(stream.iterator());
+        } finally {
+            stream.close();
+        }
     }
-	
+
     /**
      * Note we could implement another version where each batch's List is lazy loaded from the stream -
      * but this would probably require complete consumption of each batch in order
@@ -125,6 +130,102 @@ public class StreamUtils {
         fn.accept(baseSolution, (item) -> result.add(item));
 
         return result.stream();
+    }
+
+    /**
+     * Creates a stream over a resource via an enumerable.
+     * The resource is initialized lazily once the first item is read from the stream.
+     * The returned stream should be used in a try-with-resources block in order
+     * to close the underlying resource.
+     *
+     * @param <T> The record type (e.g. an array of Strings)
+     * @param <R> The resource type (e.g. a java.sql.Connection)
+     * @param <E> An enumerable (e.g. a java.sql.ResultSet)
+     * @param resourceSupplier
+     * @param toEnumerable
+     * @param nextRecord
+     * @param closer
+     * @return
+     */
+    public static <T, R, E> Stream<T> fromEnumerableResource(
+            Callable<R> resourceSupplier,
+            ThrowingFunction<? super R, E> toEnumerable,
+            ThrowingFunction<? super E, T> nextRecord,
+            BiPredicate<T, ? super E> hasEnded,
+            ThrowingBiConsumer<? super R, ? super E> closer) {
+        IteratorOverEnumerable<T, R, E> it = new IteratorOverEnumerable<>(resourceSupplier, toEnumerable, nextRecord, hasEnded, closer);
+        Stream<T> result = Streams.stream(it).onClose(it::close);
+        return result;
+    }
+
+    public static class IteratorOverEnumerable<T, R, E>
+        extends AbstractIterator<T>
+        implements AutoCloseable
+    {
+        protected Callable<R> resourceSupplier;
+        protected ThrowingFunction<? super R, E> toEnumerable;
+        protected ThrowingFunction<? super E, T> nextRecord;
+        protected BiPredicate<T, ? super E> hasEnded;
+        protected ThrowingBiConsumer<? super R, ? super E> closer;
+
+        protected boolean isClosed = false;
+        protected R resource;
+        protected E enumerable;
+
+        public IteratorOverEnumerable(
+            Callable<R> resourceSupplier,
+            ThrowingFunction<? super R, E> toEnumerable,
+            ThrowingFunction<? super E, T> nextRecord,
+            BiPredicate<T, ? super E> hasEnded,
+            ThrowingBiConsumer<? super R, ? super E> closer) {
+            this.resourceSupplier = resourceSupplier;
+            this.toEnumerable = toEnumerable;
+            this.nextRecord = nextRecord;
+            this.hasEnded = hasEnded;
+            this.closer = closer;
+        }
+
+        @Override
+        protected T computeNext() {
+            if (isClosed) {
+                throw new IllegalStateException("already closed");
+            }
+
+            if (enumerable == null) {
+                try {
+                    if (resource == null) {
+                        resource = resourceSupplier.call();
+                    }
+                    enumerable = toEnumerable.apply(resource);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            T result;
+            try {
+                result = nextRecord.apply(enumerable);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            boolean isDone = hasEnded.test(result, enumerable);
+            if (isDone) {
+                result = endOfData();
+            }
+            return result;
+        }
+
+        @Override
+        public void close() {
+            isClosed = true;
+            try {
+                if (resource != null) {
+                    closer.accept(resource, enumerable);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }

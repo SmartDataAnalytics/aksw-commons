@@ -9,11 +9,11 @@ public class SeekableReadableChannelWithLimit<A, X extends SeekableReadableChann
     extends ChannelDecoratorBase<X>
     implements SeekableReadableChannel<A>
 {
-    protected long limit;
+    protected long endPos;
 
-    public SeekableReadableChannelWithLimit(X delegate, long limit) {
+    public SeekableReadableChannelWithLimit(X delegate, long endPos) {
         super(delegate);
-        this.limit = limit;
+        this.endPos = endPos;
     }
 
     @Override
@@ -34,15 +34,17 @@ public class SeekableReadableChannelWithLimit<A, X extends SeekableReadableChann
     @Override
     public int read(A array, int position, int length) throws IOException {
         long pos = decoratee.position();
-        int l = Math.max(0, (int)Math.min(limit - pos, length));
+        int l = Math.max(0, (int)Math.min(endPos - pos, length));
         int result = l == 0
-                ? length == 0 ? 0 : -1
+                ? length == 0
+                    ? 0
+                    : -1
                 : decoratee.read(array, position, l);
         return result;
     }
 
     @Override
     public SeekableReadableChannel<A> cloneObject() {
-        return new SeekableReadableChannelWithLimit<>(decoratee.cloneObject(), limit);
+        return new SeekableReadableChannelWithLimit<>(decoratee.cloneObject(), endPos);
     }
 }

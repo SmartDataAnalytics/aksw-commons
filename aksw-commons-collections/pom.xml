@@ -25,6 +25,11 @@
 			<artifactId>aksw-commons-utils</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-lambdas-throwing</artifactId>
+		</dependency>
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
