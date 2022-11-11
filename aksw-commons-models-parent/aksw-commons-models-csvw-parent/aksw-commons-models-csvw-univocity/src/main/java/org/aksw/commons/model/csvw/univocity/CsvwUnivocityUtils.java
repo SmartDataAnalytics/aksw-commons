@@ -148,7 +148,7 @@ public class CsvwUnivocityUtils {
         return result;
     }
 
-    public static CsvFormat detectFormat(CsvParser parser, Callable<Reader> readerSupp) throws Exception {
+    public static CsvFormat detectFormat(CsvParser parser, Callable<Reader> readerSupp) throws Exception {    	
         CsvFormat result;
         try (Reader reader = readerSupp.call()) {
              parser.beginParsing(reader);
