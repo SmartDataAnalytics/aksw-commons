@@ -1,6 +1,7 @@
 package org.aksw.commons.util.closeable;
 
 import org.aksw.commons.util.stack_trace.StackTraceUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,10 +43,11 @@ public class AutoCloseableWithLeakDetectionBase
     protected void finalize() throws Throwable {
         try {
             if (!isClosed) {
-                String str = StackTraceUtils.toString(instantiationStackTrace);
-
-                logger.warn("Close invoked via GC rather than user logic - indicates resource leak. Object constructed at " + str);
-
+            	if (logger.isWarnEnabled()) {
+            		String objectIdStr = ObjectUtils.identityToString(this);
+	                String stackTraceStr = StackTraceUtils.toString(instantiationStackTrace);
+	                logger.warn(String.format("Close invoked via GC rather than user logic - indicates resource leak. Object %s constructed at %s", objectIdStr, stackTraceStr));
+            	}
                 close();
             }
         } finally {
