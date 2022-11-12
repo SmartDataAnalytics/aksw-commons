@@ -184,4 +184,14 @@ public class ReadableChannels {
     	}
     	return result;
     }
+    
+    public static <T> ReadableChannel<T> closeShield(ReadableChannel<T> in) {
+        Objects.requireNonNull(in);
+        return new ReadableChannelDecoratorBase<>(in) {
+        	@Override
+        	public void close() throws IOException {
+        		// No op / close shield
+        	}
+        };
+    }
 }

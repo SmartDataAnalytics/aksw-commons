@@ -11,6 +11,7 @@ import java.util.Objects;
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.input.SeekableReadableChannelBase;
+import org.aksw.commons.io.input.SeekableReadableChannelDecoratorBase;
 import org.aksw.commons.io.util.channel.ReadableByteChannelDecoratorBase;
 import org.apache.hadoop.fs.Seekable;
 
@@ -76,10 +77,12 @@ public class SeekableInputStreams
             public void position(long pos) {
                 in.position(pos);
             }
+            @Override
+            protected void closeActual() throws Exception {
+            	in.close();
+            }
         };
     }
-
-
 
     public static <T extends ReadableByteChannel> SeekableInputStream create(
         InputStream in,
