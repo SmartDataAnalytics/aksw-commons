@@ -7,8 +7,8 @@
 	<packaging>pom</packaging>
 
 	<parent>
-		<artifactId>aksw-commons-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
+		<artifactId>aksw-commons-parent</artifactId>
 		<version>0.9.5-SNAPSHOT</version>
 	</parent>
 

@@ -1,5 +1,13 @@
 package org.aksw.commons.model.csvw.domain.api;
 
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
 /** Resource view of the Dialect class according to
  *  https://www.w3.org/ns/csvw#class-definitions
  *
@@ -40,7 +48,7 @@ public interface Dialect
      * array containing the single provided string value, or the provided array.
      */
     String  getLineTerminators();
-
+    
     /** An atomic property that sets the quote character flag to the single
      * provided value, which must be a string or `null`.
      */
@@ -100,5 +108,28 @@ public interface Dialect
         dest.setSkipInitialSpace(getSkipInitialSpace());
         dest.setSkipRows(getSkipRows());
         dest.setTrim(getTrim());
+    }
+
+    /**
+     * Attempts to parse the line terminators as a json array and return an array of the strings.
+     * If parsing fails then a single item with original string value is returned.
+     */
+    default List<String> getLineTerminatorList() {
+    	List<String> result = null;
+    	String str = getLineTerminators();
+    	if (str != null) {
+        	try {
+	    		Type type = new TypeToken<List<String>>() {}.getType();
+	    		Gson gson = new GsonBuilder().setLenient().create();
+	    		result = gson.fromJson(str, type);
+	    	} catch (Exception e) {
+	    		// Ignore?
+	    	}
+        	
+        	if (result == null) {
+	    		result = Arrays.asList(str);        		
+        	}
+    	}
+    	return result;
     }
 }

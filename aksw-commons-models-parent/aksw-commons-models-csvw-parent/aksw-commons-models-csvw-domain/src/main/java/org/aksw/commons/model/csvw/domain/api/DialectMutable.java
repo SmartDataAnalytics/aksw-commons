@@ -1,5 +1,9 @@
 package org.aksw.commons.model.csvw.domain.api;
 
+import java.util.List;
+
+import com.google.gson.JsonArray;
+
 public interface DialectMutable
     extends Dialect
 {
@@ -18,6 +22,16 @@ public interface DialectMutable
     DialectMutable setTrim(String trim);
     DialectMutable setQuoteEscapeChar(String quoteEscapeChar);
 
+    default DialectMutable setLineTerminatorList(List<String> lineTerminators) {
+    	String str = null;
+    	if (lineTerminators != null) {
+	    	JsonArray array = new JsonArray();
+	    	lineTerminators.forEach(array::add);
+	    	str = array.toString();
+    	}
+		return setLineTerminators(str);
+    }
+    
 //    default void copyFrom(Dialect src) {
 //        setCommentPrefix(src.getCommentPrefix());
 //        setDelimiter(src.getDelimiter());

@@ -83,5 +83,4 @@ public interface StreamFunction<I, O>
     static <X> StreamFunction<X, X> identity(Class<X> cls) {
         return x -> x;
     }
-
 }

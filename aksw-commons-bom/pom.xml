@@ -49,6 +49,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
 
+                <gson.version>2.9.0</gson.version>
 		<guava.version>31.0.1-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
 		<xstream.version>1.4.19</xstream.version>
@@ -433,6 +434,12 @@
 				<artifactId>aksw-commons-models-csvw-domain</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${gson.version}</version>
+		</dependency>
 
 			<dependency>
 				<groupId>com.univocity</groupId>
