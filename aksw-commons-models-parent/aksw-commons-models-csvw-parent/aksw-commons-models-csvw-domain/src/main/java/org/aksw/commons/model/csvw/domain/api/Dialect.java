@@ -119,7 +119,7 @@ public interface Dialect
     	String str = getLineTerminators();
     	if (str != null) {
         	try {
-	    		Type type = new TypeToken<List<String>>() {}.getType();
+	    		Type type = new TypeToken<List<String>>() { /* empty */ }.getType();
 	    		Gson gson = new GsonBuilder().setLenient().create();
 	    		result = gson.fromJson(str, type);
 	    	} catch (Exception e) {
