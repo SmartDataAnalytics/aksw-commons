@@ -48,7 +48,7 @@ public interface Dialect
      * array containing the single provided string value, or the provided array.
      */
     String  getLineTerminators();
-    
+
     /** An atomic property that sets the quote character flag to the single
      * provided value, which must be a string or `null`.
      */
@@ -93,21 +93,53 @@ public interface Dialect
     /** Extension: Quote escape char */
     String  getQuoteEscapeChar();
 
-    default void copyInto(DialectMutable dest) {
-        dest.setCommentPrefix(getCommentPrefix());
-        dest.setDelimiter(getDelimiter());
-        dest.setDoubleQuote(isDoubleQuote());
-        dest.setEncoding(getEncoding());
-        dest.setHeader(getHeader());
-        dest.setHeaderRowCount(getHeaderRowCount());
-        dest.setLineTerminators(getLineTerminators());
-        dest.setQuoteChar(getQuoteChar());
-        dest.setQuoteEscapeChar(getQuoteEscapeChar());
-        dest.setSkipBlankRows(getSkipBlankRows());
-        dest.setSkipColumns(getSkipColumns());
-        dest.setSkipInitialSpace(getSkipInitialSpace());
-        dest.setSkipRows(getSkipRows());
-        dest.setTrim(getTrim());
+    default void copyInto(DialectMutable dest, boolean copyNulls) {
+        String str;
+        Boolean b;
+        Long l;
+
+        if ((str = getCommentPrefix()) != null || copyNulls) {
+            dest.setCommentPrefix(str);
+        }
+        if((str = getDelimiter()) != null || copyNulls) {
+            dest.setDelimiter(str);
+        }
+        if((b = isDoubleQuote()) != null || copyNulls) {
+            dest.setDoubleQuote(b);
+        }
+        if((str = getEncoding()) != null || copyNulls) {
+            dest.setEncoding(str);
+        }
+        if((b = getHeader()) != null || copyNulls) {
+            dest.setHeader(b);
+        }
+        if((l = getHeaderRowCount()) != null || copyNulls) {
+            dest.setHeaderRowCount(l);
+        }
+        if((str = getLineTerminators()) != null || copyNulls) {
+            dest.setLineTerminators(str);
+        }
+        if((str = getQuoteChar()) != null || copyNulls) {
+            dest.setQuoteChar(str);
+        }
+        if((str = getQuoteEscapeChar()) != null || copyNulls) {
+            dest.setQuoteEscapeChar(str);
+        }
+        if((b = getSkipBlankRows()) != null || copyNulls) {
+            dest.setSkipBlankRows(b);
+        }
+        if((l = getSkipColumns()) != null || copyNulls) {
+            dest.setSkipColumns(l);
+        }
+        if((b = getSkipInitialSpace()) != null || copyNulls) {
+            dest.setSkipInitialSpace(b);
+        }
+        if((l = getSkipRows()) != null || copyNulls) {
+            dest.setSkipRows(l);
+        }
+        if((str = getTrim()) != null || copyNulls) {
+            dest.setTrim(str);
+        }
     }
 
     /**
@@ -115,21 +147,21 @@ public interface Dialect
      * If parsing fails then a single item with original string value is returned.
      */
     default List<String> getLineTerminatorList() {
-    	List<String> result = null;
-    	String str = getLineTerminators();
-    	if (str != null) {
-        	try {
-	    		Type type = new TypeToken<List<String>>() { /* empty */ }.getType();
-	    		Gson gson = new GsonBuilder().setLenient().create();
-	    		result = gson.fromJson(str, type);
-	    	} catch (Exception e) {
-	    		// Ignore?
-	    	}
-        	
-        	if (result == null) {
-	    		result = Arrays.asList(str);        		
-        	}
-    	}
-    	return result;
+        List<String> result = null;
+        String str = getLineTerminators();
+        if (str != null) {
+            try {
+                Type type = new TypeToken<List<String>>() { /* empty */ }.getType();
+                Gson gson = new GsonBuilder().setLenient().create();
+                result = gson.fromJson(str, type);
+            } catch (Exception e) {
+                // Ignore?
+            }
+
+            if (result == null) {
+                result = Arrays.asList(str);
+            }
+        }
+        return result;
     }
 }
