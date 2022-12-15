@@ -592,4 +592,18 @@ public class RangeUtils {
                 : (b.hasUpperBound() ? 1 : 0);
     }
 
+
+    /** Return a random double value within the given range. Open bounds are capped at Double.MIN_VALUE and MAX_VALUE,
+     *  respectively.
+     *  TODO This method currently does not respect exclusive bounds
+     */
+    public static double randomDouble(Range<? extends Number> range, Random random) {
+        double min = range.hasLowerBound() ? range.lowerEndpoint().doubleValue() : Double.MIN_VALUE;
+        double max = range.hasUpperBound() ? range.upperEndpoint().doubleValue() : Double.MAX_VALUE;
+
+        double f = random.nextDouble();
+        double result = min + (max - min) * f;
+
+        return result;
+    }
 }

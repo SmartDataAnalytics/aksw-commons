@@ -11,8 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-import java.util.function.Function;
-
 
 /**
  * Generic base implementation of the path interface.
@@ -259,7 +257,6 @@ public class PathBase<T, P extends Path<T>>
         return result;
     }
 
-
     public static <T> List<T> relativize(List<T> a, List<T> b, T parentToken) {
         List<T> result = new ArrayList<>();
 
@@ -322,7 +319,6 @@ public class PathBase<T, P extends Path<T>>
                 .iterator();
     }
 
-
     @Override
     public int compareTo(Path<T> other) {
         int result;
@@ -368,6 +364,7 @@ public class PathBase<T, P extends Path<T>>
 
         return result;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -391,5 +388,4 @@ public class PathBase<T, P extends Path<T>>
         result = prime * result + ((segments == null) ? 0 : segments.hashCode());
         return result;
     }
-
 }
