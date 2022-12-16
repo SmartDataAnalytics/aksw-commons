@@ -71,8 +71,7 @@
 		<module>aksw-commons-resources-test-config</module>
 
 		<module>aksw-commons-collections</module>
-		<module>aksw-commons-utils</module>
-		<module>aksw-commons-utils-xml</module>
+		<module>aksw-commons-utils-parent</module>
 		<module>aksw-commons-beans</module>
 		<module>aksw-commons-lambdas-parent</module>
 		<module>aksw-commons-collectors</module>
