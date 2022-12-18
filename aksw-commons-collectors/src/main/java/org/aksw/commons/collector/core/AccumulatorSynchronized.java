@@ -2,19 +2,19 @@ package org.aksw.commons.collector.core;
 
 import org.aksw.commons.collector.domain.Accumulator;
 
-public class AccumulatorSynchronized<I, O>
-    implements Accumulator<I, O>
+public class AccumulatorSynchronized<I, E, O>
+    implements Accumulator<I, E, O>
 {
-    protected Accumulator<I, O> delegate;
+    protected Accumulator<I, E, O> delegate;
 
-    public AccumulatorSynchronized(Accumulator<I, O> delegate) {
+    public AccumulatorSynchronized(Accumulator<I, E, O> delegate) {
         super();
         this.delegate = delegate;
     }
 
     @Override
-    public synchronized void accumulate(I input) {
-        delegate.accumulate(input);
+    public synchronized void accumulate(I input, E env) {
+        delegate.accumulate(input, env);
     }
 
     @Override

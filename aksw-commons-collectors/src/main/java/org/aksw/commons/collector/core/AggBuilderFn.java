@@ -12,17 +12,17 @@ import org.aksw.commons.lambda.serializable.SerializablePredicate;
 // useable; but so far it isn't - see the example() function below
 @FunctionalInterface
 public interface AggBuilderFn<
-        XI, XO, XACC extends Accumulator<XI, XO>, XAGG extends ParallelAggregator<XI, XO, XACC>,
-        YI, YO, YACC extends Accumulator<YI, YO>, YAGG extends ParallelAggregator<YI, YO, YACC>>
+        XI, E, XO, XACC extends Accumulator<XI, E, XO>, XAGG extends ParallelAggregator<XI, E, XO, XACC>,
+        YI, YO, YACC extends Accumulator<YI, E, YO>, YAGG extends ParallelAggregator<YI, E, YO, YACC>>
     extends SerializableFunction<XAGG, YAGG>
 {
 
     default
-    <ZI, ZO, ZACC extends Accumulator<ZI, ZO>, ZAGG extends ParallelAggregator<ZI, ZO, ZACC>>
+    <ZI, ZO, ZACC extends Accumulator<ZI, E, ZO>, ZAGG extends ParallelAggregator<ZI, E, ZO, ZACC>>
     AggBuilderFn<
-        XI, XO, XACC, XAGG,
+        XI, E, XO, XACC, XAGG,
         ZI, ZO, ZACC, ZAGG>
-    andThen(AggBuilderFn<YI, YO, YACC, YAGG, ZI, ZO, ZACC, ZAGG> next) {
+    andThen(AggBuilderFn<YI, E, YO, YACC, YAGG, ZI, ZO, ZACC, ZAGG> next) {
         return in -> {
             YAGG o = this.apply(in);
             ZAGG r = next.apply(o);
@@ -30,26 +30,26 @@ public interface AggBuilderFn<
         };
     }
 
-    static <XI, XO, XACC extends Accumulator<XI, XO>, XAGG extends ParallelAggregator<XI, XO, XACC>,
-            YI, YO, YACC extends Accumulator<YI, YO>, YAGG extends ParallelAggregator<YI, YO, YACC>>
-    AggBuilderFn<XI, XO, XACC, XAGG, YI, YO, YACC, YAGG> of(AggBuilderFn<XI, XO, XACC, XAGG, YI, YO, YACC, YAGG> fn) {
+    static <XI, E, XO, XACC extends Accumulator<XI, E, XO>, XAGG extends ParallelAggregator<XI, E, XO, XACC>,
+            YI, YO, YACC extends Accumulator<YI, E, YO>, YAGG extends ParallelAggregator<YI, E, YO, YACC>>
+    AggBuilderFn<XI, E, XO, XACC, XAGG, YI, YO, YACC, YAGG> of(AggBuilderFn<XI, E, XO, XACC, XAGG, YI, YO, YACC, YAGG> fn) {
         return fn;
     }
 
 
 
-    public static <I, O,
-                    SUBACC extends Accumulator<I, O>,
-                    SUBAGG extends ParallelAggregator<I, O, SUBACC>>
-    SerializableFunction<SUBAGG, AggInputFilter<I, O, SUBACC, SUBAGG>>
+    public static <I, E, O,
+                    SUBACC extends Accumulator<I, E, O>,
+                    SUBAGG extends ParallelAggregator<I, E, O, SUBACC>>
+    SerializableFunction<SUBAGG, AggInputFilter<I, E, O, SUBACC, SUBAGG>>
     inputFilter(SerializablePredicate<? super I> inputFilter) {
         return subAgg -> AggBuilder.inputFilter(inputFilter, subAgg);
     }
 
-    public static <I, K, J, O,
-        SUBACC extends Accumulator<J, O>,
-        SUBAGG extends ParallelAggregator<J, O, SUBACC>>
-    SerializableFunction<SUBAGG, AggInputSplit<I, K, J, O, SUBACC, SUBAGG>>
+    public static <I, E, K, J, O,
+        SUBACC extends Accumulator<J, E, O>,
+        SUBAGG extends ParallelAggregator<J, E, O, SUBACC>>
+    SerializableFunction<SUBAGG, AggInputSplit<I, E, K, J, O, SUBACC, SUBAGG>>
     inputSplit(
         SerializableFunction<? super I, ? extends Set<? extends K>> keyMapper,
         SerializableBiFunction<? super I, ? super K, ? extends J> valueMapper) {

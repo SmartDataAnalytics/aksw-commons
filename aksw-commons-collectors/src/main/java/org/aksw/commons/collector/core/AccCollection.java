@@ -6,8 +6,8 @@ import java.util.Collection;
 import org.aksw.commons.collector.domain.Accumulator;
 
 /** Can be used with AggNatural */
-public class AccCollection<I, C extends Collection<I>>
-    implements Accumulator<I, C>, Serializable
+public class AccCollection<I, E, C extends Collection<I>>
+    implements Accumulator<I, E, C>, Serializable
 {
     private static final long serialVersionUID = 0;
 
@@ -19,7 +19,7 @@ public class AccCollection<I, C extends Collection<I>>
     }
 
     @Override
-    public void accumulate(I item) {
+    public void accumulate(I item, E env) {
         value.add(item);
     }
 
@@ -44,7 +44,7 @@ public class AccCollection<I, C extends Collection<I>>
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AccCollection<?, ?> other = (AccCollection<?, ?>) obj;
+        AccCollection<?, ?, ?> other = (AccCollection<?, ?, ?>) obj;
         if (value == null) {
             if (other.value != null)
                 return false;

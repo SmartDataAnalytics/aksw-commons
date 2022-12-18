@@ -28,8 +28,8 @@ import org.aksw.commons.lambda.serializable.SerializableBiFunction;
  * @author raven
  *
  */
-public class AggLcaMap<T>
-    implements ParallelAggregator<T, Map<T, T>, Accumulator<T, Map<T, T>>>, Serializable
+public class AggLcaMap<T, E>
+    implements ParallelAggregator<T, E, Map<T, T>, Accumulator<T, E, Map<T, T>>>, Serializable
 {
     private static final long serialVersionUID = 0;
 
@@ -42,20 +42,20 @@ public class AggLcaMap<T>
 
 
     @Override
-    public Accumulator<T, Map<T, T>> createAccumulator() {
-        return new AccLcaMap<T>(lcaFinder);
+    public Accumulator<T, E, Map<T, T>> createAccumulator() {
+        return new AccLcaMap<T, E>(lcaFinder);
     }
 
 
     @Override
-    public Accumulator<T, Map<T, T>> combine(Accumulator<T, Map<T, T>> a, Accumulator<T, Map<T, T>> b) {
+    public Accumulator<T, E, Map<T, T>> combine(Accumulator<T, E, Map<T, T>> a, Accumulator<T, E, Map<T, T>> b) {
         if (a.getValue().keySet().size() > b.getValue().keySet().size()) {
-            Accumulator<T, Map<T, T>> tmp = a; a = b; b = tmp;
+            Accumulator<T, E, Map<T, T>> tmp = a; a = b; b = tmp;
         }
 
         Map<T, T> bm = b.getValue();
         for (T item : bm.keySet()) {
-            a.accumulate(item);
+            a.accumulate(item, null);
         }
 
         return a;
@@ -78,7 +78,7 @@ public class AggLcaMap<T>
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AggLcaMap<?> other = (AggLcaMap<?>) obj;
+        AggLcaMap<?, ?> other = (AggLcaMap<?, ?>) obj;
         if (lcaFinder == null) {
             if (other.lcaFinder != null)
                 return false;
@@ -89,8 +89,8 @@ public class AggLcaMap<T>
 
 
 
-    public static class AccLcaMap<T>
-        implements Accumulator<T, Map<T, T>>, Serializable
+    public static class AccLcaMap<T, E>
+        implements Accumulator<T, E, Map<T, T>>, Serializable
     {
         private static final long serialVersionUID = 0;
 
@@ -109,7 +109,7 @@ public class AggLcaMap<T>
         }
 
         @Override
-        public void accumulate(T input) {
+        public void accumulate(T input, E env) {
 
             // Check whether the given input node is subsumed by any other node
 
@@ -149,7 +149,7 @@ public class AggLcaMap<T>
         }
 
 
-        public static <T> AccLcaMap<T> create(SerializableBiFunction<? super T, ? super T, ? extends T> lcaFinder) {
+        public static <T, E> AccLcaMap<T, E> create(SerializableBiFunction<? super T, ? super T, ? extends T> lcaFinder) {
             return new AccLcaMap<>(lcaFinder);
         }
 
@@ -170,7 +170,7 @@ public class AggLcaMap<T>
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            AccLcaMap<?> other = (AccLcaMap<?>) obj;
+            AccLcaMap<?, ?> other = (AccLcaMap<?, ?>) obj;
             if (childToAncestor == null) {
                 if (other.childToAncestor != null)
                     return false;
@@ -185,7 +185,7 @@ public class AggLcaMap<T>
         }
     }
 
-    public static <T> AggLcaMap<T> create(SerializableBiFunction<? super T, ? super T, ? extends T> lcaFinder) {
+    public static <T, E> AggLcaMap<T, E> create(SerializableBiFunction<? super T, ? super T, ? extends T> lcaFinder) {
         return new AggLcaMap<>(lcaFinder);
     }
 

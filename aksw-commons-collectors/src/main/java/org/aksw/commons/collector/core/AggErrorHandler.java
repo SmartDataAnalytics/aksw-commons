@@ -12,22 +12,22 @@ import org.aksw.commons.collector.domain.ParallelAggregator;
 
 /** Wraps another aggregator such that if accumulation fails with an exception
  *  an error counter is increased. If the error counter is non zero then the accumulated value will always be null */
-public class AggErrorHandler<I, O,
-    SUBACC extends Accumulator<I, O>, SUBAGG extends ParallelAggregator<I, O, SUBACC>>
-    implements ParallelAggregator<I, O, AccError<I, O, SUBACC>>, Serializable
+public class AggErrorHandler<I, E, O,
+    SUBACC extends Accumulator<I, E, O>, SUBAGG extends ParallelAggregator<I, E, O, SUBACC>>
+    implements ParallelAggregator<I, E, O, AccError<I, E, O, SUBACC>>, Serializable
 {
     // private static final Logger logger = LoggerFactory.crea
 
     private static final long serialVersionUID = 0;
 
-    public static interface AccError<I, O, SUBACC extends Accumulator<I, O>>
-        extends AccWrapper<I, O, SUBACC>
+    public static interface AccError<I, E, O, SUBACC extends Accumulator<I, E, O>>
+        extends AccWrapper<I, E, O, SUBACC>
     {
         long getErrorCount();
     }
 
     protected SUBAGG subAgg;
-    protected Function<AccError<I, O, SUBACC> , O> errorValueExtractor;
+    protected Function<AccError<I, E, O, SUBACC> , O> errorValueExtractor;
     protected Consumer<? super Throwable> errorCallback;
 
     /** Whether to delegate accumulate calls to the sub-accumulator despite error.
@@ -39,7 +39,7 @@ public class AggErrorHandler<I, O,
             SUBAGG subAgg,
             boolean subAccDespiteError,
             Consumer<? super Throwable> errorCallback,
-            Function<AccError<I, O, SUBACC> , O> errorValueExtractor) {
+            Function<AccError<I, E, O, SUBACC> , O> errorValueExtractor) {
         super();
         this.subAgg = subAgg;
         this.subAccDespiteError = subAccDespiteError;
@@ -49,14 +49,14 @@ public class AggErrorHandler<I, O,
     }
 
     @Override
-    public AccError<I, O, SUBACC> createAccumulator() {
+    public AccError<I, E, O, SUBACC> createAccumulator() {
         SUBACC subAcc = subAgg.createAccumulator();
         return new AccErrorImpl(subAcc, 0);
     }
 
     @Override
-    public AccError<I, O, SUBACC> combine(AccError<I, O, SUBACC> a,
-            AccError<I, O, SUBACC> b) {
+    public AccError<I, E, O, SUBACC> combine(AccError<I, E, O, SUBACC> a,
+            AccError<I, E, O, SUBACC> b) {
 
         SUBACC accA = a.getSubAcc();
         SUBACC accB = b.getSubAcc();
@@ -82,7 +82,7 @@ public class AggErrorHandler<I, O,
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AggErrorHandler<?, ?, ?, ?> other = (AggErrorHandler<?, ?, ?, ?>) obj;
+        AggErrorHandler<?, ?, ?, ?, ?> other = (AggErrorHandler<?, ?, ?, ?, ?>) obj;
         return Objects.equals(errorCallback, other.errorCallback)
                 && Objects.equals(errorValueExtractor, other.errorValueExtractor)
                 && subAccDespiteError == other.subAccDespiteError && Objects.equals(subAgg, other.subAgg);
@@ -92,7 +92,7 @@ public class AggErrorHandler<I, O,
 
 
     public class AccErrorImpl
-        implements AccError<I, O, SUBACC>, Serializable
+        implements AccError<I, E, O, SUBACC>, Serializable
     {
         private static final long serialVersionUID = 0;
 
@@ -106,10 +106,10 @@ public class AggErrorHandler<I, O,
         }
 
         @Override
-        public void accumulate(I input) {
+        public void accumulate(I input, E env) {
             try {
                 if (errorCount == 0 || subAccDespiteError) {
-                    subAcc.accumulate(input);
+                    subAcc.accumulate(input, env);
                 }
             } catch (Exception e) {
                 ++errorCount;
@@ -164,7 +164,7 @@ public class AggErrorHandler<I, O,
             return errorCount == other.errorCount && Objects.equals(subAcc, other.subAcc);
         }
 
-        private AggErrorHandler<?, ?, ?, ?> getEnclosingInstance() {
+        private AggErrorHandler<?, ?, ?, ?, ?> getEnclosingInstance() {
             return AggErrorHandler.this;
         }
     }

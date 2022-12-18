@@ -11,8 +11,8 @@ import org.aksw.commons.collector.domain.Aggregator;
  * Note the difference between outputTransform and finish: The former is a per-accumulator operation which can be performed concurrently,
  * whereas finish is a post-processing of the overall result.
  */
-public class AggFinish<B, I, O, C extends Aggregator<B, I>>
-    implements Aggregator<B, O>, Serializable
+public class AggFinish<B, I, E, O, C extends Aggregator<B, E, I>>
+    implements Aggregator<B, E, O>, Serializable
 {
     private C subAgg;
     private Function<? super I, O> transform;
@@ -24,14 +24,14 @@ public class AggFinish<B, I, O, C extends Aggregator<B, I>>
     }
 
     @Override
-    public Accumulator<B, O> createAccumulator() {
-        Accumulator<B, I> baseAcc = subAgg.createAccumulator();
-        Accumulator<B, O> result = new AccFinish(baseAcc);
+    public Accumulator<B, E, O> createAccumulator() {
+        Accumulator<B, E, I> baseAcc = subAgg.createAccumulator();
+        Accumulator<B, E, O> result = new AccFinish(baseAcc);
         return result;
     }
 
-    public static <B, I, O, C extends Aggregator<B, I>> AggFinish<B, I, O, C> create(C subAgg, Function<? super I, O> transform) {
-        AggFinish<B, I, O, C> result = new AggFinish<>(subAgg, transform);
+    public static <B, I, E, O, C extends Aggregator<B, E, I>> AggFinish<B, I, E, O, C> create(C subAgg, Function<? super I, O> transform) {
+        AggFinish<B, I, E, O, C> result = new AggFinish<>(subAgg, transform);
         return result;
     }
 
@@ -74,19 +74,19 @@ public class AggFinish<B, I, O, C extends Aggregator<B, I>>
 
 
     public class AccFinish
-        implements Accumulator<B, O>, Serializable
+        implements Accumulator<B, E, O>, Serializable
     {
         private static final long serialVersionUID = 1L;
 
-        protected Accumulator<B, I> subAcc;
+        protected Accumulator<B, E, I> subAcc;
 
-        public AccFinish(Accumulator<B, I> subAcc) {
+        public AccFinish(Accumulator<B, E, I> subAcc) {
             this.subAcc = subAcc;
         }
 
         @Override
-        public void accumulate(B binding) {
-            subAcc.accumulate(binding);
+        public void accumulate(B binding, E env) {
+            subAcc.accumulate(binding, env);
         }
 
         @Override

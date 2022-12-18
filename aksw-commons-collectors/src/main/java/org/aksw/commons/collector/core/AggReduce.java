@@ -17,8 +17,8 @@ import org.aksw.commons.collector.domain.ParallelAggregator;
  *
  * Used as a basis for: min, max, sum (which in turn are the basis for e.g. avg)
  */
-public class AggReduce<I>
-    implements ParallelAggregator<I, I, Accumulator<I, I>>, Serializable
+public class AggReduce<I, E>
+    implements ParallelAggregator<I, E, I, Accumulator<I, E, I>>, Serializable
 {
     private static final long serialVersionUID = 0L;
 
@@ -32,13 +32,13 @@ public class AggReduce<I>
     }
 
     @Override
-    public Accumulator<I, I> createAccumulator() {
+    public Accumulator<I, E, I> createAccumulator() {
         I zeroElement = zeroElementSupplier.get();
         return new AccReduceImpl(zeroElement);
     }
 
     @Override
-    public Accumulator<I, I> combine(Accumulator<I, I> a, Accumulator<I, I> b) {
+    public Accumulator<I, E, I> combine(Accumulator<I, E, I> a, Accumulator<I, E, I> b) {
         I va = a.getValue();
         I vb = b.getValue();
         I combinedValue = plusOperator.apply(va, vb);
@@ -63,7 +63,7 @@ public class AggReduce<I>
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AggReduce<?> other = (AggReduce<?>) obj;
+        AggReduce<?, ?> other = (AggReduce<?, ?>) obj;
         if (plusOperator == null) {
             if (other.plusOperator != null)
                 return false;
@@ -80,7 +80,7 @@ public class AggReduce<I>
 
 
     public class AccReduceImpl
-        implements Accumulator<I, I>, Serializable
+        implements Accumulator<I, E, I>, Serializable
     {
         private static final long serialVersionUID = 0;
 
@@ -92,7 +92,7 @@ public class AggReduce<I>
         }
 
         @Override
-        public void accumulate(I input) {
+        public void accumulate(I input, E env) {
             value = plusOperator.apply(value, input);
         }
 
@@ -130,7 +130,7 @@ public class AggReduce<I>
             return true;
         }
 
-        private AggReduce<?> getEnclosingInstance() {
+        private AggReduce<?, ?> getEnclosingInstance() {
             return AggReduce.this;
         }
     }
