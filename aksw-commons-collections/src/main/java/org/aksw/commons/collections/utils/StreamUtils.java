@@ -7,12 +7,12 @@ import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.aksw.commons.collections.IteratorUtils;
 import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
-import org.aksw.commons.lambda.throwing.ThrowingSupplier;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;
@@ -228,4 +228,18 @@ public class StreamUtils {
         }
     }
 
+    public static <T> Stream<T> viaList(Stream<T> in, Consumer<List<T>> consumer) {
+        List<T> list;
+        try (Stream<T> tmp = in) {
+            list = tmp.collect(Collectors.toList());
+        }
+        if (consumer != null) {
+            consumer.accept(list);
+        }
+        return list.stream();
+    }
+
+    public static <T> Stream<T> println(Stream<T> in) {
+        return viaList(in, System.out::println);
+    }
 }

@@ -4,6 +4,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheStats;
 
 /** Utils for guava caches. Methods do not declare exceptions and the cache may be null. */
 public class CacheUtils {
@@ -34,5 +36,19 @@ public class CacheUtils {
             }
         }
         return result;
+    }
+
+    public static CacheStats stats(Cache<?, ?> cache) {
+        return cache == null
+                ? new CacheStats(0, 0, 0, 0, 0, 0)
+                : cache.stats();
+    }
+
+    /** Modify an existing builder to conditionally enable recording stats */
+    public static <K, V> CacheBuilder<K, V> recordStats(CacheBuilder<K, V> builder, boolean onOrOff) {
+        if (onOrOff) {
+            builder.recordStats();
+        }
+        return builder;
     }
 }

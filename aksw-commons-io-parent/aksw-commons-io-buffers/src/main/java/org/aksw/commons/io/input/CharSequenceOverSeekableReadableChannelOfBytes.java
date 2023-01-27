@@ -18,8 +18,8 @@ public class CharSequenceOverSeekableReadableChannelOfBytes
 
     protected int pageSize = 32 * 1024; // 1024 * 1024;
     private static final int DFT_CACHE_SIZE_MAX = 5;
-    
-    protected LoadingCache<Long, byte[]> cache;    
+
+    protected LoadingCache<Long, byte[]> cache;
     protected int recentOffset = Integer.MAX_VALUE;
     protected byte[] recentBuffer = null;
 
@@ -31,39 +31,39 @@ public class CharSequenceOverSeekableReadableChannelOfBytes
         this.seekable = seekable;
         this.length = length;
         this.cache = CacheBuilder.newBuilder().maximumSize(DFT_CACHE_SIZE_MAX).build(new CacheLoader<Long, byte[]>() {
-			@Override
-			public byte[] load(Long key) throws Exception {
-				return loadPage(key);
-			}        	
+            @Override
+            public byte[] load(Long key) throws Exception {
+                return loadPage(key);
+            }
         });
     }
 
     @Override
     public long getPageSize() {
-    	return pageSize;
+        return pageSize;
     }
-    
+
     protected byte[] loadPage(long pageId) throws IOException {
-    	long offset = getPageOffsetForPageId(pageId);
-    	seekable.position(offset);
-    	byte[] result = new byte[pageSize];
-    	int actualSize = ReadableChannels.readFully(seekable, result, 0, pageSize);
-    	if (actualSize != pageSize) {
-    		// This case happens only on the last page (and when exceeding it)
-    		// The cost to create trimmed copy of the page in this situation should be fairly low
-    		result = ArrayUtils.subarray(result, 0, actualSize);
-    	}
-    	return result;
+        long offset = getPageOffsetForPageId(pageId);
+        seekable.position(offset);
+        byte[] result = new byte[pageSize];
+        int actualSize = ReadableChannels.readFully(seekable, result, 0, pageSize);
+        if (actualSize != pageSize) {
+            // This case happens only on the last page (and when exceeding it)
+            // The cost to create a trimmed copy of that last page should be fairly low
+            result = ArrayUtils.subarray(result, 0, actualSize);
+        }
+        return result;
     }
-    
+
     protected byte[] getBufferForPageId(long pageId) {
-    	byte[] result;
-    	try {
-    		result = cache.get(pageId);
-    	} catch (ExecutionException e) {
-    		throw new RuntimeException(e);
-    	}
-    	return result;
+        byte[] result;
+        try {
+            result = cache.get(pageId);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 
     @Override
@@ -73,34 +73,35 @@ public class CharSequenceOverSeekableReadableChannelOfBytes
 
     @Override
     public char charAt(int index) {
-    	char result;
+        char result;
 
-    	if (index >= length) {
-    		result = (char)-1;
-    	} else {
-    		// Set the recent buffer if needed
-			if (!(recentBuffer != null && index >= recentOffset && index < recentOffset + pageSize)) {
-	    		long pageId = getPageIdForOffset(index);
-	    		recentOffset = (int)getPageOffsetForPageId(pageId);
-	    		recentBuffer = getBufferForPageId(pageId);
-	    	}
-	
-			int idx = index - recentOffset;
-			result = idx < recentBuffer.length
-					? (char)recentBuffer[idx]
-					: (char)-1;
-    	}
-    	return result;
+        if (index >= length) {
+            result = (char)-1;
+        } else {
+            // Set the recent buffer if needed
+            if (!(recentBuffer != null && index >= recentOffset && index < recentOffset + pageSize)) {
+                long pageId = getPageIdForOffset(index);
+                recentOffset = (int)getPageOffsetForPageId(pageId);
+                recentBuffer = getBufferForPageId(pageId);
+            }
+
+            int idx = index - recentOffset;
+            result = idx < recentBuffer.length
+                    ? (char)recentBuffer[idx]
+                    : (char)-1;
+        }
+        return result;
     }
 
     @Override
     public CharSequence subSequence(int start, int end) {
-        // We cannot guarantee that newly openend channels well be closed, therefore unsupported
+        // We cannot guarantee that newly opened channels will be closed and
+        // it is hard to keep track of resource allocations, therefore unsupported
         throw new UnsupportedOperationException();
 //        Seekable clone = seekable.clone();
 //        return new CharSequenceFromSeekable(clone, start, end);
     }
-    
+
 
 //  char result;
 //  try {

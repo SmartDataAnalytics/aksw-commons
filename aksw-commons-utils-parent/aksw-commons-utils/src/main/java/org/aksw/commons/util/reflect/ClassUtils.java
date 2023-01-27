@@ -1,5 +1,6 @@
 package org.aksw.commons.util.reflect;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -10,9 +11,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.aksw.commons.util.function.ThrowingRunnable;
 import org.aksw.commons.util.traverse.BreadthFirstSearchLib;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +47,7 @@ public class ClassUtils {
     public static <T> T getFieldValueChecked(Class<?> clazz, String fieldName, Object obj)
             throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Field field = clazz.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        Object result = field.get(obj);
+        Object result = accessCalc(field, () -> field.get(obj));
         return (T)result;
     }
 
@@ -62,6 +64,34 @@ public class ClassUtils {
         return getFieldValue(obj.getClass(), fieldName, obj);
     }
 
+    public static Field getModifiersField() throws IllegalAccessException, NoSuchFieldException {
+        // this is copied from https://github.com/powermock/powermock/pull/1010/files to
+        // work around
+        // JDK 12+
+        Field modifiersField = null;
+        try {
+            modifiersField = Field.class.getDeclaredField("modifiers");
+        } catch (NoSuchFieldException e) {
+            try {
+                Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+                Field[] fields = accessCalc(getDeclaredFields0, () -> (Field[]) getDeclaredFields0.invoke(Field.class, false));
+                for (Field field : fields) {
+                    if ("modifiers".equals(field.getName())) {
+                        modifiersField = field;
+                        break;
+                    }
+                }
+                if (modifiersField == null) {
+                    throw e;
+                }
+            } catch (NoSuchMethodException ex) {
+                e.addSuppressed(ex);
+                throw e;
+            }
+        }
+        return modifiersField;
+    }
+
     public static void setFieldValueChecked(
             Class<?> clazz,
             String fieldName,
@@ -69,15 +99,51 @@ public class ClassUtils {
             Object value)
                 throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
         Field field = clazz.getDeclaredField(fieldName);
-        field.setAccessible(true);
+        access(field, () -> {
+            if ((field.getModifiers() & Modifier.FINAL) != 0) {
+                Field modifiersField = getModifiersField();
+                access(modifiersField, () -> {
+                    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                });
+            }
 
-        if ((field.getModifiers() & Modifier.FINAL) != 0) {
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            field.set(obj, value);
+        });
+    }
+
+    public static void access(AccessibleObject obj, ThrowingRunnable consumer) {
+        boolean isAccessible = obj.isAccessible();
+        if (!isAccessible) {
+            obj.setAccessible(true);
         }
 
-        field.set(obj, value);
+        try {
+            consumer.run();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (!isAccessible) {
+                obj.setAccessible(false);
+            }
+        }
+    }
+
+    public static <T> T accessCalc(AccessibleObject obj, Callable<T> consumer) {
+        boolean isAccessible = obj.isAccessible();
+        if (!isAccessible) {
+            obj.setAccessible(true);
+        }
+
+        try {
+            T result = consumer.call();
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (!isAccessible) {
+                obj.setAccessible(false);
+            }
+        }
     }
 
     public static void setFieldValue(
@@ -107,18 +173,7 @@ public class ClassUtils {
     public static Object forceInvoke(Object o, Method m, Object... args)
     {
         // FIXME Not multithreading safe
-        boolean isAccessible = m.isAccessible();
-        m.setAccessible(true);
-
-        try {
-            //logger.trace("Invoking " + m + " on " + o);
-            return m.invoke(o, args);
-        } catch (Exception e) {
-            //throw new RuntimeException("Invocation failed", e);
-            throw new RuntimeException(e);
-        } finally {
-            m.setAccessible(isAccessible);
-        }
+        return accessCalc(m, () -> m.invoke(o, args));
     }
 
     /**

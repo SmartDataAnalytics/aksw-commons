@@ -1,12 +1,28 @@
 package org.aksw.commons.model.csvw.domain.impl;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 import org.aksw.commons.model.csvw.domain.api.Dialect;
 import org.aksw.commons.model.csvw.domain.api.DialectMutable;
 
 public class CsvwLib {
+
+    public static List<String> DFT_LINE_TERMINATORS = Arrays.asList("\n", "\r\n", "\n\r", "\r\n\r");
+
+    public static final String END_OF_DATA_KEY = "endOfData";
+    public static final String FIELD_SEPARATOR_KEY = "fieldSeparator";
+    public static final String LINE_TERMINATOR_KEY = "lineTerminator";
+
+
+//    public static List<String> getLineTerminators(Dialect dialect) {
+//        List<String> result = dialect.getLineTerminatorList();
+//        if (result == null || result.isEmpty()) {
+//            result = CsvwLib.DFT_LINE_TERMINATORS; // null; // \r?\n\r?
+//        }
+//        return result;
+//    }
 
     public static boolean isPresent(String value) {
         return value != null && !value.isEmpty();
