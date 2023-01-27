@@ -46,9 +46,6 @@ public class CacheUtils {
 
     /** Modify an existing builder to conditionally enable recording stats */
     public static <K, V> CacheBuilder<K, V> recordStats(CacheBuilder<K, V> builder, boolean onOrOff) {
-        if (onOrOff) {
-            builder.recordStats();
-        }
-        return builder;
+        return onOrOff ? builder.recordStats() : builder;
     }
 }
