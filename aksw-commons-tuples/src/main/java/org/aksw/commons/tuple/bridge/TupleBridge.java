@@ -15,52 +15,51 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.bridge;
+
+import org.aksw.commons.tuple.accessor.TupleAccessor;
 
 /**
- * Access components of a domain object such as a Triple or Quad as if it was a Tuple
+ * A bridge between domain objects and tuple representation.
+ * The bridge adds the capability to create domain objects from tuples.
  *
  * @author Claus Stadler 11/09/2020
  *
  * @param <D> The domain type of the tuple like object
  * @param <C> The component type
  */
-public interface TupleAccessor<D, C>
-    extends TupleAccessorCore<D, C>
+public interface TupleBridge<D, C>
+    extends TupleAccessor<D, C>
 {
     int getDimension();
 
     /**
-     * Restore a domain object from some other object with a corresponding accessor
-     * The length of the component array must equal the rank of the accessor
-     *
-     * @param <T> The type of tuple-like domain object from which to copy its components
-     * @param obj The domain object
-     * @param accessor The accessor of components from the domain object
-     * @return
+     * Build a domain object from some tuple-like object with its corresponding accessor.
      */
-    <T> D restore(T obj, TupleAccessorCore<? super T, ? extends C> accessor);
+    <T> D build(T obj, TupleAccessor<? super T, ? extends C> accessor);
 
-    default void validateRestoreArg(TupleAccessor<?, ?> accessor) {
-        int cl = accessor.getDimension();
+    default D build(@SuppressWarnings("unchecked") C... components) {
+        return build(components, (cs, i) -> cs[i]);
+    }
+
+    default void validateBuildArg(TupleBridge<?, ?> bridge) {
+        int cl = bridge.getDimension();
         int r = getDimension();
 
         if (cl != r) {
             throw new IllegalArgumentException("components.length must equal rank but " + cl + " != " + r);
         }
-
     }
 
     default C[] toComponentArray(D domainObject) {
-        int rank = getDimension();
+        int len = getDimension();
         @SuppressWarnings("unchecked")
-        C[] result = (C[])new Object[rank];
+        C[] result = (C[])new Object[len];
 
-        for (int i = 0; i < rank; ++i) {
+        for (int i = 0; i < len; ++i) {
             result[i] = get(domainObject, i);
         }
 
         return result;
     }
-
 }

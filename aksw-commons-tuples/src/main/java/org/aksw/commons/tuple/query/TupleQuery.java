@@ -15,7 +15,7 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.query;
 
 import java.util.List;
 import java.util.Set;

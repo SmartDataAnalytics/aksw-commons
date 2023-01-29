@@ -20,7 +20,7 @@ package org.aksw.commons.index.core;
 import java.util.Set;
 
 import org.aksw.commons.index.util.SetSupplier;
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  *
@@ -38,7 +38,7 @@ abstract class StorageNodeSetBase<D, C, V, S extends Set<V>>
 
     public StorageNodeSetBase(
             int[] tupleIdxs,
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             SetSupplier setSupplier
         ) {
         super(tupleIdxs, tupleAccessor);

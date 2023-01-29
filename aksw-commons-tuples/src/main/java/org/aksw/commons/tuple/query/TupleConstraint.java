@@ -15,18 +15,16 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.query;
+
+import java.util.List;
 
 /**
- * Functional interface for accessing components of a tuple
  *
  * @author Claus Stadler 11/09/2020
  *
- * @param <TUPLE>
- * @param <COMPONENT>
+ * @param <ComponentType>
  */
-@FunctionalInterface
-public interface TupleAccessorCore<TUPLE, COMPONENT>
-{
-    COMPONENT get(TUPLE tupleLike, int componentIdx);
+public interface TupleConstraint<ComponentType> {
+    List<ComponentType> getConstraints();
 }

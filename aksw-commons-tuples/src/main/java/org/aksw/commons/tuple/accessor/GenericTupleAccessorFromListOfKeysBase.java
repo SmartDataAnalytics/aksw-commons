@@ -1,4 +1,4 @@
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
 
 import java.util.List;
 

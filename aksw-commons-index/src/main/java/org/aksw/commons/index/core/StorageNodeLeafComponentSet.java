@@ -26,8 +26,8 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.SetSupplier;
 import org.aksw.commons.index.util.TupleValueFunction;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.Maps;
@@ -47,7 +47,7 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
     protected TupleValueFunction<C, V> valueFunction;
 
     // Reverse mapping of key to components
-    protected TupleAccessorCore<? super V, ? extends C> keyToComponent;
+    protected TupleAccessor<? super V, ? extends C> keyToComponent;
 
 //    public StorageNodeLeafComponentSet(
 //            TupleAccessor<D, C> tupleAccessor,
@@ -63,10 +63,10 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
 
     public StorageNodeLeafComponentSet(
             int tupleIdxs[],
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             SetSupplier setSupplier,
             TupleValueFunction<C, V> valueFunction,
-            TupleAccessorCore<? super V, ? extends C> keyToComponent
+            TupleAccessor<? super V, ? extends C> keyToComponent
             ) {
         super(tupleIdxs, tupleAccessor, setSupplier);
         this.valueFunction = valueFunction;
@@ -115,7 +115,7 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
 
     @Override
     public <T> Streamer<S, C> streamerForKeysAsComponent(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
 //      return argSet -> argSet.stream();
 
         Streamer<S, V> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
@@ -126,7 +126,7 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
 
     public <T> Streamer<S, V> streamerForKeysUnderConstraints(
             T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor)
+            TupleAccessor<? super T, ? extends C> tupleAccessor)
     {
         Streamer<S, V> result;
 
@@ -148,12 +148,12 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
 
     @Override
     public <T> Streamer<S, List<C>> streamerForKeysAsTuples(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return null;
     }
 
     @Override
-    public <T> Streamer<S, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, V> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         throw new UnsupportedOperationException("There are no values to stream (Values can be seen as Tuple0 though)");
     }
 
@@ -162,7 +162,7 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
     public <T> Streamer<S, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
 //            int altIdx,
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         Streamer<S, Entry<?, ?>> result = streamerForKeysUnderConstraints(pattern, accessor)
                 .mapItems(v -> Maps.immutableEntry(v, null));
 
@@ -170,12 +170,12 @@ public class StorageNodeLeafComponentSet<D, C, V, S extends Set<V>>
     }
 
     @Override
-    public <T> Stream<V> streamEntries(S set, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<V> streamEntries(S set, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
         throw new UnsupportedOperationException("There are no entries to stream (Values can be seen as Tuple0 though)");
     }
 
     @Override
-    public <T> Streamer<S, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, ?> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return streamerForKeysUnderConstraints(pattern, accessor);
     }
 

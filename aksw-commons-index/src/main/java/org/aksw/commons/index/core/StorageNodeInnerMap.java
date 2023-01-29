@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.MapSupplier;
 import org.aksw.commons.index.util.TupleValueFunction;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  *
@@ -47,11 +47,11 @@ public class StorageNodeInnerMap<D, C, K, V, M extends Map<K, V>>
 
     public StorageNodeInnerMap(
             int[] tupleIdxs,
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             StorageNodeMutable<D, C, V> child,
             MapSupplier mapSupplier,
             TupleValueFunction<C, K> keyFunction,
-            TupleAccessorCore<? super K, ? extends C> keyToComponent) {
+            TupleAccessor<? super K, ? extends C> keyToComponent) {
         super(tupleIdxs, tupleAccessor, mapSupplier, keyFunction, keyToComponent);
         this.child = child;
     }
@@ -119,7 +119,7 @@ public class StorageNodeInnerMap<D, C, K, V, M extends Map<K, V>>
 
 
     @Override
-    public <T> Stream<Entry<K, ?>> streamEntries(M map, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<Entry<K, ?>> streamEntries(M map, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
 
         // Check whether the components of the given tuple are all non-null such that we can
         // create a key from them

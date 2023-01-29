@@ -1,4 +1,4 @@
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +20,7 @@ public class GenericTupleAccessorForMap<C, K>
 	}
 
 	@Override
-	public <T> Map<K, C> restore(T obj, TupleAccessorCore<? super T, ? extends C> accessor) {
+	public <T> Map<K, C> build(T obj, TupleAccessor<? super T, ? extends C> accessor) {
 		Map<K, C> result = mapSupplier.get();
 		
 		int n = getDimension();

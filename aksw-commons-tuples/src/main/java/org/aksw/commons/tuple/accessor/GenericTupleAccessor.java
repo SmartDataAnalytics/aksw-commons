@@ -1,5 +1,6 @@
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
 
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  * An extension of tuple accessor which allows for access via keys (in addition to ordinal integers).
@@ -11,7 +12,7 @@ package org.aksw.commons.tuple;
  * @param <K>
  */
 public interface GenericTupleAccessor<D, C, K>
-	extends TupleAccessor<D, C>
+	extends TupleBridge<D, C>
 {
 	/** Map an ordinal to a key */
 	K keyAtOrdinal(int index);

@@ -15,7 +15,7 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.query;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -112,7 +112,7 @@ public class TupleQueryImpl<ComponentType>
 
     @Override
     public Set<Integer> getConstrainedComponents() {
-        Set<Integer> result = new LinkedHashSet<Integer>();
+        Set<Integer> result = new LinkedHashSet<>();
         for (int i = 0; i < dimension; ++i) {
             ComponentType value = getConstraint(i);
 

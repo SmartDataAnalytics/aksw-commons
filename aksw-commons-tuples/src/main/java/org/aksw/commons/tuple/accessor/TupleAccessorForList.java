@@ -1,10 +1,12 @@
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.aksw.commons.tuple.bridge.TupleBridge;
+
 public class TupleAccessorForList<C>
-    implements TupleAccessor<List<C>, C>
+    implements TupleBridge<List<C>, C>
 {
     protected int dimension;
 
@@ -24,7 +26,7 @@ public class TupleAccessorForList<C>
     }
 
     @Override
-    public <T> List<C> restore(T obj, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> List<C> build(T obj, TupleAccessor<? super T, ? extends C> accessor) {
         List<C> result = new ArrayList<>(dimension);
         for(int i = 0; i < dimension; ++i) {
             C item = accessor.get(obj, i);

@@ -23,8 +23,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 import org.aksw.commons.util.stream.Streamer;
 
 /**
@@ -175,7 +175,7 @@ public interface StorageNode<D, C, V> {
      */
     // Complexity rateCoostraint(ConstraintPatter pattern);
 
-    TupleAccessor<D, C> getTupleAccessor();
+    TupleBridge<D, C> getTupleAccessor();
 
     /**
      * Create an object that can stream the content of the store
@@ -196,7 +196,7 @@ public interface StorageNode<D, C, V> {
      *
      * @return
      */
-    <T> Streamer<V, C> streamerForKeysAsComponent(T pattern, TupleAccessorCore<? super T, ? extends C> accessor);
+    <T> Streamer<V, C> streamerForKeysAsComponent(T pattern, TupleAccessor<? super T, ? extends C> accessor);
 
 
     /**
@@ -210,10 +210,10 @@ public interface StorageNode<D, C, V> {
      * @param store
      * @return
      */
-    <T> Streamer<V, List<C>> streamerForKeysAsTuples(T pattern, TupleAccessorCore<? super T, ? extends C> accessor);
+    <T> Streamer<V, List<C>> streamerForKeysAsTuples(T pattern, TupleAccessor<? super T, ? extends C> accessor);
 
 
-    <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor);
+    <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C> accessor);
 
 
     /**
@@ -259,7 +259,7 @@ public interface StorageNode<D, C, V> {
      * @param accessor
      * @return
      */
-    <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor);
+    <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C> accessor);
 
     /**
      * The streamer returns entry that hold a tuple-like key and conceptually alternatives of sub-stores
@@ -280,7 +280,7 @@ public interface StorageNode<D, C, V> {
      * @return
      */
     <T> Streamer<V, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
-            T pattern, TupleAccessorCore<? super T, ? extends C> accessor);
+            T pattern, TupleAccessor<? super T, ? extends C> accessor);
 
 
 
@@ -301,10 +301,10 @@ public interface StorageNode<D, C, V> {
      * @param tupleAccessor
      * @return
      */
-    <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor);
+    <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor);
 
     @SuppressWarnings("unchecked")
-    default <T> Stream<?> streamEntriesRaw(Object store, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    default <T> Stream<?> streamEntriesRaw(Object store, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
         return streamEntries((V)store, tupleLike, tupleAccessor);
     }
 

@@ -15,15 +15,29 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
+
+import java.util.function.Function;
 
 /**
+ * Functional interface for accessing components of a tuple.
  *
  * @author Claus Stadler 11/09/2020
  *
- * @param <TupleType>
- * @param <ComponentType>
+ * @param <TUPLE>
+ * @param <COMPONENT>
  */
-public interface TupleSetter<TupleType, ComponentType> {
-    void set(TupleType tuple, int idx, ComponentType componentValue);
+@FunctionalInterface
+public interface TupleAccessor<TUPLE, COMPONENT>
+{
+    COMPONENT get(TUPLE tupleLike, int componentIdx);
+
+    /** Create an accessor that passes the components through a mapper function */
+    default <X> TupleAccessor<TUPLE, X> map(Function<? super COMPONENT, X> mapper) {
+        return (tuple, i) -> {
+            COMPONENT v = get(tuple, i);
+            X r = mapper.apply(v);
+            return r;
+        };
+    }
 }

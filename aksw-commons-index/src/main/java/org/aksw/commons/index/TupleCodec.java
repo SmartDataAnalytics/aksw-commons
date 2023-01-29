@@ -1,6 +1,6 @@
 package org.aksw.commons.index;
 
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  * Component-wise tuple codec.
@@ -24,9 +24,9 @@ public interface TupleCodec<D1, C1, D2, C2> {
 
     D1 decodeTuple(D2 targetTuple);
 
-    TupleAccessor<D1, C1> getSourceTupleAccessor();
+    TupleBridge<D1, C1> getSourceTupleAccessor();
 
-    TupleAccessor<D2, C2> getTargetTupleAccessor();
+    TupleBridge<D2, C2> getTargetTupleAccessor();
 
     /**
      * This method can be used as a TupleAccessorCore

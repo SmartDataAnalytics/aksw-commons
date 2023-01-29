@@ -15,16 +15,15 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
-
-import java.util.List;
+package org.aksw.commons.tuple.query;
 
 /**
  *
  * @author Claus Stadler 11/09/2020
  *
+ * @param <TupleType>
  * @param <ComponentType>
  */
-public interface TupleConstraint<ComponentType> {
-    List<ComponentType> getConstraints();
+public interface TupleSetter<TupleType, ComponentType> {
+    void set(TupleType tuple, int idx, ComponentType componentValue);
 }

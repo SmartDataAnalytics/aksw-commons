@@ -15,7 +15,9 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.query;
+
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  * Getter and setter in one
@@ -24,6 +26,6 @@ package org.aksw.commons.tuple;
  *
  */
 public interface TupleMutator<DomainType, ComponentType>
-    extends TupleAccessor<DomainType, ComponentType>, TupleSetter<DomainType, ComponentType>
+    extends TupleBridge<DomainType, ComponentType>, TupleSetter<DomainType, ComponentType>
 {
 }

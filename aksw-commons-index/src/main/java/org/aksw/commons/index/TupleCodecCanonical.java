@@ -3,21 +3,21 @@ package org.aksw.commons.index;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 public abstract class TupleCodecCanonical<D, C>
     implements TupleCodec<D, C, D, C>
 {
     protected Map<C, C> canonicalMap;
 
-    protected TupleAccessor<D, C> tupleAccessor;
+    protected TupleBridge<D, C> tupleAccessor;
 
     //protected TupleAccessor<D1, C2> encodingTupleAccessor;
     //protected TupleAccessor<D2, C1> decodingTupleAccessor;
 
     public TupleCodecCanonical(
     //        BiMap<C1, C2> dictionary,
-            TupleAccessor<D, C> tupleAccessor
+            TupleBridge<D, C> tupleAccessor
             ) {
         super();
         this.canonicalMap = new HashMap<>(); //dictionary;
@@ -29,7 +29,7 @@ public abstract class TupleCodecCanonical<D, C>
 
 
     public static <D, C> TupleCodec<D, C, D, C> create(
-            TupleAccessor<D, C> tupleAccessor
+            TupleBridge<D, C> tupleAccessor
             ) {
 
         return new TupleCodecCanonical<D, C>(tupleAccessor) {
@@ -53,11 +53,11 @@ public abstract class TupleCodecCanonical<D, C>
         return c2;
     }
 
-    public TupleAccessor<D, C> getSourceTupleAccessor() {
+    public TupleBridge<D, C> getSourceTupleAccessor() {
         return tupleAccessor;
     }
 
-    public TupleAccessor<D, C> getTargetTupleAccessor() {
+    public TupleBridge<D, C> getTargetTupleAccessor() {
         return tupleAccessor;
     }
 
@@ -76,7 +76,7 @@ public abstract class TupleCodecCanonical<D, C>
 
     @Override
     public D encodeTuple(D sourceTuple) {
-        D result = tupleAccessor.restore(sourceTuple, (st, i) -> {
+        D result = tupleAccessor.build(sourceTuple, (st, i) -> {
             C c1 = tupleAccessor.get(st, i);
             C c2 = encodeComponent(c1);
             return c2;

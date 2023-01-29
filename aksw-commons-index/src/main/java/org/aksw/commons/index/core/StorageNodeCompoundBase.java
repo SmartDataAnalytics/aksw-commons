@@ -17,7 +17,7 @@
 
 package org.aksw.commons.index.core;
 
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  *
@@ -32,7 +32,7 @@ public abstract class StorageNodeCompoundBase<D, C, V>
     implements StorageNodeMutable<D, C, V>
 {
 
-    public StorageNodeCompoundBase(int[] tupleIdxs, TupleAccessor<D, C> tupleAccessor) {
+    public StorageNodeCompoundBase(int[] tupleIdxs, TupleBridge<D, C> tupleAccessor) {
         super(tupleIdxs, tupleAccessor);
     }
 

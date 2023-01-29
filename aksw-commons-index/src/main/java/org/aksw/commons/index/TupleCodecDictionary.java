@@ -1,6 +1,6 @@
 package org.aksw.commons.index;
 
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -9,16 +9,16 @@ public abstract class TupleCodecDictionary<D1, C1, D2, C2>
     implements TupleCodec<D1, C1, D2, C2> {
     protected BiMap<C1, C2> dictionary;
 
-    protected TupleAccessor<D1, C1> sourceTupleAccessor;
-    protected TupleAccessor<D2, C2> targetTupleAccessor;
+    protected TupleBridge<D1, C1> sourceTupleAccessor;
+    protected TupleBridge<D2, C2> targetTupleAccessor;
 
 //    protected TupleAccessor<D1, C2> encodingTupleAccessor;
 //    protected TupleAccessor<D2, C1> decodingTupleAccessor;
 
     public TupleCodecDictionary(
 //            BiMap<C1, C2> dictionary,
-            TupleAccessor<D1, C1> sourceTupleAccessor,
-            TupleAccessor<D2, C2> targetTupleAccessor
+            TupleBridge<D1, C1> sourceTupleAccessor,
+            TupleBridge<D2, C2> targetTupleAccessor
             ) {
         super();
         this.dictionary = HashBiMap.create(); //dictionary;
@@ -31,8 +31,8 @@ public abstract class TupleCodecDictionary<D1, C1, D2, C2>
 
 
     public static <D, C> TupleCodec<D, C, int[], Integer> createForInts(
-            TupleAccessor<D, C> source,
-            TupleAccessor<int[], Integer> target
+            TupleBridge<D, C> source,
+            TupleBridge<int[], Integer> target
             ) {
 
         return new TupleCodecDictionary<D, C, int[], Integer>(source, target) {
@@ -57,11 +57,11 @@ public abstract class TupleCodecDictionary<D1, C1, D2, C2>
         return result;
     }
 
-    public TupleAccessor<D1, C1> getSourceTupleAccessor() {
+    public TupleBridge<D1, C1> getSourceTupleAccessor() {
         return sourceTupleAccessor;
     }
 
-    public TupleAccessor<D2, C2> getTargetTupleAccessor() {
+    public TupleBridge<D2, C2> getTargetTupleAccessor() {
         return targetTupleAccessor;
     }
 
@@ -80,7 +80,7 @@ public abstract class TupleCodecDictionary<D1, C1, D2, C2>
 
     @Override
     public D2 encodeTuple(D1 sourceTuple) {
-        D2 result = targetTupleAccessor.restore(sourceTuple, (st, i) -> {
+        D2 result = targetTupleAccessor.build(sourceTuple, (st, i) -> {
             C1 c1 = sourceTupleAccessor.get(st, i);
             C2 c2 = encodeComponent(c1);
             return c2;
@@ -91,7 +91,7 @@ public abstract class TupleCodecDictionary<D1, C1, D2, C2>
 
     @Override
     public D1 decodeTuple(D2 targetTuple) {
-        D1 result = sourceTupleAccessor.restore(targetTuple, (tt, i) -> {
+        D1 result = sourceTupleAccessor.build(targetTuple, (tt, i) -> {
             C2 c2 = targetTupleAccessor.get(tt, i);
             C1 c1 = dictionary.inverse().get(c2);
 

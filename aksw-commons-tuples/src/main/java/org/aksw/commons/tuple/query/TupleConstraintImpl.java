@@ -15,7 +15,7 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.query;
 
 import java.util.List;
 
@@ -35,6 +35,7 @@ public class TupleConstraintImpl<ComponentType>
         this.constraints = constraints;
     }
 
+    @Override
     public List<ComponentType> getConstraints() {
         return constraints;
     }

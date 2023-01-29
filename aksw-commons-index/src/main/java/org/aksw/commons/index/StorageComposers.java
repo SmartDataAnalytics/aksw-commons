@@ -40,7 +40,7 @@ import org.aksw.commons.index.util.ListSupplier;
 import org.aksw.commons.index.util.MapSupplier;
 import org.aksw.commons.index.util.SetSupplier;
 import org.aksw.commons.index.util.TupleValueFunction;
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 import org.checkerframework.checker.units.qual.C;
 
 import com.google.common.collect.HashBiMap;
@@ -57,7 +57,7 @@ public class StorageComposers {
 
     public static <D, C, S extends Set<D>> StorageNodeMutable<D, C, S> leafSet(
             SetSupplier setSupplier,
-            TupleAccessor<D, C> tupleAccessor) {
+            TupleBridge<D, C> tupleAccessor) {
         return new StorageNodeLeafDomainSet<D, C, D, S>(
                 tupleAccessor,
                 setSupplier,
@@ -69,7 +69,7 @@ public class StorageComposers {
     public static <D, C, S extends Set<C>> StorageNodeMutable<D, C, S> leafComponentSet(
             int tupleIdx,
             SetSupplier setSupplier,
-            TupleAccessor<D, C> tupleAccessor) {
+            TupleBridge<D, C> tupleAccessor) {
         return new StorageNodeLeafComponentSet<D, C, C, S>(
                 new int[] {tupleIdx},
                 tupleAccessor,
@@ -83,7 +83,7 @@ public class StorageComposers {
 
     public static <D, C> StorageNodeMutable<D, C, List<D>> leafList(
             ListSupplier listSupplier,
-            TupleAccessor<D, C> tupleAccessor) {
+            TupleBridge<D, C> tupleAccessor) {
         return new StorageNodeLeafDomainList<D, C, D>(
                 tupleAccessor,
                 listSupplier,
@@ -97,7 +97,7 @@ public class StorageComposers {
     public static <D, C, S extends Map<C, D>> StorageNodeMutable<D, C, S> leafMap(
             int tupleIdx,
             MapSupplier mapSupplier,
-            TupleAccessor<D, C> tupleAccessor) {
+            TupleBridge<D, C> tupleAccessor) {
         return new StorageNodeLeafMap<D, C, C, D, S>(
                 new int[] {tupleIdx},
                 tupleAccessor,
@@ -117,7 +117,7 @@ public class StorageComposers {
             StorageNodeMutable<D, C, V> child
             ) {
 
-        TupleAccessor<D, C> tupleAccessor = child.getTupleAccessor();
+        TupleBridge<D, C> tupleAccessor = child.getTupleAccessor();
 
         return new StorageNodeInnerMap<D, C, C, V, S>(
                 new int[] {tupleIdx},
@@ -154,7 +154,7 @@ public class StorageComposers {
         }
 
         // TODO Validate that all children use the same tuple acessor
-        TupleAccessor<D, C> tupleAccessor = children.get(0).getTupleAccessor();
+        TupleBridge<D, C> tupleAccessor = children.get(0).getTupleAccessor();
         return new StorageNodeAltN<D, C>(tupleAccessor, children);
     }
 
@@ -165,7 +165,7 @@ public class StorageComposers {
             ) {
 
         // TODO Validate that all children use the same tuple accessor
-        TupleAccessor<D, C> tupleAccessor = child1.getTupleAccessor();
+        TupleBridge<D, C> tupleAccessor = child1.getTupleAccessor();
         return new StorageNodeAlt2<D, C, V1, V2>(tupleAccessor, child1, child2);
     }
 
@@ -177,7 +177,7 @@ public class StorageComposers {
             ) {
 
         // TODO Validate that all children use the same tuple accessor
-        TupleAccessor<D, C> tupleAccessor = child1.getTupleAccessor();
+        TupleBridge<D, C> tupleAccessor = child1.getTupleAccessor();
         return new StorageNodeAlt3<D, C, V1, V2, V3>(tupleAccessor, child1, child2, child3);
     }
 
@@ -249,7 +249,7 @@ public class StorageComposers {
     public static <D1, C1, D2, C2, V, X extends StorageNodeMutable<D2, C2, V>>
         StorageNodeMutable<D1, C1, V> wrapWithDictionary(
             X delegate,
-            TupleAccessor<D1, C1> sourceTupleAccessor
+            TupleBridge<D1, C1> sourceTupleAccessor
             ) {
 
         return new StorageNodeDictionary<D1, C1, D2, C2, V, X>(

@@ -15,7 +15,9 @@
  *  information regarding copyright ownership.
  */
 
-package org.aksw.commons.tuple;
+package org.aksw.commons.tuple.accessor;
+
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  * A forwarding tuple accessor that can remap indices
@@ -25,12 +27,12 @@ package org.aksw.commons.tuple;
  *
  */
 public class TupleAccessorRemap<TupleType, ComponentType>
-    implements TupleAccessor<TupleType, ComponentType>
+    implements TupleBridge<TupleType, ComponentType>
 {
-    protected TupleAccessor<TupleType, ComponentType> delegate;
+    protected TupleBridge<TupleType, ComponentType> delegate;
     protected int[] remap;
 
-    public TupleAccessorRemap(TupleAccessor<TupleType, ComponentType> delegate, int[] remap) {
+    public TupleAccessorRemap(TupleBridge<TupleType, ComponentType> delegate, int[] remap) {
         super();
         this.delegate = delegate;
         this.remap = remap;
@@ -49,7 +51,7 @@ public class TupleAccessorRemap<TupleType, ComponentType>
     }
 
     @Override
-    public <T> TupleType restore(T obj, TupleAccessorCore<? super T, ? extends ComponentType> accessor) {
+    public <T> TupleType build(T obj, TupleAccessor<? super T, ? extends ComponentType> accessor) {
         //return delegate.restore(obj, accessor);
         throw new RuntimeException("implement me");
 

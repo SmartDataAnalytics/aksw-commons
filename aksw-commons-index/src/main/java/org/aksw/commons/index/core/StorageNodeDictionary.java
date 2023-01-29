@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.BiMap;
@@ -46,16 +46,16 @@ public class StorageNodeDictionary<D1, C1, D2, C2, V, X extends StorageNodeMutab
 {
     protected X delegate;
     protected BiMap<C1, C2> dictionary;
-    protected TupleAccessor<D1, C1> sourceTupleAccessor;
+    protected TupleBridge<D1, C1> sourceTupleAccessor;
 
     // The converting accessor is backed by the tupleAccesssor and the dictionary
-    protected TupleAccessor<D2, C2> targetTupleAccessor;
+    protected TupleBridge<D2, C2> targetTupleAccessor;
 
     public StorageNodeDictionary(
             X delegate,
             BiMap<C1, C2> dictionary,
-            TupleAccessor<D1, C1> sourceTupleAccessor,
-            TupleAccessor<D2, C2> targetTupleAccessor
+            TupleBridge<D1, C1> sourceTupleAccessor,
+            TupleBridge<D2, C2> targetTupleAccessor
             ) {
         super();
         this.delegate = delegate;
@@ -71,7 +71,7 @@ public class StorageNodeDictionary<D1, C1, D2, C2, V, X extends StorageNodeMutab
     }
 
     public D2 mapSourceToTarget(D1 sourceTuple) {
-        D2 result = targetTupleAccessor.restore(sourceTuple, (st, i) -> {
+        D2 result = targetTupleAccessor.build(sourceTuple, (st, i) -> {
             C1 c1 = sourceTupleAccessor.get(st, i);
             C2 c2 = dictionary.computeIfAbsent(c1, c -> makeEntry(c));
             return c2;
@@ -81,7 +81,7 @@ public class StorageNodeDictionary<D1, C1, D2, C2, V, X extends StorageNodeMutab
 
 
     public D1 mapTargetToSource(D2 targetTuple) {
-        D1 result = sourceTupleAccessor.restore(targetTuple, (tt, i) -> {
+        D1 result = sourceTupleAccessor.build(targetTuple, (tt, i) -> {
             C2 c2 = targetTupleAccessor.get(tt, i);
             C1 c1 = dictionary.inverse().get(c2);
 
@@ -136,27 +136,27 @@ public class StorageNodeDictionary<D1, C1, D2, C2, V, X extends StorageNodeMutab
 
 
     @Override
-    public TupleAccessor<D1, C1> getTupleAccessor() {
+    public TupleBridge<D1, C1> getTupleAccessor() {
         return sourceTupleAccessor;
     }
 
 
     @Override
     public <T> Streamer<V, C1> streamerForKeysAsComponent(T pattern,
-            TupleAccessorCore<? super T, ? extends C1> accessor) {
+            TupleAccessor<? super T, ? extends C1> accessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 
 
     @Override
     public <T> Streamer<V, List<C1>> streamerForKeysAsTuples(T pattern,
-            TupleAccessorCore<? super T, ? extends C1> accessor) {
+            TupleAccessor<? super T, ? extends C1> accessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 
 
     @Override
-    public <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C1> accessor) {
+    public <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C1> accessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 
@@ -175,20 +175,20 @@ public class StorageNodeDictionary<D1, C1, D2, C2, V, X extends StorageNodeMutab
 
 
     @Override
-    public <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C1> accessor) {
+    public <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C1> accessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 
 
     @Override
     public <T> Streamer<V, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(T pattern,
-            TupleAccessorCore<? super T, ? extends C1> accessor) {
+            TupleAccessor<? super T, ? extends C1> accessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 
 
     @Override
-    public <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessorCore<? super T, ? extends C1> tupleAccessor) {
+    public <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessor<? super T, ? extends C1> tupleAccessor) {
         throw new UnsupportedOperationException("not implemented");
     }
 

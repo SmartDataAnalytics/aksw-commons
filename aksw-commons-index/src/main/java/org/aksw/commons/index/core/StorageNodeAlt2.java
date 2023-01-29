@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.Alt2;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  *
@@ -43,7 +43,7 @@ public class StorageNodeAlt2<D, C, V1, V2>
     protected Alt2<? extends StorageNodeMutable<D, C, V1>, ? extends StorageNodeMutable<D, C, V2>> children;
 
     public StorageNodeAlt2(
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             StorageNodeMutable<D, C, V1> child1,
             StorageNodeMutable<D, C, V2> child2
         ) {
@@ -58,7 +58,7 @@ public class StorageNodeAlt2<D, C, V1, V2>
 
     @Override
     public <T> Stream<?> streamEntries(Alt2<V1, V2> childStores, T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+            TupleAccessor<? super T, ? extends C> tupleAccessor) {
 
         StorageNodeMutable<D, C, ?> pickedChild = children.getV1();
         Object pickedChildStore = childStores.getV1();
