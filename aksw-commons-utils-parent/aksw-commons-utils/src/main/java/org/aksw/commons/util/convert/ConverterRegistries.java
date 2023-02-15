@@ -76,7 +76,11 @@ public class ConverterRegistries {
             .register(BigDecimal.class, Double.class,
                     BigDecimal::doubleValue, BigDecimal::new)
             .register(BigDecimal.class, Float.class,
-                    BigDecimal::floatValue, BigDecimal::new);
+                    BigDecimal::floatValue, BigDecimal::new)
+            // For auto-mapping methods with a CharSequence return type to String
+            .register(String.class, CharSequence.class,
+                    str -> str, CharSequence::toString)
+            ;
     }
 }
 
