@@ -35,5 +35,4 @@ public interface ConverterRegistry {
 
         return this;
     }
-
 }
