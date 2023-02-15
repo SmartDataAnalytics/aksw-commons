@@ -14,6 +14,10 @@ public abstract class TupleFinderWrapper<D, C, B extends TupleFinder<D, C>>
         this.base = Objects.requireNonNull(base);
     }
 
+    public B getBase() {
+        return base;
+    }
+
     @Override
     public TupleBridge<D, C> getTupleBridge() {
         return base.getTupleBridge();

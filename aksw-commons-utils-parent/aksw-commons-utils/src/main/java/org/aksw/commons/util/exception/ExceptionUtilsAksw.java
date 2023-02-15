@@ -48,8 +48,15 @@ public class ExceptionUtilsAksw {
     }
 
     public static boolean isConnectionRefusedException(Throwable t) {
-        String str = org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage(t);
-        boolean result = str != null && str.toLowerCase().contains("connection refused");
+        Throwable rootCause = org.apache.commons.lang3.exception.ExceptionUtils.getRootCause(t);
+        String str = ExceptionUtils.getMessage(rootCause);
+
+        // Jena 4.8.0 over Java 17 no longer exposes connection refused but closed channel
+        boolean isClosedChannel = isClosedChannelException(rootCause);
+
+        // Works with Jena 4.8.0 over Java 11
+        boolean isConnectionRefused = str != null && str.toLowerCase().contains("connection refused");
+        boolean result = isClosedChannel || isConnectionRefused;
         return result;
     }
 
