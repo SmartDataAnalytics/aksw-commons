@@ -1,6 +1,7 @@
 package org.aksw.commons.util.obj;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ObjectUtils {
@@ -41,5 +42,20 @@ public class ObjectUtils {
                 .filter(t -> t != null)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /** Raises an exception if both arguments are non-null and they differ.
+     *  Otherwise returns the first non-null argument. */
+    public static <T> T requireNullOrEqual(T a, T b) {
+        T result;
+
+        boolean isInconsistent = a != null && b != null && !Objects.equals(a, b);
+        if (isInconsistent) {
+            throw new IllegalArgumentException(String.format("Arguments %s and %s must both be equal or one must be null", a, b));
+        } else {
+            result = a == null ? b : a;
+        }
+
+        return result;
     }
 }
