@@ -4,14 +4,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-        <parent>
+	<parent>
 		<groupId>org.aksw.commons</groupId>
 		<artifactId>aksw-commons-bom</artifactId>
 		<version>0.9.5-SNAPSHOT</version>
 		<relativePath>aksw-commons-bom</relativePath>
-        </parent>
+	</parent>
 
-	<groupId>org.aksw.commons</groupId>
+<!--	<groupId>org.aksw.commons</groupId>-->
 	<artifactId>aksw-commons-parent</artifactId>
 	<packaging>pom</packaging>
 	<name>AKSW Commons parent</name>
