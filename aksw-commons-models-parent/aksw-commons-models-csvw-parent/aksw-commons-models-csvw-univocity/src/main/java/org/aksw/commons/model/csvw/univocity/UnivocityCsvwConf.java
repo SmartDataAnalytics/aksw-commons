@@ -8,19 +8,25 @@ import org.aksw.commons.model.csvw.jackson.DialectMutableForwardingJacksonString
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonMerge;
 
+/**
+ * This class 'extends' a dialect with a flag for 'tabs'.
+ * Probably a dialect with a tab field separator could reasonable replace this class.
+ * However, because univocity uses somewhat different infrastructures for TSV and CSV
+ * this class exists for now.
+ */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
-public class UnivocityHadoopConf
+public class UnivocityCsvwConf
 {
     protected DialectMutableForwardingJackson<?> dialect;
 
     protected boolean isTabs = false;
     // protected List<String> columnNamingSchemes;
 
-    public UnivocityHadoopConf() {
+    public UnivocityCsvwConf() {
         this(new DialectMutableImpl());
     }
 
-    public UnivocityHadoopConf(DialectMutable dialectStore) {
+    public UnivocityCsvwConf(DialectMutable dialectStore) {
         this.dialect = new DialectMutableForwardingJacksonString<>(dialectStore);
     }
 

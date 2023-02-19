@@ -63,7 +63,7 @@ public class UnivocityParserFactory {
         settings.setReadInputOnSeparateThread(false);
     }
 
-    public UnivocityParserFactory configure(UnivocityHadoopConf conf) {
+    public UnivocityParserFactory configure(UnivocityCsvwConf conf) {
         UnivocityParserFactory result;
         Dialect dialect = conf.getDialect();
         Charset cs = CsvwLib.getEncoding(dialect, charset);
