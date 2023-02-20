@@ -44,8 +44,8 @@ public class ObjectUtils {
                 .orElse(null);
     }
 
-    /** Raises an exception if both arguments are non-null and they differ.
-     *  Otherwise returns the first non-null argument. */
+    /** A consistency check utility. If both given values are non-null then they must be equal otherwise an exception is raised.
+     * Returns the first non-null value (if present) otherwise null. */
     public static <T> T requireNullOrEqual(T a, T b) {
         T result;
 
