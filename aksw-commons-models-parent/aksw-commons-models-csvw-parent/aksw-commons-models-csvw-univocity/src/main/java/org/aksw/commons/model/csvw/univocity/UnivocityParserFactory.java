@@ -43,6 +43,7 @@ public class UnivocityParserFactory {
 
     public static UnivocityParserFactory createDefault(Boolean skipHeaders) {
         CsvParserSettings defaultCsvSettings = new CsvParserSettings();
+        defaultCsvSettings.setEmptyValue("");
         applyDefaults(defaultCsvSettings, skipHeaders);
 
         TsvParserSettings defaultTsvSettings = new TsvParserSettings();
