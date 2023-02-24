@@ -108,7 +108,7 @@ public class GenericDag<E, V> {
         Multimap<V, V> mm = getChildToParent();
 
         for (E root : roots) {
-            collapse(null, 0, root, mm);
+            collapse(root, mm);
         }
     }
 
@@ -117,29 +117,36 @@ public class GenericDag<E, V> {
     /**
      * Merge and remove all non-root nodes having only a single parent into the parent.
      */
-    protected void collapse(E parent, int childIdx, E childExpr, Multimap<V, V> mm) {
-        if (isBlocker == null || !isBlocker.test(parent, childIdx, childExpr)) {
-            Set<V> mentionedVars = ExprOps.varsMentioned(exprOps, childExpr);
-            int i = 0;
-            for (V mentionedVar : mentionedVars) {
-                E subExpr = getExpr(mentionedVar);
-                collapse(childExpr, i, subExpr, mm);
-                ++i;
+    protected void collapse(E expr, Multimap<V, V> mm) {
+        if (exprOps.isVar(expr)) {
+            V exprVar = exprOps.asVar(expr);
+            E exprDef = getExpr(exprVar);
+
+            Set<V> subExprVars = ExprOps.varsMentioned(exprOps, exprDef);
+            for (V subExprVar : subExprVars) {
+                E subExprDef = exprOps.varToExpr(subExprVar);
+                if (subExprDef != null) {
+                    collapse(subExprDef, mm);
+                }
             }
-        }
-        // Do not collapse roots
-        if (!roots.contains(childExpr)) {
-            V childVar = getVar(childExpr);
-            Collection<V> parents = mm.get(childVar);
-            if (parents.size() == 1) {
-                V parentVar = parents.iterator().next();
-                E parentDefBefore = getExpr(parentVar);
-                E childVarExpr = exprOps.varToExpr(childVar);
-                E parentDefAfter = ExprOps.replace(exprOps, parentDefBefore, e -> e.equals(childVarExpr) ? childExpr : e);
-                remove(childVar);
-                remove(parentVar);
-                varToExpr.put(parentVar, parentDefAfter);
-            }
+
+            E newDef = ExprOps.replace(exprOps, exprDef, ev -> {
+                E r = null;
+                if (exprOps.isVar(ev)) {
+                    V v = exprOps.asVar(ev);
+                    if (!roots.contains(ev) && mm.get(v).size() == 1) {
+                        r = getExpr(v);
+                        remove(v);
+                    }
+                }
+                if (r == null) {
+                    r = ev;
+                }
+                return r;
+            });
+
+            remove(exprVar);
+            varToExpr.put(exprVar, newDef);
         }
     }
 }
