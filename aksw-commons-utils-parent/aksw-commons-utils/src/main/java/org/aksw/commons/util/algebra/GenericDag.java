@@ -122,7 +122,7 @@ public class GenericDag<E, V> {
             V exprVar = exprOps.asVar(expr);
             E exprDef = getExpr(exprVar);
 
-            Set<V> subExprVars = ExprOps.varsMentioned(exprOps, exprDef);
+            Set<V> subExprVars = exprOps.varsMentioned(exprDef);
             for (V subExprVar : subExprVars) {
                 E subExprDef = exprOps.varToExpr(subExprVar);
                 if (subExprDef != null) {
