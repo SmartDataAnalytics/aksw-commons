@@ -23,6 +23,17 @@ public interface ExprOps<E, V> {
         return asVar(expr) != null;
     }
 
+    /**
+     * Returns all variables mentioned in an expression.
+     * This method is provided for convenience.
+     *
+     * @implNote Relies on {@link ExprOps#varsMentioned(ExprOps, Object)}}
+     */
+    default Set<V> varsMentioned(E expr) {
+        return ExprOps.varsMentioned(this, expr);
+    }
+
+    /** Computes the used variables. Prefer {@link ExprOps#varsMentioned(Object)} for applications. */
     public static <E, V> Set<V> varsMentioned(ExprOps<E, V> exprOps, E expr) {
         Set<V> result = Streams.stream(Traverser.forTree(exprOps::getSubExprs).depthFirstPostOrder(expr))
             .map(e -> exprOps.isVar(e) ? exprOps.asVar(e) : null)
