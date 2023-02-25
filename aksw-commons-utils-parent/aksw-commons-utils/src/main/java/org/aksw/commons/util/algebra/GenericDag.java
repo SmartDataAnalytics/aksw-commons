@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.google.common.collect.BiMap;
@@ -149,4 +150,34 @@ public class GenericDag<E, V> {
             varToExpr.put(exprVar, newDef);
         }
     }
+
+    // TODO Wrap this up as an iterator similar to guava's traverser
+    public static <E, V> void depthFirstTraverse(GenericDag<E, V> dag, E parent, int childIdx, E child, ExprFilter<E> isBlocked, Consumer<E> visitor) {
+        if (!isBlocked.test(parent, childIdx, child)) {
+            ExprOps<E, V> exprOps = dag.getExprOps();
+
+            // Descend
+            // If the argument is a var then resolve it to the op and keep recursing
+            if (exprOps.isVar(child)) {
+                V var = exprOps.asVar(child);
+                E def = dag.getExpr(var);
+                if (def != null) {
+                    depthFirstTraverse(dag, child, 0, def, isBlocked, visitor);
+                }
+            } else {
+                // Compute the cost of the children
+                List<E> subExprs = exprOps.getSubExprs(child);
+                for (int i = 0; i < subExprs.size(); ++i) {
+                    E subExpr = subExprs.get(i);
+                    depthFirstTraverse(dag, child, i, subExpr, isBlocked, visitor);
+                }
+            }
+
+            // If this is a cache node then set our cost to 0
+            // Note: the cost function can examine the children
+            // float thisCost = computeCost.apply(child, costs);
+            visitor.accept(child);
+        }
+    }
+
 }
