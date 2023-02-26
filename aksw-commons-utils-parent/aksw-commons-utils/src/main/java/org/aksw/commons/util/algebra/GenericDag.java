@@ -47,9 +47,10 @@ public class GenericDag<E, V> {
     }
 
     /** Call {@link #factorize(Object)} and add the result as a new root */
-    public void addRoot(E expr) {
+    public E addRoot(E expr) {
         E newRoot = factorize(expr);
         roots.add(newRoot);
+        return newRoot;
     }
 
     public GenericFactorizer<E, V> getExprFactorizer() {
