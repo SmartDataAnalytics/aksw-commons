@@ -16,6 +16,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.common.graph.SuccessorsFunction;
 import com.google.common.graph.Traverser;
@@ -239,6 +240,27 @@ public class GenericDag<E, V> {
         return result;
     }
 
+    public static <E, V> Set<E> getCoreDefinitions(GenericDag<E, V> dag) {
+        return getCoreDefinitions(dag, dag.getRoots());
+    }
+
+    /** Return the set of definitions where at least 1 mentioned variable does not have a definition.
+     *  This is the set of expressions that mention variables in the set of {@link #getUndefinedVars(GenericDag, Set)} */
+    public static <E, V> Set<E> getCoreDefinitions(GenericDag<E, V> dag, Set<E> roots) {
+        ExprOps<E, V> exprOps = dag.getExprOps();
+        // This implementation should be improved as it traverses the dag twice
+        //  (once to collect undef vars and once more to find the expressions that mention them)
+        Set<V> undefVars = getUndefinedVars(dag, roots);
+        Set<E> result = new LinkedHashSet<>();
+        for (E expr : dag.varToExpr.values()) {
+            Set<V> mentionedVars = exprOps.varsMentioned(expr);
+            if (!Sets.intersection(undefVars, mentionedVars).isEmpty()) {
+                result.add(expr);
+            }
+        }
+        return result;
+    }
+
     /** Successor function for use with guava's traverser */
     public static <E, V> SuccessorsFunction<E> createSuccessorFunction(GenericDag<E, V> dag) {
         ExprOps<E, V> exprOps = dag.getExprOps();
@@ -258,8 +280,6 @@ public class GenericDag<E, V> {
             return r;
         };
     }
-
-
 
     // TODO Wrap this up as an iterator similar to guava's traverser
     // This is depth first post order

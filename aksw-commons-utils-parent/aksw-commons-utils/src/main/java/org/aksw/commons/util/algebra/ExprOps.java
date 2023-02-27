@@ -42,6 +42,7 @@ public interface ExprOps<E, V> {
         return result;
     }
 
+    /** Gets the leaf expressions of the given expression - i.e. those expressions that themselves do not have any sub expressions. */
     public static <E, V> Set<E> getLeafs(ExprOps<E, V> exprOps, E expr) {
         Set<E> result = Streams.stream(Traverser.forTree(exprOps::getSubExprs).depthFirstPostOrder(expr))
             .filter(e -> exprOps.getSubExprs(e).isEmpty())
