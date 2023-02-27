@@ -52,6 +52,7 @@ public class GenericFactorizer<E, V> {
                 after.add(tmp);
             }
             E e = exprOps.copy(child, after);
+            // Note: It shouldn't be necessary to allocate var names for other vars or constants            
             if (exprOps.isFunction(e)) {
                 V var = cxt.inverse().get(e);
                 if (var == null) {

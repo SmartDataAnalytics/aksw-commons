@@ -70,6 +70,7 @@ public interface ExprOps<E, V> {
         return result;
     }
 
+    // public static <V, C extends Collection<V>> toVars()
 //
 //    default boolean isConstant(E expr) {
 //        boolean result = !isFunction(expr) && !isVar(expr);
