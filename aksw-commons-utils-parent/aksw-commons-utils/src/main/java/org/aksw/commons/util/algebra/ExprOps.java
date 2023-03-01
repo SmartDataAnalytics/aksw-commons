@@ -51,13 +51,32 @@ public interface ExprOps<E, V> {
     }
 
     public static <E, V> E replace(ExprOps<E, V> exprOps, E expr, Function<? super E, ? extends E> fn) {
+        List<E> subExprsBefore = exprOps.getSubExprs(expr);
+        List<E> subExprsAfter = new ArrayList<>(subExprsBefore.size());
+        boolean change = false;
+        for (E subExprBefore : subExprsBefore) {
+            E subExprAfter = replace(exprOps, subExprBefore, fn);
+            subExprsAfter.add(subExprAfter);
+            if (subExprAfter != subExprBefore) {
+                change = true;
+            }
+        }
+        E arg = change
+                ? exprOps.copy(expr, subExprsAfter)
+                : expr;
+        E result = fn.apply(arg);
+        return result;
+    }
+
+    /** Pre order is probably not that useful */
+    public static <E, V> E replaceTopDown(ExprOps<E, V> exprOps, E expr, Function<? super E, ? extends E> fn) {
         E result = fn.apply(expr);
         if (result == expr) { // No change yet
             List<E> subExprsBefore = exprOps.getSubExprs(expr);
             List<E> subExprsAfter = new ArrayList<>();
             boolean change = false;
             for (E subExprBefore : subExprsBefore) {
-                E subExprAfter = replace(exprOps, subExprBefore, fn);
+                E subExprAfter = replaceTopDown(exprOps, subExprBefore, fn);
                 if (subExprAfter != subExprBefore) {
                     change = true;
                 }
