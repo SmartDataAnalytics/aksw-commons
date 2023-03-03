@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 /** Resource view of the Dialect class according to
@@ -142,6 +141,8 @@ public interface Dialect
         }
     }
 
+
+
     /**
      * Attempts to parse the line terminators as a json array and return an array of the strings.
      * If parsing fails then a single item with original string value is returned.
@@ -152,7 +153,7 @@ public interface Dialect
         if (str != null) {
             try {
                 Type type = new TypeToken<List<String>>() { /* empty */ }.getType();
-                Gson gson = new GsonBuilder().setLenient().create();
+                Gson gson = GsonUtils.createGson();
                 result = gson.fromJson(str, type);
             } catch (Exception e) {
                 // Ignore?
