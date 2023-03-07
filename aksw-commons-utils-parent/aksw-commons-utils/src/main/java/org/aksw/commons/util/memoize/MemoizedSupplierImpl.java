@@ -13,6 +13,7 @@ public class MemoizedSupplierImpl<T>
     public MemoizedSupplierImpl(Supplier<T> supplier) {
         super();
         this.supplier = supplier;
+        this.cache = Collections.emptyMap();
     }
 
 
