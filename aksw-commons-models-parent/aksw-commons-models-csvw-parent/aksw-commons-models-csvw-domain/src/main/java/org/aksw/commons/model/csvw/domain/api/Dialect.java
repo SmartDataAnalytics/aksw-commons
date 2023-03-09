@@ -141,8 +141,6 @@ public interface Dialect
         }
     }
 
-
-
     /**
      * Attempts to parse the line terminators as a json array and return an array of the strings.
      * If parsing fails then a single item with original string value is returned.

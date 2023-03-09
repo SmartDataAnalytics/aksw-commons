@@ -262,6 +262,21 @@ public class RangeUtils {
     }
 
 
+    /**
+     * Return a new range with each lower and upper endpoint of the input range passed through a separate transformation function.
+     */
+    public static <I extends Comparable<I>, O extends Comparable<O>> Range<O> map(
+            Range<I> range,
+            BiFunction<? super I, BoundType, Endpoint<? extends O>> lowerEndpointMapper,
+            BiFunction<? super I, BoundType, Endpoint<? extends O>> upperEndpointMapper)
+    {
+        Endpoint<? extends O> lower = range.hasLowerBound() ? lowerEndpointMapper.apply(range.lowerEndpoint(), range.lowerBoundType()) : null;
+        Endpoint<? extends O> upper = range.hasUpperBound() ? upperEndpointMapper.apply(range.upperEndpoint(), range.upperBoundType()) : null;
+        Range<O> result = RangeUtils.create(lower, upper);
+        return result;
+    }
+
+
     public static Range<Long> multiplyByPageSize(Range<Long> range, long pageSize) {
         Range<Long> result = apply(range, pageSize, (endpoint, value) -> endpoint * value);
         return result;
@@ -546,8 +561,11 @@ public class RangeUtils {
         return result;
     }
 
-    public static <T extends Comparable<T>> Range<T> create(Endpoint<T> lower, Endpoint<T> upper) {
-        return create(lower.getValue(), lower.getBoundType(), upper.getValue(), upper.getBoundType());
+    /** Create a range from two endpoints. If either an endpoint or it's value is null then it is considered as unbounded. */
+    public static <T extends Comparable<T>> Range<T> create(Endpoint<? extends T> lower, Endpoint<? extends T> upper) {
+        return create(
+                lower == null ? null : lower.getValue(), lower == null ? null : lower.getBoundType(),
+                upper == null ? null : upper.getValue(), upper == null ? null : upper.getBoundType());
     }
 
     public static <T extends Comparable<T>> Endpoint<T> getLowerEndpoint(Range<T> range) {
