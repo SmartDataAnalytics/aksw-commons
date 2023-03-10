@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class AllenConstants {
+    public final static short EMPTY        =    0; // 0000000000000000
 
     public final static short BEFORE       =    1; // 0000000000000001
     public final static short AFTER        =    2; // 0000000000000010

@@ -6,6 +6,9 @@ import java.util.Objects;
 /** An immutable wrapper for a bit-pattern (of primitive type 'short') that represents the Allen relations */
 public class AllenRelation {
 
+    /** Dummy relation with a 0 bit pattern. Useful for reduce/fold operations. */
+    public static final AllenRelation EMPTY       = AllenRelation.of(AllenConstants.EMPTY);
+
     public static final AllenRelation BEFORE       = AllenRelation.of(AllenConstants.BEFORE);
     public static final AllenRelation AFTER        = AllenRelation.of(AllenConstants.AFTER);
     public static final AllenRelation DURING       = AllenRelation.of(AllenConstants.DURING);
@@ -35,10 +38,6 @@ public class AllenRelation {
     /** Create a new relation with the inverse */
     public AllenRelation invert() {
         return of(AllenConstants.invert(pattern));
-    }
-
-    public static AllenRelation empty() {
-        return new AllenRelation((short)0);
     }
 
     public static AllenRelation of(short pattern) {
