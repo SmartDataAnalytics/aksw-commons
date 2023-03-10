@@ -14,11 +14,15 @@ public class Endpoint<T> {
     }
 
     public static <T> Endpoint<T> open(T value) {
-        return new Endpoint<>(value, BoundType.OPEN);
+        return of(value, BoundType.OPEN);
     }
 
     public static <T> Endpoint<T> closed(T value) {
-        return new Endpoint<>(value, BoundType.CLOSED);
+        return of(value, BoundType.CLOSED);
+    }
+
+    public static <T> Endpoint<T> of(T value, BoundType boundType) {
+        return new Endpoint<>(value, boundType);
     }
 
     public T getValue() {

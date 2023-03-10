@@ -90,6 +90,7 @@
 		<module>aksw-commons-picocli</module>
 
 		<module>aksw-commons-models-parent</module>
+		<module>aksw-commons-algebra-parent</module>
 
 		<module>aksw-commons-legacy</module>
 	</modules>

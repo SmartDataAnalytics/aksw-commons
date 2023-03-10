@@ -261,9 +261,9 @@ public class RangeUtils {
         return result;
     }
 
-
     /**
      * Return a new range with each lower and upper endpoint of the input range passed through a separate transformation function.
+     * The lower and upper endpoint mappers may return null to indicate the absence of a lower or upper bound in the mapped range, respectively.
      */
     public static <I extends Comparable<I>, O extends Comparable<O>> Range<O> map(
             Range<I> range,
