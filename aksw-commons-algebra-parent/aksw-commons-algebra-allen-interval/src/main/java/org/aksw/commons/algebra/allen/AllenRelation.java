@@ -66,58 +66,57 @@ public class AllenRelation {
         return of(unionPattern);
     }
 
-//
-//    boolean isBefore() {
-//        return (pattern & AllenConstants.BEFORE) != 0;
-//    }
-//
-//    boolean isAfter() {
-//        return (pattern & AllenConstants.AFTER) != 0;
-//    }
-//
-//    boolean isDuring() {
-//        return (pattern & AllenConstants.DURING) != 0;
-//    }
-//
-//    boolean isContaining() {
-//        return (pattern & AllenConstants.CONTAINS) != 0;
-//    }
-//
-//    boolean isOverlapping() {
-//        return (pattern & AllenConstants.OVERLAPS) != 0;
-//    }
-//
-//    boolean isOverlappedBy() {
-//        return (pattern & AllenConstants.OVERLAPPEDBY) != 0;
-//    }
-//
-//    boolean isMeeting() {
-//        return (pattern & AllenConstants.MEETS) != 0;
-//    }
-//
-//    boolean isMetBy() {
-//        return (pattern & AllenConstants.METBY) != 0;
-//    }
-//
-//    boolean isStarting() {
-//        return (pattern & AllenConstants.STARTS) != 0;
-//    }
-//
-//    boolean isStartedBy() {
-//        return (pattern & AllenConstants.STARTEDBY) != 0;
-//    }
-//
-//    boolean isFinishing() {
-//        return (pattern & AllenConstants.FINISHES) != 0;
-//    }
-//
-//    boolean isFinishedBy() {
-//        return (pattern & AllenConstants.FINISHEDBY) != 0;
-//    }
-//
-//    boolean isEqual() {
-//        return (pattern & AllenConstants.EQUALS) != 0;
-//    }
+    boolean isBefore() {
+        return (pattern & AllenConstants.BEFORE) != 0;
+    }
+
+    boolean isAfter() {
+        return (pattern & AllenConstants.AFTER) != 0;
+    }
+
+    boolean isDuring() {
+        return (pattern & AllenConstants.DURING) != 0;
+    }
+
+    boolean isContaining() {
+        return (pattern & AllenConstants.CONTAINS) != 0;
+    }
+
+    boolean isOverlapping() {
+        return (pattern & AllenConstants.OVERLAPS) != 0;
+    }
+
+    boolean isOverlappedBy() {
+        return (pattern & AllenConstants.OVERLAPPEDBY) != 0;
+    }
+
+    boolean isMeeting() {
+        return (pattern & AllenConstants.MEETS) != 0;
+    }
+
+    boolean isMetBy() {
+        return (pattern & AllenConstants.METBY) != 0;
+    }
+
+    boolean isStarting() {
+        return (pattern & AllenConstants.STARTS) != 0;
+    }
+
+    boolean isStartedBy() {
+        return (pattern & AllenConstants.STARTEDBY) != 0;
+    }
+
+    boolean isFinishing() {
+        return (pattern & AllenConstants.FINISHES) != 0;
+    }
+
+    boolean isFinishedBy() {
+        return (pattern & AllenConstants.FINISHEDBY) != 0;
+    }
+
+    boolean isEqual() {
+        return (pattern & AllenConstants.EQUALS) != 0;
+    }
 
     @Override
     public String toString() {
