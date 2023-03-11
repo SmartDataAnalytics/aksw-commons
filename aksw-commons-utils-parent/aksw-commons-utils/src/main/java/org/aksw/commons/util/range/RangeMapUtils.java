@@ -1,13 +1,35 @@
 package org.aksw.commons.util.range;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 
 public class RangeMapUtils {
+    /** See {@link #merge(RangeMap, Range, Collection, Supplier)}. */
+    public static <K extends Comparable<K>, V, C extends Collection<V>> void merge(RangeMap<K, C> rangeMap, Range<K> range, V value, Supplier<C> newCollection) {
+        merge(rangeMap, range, Collections.singleton(value), newCollection);
+    }
+
+    /**
+     * Merge a given collection of values into the specified range.
+     * All existing entries are remapped to fresh collections with these values appended,
+     * whereas all "gaps" are mapped to the same fresh copy of the given values.
+     */
+    public static <K extends Comparable<K>, V, C extends Collection<V>> void merge(RangeMap<K, C> rangeMap, Range<K> range, Collection<V> values, Supplier<C> newCollection) {
+        C copy = newCollection.get();
+        copy.addAll(values);
+        rangeMap.merge(range, copy, (priorValues, additions) -> {
+            C r = newCollection.get();
+            r.addAll(priorValues);
+            r.addAll(additions);
+            return r;
+        });
+    }
 
     /**
      * Create a RangeMap with dummy values from a set of ranges.
