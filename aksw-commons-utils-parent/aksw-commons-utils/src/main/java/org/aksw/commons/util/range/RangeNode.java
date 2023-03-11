@@ -30,7 +30,7 @@ public class RangeNode<K extends Comparable<K>, V> {
     protected RangeMap<K, RangeNode<K, V>> children = TreeRangeMap.create(); // = new ArrayList<>();
 
     public static <K extends Comparable<K>, V> RangeNode<K, V> newRoot() {
-        return new RangeNode<>(Range.all());
+        return new RangeNode<K, V>(Range.all());
     }
 
     public RangeNode(Range<K> nodeRange) {
