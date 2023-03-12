@@ -3,18 +3,21 @@ package org.aksw.commons.util.range;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
+import com.google.common.collect.Streams;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
+import com.google.common.graph.Traverser;
 
 
 /**
@@ -23,32 +26,50 @@ import com.google.common.collect.TreeRangeSet;
  * @param <K>
  * @param <V>
  */
-public class RangeNode<K extends Comparable<K>, V> {
+public class RangeTreeNode<K extends Comparable<K>, V> {
     protected Range<K> nodeRange;
     protected Collection<V> values;
 
-    protected RangeMap<K, RangeNode<K, V>> children = TreeRangeMap.create(); // = new ArrayList<>();
+    protected RangeMap<K, RangeTreeNode<K, V>> children = TreeRangeMap.create(); // = new ArrayList<>();
 
-    public static <K extends Comparable<K>, V> RangeNode<K, V> newRoot() {
-        return new RangeNode<K, V>(Range.all());
+    public static <K extends Comparable<K>, V> RangeTreeNode<K, V> newRoot() {
+        return new RangeTreeNode<K, V>(Range.all());
     }
 
-    public RangeNode(Range<K> nodeRange) {
+    public Collection<V> getValues() {
+        return values;
+    }
+
+    public RangeTreeNode(Range<K> nodeRange) {
         this(nodeRange, Collections.emptySet());
     }
 
-    public RangeNode(Range<K> nodeRange, V value) {
+    public RangeTreeNode(Range<K> nodeRange, V value) {
         this(nodeRange, Collections.singleton(value));
     }
 
-    public RangeNode(Range<K> nodeRange, Collection<V> values) {
+    public RangeTreeNode(Range<K> nodeRange, Collection<V> values) {
         super();
         this.nodeRange = nodeRange;
-        this.values = new ArrayList<>(values);
+        this.values = new LinkedHashSet<>(values);
+    }
+
+    public RangeMap<K, RangeTreeNode<K, V>> getChildren() {
+        return children;
+    }
+
+    public Collection<RangeTreeNode<K, V>> getChildNodes() {
+        return getChildren().asMapOfRanges().values();
+    }
+
+    /** Return all values of this node and all of its children - depth first pre order */
+    public Stream<V> streamAllValuesPreOrder() {
+        return Streams.stream(Traverser.forTree((RangeTreeNode<K, V> node) -> node.getChildNodes()).depthFirstPreOrder(this))
+            .flatMap(node -> node.getValues().stream());
     }
 
     public void put(Range<K> insertRange, V value) {
-        Map<Range<K>, RangeNode<K, V>> childMap = children.asMapOfRanges();
+        Map<Range<K>, RangeTreeNode<K, V>> childMap = children.asMapOfRanges();
         boolean processed = false;
 
         if (insertRange.equals(nodeRange)) {
@@ -59,7 +80,7 @@ public class RangeNode<K extends Comparable<K>, V> {
         RangeSet<K> overlappingChildren = null;
         if (!processed) {
             // If there is any child node that encloses the insertRange than delegate the insertion to it
-            for (Entry<Range<K>, RangeNode<K, V>> child : childMap.entrySet()) {
+            for (Entry<Range<K>, RangeTreeNode<K, V>> child : childMap.entrySet()) {
                 Range<K> childRange = child.getKey();
                 if (childRange.encloses(insertRange)) {
                     child.getValue().put(insertRange, value);
@@ -78,9 +99,9 @@ public class RangeNode<K extends Comparable<K>, V> {
         if (!processed && overlappingChildren != null) {
             processed = true;
             // Range<K> newSpan = overlappingChildren.span();
-            RangeNode<K, V> newNode = new RangeNode<>(insertRange, value);
+            RangeTreeNode<K, V> newNode = new RangeTreeNode<>(insertRange, value);
             for (Range<K> overlap : overlappingChildren.asRanges()) {
-                RangeNode<K, V> node = childMap.remove(overlap);
+                RangeTreeNode<K, V> node = childMap.remove(overlap);
                 newNode.children.put(node.nodeRange, node);
                 // children.remove(insertRange);
             }
@@ -89,7 +110,7 @@ public class RangeNode<K extends Comparable<K>, V> {
 
         // No overlap - just add the new node
         if (!processed) {
-            RangeNode<K, V> newNode = new RangeNode<>(insertRange, value);
+            RangeTreeNode<K, V> newNode = new RangeTreeNode<>(insertRange, value);
             children.put(insertRange, newNode);
             processed = true;
         }
@@ -106,9 +127,9 @@ public class RangeNode<K extends Comparable<K>, V> {
         out.println(indent + "span: " + nodeRange);
         out.println(indent + "|- values: " + values);
         int i = 0;
-        Iterator<Entry<Range<K>, RangeNode<K, V>>> it = children.asMapOfRanges().entrySet().iterator();
+        Iterator<Entry<Range<K>, RangeTreeNode<K, V>>> it = children.asMapOfRanges().entrySet().iterator();
         while (it.hasNext()) {
-            Entry<Range<K>, RangeNode<K, V>> entry = it.next();
+            Entry<Range<K>, RangeTreeNode<K, V>> entry = it.next();
             out.println(indent + "|- child[" + i + "]");
             String nextIndent = it.hasNext() ? "|  " : "   ";
             entry.getValue().print(out, indent + nextIndent);
@@ -118,7 +139,7 @@ public class RangeNode<K extends Comparable<K>, V> {
 
     public static void main(String[] args) {
 
-        RangeNode<Integer, String> root = RangeNode.newRoot();
+        RangeTreeNode<Integer, String> root = RangeTreeNode.newRoot();
 
         root.put(Range.closedOpen(0, 5), "a");
         root.put(Range.closedOpen(1, 4), "b");
