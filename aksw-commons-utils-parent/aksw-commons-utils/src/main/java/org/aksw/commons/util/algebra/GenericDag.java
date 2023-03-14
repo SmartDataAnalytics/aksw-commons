@@ -7,8 +7,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,8 @@ public class GenericDag<E, V> {
     protected ExprOps<E, V> exprOps;
     protected ExprFilter<E> isBlocker;
     protected GenericFactorizer<E, V> exprFactorizer;
+
+    // Replace the supplier with something clonable
     protected Supplier<V> nextVar;
     protected BiMap<V, E> varToExpr = HashBiMap.create();
     protected Set<E> roots = new LinkedHashSet<>();
@@ -35,6 +40,51 @@ public class GenericDag<E, V> {
         this.isBlocker = isBlocker;
         this.exprFactorizer = new GenericFactorizer<>(exprOps, isBlocker);
         this.nextVar = nextVar;
+    }
+
+    /** Create a dag which only contains expressions reachable from the given roots */
+    public GenericDag<E, V> subDag(Collection<E> roots) {
+        GenericDag<E, V> result = new GenericDag<>(exprOps, nextVar, isBlocker);
+        result.getRoots().addAll(roots);
+
+        ExprOps<E, V> exprOps = this.getExprOps();
+        SuccessorsFunction<E> successors = createSuccessorFunction(this);
+        Streams.stream(Traverser.forTree(successors).depthFirstPostOrder(roots)).forEach(expr -> {
+            V v = this.getVar(expr);
+            if (v != null) {
+                result.getVarToExpr().put(v, expr);
+            }
+        });
+        return result;
+
+
+    }
+
+
+    public GenericDag<E, V> applyVarTransform(Function<V, V> remap) {
+        GenericDag<E, V> result = new GenericDag<>(exprOps, nextVar, isBlocker);
+        Function<E, E> exprRemap = e -> exprOps.isVar(e) ? Optional.ofNullable(remap.apply(exprOps.asVar(e))).map(exprOps::varToExpr).orElse(e) : e;
+        this.varToExpr.forEach((v, e) -> {
+            V newV = Objects.requireNonNullElse(remap.apply(v), v);
+            E newE = ExprOps.replace(exprOps, e, exprRemap);
+            result.varToExpr.put(newV, newE);
+        });
+        this.roots.forEach(e -> {
+            E newE = ExprOps.replace(exprOps, e, exprRemap);
+            result.roots.add(newE);
+        });
+        return result;
+    }
+
+    /**
+     * Create a copy of this dag.
+     * Caution: The nextVar supplier of the clone is presently shared with the origin instance.
+     */
+    public GenericDag<E, V> cloneObject() {
+        GenericDag<E, V> result = new GenericDag<>(exprOps, nextVar, isBlocker);
+        result.varToExpr.putAll(this.varToExpr);
+        result.roots.addAll(this.roots);
+        return result;
     }
 
 //    public GenericDag(GenericFactorizer<E, V> exprFactorizer, Supplier<V> nextVar) {
@@ -229,7 +279,7 @@ public class GenericDag<E, V> {
     }
 
     /** Return the set of variables that do not have a definition in the dag */
-    public static <E, V> Set<V> getUndefinedVars(GenericDag<E, V> dag, Set<E> roots) {
+    public static <E, V> Set<V> getUndefinedVars(GenericDag<E, V> dag, Collection<E> roots) {
         ExprOps<E, V> exprOps = dag.getExprOps();
         SuccessorsFunction<E> successors = createSuccessorFunction(dag);
         Set<V> result = Streams.stream(Traverser.forTree(successors).depthFirstPostOrder(roots))
@@ -246,18 +296,25 @@ public class GenericDag<E, V> {
 
     /** Return the set of definitions where at least 1 mentioned variable does not have a definition.
      *  This is the set of expressions that mention variables in the set of {@link #getUndefinedVars(GenericDag, Set)} */
-    public static <E, V> Set<E> getCoreDefinitions(GenericDag<E, V> dag, Set<E> roots) {
+    public static <E, V> Set<E> getCoreDefinitions(GenericDag<E, V> dag, Collection<E> roots) {
         ExprOps<E, V> exprOps = dag.getExprOps();
         // This implementation should be improved as it traverses the dag twice
         //  (once to collect undef vars and once more to find the expressions that mention them)
         Set<V> undefVars = getUndefinedVars(dag, roots);
-        Set<E> result = new LinkedHashSet<>();
-        for (E expr : dag.varToExpr.values()) {
-            Set<V> mentionedVars = exprOps.varsMentioned(expr);
-            if (!Sets.intersection(undefVars, mentionedVars).isEmpty()) {
-                result.add(expr);
-            }
-        }
+        SuccessorsFunction<E> successors = createSuccessorFunction(dag);
+        Set<E> result = Streams.stream(Traverser.forTree(successors).depthFirstPostOrder(roots))
+                .filter(expr -> {
+                    Set<V> mentionedVars = exprOps.varsMentioned(expr);
+                    boolean r = !Sets.intersection(undefVars, mentionedVars).isEmpty();
+                    // The expression must both be assigned to variable in the dag as well as mention an undefined variable
+                    V v = dag.getVar(expr);
+                    if (v == null) {
+                        // System.out.println("No var for " + expr);
+                      r = false;
+                    }
+                    return r;
+                  })
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         return result;
     }
 

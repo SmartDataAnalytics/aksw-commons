@@ -12,12 +12,23 @@ import com.google.common.collect.Streams;
 import com.google.common.graph.Traverser;
 
 public interface ExprOps<E, V> {
+    /** Return an expression's immediate sub expressions */
     List<E> getSubExprs(E expr);
+
+    /** Create a copy of an expression that serves as a prototype with the given sub expressions */
     E copy(E proto, List<E> subEs);
 
+    /** Return true iff the argument is a function expression */
     boolean isFunction(E expr);
-    V asVar(E expr); // Return null if not a var
+
+    /** Get the expression as a variable - null if it is not a variable */
+    V asVar(E expr);
+
+    /** Create an expression that represents the given variable */
     E varToExpr(V var);
+
+    /** Return a string representation of an expression */
+    String toString(E expr);
 
     default boolean isVar(E expr) {
         return asVar(expr) != null;
