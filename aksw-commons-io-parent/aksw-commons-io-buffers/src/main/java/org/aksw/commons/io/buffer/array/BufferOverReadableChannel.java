@@ -512,7 +512,7 @@ public class BufferOverReadableChannel<A>
             int newEndIdx = activeEnd.bucketIdx + 1;
             if (newEndIdx >= buckets.length) {
                 // Double number of buckets if possible
-                int numNewBuckets = IntMath.saturatedMultiply(buckets.length, 2);
+                int numNewBuckets = Ints.saturatedCast((long)(buckets.length * 2)); // IntMath.saturatedMultiply(buckets.length, 2);
 //                if (numNewBuckets < buckets.length) {
 //                    numNewBuckets = Integer.MAX_VALUE;
 //                }
