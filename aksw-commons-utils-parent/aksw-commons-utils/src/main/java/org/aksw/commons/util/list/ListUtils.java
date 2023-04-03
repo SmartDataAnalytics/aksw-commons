@@ -21,5 +21,4 @@ public class ListUtils {
         T result = i >= list.size() ? dflt : list.get(i);
         return result;
     }
-
 }
