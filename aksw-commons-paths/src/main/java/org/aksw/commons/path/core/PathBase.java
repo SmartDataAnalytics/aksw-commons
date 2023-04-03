@@ -95,7 +95,6 @@ public class PathBase<T, P extends Path<T>>
         return pathOps;
     }
 
-
     @Override
     public P toAbsolutePath() {
         P basePath = newPath(true, getPathOps().getBasePathSegments());
@@ -104,7 +103,6 @@ public class PathBase<T, P extends Path<T>>
 
         return result;
     }
-
 
     @Override
     public boolean isAbsolute() {
@@ -152,13 +150,18 @@ public class PathBase<T, P extends Path<T>>
         boolean result;
         int n = other.getNameCount();
         if (n <= getNameCount()) {
+            result = true; // True until proven otherwise
+            List<T> otherSegments = other.getSegments();
+            Iterator<T> thisIt = segments.iterator();
+            Iterator<T> otherIt = otherSegments.iterator();
             for (int i = 0; i < n; ++i) {
-                String part = other.getName(i).toString();
-                if (!Objects.equals(segments.get(i), part)) {
+                T thisPart = thisIt.next();
+                T otherPart = otherIt.next();
+                if (!Objects.equals(thisPart, otherPart)) {
                     result = false;
+                    break;
                 }
             }
-            result = true;
         } else {
             result = false;
         }
