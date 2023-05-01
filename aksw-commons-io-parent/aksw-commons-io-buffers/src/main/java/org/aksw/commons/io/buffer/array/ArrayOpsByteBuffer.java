@@ -9,6 +9,11 @@ public class ArrayOpsByteBuffer
     implements ArrayOps<ByteBuffer>
 {
     @Override
+    public Class<?> getArrayClass() {
+        return ByteBuffer.class;
+    }
+
+    @Override
     public ByteBuffer create(int size) {
         return ByteBuffer.allocate(size);
     }
@@ -46,6 +51,7 @@ public class ArrayOpsByteBuffer
                     buffer.put(i, b);
                 }
             } else {
+                // TODO Change implementation to just loop ; without creating an intermediary array
                 byte[] tmp = new byte[length];
                 if (b != 0) {
                     Arrays.fill(tmp, b);

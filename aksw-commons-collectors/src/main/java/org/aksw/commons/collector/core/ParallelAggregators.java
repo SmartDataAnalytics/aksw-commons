@@ -10,44 +10,46 @@ import org.aksw.commons.collector.domain.ParallelAggregator;
 
 public class ParallelAggregators {
 
-	/**
-	 * Merge two accumulators.
-	 * 
-	 * @param <T>
-	 * @param <C>
-	 * @param needle
-	 * @param haystack
-	 * @param accumulatorCloner The cloner; may return its argument for in place changes.
-	 * @return
-	 */
-	public static <T, V, C extends Collection<V>> Accumulator<T, C> combineAccumulators(
-			Accumulator<T, C> needle,
-			Accumulator<T, C> haystack,
-			UnaryOperator<Accumulator<T, C>> accumulatorCloner,
-			Function<? super V, ? extends T> valueToItem) {
-		if (needle.getValue().size() > haystack.getValue().size()) {
-			// Swap
-			Accumulator<T, C> tmp = needle; needle = haystack; haystack = tmp;
-		}
-		
-		Accumulator<T, C> result = accumulatorCloner.apply(haystack);
-		for (V value : needle.getValue()) {
-			T reductionItem = valueToItem.apply(value);
-			result.accumulate(reductionItem);
-		}
-		
-		return result;
-	}
-	
-	/**
-	 * Create a serializable java8 collector from a parallel aggregator.
-	 * 
-	 */
-	public static <I, O, ACC extends Accumulator<I,O>> Collector<I, ?, O> createCollector(ParallelAggregator<I, O, ACC> agg) {
-		return SerializableCollectorImpl.create(
-				agg::createAccumulator,
-				Accumulator::accumulate, 
-				agg::combine,
-				Accumulator::getValue);
-	}
+    /**
+     * Merge two accumulators.
+     *
+     * @param <T>
+     * @param <C>
+     * @param needle
+     * @param haystack
+     * @param accumulatorCloner The cloner; may return its argument for in place changes.
+     * @return
+     */
+    public static <T, E, V, C extends Collection<V>> Accumulator<T, E, C> combineAccumulators(
+            Accumulator<T, E, C> needle,
+            Accumulator<T, E, C> haystack,
+            UnaryOperator<Accumulator<T, E, C>> accumulatorCloner,
+            Function<? super V, ? extends T> valueToItem,
+            E env) {
+        if (needle.getValue().size() > haystack.getValue().size()) {
+            // Swap
+            Accumulator<T, E, C> tmp = needle; needle = haystack; haystack = tmp;
+        }
+
+        Accumulator<T, E, C> result = accumulatorCloner.apply(haystack);
+        for (V value : needle.getValue()) {
+            T reductionItem = valueToItem.apply(value);
+            result.accumulate(reductionItem, env);
+        }
+
+        return result;
+    }
+
+    /**
+     * Create a serializable java8 collector from a parallel aggregator.
+     *
+     */
+    public static <I, E, O, ACC extends Accumulator<I, E, O>> Collector<I, ?, O> createCollector(ParallelAggregator<I, E, O, ACC> agg, E env) {
+        return new CollectorFromParallelAggregator<>(agg, env);
+//        return SerializableCollectorImpl.create(
+//                agg::createAccumulator,
+//                // Accumulator::accumulate,
+//                agg::combine,
+//                Accumulator::getValue);
+    }
 }

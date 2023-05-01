@@ -84,4 +84,8 @@ public class DialectMutableImpl
         this.trim = trim;
         return this;
     }
+
+    public static DialectMutable create() {
+        return new DialectMutableImpl();
+    }
 }

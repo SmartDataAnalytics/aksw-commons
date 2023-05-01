@@ -23,10 +23,10 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.MapSupplier;
-import org.aksw.commons.index.util.Streamer;
 import org.aksw.commons.index.util.TupleValueFunction;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
+import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.Maps;
 
@@ -48,7 +48,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     protected TupleValueFunction<C, K> keyFunction;
 
     // Reverse mapping of key to components
-    protected TupleAccessorCore<? super K, ? extends C> keyToComponent;
+    protected TupleAccessor<? super K, ? extends C> keyToComponent;
 
     public K tupleToKey(D tupleLike) {
         K result = keyFunction.map(tupleLike, (d, i) -> tupleAccessor.get(d, tupleIdxs[i]));
@@ -64,12 +64,12 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
 
     public StorageNodeMapBase(
             int[] tupleIdxs,
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             MapSupplier mapSupplier,
             //TupleToKey<? extends K, C> keyFunction
             //Function<? super D, ? extends K> keyFunction
             TupleValueFunction<C, K> keyFunction,
-            TupleAccessorCore<? super K, ? extends C> keyToComponent
+            TupleAccessor<? super K, ? extends C> keyToComponent
             ) {
         super(tupleIdxs, tupleAccessor);
         this.mapSupplier = mapSupplier;
@@ -100,7 +100,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     }
 
 
-    public static <T, C> Object[] projectTupleToArray(int[] tupleIdxs, T tupleLike, TupleAccessorCore<T, C> tupleAccessor) {
+    public static <T, C> Object[] projectTupleToArray(int[] tupleIdxs, T tupleLike, TupleAccessor<T, C> tupleAccessor) {
         Object[] result = new Object[tupleIdxs.length];
         for (int i = 0; i < tupleIdxs.length; ++i) {
             C componentValue = tupleAccessor.get(tupleLike, tupleIdxs[i]);
@@ -117,7 +117,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
 
     public <T> Streamer<M, K> streamerForKeysUnderConstraints(
             T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor)
+            TupleAccessor<? super T, ? extends C> tupleAccessor)
     {
         Streamer<M, K> result;
 
@@ -139,7 +139,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
 
     public <T> Streamer<M, V> streamerForValuesUnderConstraints(
             T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor)
+            TupleAccessor<? super T, ? extends C> tupleAccessor)
     {
         Streamer<M, V> result;
 
@@ -161,7 +161,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
 
     public <T> Streamer<M, Entry<K, V>> streamerForEntriesUnderConstraints(
             T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor)
+            TupleAccessor<? super T, ? extends C> tupleAccessor)
     {
         Object[] tmp = new Object[tupleIdxs.length];
         boolean eligibleAsKey = true;
@@ -193,7 +193,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     @Override
     public <T> Streamer<M, C> streamerForKeysAsComponent(
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
 
         Streamer<M, K> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
         // FIXME Ensure that the keys can be cast as components!
@@ -202,7 +202,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
 
 
     @Override
-    public <T> Streamer<M, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<M, V> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return streamerForValuesUnderConstraints(pattern, accessor);
 //        Streamer<Map<K, V>, K> baseStreamer = streamerForKeysUnderConstraints(pattern, accessor);
 //
@@ -220,12 +220,12 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     @Override
     public <T> Streamer<M, List<C>> streamerForKeysAsTuples(
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return null;
     }
 
     @Override
-    public <T> Streamer<M, K> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<M, K> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return streamerForKeysUnderConstraints(pattern, accessor);
     }
 
@@ -233,7 +233,7 @@ abstract class StorageNodeMapBase<D, C, K, V, M extends Map<K, V>>
     @Override
     public <T> Streamer<M, Entry<K, V>> streamerForKeyAndSubStoreAlts(
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         // TODO Assert that altIdx == 0
         return streamerForEntriesUnderConstraints(pattern, accessor);
     }

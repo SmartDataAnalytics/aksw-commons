@@ -30,26 +30,31 @@ public abstract class PrefetchIterator<T>
         }
 
         current = null;
+        Throwable x = null;
         try {
             // Prefetch may return empty iterators - skip them.
             do {
                 current = prefetch();
             } while(current != null && !current.hasNext());
-        }
-        catch(Exception e) {
-            //logger.error(ExceptionUtils.toString(e));
-            e.printStackTrace();
+        } catch(Throwable e) {
+            current = null;
+            x = e;
         }
         if (current == null) {
             close();
             finished = true;
+
+            if (x != null) {
+                throw new RuntimeException(x);
+            }
         }
     }
 
     private Iterator<T> getCurrent()
     {
-        if (current == null || !current.hasNext())
+        if (current == null || !current.hasNext()) {
             preparePrefetch();
+        }
 
         return current;
     }

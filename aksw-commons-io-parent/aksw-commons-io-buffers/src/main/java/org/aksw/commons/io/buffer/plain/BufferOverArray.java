@@ -33,6 +33,10 @@ public class BufferOverArray<A>
         arrayOps.copy((A)arrayWithItemsOfTypeT, arrOffset, array, offsetInBufferInt, arrLength);
     }
 
+    public A getArray() {
+		return array;
+	}
+    
     @Override
     public long getCapacity() {
         return arrayOps.length(array);

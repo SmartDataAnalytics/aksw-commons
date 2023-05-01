@@ -40,10 +40,10 @@ public final class FlowableOperatorConditionalConcat<T, C>
     implements FlowableOperator<T, T> {
 
     /** The amount of items to read ahead */
-    protected Aggregator<T, C> aggregator;
+    protected Aggregator<T, ? ,C> aggregator;
     protected Function<? super C, Flowable<T>> tailFlowFactory;
 
-    public FlowableOperatorConditionalConcat(Aggregator<T, C> aggregator, Function<? super C, Flowable<T>> tailFlowFactory) {
+    public FlowableOperatorConditionalConcat(Aggregator<T, ?, C> aggregator, Function<? super C, Flowable<T>> tailFlowFactory) {
         super();
         this.aggregator = aggregator;
         this.tailFlowFactory = tailFlowFactory;
@@ -58,7 +58,7 @@ public final class FlowableOperatorConditionalConcat<T, C>
      * </ul>
      */
     public static <T, C> FlowableOperatorConditionalConcat<T, C> create(
-            Aggregator<T, C> aggregator,
+            Aggregator<T, ?, C> aggregator,
             Function<C, Flowable<T>> tailFlowFactory) {
         return new FlowableOperatorConditionalConcat<T, C>(aggregator, tailFlowFactory);
     }
@@ -80,7 +80,7 @@ public final class FlowableOperatorConditionalConcat<T, C>
         protected Subscription upstream;
         protected boolean isInitialUpstreamComplete = false;
 
-        protected Accumulator<T, C> accumulator;
+        protected Accumulator<T, ?, C> accumulator;
 
         protected AtomicLong downstreamDemand;
 

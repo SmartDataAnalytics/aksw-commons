@@ -17,7 +17,7 @@
 
 package org.aksw.commons.index.core;
 
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 
 /**
@@ -32,9 +32,9 @@ public abstract class StorageNodeBase<D, C, V>
     implements StorageNode<D, C, V>
 {
     protected int[] tupleIdxs;
-    protected TupleAccessor<D, C> tupleAccessor;
+    protected TupleBridge<D, C> tupleAccessor;
 
-    public StorageNodeBase(int[] tupleIdxs, TupleAccessor<D, C> tupleAccessor) {
+    public StorageNodeBase(int[] tupleIdxs, TupleBridge<D, C> tupleAccessor) {
         super();
         this.tupleIdxs = tupleIdxs;
         this.tupleAccessor = tupleAccessor;
@@ -46,7 +46,7 @@ public abstract class StorageNodeBase<D, C, V>
     }
 
     @Override
-    public TupleAccessor<D, C> getTupleAccessor() {
+    public TupleBridge<D, C> getTupleAccessor() {
         return tupleAccessor;
     }
 }

@@ -25,10 +25,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.aksw.commons.index.util.SetSupplier;
-import org.aksw.commons.index.util.Streamer;
 import org.aksw.commons.index.util.TupleValueFunction;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
+import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.Maps;
 
@@ -49,7 +49,7 @@ public class StorageNodeLeafDomainSet<D, C, V, S extends Set<V>>
     protected TupleValueFunction<C, V> valueFunction;
 
     public StorageNodeLeafDomainSet(
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             SetSupplier setSupplier,
             TupleValueFunction<C, V> valueFunction
             ) {
@@ -116,18 +116,18 @@ public class StorageNodeLeafDomainSet<D, C, V, S extends Set<V>>
 
     @Override
     public <T> Streamer<S, C> streamerForKeysAsComponent(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         throw new UnsupportedOperationException("Cannot stream keys as components if there are no keys");
     }
 
     @Override
     public <T> Streamer<S, List<C>> streamerForKeysAsTuples(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return argStore -> Stream.of(Collections.emptyList());
     }
 
     @Override
-    public <T> Streamer<S, V> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, V> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return argSet -> argSet.stream();
     }
 
@@ -141,20 +141,20 @@ public class StorageNodeLeafDomainSet<D, C, V, S extends Set<V>>
     public <T> Streamer<S, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
 //            int altIdx,
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return argSet -> Stream.of(Maps.immutableEntry(Collections.emptyList(), argSet));
 //        throw new UnsupportedOperationException("leaf sets do not have a sub store");
 //    	return argSet -> argSet.stream().map(item -> Entry<>);
     }
 
     @Override
-    public <T> Stream<V> streamEntries(S set, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<V> streamEntries(S set, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
         // FIXME We need to filter the result stream by the components of the tuple like!
         return set.stream();
     }
 
     @Override
-    public <T> Streamer<S, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<S, ?> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         // TODO Auto-generated method stub
         return null;
     }

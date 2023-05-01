@@ -12,13 +12,12 @@ import picocli.CommandLine.Option;
 public class PicocliMixinCsvw<D extends DialectMutable>
     extends DialectMutableForwardingBase<D>
 {
-
     protected PicocliMixinCsvw(D delegate) {
         super(delegate);
     }
 
     public static PicocliMixinCsvw<?> of(DialectMutable delegate) {
-        return new PicocliMixinCsvw<DialectMutable>(delegate);
+        return new PicocliMixinCsvw<>(delegate);
     }
 
     @Option(names={"-d", "--delimiter"}, description="Delimiter")
@@ -32,14 +31,14 @@ public class PicocliMixinCsvw<D extends DialectMutable>
     @Option(names={"-H", "--no-header-row"}, description="no header row; use variable names ?a, ?b, ...")
     public DialectMutable setNoHeader(Boolean noHeader) {
         if (Boolean.TRUE.equals(noHeader)) {
-            super.setHeader(false);
+            setHeaderRowCount(0l);
         }
         return this;
     }
 
     @Option(names={"--header-row"}, description="Input file's first row is a header with variable names (default)")
-    public DialectMutable setHeaderRow(Boolean noHeader) {
-        if (!Boolean.FALSE.equals(noHeader)) {
+    public DialectMutable setHeaderRow(Boolean headerRow) {
+        if (!Boolean.FALSE.equals(headerRow)) {
             setHeaderRowCount(1l);
         }
         return this;

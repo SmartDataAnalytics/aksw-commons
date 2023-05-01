@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 
 /**
@@ -39,7 +39,7 @@ public class StorageNodeAltN<D, C>
     protected List<? extends StorageNodeMutable<D, C, ?>> children;
 
     public StorageNodeAltN(
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             List<? extends StorageNodeMutable<D, C, ?>> children
             ) {
         super(tupleAccessor);
@@ -53,7 +53,7 @@ public class StorageNodeAltN<D, C>
 
     @Override
     public <T> Stream<?> streamEntries(Object[] childStores, T tupleLike,
-            TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+            TupleAccessor<? super T, ? extends C> tupleAccessor) {
 
         StorageNodeMutable<D, C, ?> pickedChild = children.get(0);
         Object pickedChildStore = childStores[0];

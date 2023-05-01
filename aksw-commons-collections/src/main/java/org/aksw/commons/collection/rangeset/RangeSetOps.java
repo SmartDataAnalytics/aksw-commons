@@ -3,6 +3,10 @@ package org.aksw.commons.collection.rangeset;
 import com.google.common.base.Converter;
 import com.google.common.collect.RangeSet;
 
+/**
+ * Operators that return actual RangeSet instances.
+ * RangeSetUtils is only for Set views.
+ */
 public class RangeSetOps {
 
     public static <T extends Comparable<T>> RangeSetUnion<T> union(RangeSet<T> first, RangeSet<T> second) {

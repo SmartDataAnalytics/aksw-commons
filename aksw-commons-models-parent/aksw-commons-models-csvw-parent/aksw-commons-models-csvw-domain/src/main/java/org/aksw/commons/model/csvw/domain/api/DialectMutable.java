@@ -1,5 +1,9 @@
 package org.aksw.commons.model.csvw.domain.api;
 
+import java.util.List;
+
+import com.google.gson.JsonArray;
+
 public interface DialectMutable
     extends Dialect
 {
@@ -18,20 +22,30 @@ public interface DialectMutable
     DialectMutable setTrim(String trim);
     DialectMutable setQuoteEscapeChar(String quoteEscapeChar);
 
-    default void copyFrom(Dialect src) {
-        setCommentPrefix(getCommentPrefix());
-        setDelimiter(getDelimiter());
-        setDoubleQuote(isDoubleQuote());
-        setEncoding(getEncoding());
-        setHeader(getHeader());
-        setHeaderRowCount(getHeaderRowCount());
-        setLineTerminators(getLineTerminators());
-        setQuoteChar(getQuoteChar());
-        setQuoteEscapeChar(getQuoteEscapeChar());
-        setSkipBlankRows(getSkipBlankRows());
-        setSkipColumns(getSkipColumns());
-        setSkipInitialSpace(getSkipInitialSpace());
-        setSkipRows(getSkipRows());
-        setTrim(getTrim());
+    default DialectMutable setLineTerminatorList(List<String> lineTerminators) {
+    	String str = null;
+    	if (lineTerminators != null) {
+	    	JsonArray array = new JsonArray();
+	    	lineTerminators.forEach(array::add);
+	    	str = array.toString();
+    	}
+		return setLineTerminators(str);
     }
+    
+//    default void copyFrom(Dialect src) {
+//        setCommentPrefix(src.getCommentPrefix());
+//        setDelimiter(src.getDelimiter());
+//        setDoubleQuote(src.isDoubleQuote());
+//        setEncoding(src.getEncoding());
+//        setHeader(src.getHeader());
+//        setHeaderRowCount(src.getHeaderRowCount());
+//        setLineTerminators(src.getLineTerminators());
+//        setQuoteChar(src.getQuoteChar());
+//        setQuoteEscapeChar(src.getQuoteEscapeChar());
+//        setSkipBlankRows(src.getSkipBlankRows());
+//        setSkipColumns(src.getSkipColumns());
+//        setSkipInitialSpace(src.getSkipInitialSpace());
+//        setSkipRows(src.getSkipRows());
+//        setTrim(src.getTrim());
+//    }
 }

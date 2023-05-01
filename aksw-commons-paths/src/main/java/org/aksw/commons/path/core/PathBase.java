@@ -11,8 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-import java.util.function.Function;
-
 
 /**
  * Generic base implementation of the path interface.
@@ -97,7 +95,6 @@ public class PathBase<T, P extends Path<T>>
         return pathOps;
     }
 
-
     @Override
     public P toAbsolutePath() {
         P basePath = newPath(true, getPathOps().getBasePathSegments());
@@ -106,7 +103,6 @@ public class PathBase<T, P extends Path<T>>
 
         return result;
     }
-
 
     @Override
     public boolean isAbsolute() {
@@ -154,13 +150,18 @@ public class PathBase<T, P extends Path<T>>
         boolean result;
         int n = other.getNameCount();
         if (n <= getNameCount()) {
+            result = true; // True until proven otherwise
+            List<T> otherSegments = other.getSegments();
+            Iterator<T> thisIt = segments.iterator();
+            Iterator<T> otherIt = otherSegments.iterator();
             for (int i = 0; i < n; ++i) {
-                String part = other.getName(i).toString();
-                if (!Objects.equals(segments.get(i), part)) {
+                T thisPart = thisIt.next();
+                T otherPart = otherIt.next();
+                if (!Objects.equals(thisPart, otherPart)) {
                     result = false;
+                    break;
                 }
             }
-            result = true;
         } else {
             result = false;
         }
@@ -259,7 +260,6 @@ public class PathBase<T, P extends Path<T>>
         return result;
     }
 
-
     public static <T> List<T> relativize(List<T> a, List<T> b, T parentToken) {
         List<T> result = new ArrayList<>();
 
@@ -322,7 +322,6 @@ public class PathBase<T, P extends Path<T>>
                 .iterator();
     }
 
-
     @Override
     public int compareTo(Path<T> other) {
         int result;
@@ -368,6 +367,7 @@ public class PathBase<T, P extends Path<T>>
 
         return result;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -391,5 +391,4 @@ public class PathBase<T, P extends Path<T>>
         result = prime * result + ((segments == null) ? 0 : segments.hashCode());
         return result;
     }
-
 }

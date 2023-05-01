@@ -1,6 +1,9 @@
 package org.aksw.commons.rx.util;
 
 import java.util.Iterator;
+import java.util.concurrent.Callable;
+import java.util.function.BiPredicate;
+import java.util.stream.Stream;
 
 import org.aksw.commons.accessors.SingleValuedAccessor;
 import org.aksw.commons.accessors.SingleValuedAccessorDirect;
@@ -8,6 +11,9 @@ import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
 import org.aksw.commons.lambda.throwing.ThrowingSupplier;
+
+import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.Streams;
 
 import io.reactivex.rxjava3.core.Flowable;
 
@@ -185,7 +191,6 @@ public class FlowableEx {
                 state -> closer.accept(state.resource, state.iterable));
         return result;
     }
-
 
     /**
      * Helper class used with {@link FlowableEx#fromIterableResource(ThrowingSupplier, ThrowingFunction, ThrowingFunction, ThrowingBiConsumer)}

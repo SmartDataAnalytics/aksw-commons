@@ -9,7 +9,7 @@
 	<parent>
 		<artifactId>aksw-commons-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<version>0.9.4</version>
+		<version>0.9.5</version>
 	</parent>
 
 	<modules>
@@ -17,6 +17,7 @@
 		<module>aksw-commons-io-buffers</module>
 		<module>aksw-commons-io-syscalls</module>
 		<module>aksw-commons-io-process-pipes</module>
+		<module>aksw-commons-io-hadoop</module>
 	</modules>
 
 	<dependencies>

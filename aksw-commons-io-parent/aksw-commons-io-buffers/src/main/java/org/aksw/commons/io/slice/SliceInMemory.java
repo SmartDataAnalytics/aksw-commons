@@ -4,8 +4,12 @@ import java.io.IOException;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.Buffer;
+import org.aksw.commons.util.closeable.AutoCloseableBase;
+import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
+import org.aksw.commons.util.closeable.Disposable;
 
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 
 /**
  * Slice implementation backed only by a single {@link Buffer}.
@@ -43,10 +47,10 @@ public class SliceInMemory<A>
     public SliceAccessor<A> newSliceAccessor() {
         return new SliceAccessor<A>() {
 
-        	@Override
-        	public Slice<A> getSlice() {
-        		return SliceInMemory.this;
-        	}
+            @Override
+            public Slice<A> getSlice() {
+                return SliceInMemory.this;
+            }
 
             @Override
             public void claimByOffsetRange(long startOffset, long endOffset) {
@@ -78,10 +82,21 @@ public class SliceInMemory<A>
             @Override
             public void close() {
             }
+
+            /** There is no eviction so nothing to do */
+            @Override
+            public void addEvictionGuard(RangeSet<Long> ranges) {
+
+            }
         };
     }
 
     @Override
     public void sync() throws IOException {
+    }
+
+    @Override
+    public Disposable addEvictionGuard(RangeSet<Long> range) {
+        return new AutoCloseableWithLeakDetectionBase()::close;
     }
 }

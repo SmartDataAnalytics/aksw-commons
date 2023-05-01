@@ -4,7 +4,7 @@ import java.util.stream.Stream;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.ReadableChannel;
-import org.aksw.commons.io.input.ReadableChannelOverStream;
+import org.aksw.commons.io.input.ReadableChannelOverIterator;
 import org.aksw.commons.io.input.ReadableChannelSource;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.util.range.CountInfo;
@@ -37,9 +37,9 @@ public class ReadableChannelSourceRx<T>
 
     @Override
     public ReadableChannel<T[]> newReadableChannel(Range<Long> range) {
-    	Flowable<T> flowable = listPaginator.apply(range);
-		Stream<T> stream = flowable.blockingStream();
-        return new ReadableChannelOverStream<T>(arrayOps, stream);
+        Flowable<T> flowable = listPaginator.apply(range);
+        Stream<T> stream = flowable.blockingStream();
+        return new ReadableChannelOverIterator<T>(arrayOps, stream.iterator(), stream::close);
     }
 
     @Override

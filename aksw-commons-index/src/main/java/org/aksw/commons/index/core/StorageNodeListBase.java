@@ -20,7 +20,7 @@ package org.aksw.commons.index.core;
 import java.util.List;
 
 import org.aksw.commons.index.util.ListSupplier;
-import org.aksw.commons.tuple.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 
 /**
  *
@@ -38,7 +38,7 @@ abstract class StorageNodeListBase<D, C, V>
 
     public StorageNodeListBase(
             int[] tupleIdxs,
-            TupleAccessor<D, C> tupleAccessor,
+            TupleBridge<D, C> tupleAccessor,
             ListSupplier listSupplier
         ) {
         super(tupleIdxs, tupleAccessor);

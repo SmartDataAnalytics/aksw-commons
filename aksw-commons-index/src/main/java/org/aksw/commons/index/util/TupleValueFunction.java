@@ -17,7 +17,7 @@
 
 package org.aksw.commons.index.util;
 
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
 
 /**
  * Map a tuple-like object to a value
@@ -26,7 +26,7 @@ import org.aksw.commons.tuple.TupleAccessorCore;
  *
  */
 public interface TupleValueFunction<ComponentType, ValueType> {
-    <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessorCore<? super TupleLike, ? extends ComponentType> tupleAccessor);
+    <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessor<? super TupleLike, ? extends ComponentType> tupleAccessor);
 
 
     /**
@@ -41,7 +41,7 @@ public interface TupleValueFunction<ComponentType, ValueType> {
     public static <ComponentType, ValueType> TupleValueFunction<ComponentType, ValueType> newIdentity() {
         return new TupleValueFunction<ComponentType, ValueType>() {
             @Override
-            public <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessorCore<? super TupleLike, ? extends ComponentType> tupleAccessor) {
+            public <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessor<? super TupleLike, ? extends ComponentType> tupleAccessor) {
               return (ValueType)tupleLike;
             }
         };
@@ -51,7 +51,7 @@ public interface TupleValueFunction<ComponentType, ValueType> {
         return new TupleValueFunction<ComponentType, ValueType>() {
             @SuppressWarnings("unchecked")
             @Override
-            public <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessorCore<? super TupleLike, ? extends ComponentType> tupleAccessor) {
+            public <TupleLike> ValueType map(TupleLike tupleLike, TupleAccessor<? super TupleLike, ? extends ComponentType> tupleAccessor) {
               ValueType result = (ValueType)tupleAccessor.get(tupleLike, idx);
               return result;
             }
@@ -71,7 +71,7 @@ public interface TupleValueFunction<ComponentType, ValueType> {
      * @param tupleAccessor
      * @return
      */
-    public static <T, C> C component0(T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public static <T, C> C component0(T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
         C result = tupleAccessor.get(tupleLike, 0);
         return result;
     }

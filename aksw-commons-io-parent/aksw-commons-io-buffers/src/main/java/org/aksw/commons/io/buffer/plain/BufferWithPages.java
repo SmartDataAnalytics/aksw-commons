@@ -39,7 +39,7 @@ public class BufferWithPages<A>
     }
 
     @Override
-    public ArrayOps getArrayOps() {
+    public ArrayOps<A> getArrayOps() {
         return arrayOps;
     }
 

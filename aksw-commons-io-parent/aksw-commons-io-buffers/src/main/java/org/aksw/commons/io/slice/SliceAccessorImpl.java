@@ -1,6 +1,8 @@
 package org.aksw.commons.io.slice;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -12,6 +14,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
+import org.aksw.commons.util.closeable.Disposable;
+import org.aksw.commons.util.exception.FinallyRunAll;
 import org.aksw.commons.util.page.PageUtils;
 import org.aksw.commons.util.ref.Ref;
 import org.aksw.commons.util.ref.RefFuture;
@@ -57,6 +61,9 @@ public class SliceAccessorImpl<A>
     // protected NavigableMap<Long, BufferView<A>> pageMap;
     protected boolean isLocked = false;
 
+
+    protected Collection<Disposable> evictionGuards = new ArrayList<>();
+
     public SliceAccessorImpl(SliceWithPages<A> cache) {
         super();
         this.slice = cache;
@@ -64,7 +71,7 @@ public class SliceAccessorImpl<A>
 
     @Override
     public Slice<A> getSlice() {
-    	return slice;
+        return slice;
     }
 
     public Range<Long> getOffsetRange() {
@@ -205,6 +212,17 @@ public class SliceAccessorImpl<A>
 
         // slice.getWorkerCreationLock().unlock();
         isLocked = false;
+    }
+
+    public void releaseEvictionGuards() {
+        if (!evictionGuards.isEmpty()) {
+            FinallyRunAll action = FinallyRunAll.create();
+            evictionGuards.forEach(eg -> action.add(eg::close));
+
+            evictionGuards.clear();
+
+            action.run();
+        }
     }
 
     @Override
@@ -495,7 +513,16 @@ public class SliceAccessorImpl<A>
 
     @Override
     protected void closeActual() {
+        releaseEvictionGuards();
         releaseAll();
+    }
+
+    @Override
+    public void addEvictionGuard(RangeSet<Long> ranges) {
+        Disposable disposable = slice.addEvictionGuard(ranges);
+        if (disposable != null) {
+            evictionGuards.add(disposable);
+        }
     }
 
 }

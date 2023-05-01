@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import org.aksw.commons.model.csvw.domain.api.DialectMutable;
 
+import com.google.common.base.StandardSystemProperty;
+
 public class DialectImpl
     implements DialectMutable, Serializable
 {
@@ -177,5 +179,25 @@ public class DialectImpl
     public DialectMutable setQuoteEscapeChar(String quoteEscapeChar) {
         this.quoteEscapeChar = quoteEscapeChar;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        String result = String.join(StandardSystemProperty.LINE_SEPARATOR.value(),
+            "quoteChar=" + quoteChar,
+            "quoteEscapeChar=" + quoteEscapeChar,
+            "delimiter=" + delimiter,
+            "lineTerminators=" + lineTerminators,
+            "commentPrefix=" + commentPrefix,
+            "doubleQuote=" + doubleQuote,
+            "encoding=" + encoding,
+            "header=" + header,
+            "headerRowCount=" + headerRowCount,
+            "skipBlankRows=" + skipBlankRows,
+            "skipColumns=" + skipColumns,
+            "skipInitialSpace=" + skipInitialSpace,
+            "skipRows=" + skipRows,
+            "trim=" + trim);
+        return result;
     }
 }

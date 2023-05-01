@@ -17,14 +17,14 @@ import org.aksw.commons.collector.domain.ParallelAggregator;
  * is an iterator. Each item of the iterator then passed to the accumulator.
  *
  */
-public class AggInputFlatMap<I, J, O,
-    SUBACC extends Accumulator<J, O>, SUBAGG extends ParallelAggregator<J, O, SUBACC>>
-    implements ParallelAggregator<I, O, AccInputFlatMap<I, J, O, SUBACC>>, Serializable
+public class AggInputFlatMap<I, E, J, O,
+    SUBACC extends Accumulator<J, E, O>, SUBAGG extends ParallelAggregator<J, E, O, SUBACC>>
+    implements ParallelAggregator<I, E, O, AccInputFlatMap<I, E, J, O, SUBACC>>, Serializable
 {
     private static final long serialVersionUID = 0;
 
-    public static interface AccInputFlatMap<I, J, O, SUBACC extends Accumulator<J, O>>
-        extends AccWrapper<I, O, SUBACC> { }
+    public static interface AccInputFlatMap<I, E, J, O, SUBACC extends Accumulator<J, E, O>>
+        extends AccWrapper<I, E, O, SUBACC> { }
 
 
     protected SUBAGG subAgg;
@@ -37,15 +37,15 @@ public class AggInputFlatMap<I, J, O,
     }
 
     @Override
-    public AccInputFlatMap<I, J, O, SUBACC> createAccumulator() {
+    public AccInputFlatMap<I, E, J, O, SUBACC> createAccumulator() {
         SUBACC subAcc = subAgg.createAccumulator();
 
         return new AccTransformInputImpl(subAcc, inputTransform);
     }
 
     @Override
-    public AccInputFlatMap<I, J, O, SUBACC> combine(AccInputFlatMap<I, J, O, SUBACC> a,
-            AccInputFlatMap<I, J, O, SUBACC> b) {
+    public AccInputFlatMap<I, E, J, O, SUBACC> combine(AccInputFlatMap<I, E, J, O, SUBACC> a,
+            AccInputFlatMap<I, E, J, O, SUBACC> b) {
         SUBACC accA = a.getSubAcc();
         SUBACC accB = b.getSubAcc();
         SUBACC combined = subAgg.combine(accA, accB);
@@ -71,7 +71,7 @@ public class AggInputFlatMap<I, J, O,
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AggInputFlatMap<?, ?, ?, ?, ?> other = (AggInputFlatMap<?, ?, ?, ?, ?>) obj;
+        AggInputFlatMap<?, ?, ?, ?, ?, ?> other = (AggInputFlatMap<?, ?, ?, ?, ?, ?>) obj;
         if (inputTransform == null) {
             if (other.inputTransform != null)
                 return false;
@@ -89,7 +89,7 @@ public class AggInputFlatMap<I, J, O,
 
 
     public class AccTransformInputImpl
-        implements AccInputFlatMap<I, J, O, SUBACC>, Serializable
+        implements AccInputFlatMap<I, E, J, O, SUBACC>, Serializable
     {
         private static final long serialVersionUID = 0;
 
@@ -103,11 +103,11 @@ public class AggInputFlatMap<I, J, O,
         }
 
         @Override
-        public void accumulate(I input) {
+        public void accumulate(I input, E env) {
             Iterator<? extends J> it = inputTransform.apply(input);
             while (it.hasNext()) {
                 J item = it.next();
-                subAcc.accumulate(item);
+                subAcc.accumulate(item, env);
             }
         }
 
@@ -156,7 +156,7 @@ public class AggInputFlatMap<I, J, O,
             return true;
         }
 
-        private AggInputFlatMap<?, ?, ?, ?, ?> getEnclosingInstance() {
+        private AggInputFlatMap<?, ?, ?, ?, ?, ?> getEnclosingInstance() {
             return AggInputFlatMap.this;
         }
     }

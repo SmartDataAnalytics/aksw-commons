@@ -13,7 +13,6 @@ public class PathOpsStr
 {
     private static final long serialVersionUID = 1L;
 
-
     private static PathOpsStr INSTANCE = null;
 
     public static PathOpsStr get() {
@@ -27,7 +26,6 @@ public class PathOpsStr
         return INSTANCE;
     }
 
-
     /** Convenience static shorthand for .get().newRoot() */
     public static PathStr newAbsolutePath(String ... segments) {
         return get().newPath(true, Arrays.asList(segments));
@@ -40,7 +38,6 @@ public class PathOpsStr
     public static PathStr create(String str) {
         return get().fromString(str);
     }
-
 
     @Override
     public PathStr upcast(Path<String> path) {
@@ -93,10 +90,9 @@ public class PathOpsStr
         return result;
     }
 
-
     @Override
     public String toStringRaw(Object path) {
-    	return toString((PathStr)path);
+        return toString((PathStr)path);
     }
 
     @Override
@@ -118,6 +114,7 @@ public class PathOpsStr
             str = str.substring(1);
         }
 
+        // TODO Check for odd number of escape chars!
         String[] rawSegments = str.split("(?<!\\\\)/");
         List<String> segments = Arrays.asList(rawSegments).stream()
                 .map(this::unescapeSegment)
@@ -126,5 +123,4 @@ public class PathOpsStr
 
         return newPath(isAbsolute, segments);
     }
-
 }

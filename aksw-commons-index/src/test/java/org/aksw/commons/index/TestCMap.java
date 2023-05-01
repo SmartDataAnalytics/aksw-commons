@@ -8,14 +8,14 @@ import org.aksw.commons.index.core.StorageNodeMutable;
 import org.aksw.commons.index.util.CMap;
 import org.aksw.commons.index.util.CMapSupplier;
 import org.aksw.commons.index.util.MapSuppliers;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorForList;
+import org.aksw.commons.tuple.accessor.TupleAccessorForList;
+import org.aksw.commons.tuple.bridge.TupleBridge;
 import org.junit.Test;
 
 public class TestCMap {
     @Test
     public void test() {
-        TupleAccessor<List<String>, String> tupleAccessor = new TupleAccessorForList<>(2);
+        TupleBridge<List<String>, String> tupleAccessor = new TupleAccessorForList<>(2);
 
         CMapSupplier<Boolean> mapSupplier = MapSuppliers.wrapAsCMap(HashMap::new, () -> false);// .wrapAsCMap();
 

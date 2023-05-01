@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import org.aksw.commons.index.util.Streamer;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
+import org.aksw.commons.util.stream.Streamer;
 
 import com.google.common.collect.Maps;
 
@@ -42,7 +42,7 @@ import com.google.common.collect.Maps;
 public abstract class StorageNodeAltBase<D, C, V>
     extends StorageNodeBase<D, C, V>
 {
-    public StorageNodeAltBase(TupleAccessor<D, C> tupleAccessor) {
+    public StorageNodeAltBase(TupleBridge<D, C> tupleAccessor) {
         super(new int[] {}, tupleAccessor);
     }
 
@@ -53,26 +53,26 @@ public abstract class StorageNodeAltBase<D, C, V>
 
     @Override
     public <T> Streamer<V, C> streamerForKeysAsComponent(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         throw new UnsupportedOperationException("Cannot stream keys as components if there are no keys");
     }
 
     @Override
     public <T> Streamer<V, List<C>> streamerForKeysAsTuples(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return argStore -> Stream.of(Collections.emptyList());
     }
 
     @Override
     public <T> Streamer<V, V> streamerForValues(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return argStore -> Stream.of(argStore);
     }
 
 
     @Override
     public <T> Streamer<V, ?> streamerForKeys(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return argStore -> Stream.of(Collections.emptyList());
     }
 
@@ -84,7 +84,7 @@ public abstract class StorageNodeAltBase<D, C, V>
     @Override
     public <T> Streamer<V, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(
             T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
 
         return argStore -> Stream.of(Maps.immutableEntry(null, argStore));
     }

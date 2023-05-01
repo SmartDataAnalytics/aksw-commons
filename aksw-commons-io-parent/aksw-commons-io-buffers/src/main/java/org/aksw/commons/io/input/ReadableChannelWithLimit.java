@@ -6,21 +6,21 @@ import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.primitives.Ints;
 
-public class ReadableChannelWithLimit<A>
+public class ReadableChannelWithLimit<A, X extends ReadableChannel<A>>
     implements ReadableChannel<A>
 {
-    protected ReadableChannel<A> delegate;
+    protected X delegate;
     protected long limit;
     protected long remaining;
 
-    public ReadableChannelWithLimit(ReadableChannel<A> backend, long limit) {
+    public ReadableChannelWithLimit(X backend, long limit) {
         super();
         this.delegate = backend;
         this.limit = limit;
         this.remaining = limit;
     }
 
-    public ReadableChannel<A> getDelegate() {
+    public X getDelegate() {
         return delegate;
     }
 
@@ -55,7 +55,4 @@ public class ReadableChannelWithLimit<A>
 
         return result;
     }
-
-
-
 }

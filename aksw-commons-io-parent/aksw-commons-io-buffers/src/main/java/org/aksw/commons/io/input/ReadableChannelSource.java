@@ -2,15 +2,17 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 
-import org.aksw.commons.io.buffer.array.HasArrayOps;
-
-import com.google.common.collect.Range;
-
 public interface ReadableChannelSource<A>
-    extends HasArrayOps<A>
+    extends ReadableChannelFactory<A>
 {
-    /** Offsets typically start with 0 but the interface contract leaves that unspecified */
-    ReadableChannel<A> newReadableChannel(Range<Long> range) throws IOException;
+    /**
+     * ReadableChannelSources are implemented against the newRedableChannel(Range) method.
+     * Needs consolidation.
+     */
+    @Override
+    default ReadableChannel<A> newReadableChannel(long start, long end) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
     /** The size; -1 if unknown */
     long size() throws IOException;

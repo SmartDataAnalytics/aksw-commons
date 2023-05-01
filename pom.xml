@@ -4,10 +4,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.aksw.commons</groupId>
+	<parent>
+		<groupId>org.aksw.commons</groupId>
+		<artifactId>aksw-commons-bom</artifactId>
+		<version>0.9.5</version>
+		<relativePath>aksw-commons-bom</relativePath>
+	</parent>
+
+<!--	<groupId>org.aksw.commons</groupId>-->
 	<artifactId>aksw-commons-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.9.4</version>
 	<name>AKSW Commons parent</name>
 	<description>A library of commonly used classes in AKSW applications.</description>
 	<url>https://github.com/SmartDataAnalytics/aksw-commons</url>
@@ -57,16 +63,15 @@
 		<univocity.version>2.9.0</univocity.version>
 
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
-		<slf4j.version>1.8.0-beta4</slf4j.version>
-		<log4j.version>2.17.2</log4j.version>
+		<slf4j.version>1.7.36</slf4j.version>
+		<log4j.version>2.19.0</log4j.version>
 	</properties>
 
 	<modules>
 		<module>aksw-commons-resources-test-config</module>
 
 		<module>aksw-commons-collections</module>
-		<module>aksw-commons-utils</module>
-		<module>aksw-commons-utils-xml</module>
+		<module>aksw-commons-utils-parent</module>
 		<module>aksw-commons-beans</module>
 		<module>aksw-commons-lambdas-parent</module>
 		<module>aksw-commons-collectors</module>
@@ -85,6 +90,7 @@
 		<module>aksw-commons-picocli</module>
 
 		<module>aksw-commons-models-parent</module>
+		<module>aksw-commons-algebra-parent</module>
 
 		<module>aksw-commons-legacy</module>
 	</modules>
@@ -182,253 +188,10 @@
 
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-resources-test-config</artifactId>
+				<artifactId>aksw-commons-bom</artifactId>
 				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-collections</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-collectors</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-io-utils</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-claimingcache</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-objectstore</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-io-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-rx-ex</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-txn</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-rx</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-lambdas-serializable</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-lambdas-throwing</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-entity-codecs-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-entity-codecs-sql</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-utils</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-tuples</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-io-buffers</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-index</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-paths</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
-			<!-- Kryo -->
-			<!-- Note: don't use versions above 0.43 for now, for whatever reason 
-				they depend on Kryo 5.0.0 RC1 which is binary incompatible and not used by 
-				Spark -->
-			<dependency>
-				<groupId>de.javakaffee</groupId>
-				<artifactId>kryo-serializers</artifactId>
-				<version>0.43</version>
-			</dependency>
-
-			<dependency>
-				<groupId>com.github.ben-manes.caffeine</groupId>
-				<artifactId>caffeine</artifactId>
-				<version>3.0.3</version>
-			</dependency>
-
-
-			<!-- <dependency> <groupId>org.aksw.commons</groupId> <artifactId>aksw-commons-sparql</artifactId> 
-				<version>${project.version}</version> </dependency> -->
-			<!--Junits -->
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${junit.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.apache.logging.log4j</groupId>
-				<artifactId>log4j-slf4j18-impl</artifactId>
-				<version>${log4j.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-ext</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>javax.xml.bind</groupId>
-				<artifactId>jaxb-api</artifactId>
-				<version>2.3.1</version>
-			</dependency>
-
-			<!-- Usually we depend on slf4j, but for testing we depend on a concrete 
-				implementation -->
-			<!-- <dependency> -->
-			<!-- <groupId>log4j</groupId> -->
-			<!-- <artifactId>log4j</artifactId> -->
-			<!-- <version>1.2.16</version> -->
-			<!-- <scope>test</scope> -->
-			<!-- </dependency> -->
-
-			<!-- Used for SQL-Escapting (StringEscapeUtils) -->
-			<!-- <dependency> <groupId>commons-lang</groupId> <artifactId>commons-lang</artifactId> 
-				<version>2.5</version> </dependency> -->
-
-			<dependency>
-				<groupId>org.apache.commons</groupId>
-				<artifactId>commons-lang3</artifactId>
-				<version>3.12.0</version>
-			</dependency>
-
-			<dependency>
-				<groupId>com.thoughtworks.xstream</groupId>
-				<artifactId>xstream</artifactId>
-				<version>${xstream.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>net.sourceforge.collections</groupId>
-				<artifactId>collections-generic</artifactId>
-				<version>4.01</version>
-			</dependency>
-
-
-			<dependency>
-				<groupId>commons-validator</groupId>
-				<artifactId>commons-validator</artifactId>
-				<version>1.6</version>
-			</dependency>
-
-			<!-- Collection APIs -->
-			<dependency>
-				<groupId>com.google.guava</groupId>
-				<artifactId>guava</artifactId>
-				<version>${guava.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>io.reactivex.rxjava3</groupId>
-				<artifactId>rxjava</artifactId>
-				<version>3.1.3</version>
-			</dependency>
-
-			<dependency>
-				<groupId>com.codepoetics</groupId>
-				<artifactId>protonpack</artifactId>
-				<version>1.11</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.apache.commons</groupId>
-				<artifactId>commons-compress</artifactId>
-				<version>${commons-compress.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>commons-io</groupId>
-				<artifactId>commons-io</artifactId>
-				<version>2.8.0</version>
-			</dependency>
-
-			<dependency>
-				<groupId>info.picocli</groupId>
-				<artifactId>picocli</artifactId>
-				<version>${picocli.version}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.aksw.commons</groupId>
-				<artifactId>aksw-commons-models-csvw-domain</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.univocity</groupId>
-				<artifactId>univocity-parsers</artifactId>
-				<version>${univocity.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 
 		</dependencies>

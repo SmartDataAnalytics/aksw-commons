@@ -23,9 +23,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.aksw.commons.index.util.Streamer;
-import org.aksw.commons.tuple.TupleAccessor;
-import org.aksw.commons.tuple.TupleAccessorCore;
+import org.aksw.commons.tuple.accessor.TupleAccessor;
+import org.aksw.commons.tuple.bridge.TupleBridge;
+import org.aksw.commons.util.stream.Streamer;
 
 /**
  *
@@ -87,24 +87,24 @@ public abstract class StorageNodeForwarding<D, C, V, X extends StorageNode<D, C,
     }
 
     @Override
-    public TupleAccessor<D, C> getTupleAccessor() {
+    public TupleBridge<D, C> getTupleAccessor() {
         return getDelegate().getTupleAccessor();
     }
 
     @Override
     public <T> Streamer<V, C> streamerForKeysAsComponent(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return getDelegate().streamerForKeysAsComponent(pattern, accessor);
     }
 
     @Override
     public <T> Streamer<V, List<C>> streamerForKeysAsTuples(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return getDelegate().streamerForKeysAsTuples(pattern, accessor);
     }
 
     @Override
-    public <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<V, ?> streamerForKeys(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return getDelegate().streamerForKeys(pattern, accessor);
     }
 
@@ -119,18 +119,18 @@ public abstract class StorageNodeForwarding<D, C, V, X extends StorageNode<D, C,
     }
 
     @Override
-    public <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessorCore<? super T, ? extends C> accessor) {
+    public <T> Streamer<V, ?> streamerForValues(T pattern, TupleAccessor<? super T, ? extends C> accessor) {
         return getDelegate().streamerForValues(pattern, accessor);
     }
 
     @Override
     public <T> Streamer<V, ? extends Entry<?, ?>> streamerForKeyAndSubStoreAlts(T pattern,
-            TupleAccessorCore<? super T, ? extends C> accessor) {
+            TupleAccessor<? super T, ? extends C> accessor) {
         return getDelegate().streamerForKeyAndSubStoreAlts(pattern, accessor);
     }
 
     @Override
-    public <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessorCore<? super T, ? extends C> tupleAccessor) {
+    public <T> Stream<?> streamEntries(V store, T tupleLike, TupleAccessor<? super T, ? extends C> tupleAccessor) {
         return getDelegate().streamEntries(store, tupleLike, tupleAccessor);
     }
 
