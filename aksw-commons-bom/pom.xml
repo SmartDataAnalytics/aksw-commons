@@ -42,19 +42,26 @@
 		<maven.compiler.release>11</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
+
 		<gson.version>2.9.0</gson.version>
 		<guava.version>31.0.1-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
-		<xstream.version>1.4.19</xstream.version>
+		<xstream.version>1.4.20</xstream.version>
 		<commons-compress.version>1.21</commons-compress.version>
 		<picocli.version>4.6.2</picocli.version>
 		<univocity.version>2.9.0</univocity.version>
-		<hadoop.version>3.3.4</hadoop.version>
+		
+		<hadoop.version>3.3.4</hadoop.version>	
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<slf4j.version>2.0.0</slf4j.version>
 		<log4j.version>2.18.0</log4j.version>
 		<jackson.version>2.13.3</jackson.version>
+		
+		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+		<maven-gpg-plugin.version.version>3.1.0</maven-gpg-plugin.version.version>
+		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
 	</properties>
+
 	<modules>
 		<module>..</module>
 	</modules>
@@ -114,7 +121,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.10.3</version>
+				<version>${maven-javadoc-plugin.version}</version>
 				<configuration>
 					<failOnError>false</failOnError>
 				</configuration>
@@ -434,7 +441,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.9.1</version>
+						<version>${maven-javadoc-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -466,7 +473,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.1.0</version>
+						<version>${maven-gpg-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -484,7 +491,7 @@
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
 						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.6.13</version>
+						<version>${nexus-staging-maven-plugin.version}</version>
 						<extensions>true</extensions>
 						<configuration>
 							<serverId>ossrh</serverId>
