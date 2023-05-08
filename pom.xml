@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.aksw.commons</groupId>
 		<artifactId>aksw-commons-bom</artifactId>
-		<version>0.9.5</version>
+		<version>0.9.6</version>
 		<relativePath>aksw-commons-bom</relativePath>
 	</parent>
 
@@ -57,7 +57,7 @@
 
 		<guava.version>31.0.1-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
-		<xstream.version>1.4.19</xstream.version>
+		<xstream.version>1.4.20</xstream.version>
 		<commons-compress.version>1.21</commons-compress.version>
 		<picocli.version>4.6.2</picocli.version>
 		<univocity.version>2.9.0</univocity.version>

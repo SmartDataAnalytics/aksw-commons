@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.collect.Streams;
 
 public class FilteredListTest {
 
@@ -14,6 +17,10 @@ public class FilteredListTest {
     public void testFilteredList() {
         List<Integer> core = new ArrayList<>(Arrays.asList(0, 1, 2, 3, 4, 5));
         List<Integer> list = new FilteringList<>(core, item -> item % 2 == 0);
+
+        List<Integer> filteredListViaIterator = Streams.stream(list.iterator()).collect(Collectors.toList());
+        Assert.assertEquals(list, filteredListViaIterator);
+        // System.out.println("Filtered: " + filteredListViaIterator);
 
 //        list = core;
 

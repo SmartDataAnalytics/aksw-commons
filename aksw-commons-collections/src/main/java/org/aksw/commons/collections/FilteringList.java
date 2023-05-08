@@ -2,6 +2,7 @@ package org.aksw.commons.collections;
 
 import java.util.AbstractList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Predicate;
@@ -19,6 +20,11 @@ public class FilteringList<T, C extends List<T>>
         super();
         this.backend = backend;
         this.predicate = predicate;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return listIterator(0);
     }
 
     @Override
@@ -48,6 +54,24 @@ public class FilteringList<T, C extends List<T>>
     public void add(int index, T element) {
         ListIterator<T> it = listIterator(index);
         it.add(element);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        int size = size();
+        return addAll(size, c);
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends T> c) {
+        boolean result = !c.isEmpty();
+        if (result) {
+            ListIterator<T> it = listIterator(index);
+            for (T item : c) {
+                it.add(item);
+            }
+        }
+        return result;
     }
 
     @Override
