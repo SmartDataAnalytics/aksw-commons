@@ -58,7 +58,7 @@
 		<jackson.version>2.13.3</jackson.version>
 		
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
-		<maven-gpg-plugin.version.version>3.1.0</maven-gpg-plugin.version.version>
+		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
 		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
 	</properties>
 
