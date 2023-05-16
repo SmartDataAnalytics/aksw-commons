@@ -1,5 +1,6 @@
 package org.aksw.commons.model.csvw.univocity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.aksw.commons.model.csvw.domain.api.DialectMutable;
 import org.aksw.commons.model.csvw.domain.impl.DialectMutableImpl;
 import org.aksw.commons.model.csvw.jackson.DialectMutableForwardingJackson;
@@ -21,13 +22,15 @@ public class UnivocityCsvwConf
 
     protected boolean isTabs = false;
     // protected List<String> columnNamingSchemes;
+    protected String[] nullValues = null;
 
     public UnivocityCsvwConf() {
-        this(new DialectMutableImpl());
+        this(new DialectMutableImpl(), null);
     }
 
-    public UnivocityCsvwConf(DialectMutable dialectStore) {
+    public UnivocityCsvwConf(DialectMutable dialectStore, String[] nullValues) {
         this.dialect = new DialectMutableForwardingJacksonString<>(dialectStore);
+        this.nullValues = nullValues == null ?  new String[0] : nullValues;
     }
 
     /** The csvw dialect roughly corresponds to univocity's CsvFormat class */
@@ -43,6 +46,9 @@ public class UnivocityCsvwConf
     public void setTabs(boolean tabs) {
         isTabs = tabs;
     }
+
+    public String[] getNullValues() { return nullValues; }
+    public void setNullValues(String[] nullValues) { this.nullValues = nullValues; }
 
 //    public void setColumnNamingSchemes(List<String> columnNamingSchemes) {
 //        this.columnNamingSchemes = columnNamingSchemes;
