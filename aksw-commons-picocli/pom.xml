@@ -22,6 +22,10 @@
 			<groupId>org.aksw.commons</groupId>
 			<artifactId>aksw-commons-utils</artifactId>
 		</dependency>
-	</dependencies>
 
+		<dependency>
+			<groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-io-utils</artifactId>
+		</dependency>
+	</dependencies>
 </project>
