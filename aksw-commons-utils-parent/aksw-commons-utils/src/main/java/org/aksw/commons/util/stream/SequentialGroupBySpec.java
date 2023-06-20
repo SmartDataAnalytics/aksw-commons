@@ -112,6 +112,16 @@ public class SequentialGroupBySpec<T, K, V>
         return new SequentialGroupBySpec<>(getGroupKey, groupKeyCompare, (accNum, key) -> accCtor.apply(key), accAdd);
     }
 
+
+    public static <T, K, V> SequentialGroupBySpec<T, K, V> create(
+            Function<? super T, ? extends K> getGroupKey,
+            BiPredicate<? super K, ? super K> groupKeyCompare,
+            Function<? super K, ? extends V> accCtor,
+            BiConsumer<? super V, ? super T> accAdd) {
+        return new SequentialGroupBySpec<>(getGroupKey, groupKeyCompare, (accNum, key) -> accCtor.apply(key), (acc, item) -> { accAdd.accept(acc, item); return acc; });
+    }
+
+
     public static <T, K, V> SequentialGroupBySpec<T, K, V> create(
             Function<? super T, ? extends K> getGroupKey,
             BiPredicate<? super K, ? super K> groupKeyCompare,
