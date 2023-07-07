@@ -2,6 +2,11 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 
+
+/**
+ * A factory for ReadableChannel instances.
+ * The object is akin to a JDBC datasource; the created channels correspond to JDBC connections.
+ */
 public interface ReadableChannelSource<A>
     extends ReadableChannelFactory<A>
 {
