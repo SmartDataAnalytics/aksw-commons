@@ -27,7 +27,7 @@ import com.google.common.collect.Streams;
  * @param <KB> The backend key type
  * @param <V> The value type
  */
-public class CacheView<KF,KB, V>
+public class CacheView<KF, KB, V>
     implements Cache<KF, V>
 {
     /** The delegate cache*/
