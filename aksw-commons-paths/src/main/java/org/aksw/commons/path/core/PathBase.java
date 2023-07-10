@@ -142,7 +142,7 @@ public class PathBase<T, P extends Path<T>>
 
     @Override
     public P subpath(int beginIndex, int endIndex) {
-        return newPath(false, segments.subList(endIndex, endIndex));
+        return newPath(false, segments.subList(beginIndex, endIndex));
     }
 
     @Override
