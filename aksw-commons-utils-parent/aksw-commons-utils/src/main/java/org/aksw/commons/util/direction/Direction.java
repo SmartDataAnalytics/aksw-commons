@@ -25,4 +25,9 @@ public enum Direction {
         Direction result = isFwd ? FORWARD : BACKWARD;
         return result;
     }
+
+    /** Return the opposite direction - forward becomes backward and vice versa. */
+    public Direction opposite() {
+        return Direction.ofFwd(!isForward);
+    }
 }

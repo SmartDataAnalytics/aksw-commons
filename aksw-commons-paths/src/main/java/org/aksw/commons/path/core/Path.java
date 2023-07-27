@@ -43,7 +43,6 @@ public interface Path<T>
 
     Path<T> relativize(Path<T> other);
 
-
     default T toSegment() {
         List<T> segments = getSegments();
         if (segments.size() != 1) {
