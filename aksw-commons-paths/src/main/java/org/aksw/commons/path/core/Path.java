@@ -52,4 +52,7 @@ public interface Path<T>
         T result = segments.iterator().next();
         return result;
     }
+
+    /** May return e.g. the file system underlying a path. Return null if not applicable. */
+    Object getSystem();
 }

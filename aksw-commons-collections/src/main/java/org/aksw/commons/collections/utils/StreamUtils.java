@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.aksw.commons.collections.IteratorUtils;
 import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
+import org.aksw.commons.util.stream.SequentialGroupBySpec;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;
@@ -89,6 +90,21 @@ public class StreamUtils {
         result.onClose(() -> stream.close());
         return result;
     }
+
+    /* Alternative implementation - but relies on an external counter - so still suboptimal
+     * Best solution would be if the group key could depend on the state of the accumulator
+    public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, int batchSize) {
+        long[] counter = {0};
+        long n = batchSize;
+        SequentialGroupBySpec<T, Long, List<T>> spec = SequentialGroupBySpec.create(
+                (T item) -> (long)(++counter[0] / batchSize),
+                () -> (List<T>)new ArrayList<T>(),
+                (list, item) -> list.add(item));
+
+        Stream<List<T>> result = StreamOperatorSequentialGroupBy.create(spec).transform(stream)).map(Entry::getValue);
+        return result;
+    }
+    */
 
 //    public static <T> Stream<T> stream(Iterator<T> it) {
 //        Iterable<T> i = () -> it;

@@ -55,6 +55,7 @@ public class PathBase<T, P extends Path<T>>
 
     protected PathOps<T, P> pathOps;
 
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException
     {
         this.pathOps = (PathOps<T, P>)in.readObject();
@@ -255,8 +256,9 @@ public class PathBase<T, P extends Path<T>>
 
     @Override
     public String toString() {
-        @SuppressWarnings("unchecked")
-        String result = getPathOps() .toString((P)this);
+        PathOps<T, P> po = getPathOps();
+        P p = po.upcast(this);
+        String result = po.toString(p);
         return result;
     }
 
@@ -366,6 +368,11 @@ public class PathBase<T, P extends Path<T>>
             : bs - as;
 
         return result;
+    }
+
+    @Override
+    public Object getSystem() {
+        return null;
     }
 
     @Override
