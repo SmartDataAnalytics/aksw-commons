@@ -26,8 +26,21 @@ public interface LookupService<K, V>
         return LookupServiceFilterKey.create(this, filter);
     }
 
+    default <W> LookupService<K, W> mapValues(Function<V, W> fn) {
+        return LookupServiceTransformValue.create(this, fn);
+    }
+
+    /** Passes non-null values on to the given function. Nulls are internally mapped to null. */
+    default <W> LookupService<K, W> mapNonNullValues(Function<V, W> fn) {
+        return mapValues(x -> x == null ? null : fn.apply(x));
+    }
+
     default <W> LookupService<K, W> mapValues(BiFunction<K, V, W> fn) {
         return LookupServiceTransformValue.create(this, fn);
+    }
+
+    default <W> LookupService<K, W> mapNonNullValues(BiFunction<K, V, W> fn) {
+        return mapValues((k, v) -> v == null ? null : fn.apply(k, v));
     }
 
     default <I> LookupService<I, V> mapKeys(Function<? super I, ? extends K> fn) {
