@@ -22,7 +22,7 @@ public class ConvertingList<F, B, C extends List<B>>
         boolean result = backend.addAll(transformed);
         return result;
     }
-    
+
     @Override
     public boolean addAll(int index, Collection<? extends F> c) {
         Collection<B> transformed = c.stream().map(item -> converter.reverse().convert(item)).collect(Collectors.toList());
@@ -93,15 +93,13 @@ public class ConvertingList<F, B, C extends List<B>>
     @Override
     public ListIterator<F> listIterator() {
         ListIterator<B> core = backend.listIterator();
-
         ListIterator<F> result = new ConvertingListIterator<>(core, converter);
         return result;
     }
 
     @Override
     public ListIterator<F> listIterator(int index) {
-        ListIterator<B> core = backend.listIterator();
-
+        ListIterator<B> core = backend.listIterator(index);
         ListIterator<F> result = new ConvertingListIterator<>(core, converter);
         return result;
     }
