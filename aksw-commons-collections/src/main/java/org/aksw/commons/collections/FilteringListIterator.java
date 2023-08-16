@@ -33,7 +33,7 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
 
     @Override
     public boolean hasNext() {
-        int distance = ListIteratorUtils.distanceToNext(core, predicate).getKey();
+        int distance = ListIteratorUtils.distanceToNext(core, this::test).getKey();
         ListIteratorUtils.repeatPrevious(core, distance);
         boolean result = distance > 0;
         return result;
@@ -43,7 +43,7 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
     public T next() {
         wasPreviousOrNextCalled = true;
 
-        Entry<Integer, T> e = ListIteratorUtils.distanceToNext(core, predicate);
+        Entry<Integer, T> e = ListIteratorUtils.distanceToNext(core, this::test);
         int distance = e.getKey();
         checkDistance(distance);
 
@@ -64,7 +64,7 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
 
     @Override
     public boolean hasPrevious() {
-        int distance = ListIteratorUtils.distanceToPrevious(core, predicate).getKey();
+        int distance = ListIteratorUtils.distanceToPrevious(core, this::test).getKey();
         ListIteratorUtils.repeatNext(core, distance);
 
         boolean result = distance > 0;
@@ -75,7 +75,7 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
     public T previous() {
         wasPreviousOrNextCalled = true;
 
-        Entry<Integer, T> e = ListIteratorUtils.distanceToPrevious(core, predicate);
+        Entry<Integer, T> e = ListIteratorUtils.distanceToPrevious(core, this::test);
         int distance = e.getKey();
         checkDistance(distance);
 
@@ -86,14 +86,14 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
 
     @Override
     public int nextIndex() {
-        int distance = ListIteratorUtils.distanceToNext(core, predicate).getKey();
+        int distance = ListIteratorUtils.distanceToNext(core, this::test).getKey();
         int result = distance > 0 ? currentIndex + 1 : currentIndex;
         return result;
     }
 
     @Override
     public int previousIndex() {
-        int distance = ListIteratorUtils.distanceToPrevious(core, predicate).getKey();
+        int distance = ListIteratorUtils.distanceToPrevious(core, this::test).getKey();
         int result = distance > 0 ? currentIndex - 1 : currentIndex;
         return result;
     }
@@ -105,10 +105,18 @@ public class FilteringListIterator<T, I extends ListIterator<T>>
 
     @Override
     public void add(T e) {
-        if(!predicate.test(e)) {
+        if(!test(e)) {
             throw new IllegalArgumentException("Failed to add item because of rejection by filter. Item: " + e);
         }
-
         core.add(e);
+    }
+
+    // Debug point - all prediacte.test() calls go throw this function
+    protected boolean test(T item) {
+        boolean result = predicate.test(item);
+//        if (!result) {
+//            System.out.println("Rejected: " + item);
+//        }
+        return result;
     }
 }

@@ -95,8 +95,8 @@ public class ListIteratorUtils {
 
     public static int repeatNext(ListIterator<?> listIterator, int n) {
         int result;
-        for(result = 0; result < n; ++result) {
-            if(!listIterator.hasNext()) {
+        for (result = 0; result < n; ++result) {
+            if (!listIterator.hasNext()) {
                 break;
             }
 
