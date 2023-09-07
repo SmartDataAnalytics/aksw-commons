@@ -6,7 +6,9 @@ import java.util.function.Supplier;
 import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.MutableClassToInstanceMap;
 
-/** A class for holding an object together with a class to instance map for adding metadata of arbitrary types. */
+/**
+ * A class for annotating an 'item' with metadata of arbitrary types.
+ */
 public class Enriched<T> {
     protected T item;
     protected ClassToInstanceMap<Object> classToInstanceMap;
@@ -31,6 +33,14 @@ public class Enriched<T> {
 
     public <X> X getInstance(Class<X> type) {
         return classToInstanceMap.getInstance(type);
+    }
+
+    public <X> X getInstanceOrDefault(Class<X> type, X defaultValue) {
+        X result = classToInstanceMap.getInstance(type);
+        if (result == null) {
+            result = defaultValue;
+        }
+        return result;
     }
 
     public <X> X putInstance(X value) {
