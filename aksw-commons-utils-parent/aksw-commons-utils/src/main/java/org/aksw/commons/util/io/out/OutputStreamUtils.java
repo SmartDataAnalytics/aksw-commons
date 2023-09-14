@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 public class OutputStreamUtils {
-    public static String toStringUtf8(Consumer<OutputStream> action, Charset charset) {
+    public static String toStringUtf8(Consumer<OutputStream> action) {
         return toString(action, StandardCharsets.UTF_8);
     }
 

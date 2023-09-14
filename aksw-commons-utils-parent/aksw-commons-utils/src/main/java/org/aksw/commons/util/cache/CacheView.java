@@ -31,9 +31,9 @@ public class CacheView<KF, KB, V>
     implements Cache<KF, V>
 {
     /** The delegate cache*/
-    protected Cache<KB, V> delegate;
+    protected Cache<KB, V> backend;
 
-    protected Converter<KF, KB> keyMapper;
+    protected Converter<KF, KB> keyConverter;
 
     /**
      * A predicate that hides cache entries unrelated to this cache view.
@@ -41,22 +41,22 @@ public class CacheView<KF, KB, V>
      * This means:
      * backendFilter.test(keyMapper.convert(frontendKey)) must always evaluate to true.
      */
-    protected Predicate<KB> backendFilter;
+    protected Predicate<KB> backendKeyFilter;
 
-    public CacheView(Cache<KB, V> delegate, Converter<KF, KB> keyMapper, Predicate<KB> backendFilter) {
+    public CacheView(Cache<KB, V> backend, Converter<KF, KB> keyConverter, Predicate<KB> backendFilter) {
         super();
-        this.delegate = delegate;
-        this.keyMapper = keyMapper;
-        this.backendFilter = backendFilter;
+        this.backend = backend;
+        this.keyConverter = keyConverter;
+        this.backendKeyFilter = backendFilter;
     }
 
-    public Cache<KB, V> getDelegate() {
-        return delegate;
+    public Cache<KB, V> getBackend() {
+        return backend;
     }
 
     protected KB safeToBackend(KF key) {
-        KB result = keyMapper.convert(key);
-        if (!backendFilter.test(result)) {
+        KB result = keyConverter.convert(key);
+        if (!backendKeyFilter.test(result)) {
             throw new IllegalStateException("Converted key was rejected by filter. Input: " + key + " Output: " + result);
         }
         return result;
@@ -77,7 +77,7 @@ public class CacheView<KF, KB, V>
 
     @Override
     public V getIfPresent(Object key) {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         V result = null;
         for (KB backendKey : convert(key)) {
             result = backend.getIfPresent(backendKey);
@@ -87,27 +87,27 @@ public class CacheView<KF, KB, V>
 
     @Override
     public V get(KF key, Callable<? extends V> loader) throws ExecutionException {
-        Cache<KB, V> backend = getDelegate();
-        KB backendKey = keyMapper.convert(key);
+        Cache<KB, V> backend = getBackend();
+        KB backendKey = keyConverter.convert(key);
         V result = backend.get(backendKey, loader);
         return result;
     }
 
     @Override
     public ImmutableMap<KF, V> getAllPresent(Iterable<? extends Object> keys) {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
 
         @SuppressWarnings("unchecked")
         List<KB> backendKeys = Streams.stream(keys)
                 .map(k -> (KF)k)
-                .map(keyMapper::convert)
+                .map(keyConverter::convert)
                 .collect(Collectors.toList());
 
         Builder<KF, V> mapBuilder = ImmutableMap.builder();
 
         ImmutableMap<KB, V> tmp = backend.getAllPresent(backendKeys);
         tmp.forEach((backendKey, value) -> {
-            KF frontendKey = keyMapper.reverse().convert(backendKey);
+            KF frontendKey = keyConverter.reverse().convert(backendKey);
             mapBuilder.put(frontendKey, value);
         });
         ImmutableMap<KF, V> result = mapBuilder.build();
@@ -115,21 +115,21 @@ public class CacheView<KF, KB, V>
     }
     @Override
     public void put(KF key, V value) {
-        Cache<KB, V> backend = getDelegate();
-        KB backendKey = keyMapper.convert(key);
+        Cache<KB, V> backend = getBackend();
+        KB backendKey = keyConverter.convert(key);
         backend.put(backendKey, value);
     }
 
     @Override
     public void putAll(Map<? extends KF, ? extends V> m) {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         Map<KB, V> map = m.entrySet().stream().collect(Collectors.toMap(e -> safeToBackend(e.getKey()), Entry::getValue));
         backend.putAll(map);
     }
 
     @Override
     public void invalidate(Object key) {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         for(KB backendKey : convert(key)) {
             backend.invalidate(backendKey);
         }
@@ -137,7 +137,7 @@ public class CacheView<KF, KB, V>
 
     @Override
     public void invalidateAll(Iterable<? extends Object> keys) {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         List<KB> backendKeys = Streams.stream(keys).flatMap(key -> convert(key).stream()).collect(Collectors.toList());
         backend.invalidateAll(backendKeys);
     }
@@ -145,33 +145,41 @@ public class CacheView<KF, KB, V>
     @Override
     public void invalidateAll() {
         // Only invalidate the keys that match the filter
-        Cache<KB, V> backend = getDelegate();
-        Collection<KB> backendKeys = backend.asMap().keySet().stream().filter(backendFilter).collect(Collectors.toList());
+        Cache<KB, V> backend = getBackend();
+        Collection<KB> backendKeys = backend.asMap().keySet().stream().filter(backendKeyFilter).collect(Collectors.toList());
         backend.invalidateAll(backendKeys);
     }
 
     @Override
     public long size() {
-        Cache<KB, V> backend = getDelegate();
-        long result = backend.asMap().keySet().stream().filter(backendFilter).count();
+        Cache<KB, V> backend = getBackend();
+        long result = backend.asMap().keySet().stream().filter(backendKeyFilter).count();
         return result;
     }
 
     @Override
     public CacheStats stats() {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         CacheStats result = backend.stats();
         return result;
     }
+
     @Override
     public ConcurrentMap<KF, V> asMap() {
+
         // TODO We could adapt our MapFromKeyConverter class but this one is in the collections module
+
+//        ConcurrentMap<KB, V> backendMap = delegate.asMap();
+//        Map<KB, V> filteredBackendMap = Maps.filterKeys(backendMap, backendFilter::test);
+//        Map<KF, V> frontendMap = MapFromKeyConverter();
+//        ConcurrentMap<KF, V> result = ConcurrentMapWrapper.wrap(frontendMap);
+
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void cleanUp() {
-        Cache<KB, V> backend = getDelegate();
+        Cache<KB, V> backend = getBackend();
         backend.cleanUp();
     }
 }

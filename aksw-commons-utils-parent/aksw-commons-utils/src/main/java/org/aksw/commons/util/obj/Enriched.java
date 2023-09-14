@@ -93,7 +93,7 @@ public class Enriched<T> {
 
     @Override
     public String toString() {
-        return "EnrichedItem [item=" + item + ", classToInstanceMap=" + classToInstanceMap + "]";
+        return "Enriched [item=" + item + ", classToInstanceMap=" + classToInstanceMap + "]";
     }
 
 
