@@ -25,8 +25,8 @@ import io.reactivex.rxjava3.core.Flowable;
 public class LookupServiceCacheMem<K, V>
     implements LookupService<K, V>
 {
-    protected Cache<K, Optional<V>> cache;//new LRUMap<K, V>();
-    protected Cache<K, Boolean> missCache;
+    protected Cache<K, Optional<V>> hitCache;//new LRUMap<K, V>();
+    protected Cache<K, Object> missCache;
 
     private LookupService<K, V> base;
 
@@ -41,9 +41,9 @@ public class LookupServiceCacheMem<K, V>
         );
     }
 
-    public LookupServiceCacheMem(LookupService<K, V> base, Cache<K, Optional<V>> cache, Cache<K, Boolean> missCache) {
+    public LookupServiceCacheMem(LookupService<K, V> base, Cache<K, Optional<V>> cache, Cache<K, Object> missCache) {
         this.base = base;
-        this.cache = cache;
+        this.hitCache = cache;
         this.missCache = missCache;
     }
 
@@ -51,7 +51,7 @@ public class LookupServiceCacheMem<K, V>
     public Map<K, V> fetchMap(Iterable<K> keys) {
         Set<K> lookupKeys = Sets.newLinkedHashSet(keys);
 
-        Map<K, Optional<V>> cachedEntries = cache.getAllPresent(keys);
+        Map<K, Optional<V>> cachedEntries = hitCache.getAllPresent(keys);
         lookupKeys.removeAll(cachedEntries.keySet());
 
         Set<K> knownMissKeys = new LinkedHashSet<>(Sets.intersection(lookupKeys, missCache.asMap().keySet()));
@@ -66,11 +66,11 @@ public class LookupServiceCacheMem<K, V>
             V value;
             if(cachedEntries.containsKey(key)) {
                 value = cachedEntries.get(key).orElse(null);
-                cache.put(key, Optional.ofNullable(value));
+                hitCache.put(key, Optional.ofNullable(value));
                 result.put(key, value);
             } else if(fetchedMap.containsKey(key)) {
                 value = fetchedMap.get(key);
-                cache.put(key, Optional.ofNullable(value));
+                hitCache.put(key, Optional.ofNullable(value));
                 result.put(key, value);
             } else {
                 missCache.put(key, true);
@@ -96,6 +96,12 @@ public class LookupServiceCacheMem<K, V>
         LookupServiceCacheMem<K, V> result = new LookupServiceCacheMem<K, V>(base, maxCacheSize);
         return result;
     }
+
+    public static <K, V> LookupServiceCacheMem<K, V> create(LookupService<K, V> base, Cache<K, Optional<V>> hitCache, Cache<K, Object> missCache) {
+        LookupServiceCacheMem<K, V> result = new LookupServiceCacheMem<K, V>(base, hitCache, missCache);
+        return result;
+    }
+
 
 //    public static <K, V> LookupServiceCacheMem<K, V> create(LookupService<K, V> base, Map<K, V> cache) {
 //        LookupServiceCacheMem<K, V> result = new LookupServiceCacheMem<K, V>(base, cache);

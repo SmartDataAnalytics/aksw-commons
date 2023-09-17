@@ -4,9 +4,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import com.google.common.cache.Cache;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
@@ -53,6 +56,10 @@ public interface LookupService<K, V>
 
     default LookupService<K, V> cache() {
         return LookupServiceCacheMem.create(this);
+    }
+
+    default LookupService<K, V> cache(Cache<K, Optional<V>> hitCache, Cache<K, Object> missCache) {
+        return LookupServiceCacheMem.create(this, hitCache, missCache);
     }
 
 
