@@ -44,7 +44,7 @@
 		<gpg.keyname>AKSW</gpg.keyname>
 
 		<gson.version>2.9.0</gson.version>
-		<guava.version>31.0.1-jre</guava.version>
+		<guava.version>32.1.2-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
 		<xstream.version>1.4.20</xstream.version>
 		<commons-compress.version>1.21</commons-compress.version>
