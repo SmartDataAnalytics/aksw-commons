@@ -3,6 +3,9 @@ package org.aksw.commons.collections.utils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -13,7 +16,6 @@ import java.util.stream.Stream;
 import org.aksw.commons.collections.IteratorUtils;
 import org.aksw.commons.lambda.throwing.ThrowingBiConsumer;
 import org.aksw.commons.lambda.throwing.ThrowingFunction;
-import org.aksw.commons.util.stream.SequentialGroupBySpec;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Streams;
@@ -56,6 +58,28 @@ public class StreamUtils {
         }
     }
 
+    public static <T> Stream<Entry<T, T>> streamToPairs(Stream<T> stream) {
+        Iterator<T> baseIt = stream.iterator();
+        Iterator<Entry<T, T>> it = new AbstractIterator<>() {
+            protected T priorValue = null;
+            @Override
+            protected Entry<T, T> computeNext() {
+                Entry<T, T> r;
+                if (baseIt.hasNext()) {
+                    T item = baseIt.next();
+                    r = new SimpleEntry<>(priorValue, item);
+                    priorValue = item;
+                } else {
+                    r = endOfData();
+                }
+                return r;
+            }
+        };
+        Stream<Entry<T, T>> result = Streams.stream(it);
+        result.onClose(() -> stream.close());
+        return result;
+    }
+
     /**
      * Note we could implement another version where each batch's List is lazy loaded from the stream -
      * but this would probably require complete consumption of each batch in order
@@ -65,10 +89,8 @@ public class StreamUtils {
      * @return
      */
     public static <T> Stream<List<T>> mapToBatch(Stream<T> stream, int batchSize) {
-
         Iterator<T> baseIt = stream.iterator();
-
-        Iterator<List<T>> it = new AbstractIterator<List<T>>() {
+        Iterator<List<T>> it = new AbstractIterator<>() {
             @Override
             protected List<T> computeNext() {
                 List<T> items = new ArrayList<>(batchSize);
@@ -84,9 +106,8 @@ public class StreamUtils {
                 return r;
             }
         };
-
-        Iterable<List<T>> tmp = () -> it;
-        Stream<List<T>> result = Streams.stream(tmp);
+        // Iterable<List<T>> tmp = () -> it;
+        Stream<List<T>> result = Streams.stream(it);
         result.onClose(() -> stream.close());
         return result;
     }

@@ -56,6 +56,7 @@
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.20.0</log4j.version>
 		<jackson.version>2.13.3</jackson.version>
+		<streamex.version>0.8.2</streamex.version>
 		
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
 		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
@@ -152,7 +153,12 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-
+			
+			<dependency>
+				<groupId>one.util</groupId>
+				<artifactId>streamex</artifactId>
+				<version>${streamex.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-resources-test-config</artifactId>
