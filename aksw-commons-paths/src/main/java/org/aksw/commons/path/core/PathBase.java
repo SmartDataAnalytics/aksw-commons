@@ -293,7 +293,7 @@ public class PathBase<T, P extends Path<T>>
 
     @Override
     public P resolve(T other) {
-        return resolve(getPathOps().newPath(other));
+        return resolve(getPathOps().create(other));
     }
 
     @Override
@@ -304,7 +304,7 @@ public class PathBase<T, P extends Path<T>>
 
     @Override
     public P resolveSibling(T other) {
-        return resolveSibling(getPathOps().newPath(other));
+        return resolveSibling(getPathOps().create(other));
     }
 
     @Override

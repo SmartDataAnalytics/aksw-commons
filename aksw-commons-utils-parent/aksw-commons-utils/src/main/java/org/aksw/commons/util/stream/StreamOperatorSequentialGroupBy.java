@@ -16,8 +16,6 @@ import java.util.stream.StreamSupport;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Streams;
-
 
 public class StreamOperatorSequentialGroupBy<T, K, V>
     extends SequentialGroupByOperationBase<T, K, V>

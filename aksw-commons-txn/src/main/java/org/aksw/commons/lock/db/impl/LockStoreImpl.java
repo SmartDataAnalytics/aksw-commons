@@ -16,7 +16,7 @@ import org.aksw.commons.io.util.symlink.SymbolicLinkStrategy;
 import org.aksw.commons.lock.db.api.LockStore;
 import org.aksw.commons.lock.db.api.ReadWriteLockWithOwnership;
 import org.aksw.commons.lock.db.api.ResourceLock;
-import org.aksw.commons.path.core.PathOpsStr;
+import org.aksw.commons.path.core.PathStr;
 import org.aksw.commons.txn.impl.ResourceRepository;
 
 
@@ -78,7 +78,7 @@ public class LockStoreImpl
         String tmpKey = Arrays.asList(storeKey).stream().collect(Collectors.joining("/"));
 
         String[] lockKey = lockRepo.getPathSegments(tmpKey);
-        return getLockByKey(PathOpsStr.newRelativePath(lockKey));
+        return getLockByKey(PathStr.newRelativePath(lockKey));
     }
 
     @Override
@@ -97,7 +97,7 @@ public class LockStoreImpl
         return Files.walk(lockRepo.getRootPath())
             // .filter(pathMatcher::matches)
             .map(PathUtils::getPathSegments)
-            .map(PathOpsStr::newRelativePath)
+            .map(PathStr::newRelativePath)
             .map(this::getLockByKey);
                  //.map(rootFolder::relativize)
 

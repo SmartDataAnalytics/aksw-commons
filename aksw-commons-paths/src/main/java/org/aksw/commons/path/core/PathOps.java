@@ -1,5 +1,6 @@
 package org.aksw.commons.path.core;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -11,17 +12,25 @@ public interface PathOps<T, P extends Path<T>> {
 
     List<T> getBasePathSegments();
     Comparator<T> getComparator();
+
+    /** Create a new absolute or relative path based on the given segments */
     P newPath(boolean isAbsolute, List<T> segments);
     // T requireSubType(Path other);
 
+    /**
+     * Method to create a string from an argument of type T.
+     * In most other cases, this method should return a relative path with the argument as the only segment.
+     * However, if T is {@link String}(-like) then this method should parse the argument into an appropriate path.
+     *
+     * Implementations of {@link Path#resolve(Object)} should rely on this method.
+     */
+    default P create(T arg) {
+        return newRelativePath(arg);
+    }
+
     /** Create a path from an instance of T.
      * Note that T may not by specific to segments - e.g. a string can denote both a full path or a single segment */
-    P newPath(T element);
-
-    /** Create a root path (absolute, no segments) */
-    default P newRoot() {
-        return newPath(true, Collections.emptyList());
-    }
+    // P newPath(T element);
 
     /** To token for a path to refer to itself, such as '.' */
     T getSelfToken();
@@ -33,7 +42,32 @@ public interface PathOps<T, P extends Path<T>> {
     String toString(P path);
 
     String toStringRaw(Object path);
-    
+
     /** Deserialize a string into a path */
     P fromString(String str);
+
+    /** Convenience shorthands for {@link #newPath(Object)} */
+    default P newAbsolutePath(T segment) {
+        return newAbsolutePath(Collections.singletonList(segment));
+    }
+
+    default P newAbsolutePath(@SuppressWarnings("unchecked") T ... segments) {
+        return newAbsolutePath(Arrays.asList(segments));
+    }
+
+    default P newAbsolutePath(List<T> segments) {
+        return newPath(true, segments);
+    }
+
+    default P newRelativePath(T segment) {
+        return newRelativePath(Collections.singletonList(segment));
+    }
+
+    default P newRelativePath(@SuppressWarnings("unchecked") T ... segments) {
+        return newRelativePath(Arrays.asList(segments));
+    }
+
+    default P newRelativePath(List<T> segments) {
+        return newPath(false, segments);
+    }
 }

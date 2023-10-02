@@ -26,17 +26,9 @@ public class PathOpsStr
         return INSTANCE;
     }
 
-    /** Convenience static shorthand for .get().newRoot() */
-    public static PathStr newAbsolutePath(String ... segments) {
-        return get().newPath(true, Arrays.asList(segments));
-    }
-
-    public static PathStr newRelativePath(String ... segments) {
-        return get().newPath(false, Arrays.asList(segments));
-    }
-
-    public static PathStr create(String str) {
-        return get().fromString(str);
+    @Override
+    public PathStr create(String arg) {
+        return fromString(arg);
     }
 
     @Override
@@ -57,11 +49,6 @@ public class PathOpsStr
     @Override
     public PathStr newPath(boolean isAbsolute, List<String> segments) {
         return new PathStr(this, isAbsolute, segments);
-    }
-
-    @Override
-    public PathStr newPath(String element) {
-        return fromString(element);
     }
 
     @Override

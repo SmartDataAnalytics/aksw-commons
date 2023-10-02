@@ -15,7 +15,7 @@ import org.aksw.commons.io.cache.AdvancedRangeCacheImpl.Builder;
 import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
-import org.aksw.commons.path.core.PathOpsStr;
+import org.aksw.commons.path.core.PathStr;
 import org.aksw.commons.rx.lookup.ListPaginator;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.store.object.key.api.ObjectStore;
@@ -234,7 +234,7 @@ public class TestListPaginatorCache {
         Path tmpDir = Path.of(StandardSystemProperty.JAVA_IO_TMPDIR.value());
         ObjectStore objectStore = ObjectStoreImpl.create(tmpDir.resolve("aksw-commons-tests"), ObjectSerializerKryo.create(kryoPool));
 
-        org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathOpsStr.newRelativePath("object-store").resolve(testId);
+        org.aksw.commons.path.core.Path<String> objectStoreBasePath = PathStr.newRelativePath("object-store").resolve(testId);
 
         int pageSize = 1024 * 50;
 //        int pageSize = 100;
