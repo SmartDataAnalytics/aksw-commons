@@ -19,6 +19,13 @@
 			<artifactId>guava</artifactId>
 		</dependency>
 
+		<!-- Not ideal having to rely on gson here,
+		     but an extra module just for json paths presently seems like overkill --> 
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
