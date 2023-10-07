@@ -13,7 +13,7 @@ import com.google.common.collect.Streams;
  * The result of the operation on the delegate is then passed to the abstract {@link #wrap(Path)} function which can
  * then produce an appropriate implementation of the wrapper.
  */
-public abstract class PathDelegateBase<T, F extends Path<T>>
+public abstract class PathWrapperBase<T, F extends Path<T>>
     implements Path<T>
 {
     // private static final long serialVersionUID = 1L;
@@ -29,16 +29,16 @@ public abstract class PathDelegateBase<T, F extends Path<T>>
 
     protected Path<T> unwrap(Path<T> wrappedPath) {
         Path<T> result;
-        Preconditions.checkArgument(wrappedPath instanceof PathDelegateBase, "Argument must be derived from PathDelegateBase");
+        Preconditions.checkArgument(wrappedPath instanceof PathWrapperBase, "Argument must be derived from PathDelegateBase");
         @SuppressWarnings("unchecked")
-        PathDelegateBase<T, F> actualPath = (PathDelegateBase<T, F>)wrappedPath;
+        PathWrapperBase<T, F> actualPath = (PathWrapperBase<T, F>)wrappedPath;
         result = actualPath.getDelegate();
         Object pathSystem = actualPath.getSystem();
         Preconditions.checkArgument(pathSystem == this.getSystem(), "Argument must have the same system (by referential equality using ==) as this path");
         return result;
     }
 
-    public PathDelegateBase(Path<T> delegate) {
+    public PathWrapperBase(Path<T> delegate) {
         this.delegate = delegate;
     }
 
@@ -170,7 +170,7 @@ public abstract class PathDelegateBase<T, F extends Path<T>>
             return false;
         if (getClass() != obj.getClass())
             return false;
-        PathDelegateBase<?, ?> other = (PathDelegateBase<?, ?>) obj;
+        PathWrapperBase<?, ?> other = (PathWrapperBase<?, ?>) obj;
         return Objects.equals(delegate, other.delegate);
     }
 }

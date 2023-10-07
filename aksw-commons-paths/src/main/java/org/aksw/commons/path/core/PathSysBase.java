@@ -8,7 +8,7 @@ import java.util.Objects;
  * to associate arbitrary user data with a path.
  */
 public abstract class PathSysBase<T, P extends Path<T>, S>
-    extends PathDelegateBase<T, P>
+    extends PathWrapperBase<T, P>
     implements PathSys<T, S>
 {
     protected final S system;
