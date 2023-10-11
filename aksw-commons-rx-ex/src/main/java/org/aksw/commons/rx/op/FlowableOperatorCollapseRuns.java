@@ -4,8 +4,8 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.aksw.commons.util.stream.SequentialGroupByOperationBase;
-import org.aksw.commons.util.stream.SequentialGroupBySpec;
+import org.aksw.commons.util.stream.CollapseRunsOperationBase;
+import org.aksw.commons.util.stream.CollapseRunsSpec;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -55,15 +55,15 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  * @param <K> Group key type
  * @param <V> Accumulator type
  */
-public final class FlowableOperatorSequentialGroupBy<T, K, V>
-    extends SequentialGroupByOperationBase<T, K, V>
+public final class FlowableOperatorCollapseRuns<T, K, V>
+    extends CollapseRunsOperationBase<T, K, V>
     implements FlowableOperator<Entry<K, V>, T>
 {
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(SequentialGroupBySpec<T, K, V> spec) {
-        return new FlowableOperatorSequentialGroupBy<>(spec);
+    public static <T, K, V> FlowableOperatorCollapseRuns<T, K, V> create(CollapseRunsSpec<T, K, V> spec) {
+        return new FlowableOperatorCollapseRuns<>(spec);
     }
 
-    public FlowableOperatorSequentialGroupBy(SequentialGroupBySpec<T, K, V> other) {
+    public FlowableOperatorCollapseRuns(CollapseRunsSpec<T, K, V> other) {
         super(other);
     }
 

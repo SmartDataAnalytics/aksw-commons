@@ -17,14 +17,14 @@ import java.util.stream.StreamSupport;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterators;
 
-public class StreamOperatorSequentialGroupBy<T, K, V>
-    extends SequentialGroupByOperationBase<T, K, V>
+public class StreamOperatorCollapseRuns<T, K, V>
+    extends CollapseRunsOperationBase<T, K, V>
 {
-    public static <T, K, V> StreamOperatorSequentialGroupBy<T, K, V> create(SequentialGroupBySpec<T, K, V> spec) {
-        return new StreamOperatorSequentialGroupBy<>(spec);
+    public static <T, K, V> StreamOperatorCollapseRuns<T, K, V> create(CollapseRunsSpec<T, K, V> spec) {
+        return new StreamOperatorCollapseRuns<>(spec);
     }
 
-    public StreamOperatorSequentialGroupBy(SequentialGroupBySpec<T, K, V> other) {
+    public StreamOperatorCollapseRuns(CollapseRunsSpec<T, K, V> other) {
         super(other);
     }
 
@@ -64,13 +64,17 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
      *
      */
     public class OperatorImpl
-        extends AccumulatorBase
+        extends AccumulatorBase // Should be an Iterator but can't extend AccumulatorBase and AbstractIterator
     {
         protected Iterator<T> upstream;
         protected Iterator<Entry<K, V>> downstream;
 
-        // The last seen item
+        /** The last seen item */
         protected T item;
+
+        /** If there is a pending group it will create a new accumulator on the next call to computeNext() */
+        protected boolean hasPendingGroup = false;
+        protected K pendingGroupKey = null;
 
         public T getLastSeenItem() {
             return item;
@@ -87,16 +91,25 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
         }
 
         public class InternalIterator extends AbstractIterator<Entry<K, V>> {
-
             @Override
             protected Entry<K, V> computeNext() {
-
                 Entry<K, V> result = null;
+
+                if (hasPendingGroup) {
+                    priorKey = currentKey;
+                    currentKey = pendingGroupKey;
+                    currentAcc = accCtor.apply(accNum, pendingGroupKey);
+                    ++accNum;
+                    if (currentAcc != null) {
+                        currentAcc = accAdd.apply(currentAcc, item);
+                    }
+                    hasPendingGroup = false;
+                }
 
                 // It is crucial to check for a non-null result first!
                 // Calling upstream.hasNext() may drain another item which
                 // would then get lost in the spliterator code!
-                while (result == null && upstream.hasNext()) {
+                while (upstream.hasNext()) {
                     item = upstream.next();
 
                     currentKey = getGroupKey.apply(item);
@@ -105,21 +118,22 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
                         // First time init
                         priorKey = currentKey;
                         currentAcc = accCtor.apply(accNum, currentKey);
-
                         ++accNum;
                     } else if (!groupKeyCompare.test(priorKey, currentKey)) {
-
+                        // Current collapse key is different from the prior one
                         result = new SimpleEntry<>(priorKey, currentAcc);
-
-                        currentAcc = accCtor.apply(accNum, currentKey);
-                        ++accNum;
+                        // Return the current accumulator as a result
+                        // but prepare to create a new accumulator on the next call to computeNext()
+                        pendingGroupKey = currentKey;
+                        hasPendingGroup = true;
+                        break;
                     }
 
-                    if (currentAcc != null) {
+                    if (currentAcc != null) { // XXX Redundant null check? Adding to a null accumulator should be an error.
                         currentAcc = accAdd.apply(currentAcc, item);
                     }
 
-                    priorKey = currentKey;
+                    // priorKey = currentKey;
                 }
 
                 // We only come here if either we have
@@ -132,19 +146,16 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
                         result = endOfData();
                     }
                 }
-
                 return result;
             }
         }
     }
 
-
-
     public class SpliteratorImpl extends AbstractSpliterator<Entry<K, V>> {
 
         /** Aggregator used to drain one group from the rhs of a split */
-        protected StreamOperatorSequentialGroupBy<T, K, List<T>> listAggregator =
-            StreamOperatorSequentialGroupBy.create(SequentialGroupBySpec.createList(getGroupKey));
+        protected StreamOperatorCollapseRuns<T, K, List<T>> listAggregator =
+            StreamOperatorCollapseRuns.create(CollapseRunsSpec.createList(getGroupKey));
 
         protected Iterator<T> headItem;
         protected Spliterator<T> upstream;
@@ -170,7 +181,6 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
         protected void updateIteratorViews() {
             this.iteratorView = Iterators.concat(headItem, Spliterators.iterator(upstream), tailItems);
             this.aggIteratorView = new OperatorImpl(iteratorView).getDownstream();
-
         }
 
         @Override
@@ -186,7 +196,7 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
                 Iterator<T> rhsIt = Spliterators.iterator(rhsSplit);
                 Iterator<T> rhsItPlusTail = Iterators.concat(rhsIt, tailItems);
 
-                StreamOperatorSequentialGroupBy<T, K, List<T>>.OperatorImpl op = listAggregator.new OperatorImpl(rhsItPlusTail);
+                StreamOperatorCollapseRuns<T, K, List<T>>.OperatorImpl op = listAggregator.new OperatorImpl(rhsItPlusTail);
                 Iterator<Entry<K, List<T>>> rhsItPlusTailIt = op.getDownstream();
 
                 List<T> lhsTailItems = Collections.emptyList();
@@ -199,7 +209,7 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
                 Iterator<T> rhsTailItems;
 
                 // Check whether the rhs spliterator has been completely consumed
-                // (togther with the tail items) using the 'lastItemSent' flag
+                // (together with the tail items) using the 'lastItemSent' flag
                 // We don't use rhsIt.hasNext() because that might consume another item from rhsSplit
                 if (op.lastItemSent) {
                     // We have drained the rhs
@@ -219,7 +229,6 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
                 updateIteratorViews();
 
                 result = new SpliteratorImpl(lhsHeadItem, lhsSplit, lhsTailItems.iterator());
-
             } else {
                 result = null;
             }
@@ -230,12 +239,10 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
         @Override
         public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
             boolean result = aggIteratorView.hasNext();
-
             if (result) {
                 Entry<K, V> entry = aggIteratorView.next();
                 action.accept(entry);
             }
-
             return result;
         }
     }
@@ -266,8 +273,8 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
 
     public static void main(String[] args) {
 
-        StreamOperatorSequentialGroupBy<Integer, Integer, Integer> op =
-                StreamOperatorSequentialGroupBy.create(SequentialGroupBySpec.createAcc(
+        StreamOperatorCollapseRuns<Integer, Integer, Integer> op =
+                StreamOperatorCollapseRuns.create(CollapseRunsSpec.createAcc(
                         i -> i,
                         () -> 0,
                         (acc, item) -> acc + 1));
@@ -275,6 +282,22 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
 
 
         List<Integer> ints = Arrays.asList(1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 1, 2, 3, 4);
+
+
+
+        // What happens if the accumulator is 'static'?
+        // New behavior: New accumulators are only created after passing the old one down stream.
+        // Old behavior: When an item is encountered that starts a new group
+        // then a new accumulator is eagerly created before the old one is returned
+        int[] counter = new int[]{0};
+        StreamOperatorCollapseRuns<Integer, Integer, int[]> op2 =
+                StreamOperatorCollapseRuns.create(CollapseRunsSpec.create(
+                        i -> i,
+                        () -> { counter[0] = 0; return counter; },
+                        (acc, item) -> { acc[0] += 1; }));
+
+        op2.transform(ints.stream()).forEach(e -> System.out.println("Static Agg: " + e.getKey() + ": " + e.getValue()[0]));
+
 
         // Stream<Integer> s = Stream.of(1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 1, 2, 3, 4);
 
@@ -288,7 +311,7 @@ public class StreamOperatorSequentialGroupBy<T, K, V>
 
         // split(derived, x -> split(x, StreamOperatorSequentialGroupBy::print));
 
-        split(derived, x -> split(x, y -> split(y, StreamOperatorSequentialGroupBy::print)));
+        split(derived, x -> split(x, y -> split(y, StreamOperatorCollapseRuns::print)));
 
 
         if (true) {

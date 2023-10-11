@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.aksw.commons.util.stream.SequentialGroupBySpec;
+import org.aksw.commons.util.stream.CollapseRunsSpec;
 import org.junit.Test;
 
 import io.reactivex.rxjava3.core.Flowable;
@@ -18,7 +18,7 @@ public class FlowableOperatorSequentialGroupByTests {
     @Test
     public void test1() {
         Iterable<List<Integer>> lists = Flowable.fromIterable(Arrays.asList(2, 4, 1, 3, 5))
-            .lift(FlowableOperatorSequentialGroupBy.create(SequentialGroupBySpec.create(item -> item % 2, () -> (List<Integer>)new ArrayList<Integer>(), Collection::add)))
+            .lift(FlowableOperatorCollapseRuns.create(CollapseRunsSpec.create(item -> item % 2, () -> (List<Integer>)new ArrayList<Integer>(), Collection::add)))
             .map(Entry::getValue)
             .blockingIterable();
 
@@ -31,7 +31,7 @@ public class FlowableOperatorSequentialGroupByTests {
     @Test
     public void test2() {
         List<Integer> list = Flowable.fromIterable(Arrays.asList(2, 4, 1, 3, 5))
-            .lift(FlowableOperatorSequentialGroupBy.create(SequentialGroupBySpec.create(item -> item % 2, () -> (List<Integer>)new ArrayList<Integer>(), Collection::add)))
+            .lift(FlowableOperatorCollapseRuns.create(CollapseRunsSpec.create(item -> item % 2, () -> (List<Integer>)new ArrayList<Integer>(), Collection::add)))
             .map(Entry::getValue)
             .first(Collections.emptyList())
             .blockingGet();

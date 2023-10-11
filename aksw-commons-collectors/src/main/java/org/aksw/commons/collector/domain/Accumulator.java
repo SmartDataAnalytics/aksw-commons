@@ -2,6 +2,10 @@ package org.aksw.commons.collector.domain;
 
 /**
  * An accumulator produces a single output value from zero or more input values.
+ *
+ * @param I The input type
+ * @param E The environment (aka context) type
+ * @param O The output type
  */
 public interface Accumulator<I, E, O> {
     /** Accumulate an input value w.r.t. to an environment */
