@@ -29,23 +29,21 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  * <pre>
  * long skipCount = 5;
  * flow
- *   .lift(FlowableOperatorSequentialGroupBy.create(
- *       item -> groupOf(item),
+ *   .lift(FlowableOperatorCollapseRuns.create(
+ *       item -> groupKeyOf(item),
  *       (accNum, groupKey) -> accNum < skipCount ? null : new RealAcc(),
  *       (acc, item) -> acc.add(item))
  *   .skip(skipCount)
  *   .map(Entry::getValue)
- * <pre>
- *
- *
+ * </pre>
  *
  * The items' group keys are expected to arrive in order, hence only a single accumulator is active at a time.
  *
  * <pre>{@code
- * 		Flowable<Entry<Integer, List<Integer>>> list = Flowable
- *			.range(0, 10)
- *			.map(i -> Maps.immutableEntry((int)(i / 3), i))
- *			.lift(FlowableOperatorSequentialGroupBy.<Entry<Integer, Integer>, Integer, List<Integer>>create(Entry::getKey, ArrayList::new, (acc, e) -> acc.add(e.getValue())));
+ * Flowable<Entry<Integer, List<Integer>>> list = Flowable
+ *     .range(0, 10)
+ *     .map(i -> Maps.immutableEntry((int)(i / 3), i))
+ *     .lift(FlowableOperatorSequentialGroupBy.<Entry<Integer, Integer>, Integer, List<Integer>>create(Entry::getKey, ArrayList::new, (acc, e) -> acc.add(e.getValue())));
  *
  * }</pre>
  *
