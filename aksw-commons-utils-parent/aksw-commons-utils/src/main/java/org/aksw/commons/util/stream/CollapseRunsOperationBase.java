@@ -1,10 +1,9 @@
 package org.aksw.commons.util.stream;
 
-public class SequentialGroupByOperationBase<T, K, V>
-    extends SequentialGroupByBase<T, K, V>
+public class CollapseRunsOperationBase<T, K, V>
+    extends CollapseRunsSpecBase<T, K, V>
 {
-
-    public SequentialGroupByOperationBase(SequentialGroupBySpec<T, K, V> other) {
+    public CollapseRunsOperationBase(CollapseRunsSpec<T, K, V> other) {
         super(other);
     }
 

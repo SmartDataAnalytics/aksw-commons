@@ -2,14 +2,10 @@ package org.aksw.commons.rx.op;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
+import org.aksw.commons.util.stream.CollapseRunsOperationBase;
+import org.aksw.commons.util.stream.CollapseRunsSpec;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -33,23 +29,21 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  * <pre>
  * long skipCount = 5;
  * flow
- *   .lift(FlowableOperatorSequentialGroupBy.create(
- *       item -> groupOf(item),
+ *   .lift(FlowableOperatorCollapseRuns.create(
+ *       item -> groupKeyOf(item),
  *       (accNum, groupKey) -> accNum < skipCount ? null : new RealAcc(),
  *       (acc, item) -> acc.add(item))
  *   .skip(skipCount)
  *   .map(Entry::getValue)
- * <pre>
- *
- *
+ * </pre>
  *
  * The items' group keys are expected to arrive in order, hence only a single accumulator is active at a time.
  *
  * <pre>{@code
- * 		Flowable<Entry<Integer, List<Integer>>> list = Flowable
- *			.range(0, 10)
- *			.map(i -> Maps.immutableEntry((int)(i / 3), i))
- *			.lift(FlowableOperatorSequentialGroupBy.<Entry<Integer, Integer>, Integer, List<Integer>>create(Entry::getKey, ArrayList::new, (acc, e) -> acc.add(e.getValue())));
+ * Flowable<Entry<Integer, List<Integer>>> list = Flowable
+ *     .range(0, 10)
+ *     .map(i -> Maps.immutableEntry((int)(i / 3), i))
+ *     .lift(FlowableOperatorSequentialGroupBy.<Entry<Integer, Integer>, Integer, List<Integer>>create(Entry::getKey, ArrayList::new, (acc, e) -> acc.add(e.getValue())));
  *
  * }</pre>
  *
@@ -59,90 +53,16 @@ import io.reactivex.rxjava3.internal.util.BackpressureHelper;
  * @param <K> Group key type
  * @param <V> Accumulator type
  */
-public final class FlowableOperatorSequentialGroupBy<T, K, V>
-    implements FlowableOperator<Entry<K, V>, T> {
-
-    /* Function to derive a group key from an item in the flow */
-    protected Function<? super T, ? extends K> getGroupKey;
-
-    /* Comparision whether two group keys are equal */
-    protected BiPredicate<? super K, ? super K> groupKeyCompare;
-
-    /* Constructor function for accumulators. Function argument is the group key */
-    protected BiFunction<? super Long, ? super K, ? extends V> accCtor;
-
-    /* Add an item to the accumulator */
-    protected BiConsumer<? super V, ? super T> accAdd;
-
-    /**
-     * Create method with the following characteristics:
-     * <ul>
-     *   <li>the accumulator constructor is a mere supplier (and thus neither depends on the accumulator count nor the group Key)</li>
-     *   <li>Group keys are compared using Objects::equals</li>
-     * </ul>
-     */
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
-            Function<? super T, ? extends K> getGroupKey,
-            Supplier<? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        return create(getGroupKey, Objects::equals, groupKey -> accCtor.get(), accAdd);
+public final class FlowableOperatorCollapseRuns<T, K, V>
+    extends CollapseRunsOperationBase<T, K, V>
+    implements FlowableOperator<Entry<K, V>, T>
+{
+    public static <T, K, V> FlowableOperatorCollapseRuns<T, K, V> create(CollapseRunsSpec<T, K, V> spec) {
+        return new FlowableOperatorCollapseRuns<>(spec);
     }
 
-
-    /**
-     * Create method with the following characteristics:
-     * <ul>
-     *   <li>the accumulator constructor receives the group key</li>
-     *   <li>Group keys are compared using Objects::equals</li>
-     * </ul>
-     */
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
-            Function<? super T, ? extends K> getGroupKey,
-            Function<? super K, ? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        return create(getGroupKey, Objects::equals, accCtor, accAdd);
-    }
-
-    /**
-     * Create method with the following characteristics:
-     * <ul>
-     *   <li>the accumulator constructor receives the number of so-far created accumulators (starting with 0) and the group key</li>
-     *   <li>Group keys are compared using Objects::equals</li>
-     * </ul>
-     */
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
-            Function<? super T, ? extends K> getGroupKey,
-            BiFunction<? super Long, ? super K, ? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        return create(getGroupKey, Objects::equals, accCtor, accAdd);
-    }
-
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
-            Function<? super T, ? extends K> getGroupKey,
-            BiPredicate<? super K, ? super K> groupKeyCompare,
-            Function<? super K, ? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        return new FlowableOperatorSequentialGroupBy<>(getGroupKey, groupKeyCompare, (accNum, key) -> accCtor.apply(key), accAdd);
-    }
-
-    public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
-            Function<? super T, ? extends K> getGroupKey,
-            BiPredicate<? super K, ? super K> groupKeyCompare,
-            BiFunction<? super Long, ? super K, ? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        return new FlowableOperatorSequentialGroupBy<>(getGroupKey, groupKeyCompare, accCtor, accAdd);
-    }
-
-    public FlowableOperatorSequentialGroupBy(
-            Function<? super T, ? extends K> getGroupKey,
-            BiPredicate<? super K, ? super K> groupKeyCompare,
-            BiFunction<? super Long, ? super K, ? extends V> accCtor,
-            BiConsumer<? super V, ? super T> accAdd) {
-        super();
-        this.getGroupKey = getGroupKey;
-        this.groupKeyCompare = groupKeyCompare;
-        this.accCtor = accCtor;
-        this.accAdd = accAdd;
+    public FlowableOperatorCollapseRuns(CollapseRunsSpec<T, K, V> other) {
+        super(other);
     }
 
     @Override
@@ -222,7 +142,7 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
             }
 
             if (currentAcc != null) {
-                accAdd.accept(currentAcc, item);
+                accAdd.apply(currentAcc, item);
             }
 
             priorKey = currentKey;
@@ -293,4 +213,89 @@ public final class FlowableOperatorSequentialGroupBy<T, K, V>
             upstream = SubscriptionHelper.CANCELLED;
         }
     }
+
+
+//  /* Function to derive a group key from an item in the flow */
+//  protected Function<? super T, ? extends K> getGroupKey;
+//
+//  /* Comparision whether two group keys are equal */
+//  protected BiPredicate<? super K, ? super K> groupKeyCompare;
+//
+//  /* Constructor function for accumulators. Function argument is the group key */
+//  protected BiFunction<? super Long, ? super K, ? extends V> accCtor;
+//
+//  /* Add an item to the accumulator */
+//  protected BiConsumer<? super V, ? super T> accAdd;
+
+//  /**
+//   * Create method with the following characteristics:
+//   * <ul>
+//   *   <li>the accumulator constructor is a mere supplier (and thus neither depends on the accumulator count nor the group Key)</li>
+//   *   <li>Group keys are compared using Objects::equals</li>
+//   * </ul>
+//   */
+//  public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
+//          Function<? super T, ? extends K> getGroupKey,
+//          Supplier<? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      return create(getGroupKey, Objects::equals, groupKey -> accCtor.get(), accAdd);
+//  }
+//
+//
+//  /**
+//   * Create method with the following characteristics:
+//   * <ul>
+//   *   <li>the accumulator constructor receives the group key</li>
+//   *   <li>Group keys are compared using Objects::equals</li>
+//   * </ul>
+//   */
+//  public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
+//          Function<? super T, ? extends K> getGroupKey,
+//          Function<? super K, ? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      return create(getGroupKey, Objects::equals, accCtor, accAdd);
+//  }
+//
+//  /**
+//   * Create method with the following characteristics:
+//   * <ul>
+//   *   <li>the accumulator constructor receives the number of so-far created accumulators (starting with 0) and the group key</li>
+//   *   <li>Group keys are compared using Objects::equals</li>
+//   * </ul>
+//   */
+//  public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
+//          Function<? super T, ? extends K> getGroupKey,
+//          BiFunction<? super Long, ? super K, ? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      return create(getGroupKey, Objects::equals, accCtor, accAdd);
+//  }
+//
+//  public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
+//          Function<? super T, ? extends K> getGroupKey,
+//          BiPredicate<? super K, ? super K> groupKeyCompare,
+//          Function<? super K, ? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      return new FlowableOperatorSequentialGroupBy<>(getGroupKey, groupKeyCompare, (accNum, key) -> accCtor.apply(key), accAdd);
+//  }
+//
+//  public static <T, K, V> FlowableOperatorSequentialGroupBy<T, K, V> create(
+//          Function<? super T, ? extends K> getGroupKey,
+//          BiPredicate<? super K, ? super K> groupKeyCompare,
+//          BiFunction<? super Long, ? super K, ? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      return new FlowableOperatorSequentialGroupBy<>(getGroupKey, groupKeyCompare, accCtor, accAdd);
+//  }
+//
+//  public FlowableOperatorSequentialGroupBy(
+//          Function<? super T, ? extends K> getGroupKey,
+//          BiPredicate<? super K, ? super K> groupKeyCompare,
+//          BiFunction<? super Long, ? super K, ? extends V> accCtor,
+//          BiConsumer<? super V, ? super T> accAdd) {
+//      super();
+//      this.getGroupKey = getGroupKey;
+//      this.groupKeyCompare = groupKeyCompare;
+//      this.accCtor = accCtor;
+//      this.accAdd = accAdd;
+//  }
+
 }

@@ -72,12 +72,12 @@ public class UnivocityParserFactory {
         // The conf only affects either csv or tsv settings but not both
         if (conf.isTabs()) {
             TsvParserSettings settings = tsvSettings.clone();
-            CsvwUnivocityUtils.configureCommonSettings(settings, dialect);
+            CsvwUnivocityUtils.configureCommonSettings(settings, conf);
             result = new UnivocityParserFactory(false, cs, csvSettings, settings);
         } else {
             CsvParserSettings settings = csvSettings.clone();
             CsvwUnivocityUtils.configureCsvFormat(settings.getFormat(), dialect);
-            CsvwUnivocityUtils.configureCommonSettings(settings, dialect);
+            CsvwUnivocityUtils.configureCommonSettings(settings, conf);
             CsvwUnivocityUtils.configureDetection(settings, dialect);
             result = new UnivocityParserFactory(true, cs, settings, tsvSettings);
         }

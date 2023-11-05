@@ -122,11 +122,15 @@ public class AggBuilder<I, E, O, ACC extends Accumulator<I, E, O>, AGG extends P
         return new AggInputTransform<>(state, inputTransform);
     }
 
+    /** Wraps another aggregator such that if accumulation fails with an exception
+     *  an error counter is increased. If the error counter is non zero then the accumulated value will always be null */
     public static <I, E, O, ACC extends Accumulator<I, E, O>, AGG extends ParallelAggregator<I, E, O, ACC>> AggErrorHandler<I, E, O, ACC, AGG>
         errorHandler(AGG state) {
         return new AggErrorHandler<>(state, false, null, null);
     }
 
+    /** Wraps another aggregator such that if accumulation fails with an exception
+     *  an error counter is increased. If the error counter is non zero then a custom policy for extracting a final value from the accumulator state can be specified */
     public static <I, E, O, ACC extends Accumulator<I, E, O>, AGG extends ParallelAggregator<I, E, O, ACC>> AggErrorHandler<I, E, O, ACC, AGG>
         errorHandler(AGG state, boolean accDespiteError, SerializableConsumer<? super Throwable> errorCallback, SerializableFunction<AccError<I, E, O, ACC>, O> errorValueExtractor) {
         return new AggErrorHandler<>(state, accDespiteError, errorCallback, errorValueExtractor);

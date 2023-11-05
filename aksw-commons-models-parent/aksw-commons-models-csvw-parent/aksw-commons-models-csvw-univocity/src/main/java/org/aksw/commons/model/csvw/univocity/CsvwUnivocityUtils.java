@@ -8,6 +8,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.univocity.parsers.common.Context;
+import com.univocity.parsers.common.processor.core.Processor;
+import com.univocity.parsers.conversions.Conversions;
+import com.univocity.parsers.conversions.NullStringConversion;
 import org.aksw.commons.model.csvw.domain.api.Dialect;
 import org.aksw.commons.model.csvw.domain.api.DialectMutable;
 import org.aksw.commons.model.csvw.domain.impl.CsvwLib;
@@ -21,8 +25,9 @@ import com.univocity.parsers.csv.CsvParserSettings;
 public class CsvwUnivocityUtils {
 
     /** Does not configure the format */
-    public static Set<String> configureCommonSettings(CommonParserSettings<?> settings, Dialect dialect) {
+    public static Set<String> configureCommonSettings(CommonParserSettings<?> settings, UnivocityCsvwConf csvwConf) {
         Set<String> affectedTerms = new LinkedHashSet<>();
+        Dialect dialect = csvwConf.getDialect();
 
         Boolean b;
         // Character c;
@@ -46,6 +51,24 @@ public class CsvwUnivocityUtils {
             }
             settings.setHeaderExtractionEnabled(l > 0);
             affectedTerms.add(CsvwTerms.headerRowCount);
+        }
+
+        if (csvwConf.getNullValues() != null && csvwConf.getNullValues().length > 0) {
+            NullStringConversion nullStringConversion = Conversions.toNull(csvwConf.getNullValues());
+            settings.setProcessor(new Processor<Context>() {
+                @Override
+                public void processStarted(Context context) {}
+
+                @Override
+                public void rowProcessed(String[] row, Context context) {
+                    for (int i = 0; i < row.length; i++) {
+                        row[i] = (String) nullStringConversion.execute(row[i]);
+                    }
+                }
+
+                @Override
+                public void processEnded(Context context) {}
+            });
         }
 
         return affectedTerms;

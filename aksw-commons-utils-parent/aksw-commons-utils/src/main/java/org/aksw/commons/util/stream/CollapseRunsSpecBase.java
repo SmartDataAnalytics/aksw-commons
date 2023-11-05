@@ -27,7 +27,7 @@ import java.util.function.Function;
  * @param <K> The key type by which to group items
  * @param <V> The type of the result of grouping items
  */
-public class SequentialGroupByBase<T, K, V> {
+public class CollapseRunsSpecBase<T, K, V> {
     /** Function to derive a group key from an item in the flow */
     protected Function<? super T, ? extends K> getGroupKey;
 
@@ -40,7 +40,7 @@ public class SequentialGroupByBase<T, K, V> {
     /** Reduce an item with the accumulator to obtain a new accumulator */
     protected BiFunction<? super V, ? super T, ? extends V> accAdd;
 
-    public SequentialGroupByBase(SequentialGroupByBase<T, K, V> other) {
+    public CollapseRunsSpecBase(CollapseRunsSpecBase<T, K, V> other) {
         super();
         this.getGroupKey = other.getGroupKey;
         this.groupKeyCompare = other.groupKeyCompare;
@@ -49,7 +49,7 @@ public class SequentialGroupByBase<T, K, V> {
     }
 
 
-    public SequentialGroupByBase(
+    public CollapseRunsSpecBase(
             Function<? super T, ? extends K> getGroupKey,
             BiPredicate<? super K, ? super K> groupKeyCompare,
             BiFunction<? super Long, ? super K, ? extends V> accCtor,

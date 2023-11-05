@@ -9,7 +9,7 @@
 	<parent>
 		<artifactId>aksw-commons-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<version>0.9.6</version>
+		<version>0.9.7</version>
 	</parent>
 
 	<dependencies>
@@ -17,6 +17,13 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+		</dependency>
+
+		<!-- Not ideal having to rely on gson here,
+		     but an extra module just for json paths presently seems like overkill --> 
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
 		</dependency>
 
 		<dependency>

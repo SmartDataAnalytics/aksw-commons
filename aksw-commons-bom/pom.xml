@@ -6,7 +6,7 @@
 	<groupId>org.aksw.commons</groupId>
 	<artifactId>aksw-commons-bom</artifactId>
 	<packaging>pom</packaging>
-	<version>0.9.6</version>
+	<version>0.9.7</version>
 	<name>AKSW Commons BOM</name>
 	<description>A library of commonly used classes in AKSW applications.</description>
 	<url>https://github.com/SmartDataAnalytics/aksw-commons</url>
@@ -44,7 +44,7 @@
 		<gpg.keyname>AKSW</gpg.keyname>
 
 		<gson.version>2.9.0</gson.version>
-		<guava.version>31.0.1-jre</guava.version>
+		<guava.version>32.1.2-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
 		<xstream.version>1.4.20</xstream.version>
 		<commons-compress.version>1.21</commons-compress.version>
@@ -53,9 +53,10 @@
 		
 		<hadoop.version>3.3.4</hadoop.version>	
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
-		<slf4j.version>2.0.0</slf4j.version>
-		<log4j.version>2.18.0</log4j.version>
+		<slf4j.version>1.7.36</slf4j.version>
+		<log4j.version>2.20.0</log4j.version>
 		<jackson.version>2.13.3</jackson.version>
+		<streamex.version>0.8.2</streamex.version>
 		
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
 		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
@@ -152,7 +153,12 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-
+			
+			<dependency>
+				<groupId>one.util</groupId>
+				<artifactId>streamex</artifactId>
+				<version>${streamex.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.aksw.commons</groupId>
 				<artifactId>aksw-commons-resources-test-config</artifactId>

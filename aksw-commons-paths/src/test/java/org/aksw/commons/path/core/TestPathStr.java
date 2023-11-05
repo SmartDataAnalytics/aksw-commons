@@ -7,7 +7,7 @@ public class TestPathStr {
 
     @Test
     public void testTrailingSlashes() {
-        Path<String> a = PathOpsStr.create("/hello/world/");
+        Path<String> a = PathStr.parse("/hello/world/");
         Path<String> b = a.resolve("/hello/world");
         Assert.assertEquals(a, b);
     }
@@ -15,13 +15,13 @@ public class TestPathStr {
     @Test
     public void testEscaping() {
         String str = "/hell\\//o/world/";
-        Path<String> a = PathOpsStr.create(str);
+        Path<String> a = PathStr.parse(str);
 
         String aStr = a.toString();
 
         // System.out.println(aStr + " -> " + a.getSegments());
 
-        Path<String> b = PathOpsStr.create(aStr);
+        Path<String> b = PathStr.parse(aStr);
         String bStr = b.toString();
 
         Assert.assertEquals(aStr, bStr);

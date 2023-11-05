@@ -9,6 +9,7 @@ import com.google.common.cache.CacheStats;
 
 /** Utils for guava caches. Methods do not declare exceptions and the cache may be null. */
 public class CacheUtils {
+
     public static void invalidateAll(Cache<?, ?> cache) {
         if (cache != null) {
             cache.invalidateAll();

@@ -10,8 +10,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -29,6 +29,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class TreeUtils {
+
+    /** Return all ancestors of the given item, including itself. The last element is null. */
+    public static <T> Stream<T> streamAncestors(T path, Function<? super T, ? extends T> getParent) {
+        return Stream.of(path)
+            .flatMap(p -> p == null
+                ? Stream.of(p)
+                : Stream.<T>concat(Stream.of(p), streamAncestors(getParent.apply(p), getParent)));
+    }
+
 
     public static <T> T getRoot(T item, Function<? super T, ? extends T> predecessor) {
         T result = findSuccessor(item, predecessor, (n, pred) -> pred == null);
@@ -57,7 +66,7 @@ public class TreeUtils {
         return result;
     }
 
-    public static <T> T findAncestor(T node, Function<? super T, ? extends T> getParent, java.util.function.Predicate<T> predicate) {
+    public static <T> T findAncestor(T node, Function<? super T, ? extends T> getParent, java.util.function.Predicate<? super T> predicate) {
         Objects.requireNonNull(node);
 
         T current = node;

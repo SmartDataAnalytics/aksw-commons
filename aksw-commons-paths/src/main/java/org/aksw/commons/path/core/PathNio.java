@@ -1,5 +1,6 @@
 package org.aksw.commons.path.core;
 
+import java.nio.file.FileSystem;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -13,7 +14,7 @@ import java.util.stream.StreamSupport;
  * @author Claus Stadler
  *
  */
-public class PathNio implements Path<String>
+public class PathNio implements Path<String> // PathSys<String, FileSystem>
 {
     protected java.nio.file.Path delegate;
 
@@ -155,4 +156,8 @@ public class PathNio implements Path<String>
         return Comparator.nullsFirst((x, y) -> x.toString().compareTo(y.toString())).compare(this, that);
     }
 
+    @Override
+    public FileSystem getSystem() {
+        return getDelegate().getFileSystem();
+    }
 }
