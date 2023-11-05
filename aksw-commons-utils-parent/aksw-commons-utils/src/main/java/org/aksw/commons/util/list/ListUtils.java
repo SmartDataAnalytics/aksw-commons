@@ -21,4 +21,13 @@ public class ListUtils {
         T result = i >= list.size() ? dflt : list.get(i);
         return result;
     }
+
+    /** Returns the last item of the list or null if it does not exist */
+    public static <T> T lastOrNull(List<T> list) {
+        return lastOrDefault(list, null);
+    }
+
+    public static <T> T lastOrDefault(List<T> list, T defaultValue) {
+        return list.isEmpty() ? defaultValue : list.get(list.size() - 1);
+    }
 }

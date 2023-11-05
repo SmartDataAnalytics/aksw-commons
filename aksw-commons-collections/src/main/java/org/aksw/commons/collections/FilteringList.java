@@ -30,7 +30,7 @@ public class FilteringList<T, C extends List<T>>
     @Override
     public ListIterator<T> listIterator(int index) {
         ListIterator<T> core = backend.listIterator();
-        FilteringListIterator<T, ListIterator<T>> result = new FilteringListIterator<T, ListIterator<T>>(core, predicate, index - 1);
+        FilteringListIterator<T, ListIterator<T>> result = new FilteringListIterator<>(core, predicate, index - 1);
 
         // The highest possible value for reachedIndex should be .size()
         int reachedIndex = ListIteratorUtils.repeatNext(result, index);

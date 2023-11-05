@@ -43,7 +43,6 @@ public interface Path<T>
 
     Path<T> relativize(Path<T> other);
 
-
     default T toSegment() {
         List<T> segments = getSegments();
         if (segments.size() != 1) {
@@ -53,4 +52,7 @@ public interface Path<T>
         T result = segments.iterator().next();
         return result;
     }
+
+    /** May return e.g. the file system underlying a path. Return null if not applicable. */
+    Object getSystem();
 }

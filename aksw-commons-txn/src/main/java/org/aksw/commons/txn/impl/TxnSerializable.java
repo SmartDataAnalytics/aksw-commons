@@ -20,6 +20,7 @@ import org.aksw.commons.io.util.FileUtils;
 import org.aksw.commons.io.util.PathUtils;
 import org.aksw.commons.lock.db.impl.LockFromFile;
 import org.aksw.commons.path.core.PathOpsStr;
+import org.aksw.commons.path.core.PathStr;
 import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.util.exception.FinallyRunAll;
 import org.aksw.commons.util.lock.LockUtils;
@@ -328,7 +329,7 @@ public class TxnSerializable
             Path resRelPath = txnMgr.getRootPath().relativize(resAbsPath);
             String[] array = PathUtils.getPathSegments(resRelPath);
 
-            org.aksw.commons.path.core.Path<String> result = PathOpsStr.newRelativePath(array);
+            org.aksw.commons.path.core.Path<String> result = PathStr.newRelativePath(array);
 
             return result;
         } catch (IOException e) {

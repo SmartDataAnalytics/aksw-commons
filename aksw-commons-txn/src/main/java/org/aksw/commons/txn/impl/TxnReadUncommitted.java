@@ -108,7 +108,7 @@ public class TxnReadUncommitted
                         // No longer valid: We are interested in the folder - not the file itself: Get the parent
                         // .map(Path::getParent)
                         .map(path -> rootPath.relativize(path))
-                        .map(relPath -> PathOpsStr.newRelativePath().resolve(PathNio.wrap(relPath)))
+                        .map(relPath -> PathStr.newRelativePath().resolve(PathNio.wrap(relPath)))
                         // .map(PathUtils::getPathSegments)
                         .map(this::getResourceApi)
                         .filter(TxnResourceApi::isVisible)

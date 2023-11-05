@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.buffer.plain.Buffer;
-import org.aksw.commons.util.closeable.AutoCloseableBase;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.closeable.Disposable;
 

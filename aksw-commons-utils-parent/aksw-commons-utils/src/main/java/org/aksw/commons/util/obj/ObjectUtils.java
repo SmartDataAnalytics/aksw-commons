@@ -24,8 +24,15 @@ public class ObjectUtils {
         return obj != null ? obj.getClass().getName() + "@" + System.identityHashCode(obj) : nullDefault;
     }
 
+    /**
+     * Check if the given object can be assigned to given class.
+     * Also works for primitive types, e.g. int can be assigned to Long.
+     *
+     * @implNote
+     *   Relies on {@link ClassUtils#isAssignable(Class, Class)}
+     */
     public static boolean canCastAs(Class<?> clazz, Object o) {
-        boolean result = o == null ? true : ClassUtils.isAssignable(clazz, o.getClass());
+        boolean result = o == null ? true : ClassUtils.isAssignable(o.getClass(), clazz);
         return result;
     }
 

@@ -11,7 +11,7 @@ import org.aksw.commons.io.slice.Slice;
 import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.aksw.commons.io.slice.SliceWithPagesSyncToDisk;
 import org.aksw.commons.path.core.Path;
-import org.aksw.commons.path.core.PathOpsStr;
+import org.aksw.commons.path.core.PathStr;
 import org.aksw.commons.store.object.key.api.ObjectStore;
 import org.aksw.commons.store.object.key.impl.KryoUtils;
 import org.aksw.commons.store.object.key.impl.ObjectStoreImpl;
@@ -50,7 +50,7 @@ public class ReadableChannelSources {
             java.nio.file.Path cacheBaseFolder,
             String cacheEntryId,
             AdvancedRangeCacheConfig cacheConfig) {
-        Path<String> relPath = PathOpsStr.create(cacheEntryId);
+        Path<String> relPath = PathStr.parse(cacheEntryId);
         if (relPath.isAbsolute()) {
             throw new IllegalArgumentException("Cache entries must map to relative paths");
         }
