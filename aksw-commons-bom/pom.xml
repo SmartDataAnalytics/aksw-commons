@@ -24,7 +24,8 @@
 	<scm>
 		<url>https://github.com/SmartDataAnalytics/aksw-commons</url>
 		<connection>scm:git:git://github.com/SmartDataAnalytics/aksw-commons.git</connection>
-		<developerConnection>scm:git:git@github.com:SmartDataAnalytics/aksw-commons.git</developerConnection>
+		<developerConnection>
+			scm:git:git@github.com:SmartDataAnalytics/aksw-commons.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<developers>
@@ -43,21 +44,28 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
 
-		<gson.version>2.9.0</gson.version>
-		<guava.version>32.1.2-jre</guava.version>
+		<gson.version>2.10.1</gson.version>
+		<guava.version>32.1.3-jre</guava.version>
 		<junit.version>4.13.2</junit.version>
 		<xstream.version>1.4.20</xstream.version>
-		<commons-compress.version>1.21</commons-compress.version>
-		<picocli.version>4.6.2</picocli.version>
-		<univocity.version>2.9.0</univocity.version>
-		
-		<hadoop.version>3.3.4</hadoop.version>	
+		<commons-compress.version>1.24.0</commons-compress.version>
+		<picocli.version>4.7.5</picocli.version>
+		<univocity.version>2.9.1</univocity.version>
+		<caffeine.version>3.1.8</caffeine.version>
+		<kryo-serializers.version>0.42</kryo-serializers.version>
+		<commons-lang3.version>3.13.0</commons-lang3.version>
+		<rxjava.version>3.1.8</rxjava.version>
+		<commons-validator.version>1.7</commons-validator.version>
+		<protonpack.version>1.16</protonpack.version>
+		<commons-io.version>2.15.0</commons-io.version>
+
+		<hadoop.version>3.3.6</hadoop.version>
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.20.0</log4j.version>
-		<jackson.version>2.13.3</jackson.version>
+		<jackson.version>2.15.2</jackson.version>
 		<streamex.version>0.8.2</streamex.version>
-		
+
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
 		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
 		<maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
@@ -81,7 +89,8 @@
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 				</configuration>
 			</plugin>
-			<!-- For jgitflow doc see: https://bitbucket.org/atlassian/jgit-flow/wiki/goals.wiki -->
+			<!-- For jgitflow doc see:
+			https://bitbucket.org/atlassian/jgit-flow/wiki/goals.wiki -->
 			<plugin>
 				<groupId>com.amashchenko.maven.plugin</groupId>
 				<artifactId>gitflow-maven-plugin</artifactId>
@@ -100,11 +109,13 @@
 				<version>3.6.2</version>
 				<configuration>
 					<release>${maven.compiler.release}</release>
-					<!-- <source>${maven.compiler.source}</source> <target>${maven.compiler.target}</target> -->
+					<!-- <source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target> -->
 					<encoding>${project.build.sourceEncoding}</encoding>
 				</configuration>
 			</plugin>
-			<!-- Solution from http://stackoverflow.com/questions/4725668/how-to-deploy-snapshot-with-sources-and-javadoc -->
+			<!-- Solution from
+			http://stackoverflow.com/questions/4725668/how-to-deploy-snapshot-with-sources-and-javadoc -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -139,7 +150,13 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M1</version>
-				<!-- <configuration> <skipTests>false</skipTests> </configuration> -->
+				<!-- <configuration> <skipTests>false</skipTests>
+				</configuration> -->
+			</plugin>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>8.4.2</version>
 			</plugin>
 		</plugins>
 	</build>
@@ -153,7 +170,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>one.util</groupId>
 				<artifactId>streamex</artifactId>
@@ -290,26 +307,28 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-                                <groupId>org.aksw.commons</groupId>
-                                <artifactId>aksw-commons-algebra-allen-interval</artifactId>
-                                <version>${project.version}</version>
-                        </dependency>
+				<groupId>org.aksw.commons</groupId>
+				<artifactId>aksw-commons-algebra-allen-interval</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
 			<!-- Kryo -->
-			<!-- Note: don't use versions above 0.43 for now, for whatever reason 
+			<!-- Note: don't use versions above 0.43 for now, for whatever
+			reason 
 				they depend on Kryo 5.0.0 RC1 which is binary incompatible and not used by 
 				Spark -->
 			<dependency>
 				<groupId>de.javakaffee</groupId>
 				<artifactId>kryo-serializers</artifactId>
-				<version>0.43</version>
+				<version>${kryo-serializers.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.ben-manes.caffeine</groupId>
 				<artifactId>caffeine</artifactId>
-				<version>3.0.3</version>
+				<version>${caffeine.version}</version>
 			</dependency>
-			<!-- <dependency> <groupId>org.aksw.commons</groupId> <artifactId>aksw-commons-sparql</artifactId> 
+			<!-- <dependency> <groupId>org.aksw.commons</groupId>
+			<artifactId>aksw-commons-sparql</artifactId> 
 				<version>${project.version}</version> </dependency> -->
 			<!--Junits -->
 			<dependency>
@@ -337,7 +356,8 @@
 				<artifactId>jaxb-api</artifactId>
 				<version>2.3.1</version>
 			</dependency>
-			<!-- Usually we depend on slf4j, but for testing we depend on a concrete 
+			<!-- Usually we depend on slf4j, but for testing we depend on a
+			concrete 
 				implementation -->
 			<!-- <dependency> -->
 			<!-- <groupId>log4j</groupId> -->
@@ -346,12 +366,13 @@
 			<!-- <scope>test</scope> -->
 			<!-- </dependency> -->
 			<!-- Used for SQL-Escapting (StringEscapeUtils) -->
-			<!-- <dependency> <groupId>commons-lang</groupId> <artifactId>commons-lang</artifactId> 
+			<!-- <dependency> <groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId> 
 				<version>2.5</version> </dependency> -->
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
-				<version>3.12.0</version>
+				<version>${commons-lang3.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.thoughtworks.xstream</groupId>
@@ -366,7 +387,7 @@
 			<dependency>
 				<groupId>commons-validator</groupId>
 				<artifactId>commons-validator</artifactId>
-				<version>1.6</version>
+				<version>${commons-validator.version}</version>
 			</dependency>
 			<!-- Collection APIs -->
 			<dependency>
@@ -377,12 +398,12 @@
 			<dependency>
 				<groupId>io.reactivex.rxjava3</groupId>
 				<artifactId>rxjava</artifactId>
-				<version>3.1.3</version>
+				<version>${rxjava.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.codepoetics</groupId>
 				<artifactId>protonpack</artifactId>
-				<version>1.11</version>
+				<version>${protonpack.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
@@ -392,7 +413,7 @@
 			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
-				<version>2.8.0</version>
+				<version>${commons-io.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>info.picocli</groupId>
@@ -437,6 +458,26 @@
 		</dependencies>
 	</dependencyManagement>
 	<profiles>
+		<profile>
+			<id>audit</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>8.4.2</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
 		<profile>
 			<id>doclint-java8-disable</id>
 			<activation>
