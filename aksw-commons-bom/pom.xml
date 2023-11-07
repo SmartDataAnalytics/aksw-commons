@@ -58,6 +58,8 @@
 		<commons-validator.version>1.7</commons-validator.version>
 		<protonpack.version>1.16</protonpack.version>
 		<commons-io.version>2.15.0</commons-io.version>
+		<jcraft.version>0.0.9</jcraft.version>
+		<jgit.version>5.6.0.201912101111-r</jgit.version>
 
 		<hadoop.version>3.3.6</hadoop.version>
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
@@ -380,11 +382,6 @@
 				<version>${xstream.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>net.sourceforge.collections</groupId>
-				<artifactId>collections-generic</artifactId>
-				<version>4.01</version>
-			</dependency>
-			<dependency>
 				<groupId>commons-validator</groupId>
 				<artifactId>commons-validator</artifactId>
 				<version>${commons-validator.version}</version>
@@ -455,6 +452,31 @@
 				<artifactId>hadoop-common</artifactId>
 				<version>${hadoop.version}</version>
 			</dependency>
+		<dependency>
+                        <groupId>org.eclipse.jgit</groupId>
+                        <artifactId>org.eclipse.jgit</artifactId>
+                        <version>${jgit.version}</version>
+                </dependency>
+
+                <dependency>
+                        <groupId>com.jcraft</groupId>
+                        <artifactId>jsch.agentproxy.jsch</artifactId>
+                        <version>${jcraft.version}</version>
+                </dependency>
+
+                <dependency>
+                        <groupId>com.jcraft</groupId>
+                        <artifactId>jsch.agentproxy.usocket-jna</artifactId>
+                        <version>${jcraft.version}</version>
+                </dependency>
+
+                <dependency>
+                        <groupId>com.jcraft</groupId>
+                        <artifactId>jsch.agentproxy.sshagent</artifactId>
+                        <version>${jcraft.version}</version>
+                </dependency>
+
+			
 		</dependencies>
 	</dependencyManagement>
 	<profiles>
