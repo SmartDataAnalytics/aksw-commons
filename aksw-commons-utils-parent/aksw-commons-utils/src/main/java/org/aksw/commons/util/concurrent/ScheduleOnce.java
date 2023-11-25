@@ -57,13 +57,13 @@ public class ScheduleOnce {
             lastRequestTime = Instant.now();
             if (lastExecTime != null && lastRequestTime.isAfter(lastExecTime)) {
 
-                if (logger.isInfoEnabled()) {
-                    logger.info("Scheduled task with a delay of " + execDelay);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Scheduled task with a delay of " + execDelay);
                 }
                 lastExecTime = null;
                 scheduledExecutorService.schedule(() -> {
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Running task " + task);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Running task " + task);
                     }
 
                     synchronized (lock) {
