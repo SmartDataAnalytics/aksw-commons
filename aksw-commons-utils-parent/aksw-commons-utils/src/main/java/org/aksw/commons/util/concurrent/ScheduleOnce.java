@@ -57,10 +57,14 @@ public class ScheduleOnce {
             lastRequestTime = Instant.now();
             if (lastExecTime != null && lastRequestTime.isAfter(lastExecTime)) {
 
-                logger.info("Scheduled task with a delay of " + execDelay);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Scheduled task with a delay of " + execDelay);
+                }
                 lastExecTime = null;
                 scheduledExecutorService.schedule(() -> {
-                    logger.info("Running task " + task);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Running task " + task);
+                    }
 
                     synchronized (lock) {
                         lastExecTime = Instant.now();
@@ -69,7 +73,9 @@ public class ScheduleOnce {
                     try {
                         return task.call();
                     } catch (Exception e) {
-                        logger.warn("Task execution failed", e);
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("Task execution failed", e);
+                        }
                         throw new RuntimeException(e);
                     }
                 }, execDelay.toMillis(), TimeUnit.MILLISECONDS);

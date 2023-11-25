@@ -16,7 +16,7 @@ import org.aksw.commons.path.core.PathOpsStr;
 import org.aksw.commons.rx.lookup.ListPaginatorFromList;
 import org.aksw.commons.txn.api.Txn;
 import org.aksw.commons.txn.api.TxnResourceApi;
-import org.aksw.commons.txn.impl.TxnHandler;
+import org.aksw.commons.txn.impl.TxnHandlerImpl;
 import org.aksw.commons.txn.impl.TxnMgrImpl;
 import org.aksw.commons.util.lock.LockUtils;
 import org.junit.Test;
