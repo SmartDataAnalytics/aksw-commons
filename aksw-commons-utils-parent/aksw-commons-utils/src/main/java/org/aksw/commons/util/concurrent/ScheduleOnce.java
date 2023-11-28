@@ -3,7 +3,6 @@ package org.aksw.commons.util.concurrent;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
