@@ -1,19 +1,25 @@
 package org.aksw.commons.io.util;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 
 public class UriUtils {
@@ -43,7 +49,13 @@ public class UriUtils {
         return result;
     }
 
+    public static String encodeUtf8(String str) {
+        return URLEncoder.encode(str, StandardCharsets.UTF_8);
+    }
 
+    public static String decodeUft8(String str) {
+        return URLDecoder.decode(str, StandardCharsets.UTF_8);
+    }
 
     /**
      * Only retains first value
@@ -58,7 +70,7 @@ public class UriUtils {
      * @return
      */
     public static Map<String, String> parseQueryStringAsMap(String queryString) {
-        Multimap<String, String> multimap = parseQueryString(queryString);
+        Multimap<String, String> multimap = parseQueryStringAsMultimap(queryString);
         return toMap(multimap, LinkedHashMap::new);
     }
 
@@ -67,34 +79,56 @@ public class UriUtils {
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (u, v) -> u, mapSupplier));
     }
 
+    public static Multimap<String, String> parseQueryStringAsMultimap(String queryString) {
+        Multimap<String, String> result = LinkedHashMultimap.create();
+        parseQueryStringAsEntries(queryString, result::put);
+        return result;
+    }
 
-    public static Multimap<String, String> parseQueryString(String queryString) {
-        try {
-            return parseQueryStringEx(queryString);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
+    public static List<Entry<String, String>> parseQueryStringAsList(String queryString) {
+        List<Entry<String, String>> result = new ArrayList<>();
+        parseQueryStringAsEntries(queryString, (k, v) -> result.add(new SimpleImmutableEntry<>(k, v)));
+        return result;
+    }
+
+    public static void parseQueryStringAsEntries(String queryString, BiConsumer<String, String> sink) {
+        if (queryString != null && !queryString.isBlank()) {
+            for (String param : queryString.split("&")) {
+                String pair[] = param.split("=", 2);
+                String key = decodeUft8(pair[0]);
+                String value = null;
+                if (pair.length > 1) {
+                    value = decodeUft8(pair[1]);
+                }
+                sink.accept(key, value);
+            }
         }
     }
 
-    public static Multimap<String, String> parseQueryStringEx(String queryString)
-            throws UnsupportedEncodingException
-    {
-        Multimap<String, String> result = ArrayListMultimap.create();
+    public static String toQueryString(Multimap<String, String> args) {
+        return toQueryString(args.entries());
+    }
 
-        if(queryString == null) {
-            return result;
-        }
-
-        for (String param : queryString.split("&")) {
-            String pair[] = param.split("=");
-            String key = URLDecoder.decode(pair[0], "UTF-8");
-            String value = "";
-            if (pair.length > 1) {
-                value = URLDecoder.decode(pair[1], "UTF-8");
-            }
-            result.put(new String(key), new String(value));
-        }
-
+    public static String toQueryString(Collection<Entry<String, String>> entries) {
+        String tmp = entries.stream().map(e -> {
+            String k = e.getKey();
+            String v = e.getValue();
+            String encodedK = encodeUtf8(k);
+            String r = v == null
+                    ? encodedK
+                    : encodedK + "=" + encodeUtf8(v);
+            return r;
+        }).collect(Collectors.joining("&"));
+        String result = !tmp.isEmpty() ? tmp : null;
         return result;
+    }
+
+    /** Returns a new URI with its query string replaced directly with the given argument */
+    public static URI replaceQueryString(URI uri, String newQueryString) throws URISyntaxException {
+        return new URI(uri.getScheme(),
+                       uri.getAuthority(),
+                       uri.getPath(),
+                       newQueryString,
+                       uri.getFragment());
     }
 }
