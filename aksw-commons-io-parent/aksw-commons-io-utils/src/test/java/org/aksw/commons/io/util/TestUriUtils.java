@@ -20,6 +20,23 @@ public class TestUriUtils {
         Assert.assertEquals(new ArrayList<>(expected.entries()), new ArrayList<>(actual.entries()));
     }
 
+    @Test
+    public void testEncoding01() {
+        Multimap<String, String> expected = ImmutableMultimap.<String, String>builder()
+                .put("default-graph-uri", "http://dbpedia.org").build();
+        String str = UriUtils.toQueryString(expected.entries());
+        // The actual map is a LinkedHashMultiMap so the order should always be as given
+        Multimap<String, String> actual = UriUtils.parseQueryStringAsMultimap(str);
+        // The entry collections differ in type so we need array lists
+        Assert.assertEquals(new ArrayList<>(expected.entries()), new ArrayList<>(actual.entries()));
+
+//        URI baseUri = new URI("http://dbpdia.org/sparql");
+//        URI uriWithQueryString = UriUtils.replaceQueryString(baseUri, str);
+//
+//        System.out.println(str);
+//        System.out.println(uriWithQueryString);
+    }
+
     /** null query string must result in empty list */
     @Test
     public void testNullQueryStringResultsInEmptyList() {
@@ -37,5 +54,4 @@ public class TestUriUtils {
     public void testEmptyListResultsInNullQueryString() {
         Assert.assertEquals(null, UriUtils.toQueryString(List.of()));
     }
-
 }

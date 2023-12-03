@@ -49,21 +49,16 @@ public class UriUtils {
         return result;
     }
 
-    public static String encodeUtf8(String str) {
-        return URLEncoder.encode(str, StandardCharsets.UTF_8);
+    public static String encodeQueryParamUtf8(String str) {
+        return URLEncoder.encode(str, StandardCharsets.UTF_8)
+                .replace("%20", "+")
+                .replaceAll("%3[aA]", ":")
+                .replaceAll("%2[fF]", "/");
     }
 
-    public static String decodeUft8(String str) {
+    public static String decodeQueryParamUtf8(String str) {
         return URLDecoder.decode(str, StandardCharsets.UTF_8);
     }
-
-    /**
-     * Only retains first value
-     * @return
-     */
-//    public static Map<String, String> createMapFromUriQueryString(URI uri) {
-//        return createMapFromUriQueryString(uri);
-//    }
 
     /**
      * Only retains first value
@@ -95,10 +90,10 @@ public class UriUtils {
         if (queryString != null && !queryString.isBlank()) {
             for (String param : queryString.split("&")) {
                 String pair[] = param.split("=", 2);
-                String key = decodeUft8(pair[0]);
+                String key = decodeQueryParamUtf8(pair[0]);
                 String value = null;
                 if (pair.length > 1) {
-                    value = decodeUft8(pair[1]);
+                    value = decodeQueryParamUtf8(pair[1]);
                 }
                 sink.accept(key, value);
             }
@@ -113,22 +108,42 @@ public class UriUtils {
         String tmp = entries.stream().map(e -> {
             String k = e.getKey();
             String v = e.getValue();
-            String encodedK = encodeUtf8(k);
+            String encodedK = encodeQueryParamUtf8(k);
             String r = v == null
                     ? encodedK
-                    : encodedK + "=" + encodeUtf8(v);
+                    : encodedK + "=" + encodeQueryParamUtf8(v);
             return r;
         }).collect(Collectors.joining("&"));
         String result = !tmp.isEmpty() ? tmp : null;
         return result;
     }
 
-    /** Returns a new URI with its query string replaced directly with the given argument */
+    /**
+     * Returns a new URI with its query string replaced directly with the given argument
+     * (which must already be properly encoded)
+     */
     public static URI replaceQueryString(URI uri, String newQueryString) throws URISyntaxException {
-        return new URI(uri.getScheme(),
-                       uri.getAuthority(),
-                       uri.getPath(),
-                       newQueryString,
-                       uri.getFragment());
+        // Passing the newQueryString to the URI constructor encodes it again, so we inject a placeholder and
+        // simply substitute it
+        boolean skip = newQueryString == null || newQueryString.isBlank();
+        String placeholder = "&&&INTERNAL_PLACEHOLDER&&&";
+        String str = new URI(
+            uri.getScheme(),
+            uri.getAuthority(),
+            uri.getPath(),
+            (skip ? null : placeholder),
+            uri.getFragment()).toString();
+
+        String newStr = skip ? str : str.replace(placeholder, newQueryString);
+        return new URI(newStr);
+
+//        return new URI(uri.getScheme(),
+//			uri.getUserInfo(),
+//			uri.getHost(),
+//			uri.getPort(),
+//			uri.getPath(),
+//			newQueryString,
+//			uri.getFragment());
+
     }
 }
