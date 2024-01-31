@@ -12,34 +12,20 @@ import org.aksw.commons.io.util.channel.ChannelFactory;
  * This may speed up speed up relative read operations as e.g. lookup of the right bucket
  * for consecutive reads can be skipped.
  *
- *
  * @author raven
- *
  */
 public interface Segment
     extends ChannelFactory<Seekable>
 {
-
-
-//    Segment nextSegment();
-//    Segment prevSegment();
-
-    /**
-     * The horizon is the number of bytes from the offset of the segment that have been loaded
-     *
-     * @return
-     */
-    // long horizon();
-
     /**
      * Retrieve the length of the segment
-     * For segments that are based on encoded data this method may trigger a full read
+     * For segments that are based on encoded data this method may trigger a full read.
+     * Therefore, this method should be used with care.
      *
      * @return
      * @throws IOException
      */
     long length() throws IOException;
-
 
     /**
      * Return a sub-segment
@@ -49,4 +35,11 @@ public interface Segment
      * @return
      */
     // Segment slice(long start, long end);
+
+    /**
+     * The horizon is the number of bytes from the offset of the segment that have been loaded
+     *
+     * @return
+     */
+    // long horizon();
 }
