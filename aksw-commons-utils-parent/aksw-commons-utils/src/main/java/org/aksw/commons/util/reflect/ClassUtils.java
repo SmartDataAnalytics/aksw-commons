@@ -1,7 +1,9 @@
 package org.aksw.commons.util.reflect;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -417,4 +420,51 @@ public class ClassUtils {
         return result;
     }
 
+
+    /**
+     * Return a supplier that invokes the given class' no-arg constructor.
+     *
+     * @param cls The class
+     * @param createTestInstance If true then for verification an instance is
+     *          taken from the created supplier immediately.
+     */
+    public static <T> Supplier<T> supplierFromCtor(Class<?> cls, boolean createTestInstance) {
+        Constructor<?> ctor;
+        try {
+            ctor = cls.getConstructor();
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException(e);
+        }
+
+        return supplierFromCtor(ctor, createTestInstance);
+    }
+
+    /**
+     * Return a supplier that invokes the constructor.
+     *
+     * @param ctor The constructor
+     * @param createTestInstance If true then for verification an instance is
+     *          taken from the created supplier immediately.
+     */
+    public static <T> Supplier<T> supplierFromCtor(Constructor<?> ctor, boolean createTestInstance) {
+
+        Supplier<T> result = () -> {
+            Object obj;
+            try {
+                obj = ctor.newInstance();
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+            @SuppressWarnings("unchecked")
+            T r = (T)obj;
+            return r;
+        };
+
+        if (createTestInstance) {
+            T test = result.get();
+        }
+
+        return result;
+    }
 }
