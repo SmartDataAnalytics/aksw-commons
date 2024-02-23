@@ -3,18 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>aksw-commons-models-parent</artifactId>
-	<packaging>pom</packaging>
+	<artifactId>aksw-commons-models-maven</artifactId>
+	<packaging>jar</packaging>
 
 	<parent>
+		<artifactId>aksw-commons-models-parent</artifactId>
 		<groupId>org.aksw.commons</groupId>
-		<artifactId>aksw-commons-parent</artifactId>
 		<version>0.9.8-SNAPSHOT</version>
 	</parent>
-
-	<modules>
-		<module>aksw-commons-models-csvw-parent</module>
-		<module>aksw-commons-models-maven</module>
-	</modules>
-
 </project>
+
