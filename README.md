@@ -1,8 +1,15 @@
-## AKSW Commons
+# AKSW Commons
 
 A modular utility collection for solving recurrent basic tasks in a productive and robust way.
 
-### Modules
+## Building
+
+The parent pom of this project resides in the directory `./aksw-commons-bom`. You can build the project as follows:
+
+* Run `mvn clean install` from `./aksw-commons-bom` or
+* Specify the parent with explicitly to run a full build from any folder: `mvn -f aksw-commons-bom/pom.xml clean install`
+
+## Modules
 
 * [Lambdas: Serializable](aksw-commons-lambdas-parent/aksw-commons-lambdas-serializable): Interfaces derived from the Java8 functions and collector ones that extend Serializable.
 * [Lambdas: Throwing](aksw-commons-lambdas-parent/aksw-commons-lambdas-throwing): Alternate version of the Java8 function interfaces that declare to throw exceptions.
@@ -20,17 +27,17 @@ A modular utility collection for solving recurrent basic tasks in a productive a
 * [util](aksw-commons-util): This package needs refactoring as it contains utils for unrelated domains, such as JDBC metadata retrieval and health checking. Also the name 'util' is too generic.
 
 
-### Where is it used?
+## Where is it used?
 
 AKSW Commons is essentially the jena-idenpendent code from our [jena-sparql-api](https://github.com/SmartDataAnalytics/jena-sparql-api) Semantic Web toolkit.
 
 * [RDFUnit](https://github.com/AKSW/RDFUnit): RDF data quality assessment framework
 * [DL-Learner](https://github.com/SmartDataAnalytics/DL-Learner): Framework for symbolic machine learning
-* [Facete](https://github.com/SmartDataAnalytics/DL-Learner): Faceted Search framework
+* [Facete](https://github.com/Scaseco/facete3): Faceted Search framework
 * [SANSA](https://github.com/SANSA-Stack/SANSA-Stack): Big Data RDF Processing and Analytics framework
 
 
-### License
+## License
 
 This code is released under the Apache License Version 2.0.
 
