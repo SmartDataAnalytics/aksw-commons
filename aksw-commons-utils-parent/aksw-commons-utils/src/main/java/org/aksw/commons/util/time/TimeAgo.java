@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
-
+/** Utility class to parse durations such as 1h5m (1 hour and 5 minutes) */
 public class TimeAgo {
 
     public static final List<Long> times = Arrays.asList(
