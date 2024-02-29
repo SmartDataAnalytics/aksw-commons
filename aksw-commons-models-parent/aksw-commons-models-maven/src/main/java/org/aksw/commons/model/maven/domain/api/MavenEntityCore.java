@@ -190,6 +190,11 @@ public interface MavenEntityCore {
                 : null
                 ;
 
+        // Empty prefix is treated as if it was null
+        if (prefix != null && prefix.isEmpty()) {
+            prefix = null;
+        }
+
         String pathStr = includeDirectories ? toPath(entity) : null;
         String fileName = includeFileName ? toFileName(entity) : null;
 
