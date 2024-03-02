@@ -2,8 +2,11 @@ package org.aksw.commons.util.exception;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.aksw.commons.util.function.ThrowingRunnable;
 
@@ -84,4 +87,47 @@ public class FinallyRunAll
     public static void run(ThrowingRunnable ... actions) {
         new FinallyRunAll(Arrays.asList(actions)).run();
     }
+    
+	public static <T> void runAll(Collection<T> actions, Consumer<T> runner, ThrowingRunnable finallyAction) {
+		ThrowingRunnable[] runnables = actions.stream().map(action -> {
+			ThrowingRunnable r = () -> {
+				runner.accept(action);
+			};
+			return r;
+		}).collect(Collectors.toList()).toArray(new ThrowingRunnable[0]);
+		
+		try {
+			run(runnables);
+		} finally {
+			if (finallyAction != null) {
+				try {
+					finallyAction.run();
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		
+		// Alternative approach using a loop
+		if (false) {
+			List<Exception> exceptions = null;
+			for (T action : actions) {
+				try {
+					runner.accept(action);
+				} catch (Exception e) {
+					if (exceptions == null) {
+						exceptions = new ArrayList<>();
+					}
+					exceptions.add(e);
+				}
+			}
+			
+			if (exceptions != null) {
+				RuntimeException e = new RuntimeException();
+				exceptions.forEach(e::addSuppressed);
+				throw e;
+			}
+		}
+	}
+
 }
