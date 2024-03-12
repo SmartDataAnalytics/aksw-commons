@@ -30,16 +30,15 @@ public class StdIo {
         return new FileInputStream(FileDescriptor.in);
     }
 
-
     public static OutputStream openStdOutWithCloseShield() {
-        return new CloseShieldOutputStream(openStdOut());
+        return CloseShieldOutputStream.wrap(openStdOut());
     }
 
     public static OutputStream openStdErrWithCloseShield() {
-        return new CloseShieldOutputStream(openStdErr());
+        return CloseShieldOutputStream.wrap(openStdErr());
     }
 
     public static InputStream openStdInWithCloseShield() {
-        return new CloseShieldInputStream(openStdIn());
+        return CloseShieldInputStream.wrap(openStdIn());
     }
 }
