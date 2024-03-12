@@ -20,6 +20,10 @@ public class MavenEntityCoreImpl
         this(base.getGroupId(), base.getArtifactId(), base.getVersion(), base.getType(), base.getClassifier(), base.getRemainder());
     }
 
+    public MavenEntityCoreImpl(String groupId, String artifactId, String version, String type, String classifier) {
+        this(groupId, artifactId, version, type, classifier, null);
+    }
+
     public MavenEntityCoreImpl(String groupId, String artifactId, String version, String type, String classifier, String remainder) {
         super();
         this.groupId = groupId;
