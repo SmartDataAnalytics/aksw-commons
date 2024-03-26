@@ -120,7 +120,7 @@ public class FileUtils {
     }
 
     /** Actions if the target already exists */
-    public static enum OverwriteAction {
+    public static enum OverwriteMode {
         /** Raise an error */
         ERROR,
 
@@ -131,29 +131,29 @@ public class FileUtils {
         SKIP
     }
 
-    public static void safeCreate(Path target, OverwriteAction overwriteAction, IOWriter writer) throws IOException {
+    public static void safeCreate(Path target, OverwriteMode overwriteAction, IOWriter writer) throws IOException {
         Objects.requireNonNull(overwriteAction);
 
         String fileName = target.getFileName().toString();
         String tmpFileName = "." + fileName + ".tmp"; // + new Random().nextInt();
         Path tmpFile = target.resolveSibling(tmpFileName);
 
-        Boolean fileExists = OverwriteAction.SKIP.equals(overwriteAction) || OverwriteAction.ERROR.equals(overwriteAction)
+        Boolean fileExists = OverwriteMode.SKIP.equals(overwriteAction) || OverwriteMode.ERROR.equals(overwriteAction)
                 ? Files.exists(target)
                 : null;
 
         // Check whether the target already exists before we start writing the tmpFile
-        if (Boolean.TRUE.equals(fileExists) && OverwriteAction.ERROR.equals(overwriteAction)) {
+        if (Boolean.TRUE.equals(fileExists) && OverwriteMode.ERROR.equals(overwriteAction)) {
             throw new FileAlreadyExistsException(target.toAbsolutePath().toString());
         }
 
-        if (!(Boolean.TRUE.equals(fileExists) && OverwriteAction.SKIP.equals(overwriteAction))) {
+        if (!(Boolean.TRUE.equals(fileExists) && OverwriteMode.SKIP.equals(overwriteAction))) {
             Path parent = target.getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
             }
 
-            boolean allowOverwrite = OverwriteAction.OVERWRITE.equals(overwriteAction);
+            boolean allowOverwrite = OverwriteMode.OVERWRITE.equals(overwriteAction);
             // What to do if the tmp file already exists?
             try (OutputStream out = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW)) {
                 writer.write(out);
