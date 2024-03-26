@@ -3,9 +3,11 @@ package org.aksw.commons.io.util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +17,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
@@ -82,7 +86,8 @@ public class FileUtils {
         }
     }
 
-    /** Best-effort moveAtomic */
+    /** Best-effort moveAtomic. Use moveAtomicIfPossible. */
+    @Deprecated
     public static void moveAtomic(Path srcFile, Path tgtPath) throws IOException {
         try {
             Files.move(srcFile, tgtPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
@@ -99,6 +104,60 @@ public class FileUtils {
         }
     }
 
+    public static void moveAtomicIfSupported(Consumer<String> warnCallback, Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            if (warnCallback != null) {
+                warnCallback.accept(String.format("Atomic move from %s to %s failed, falling back to copy", source, target));
+            }
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    public interface IOWriter {
+        void write(OutputStream out) throws IOException;
+    }
+
+    /** Actions if the target already exists */
+    public static enum OverwriteAction {
+        /** Raise an error */
+        ERROR,
+
+        /** Overwrite the target */
+        OVERWRITE,
+
+        /** Skip the write */
+        SKIP
+    }
+
+    public static void safeCreate(Path target, OverwriteAction overwriteAction, IOWriter writer) throws IOException {
+        Objects.requireNonNull(overwriteAction);
+
+        String fileName = target.getFileName().toString();
+        String tmpFileName = "." + fileName + ".tmp"; // + new Random().nextInt();
+        Path tmpFile = target.resolveSibling(tmpFileName);
+
+        Boolean fileExists = OverwriteAction.SKIP.equals(overwriteAction) || OverwriteAction.ERROR.equals(overwriteAction)
+                ? Files.exists(target)
+                : null;
+
+        // Check whether the target already exists before we start writing the tmpFile
+        if (Boolean.TRUE.equals(fileExists) && OverwriteAction.ERROR.equals(overwriteAction)) {
+            throw new FileAlreadyExistsException(target.toAbsolutePath().toString());
+        }
+
+        if (!(Boolean.TRUE.equals(fileExists) && OverwriteAction.SKIP.equals(overwriteAction))) {
+            boolean allowOverwrite = OverwriteAction.OVERWRITE.equals(overwriteAction);
+            // What to do if the tmp file already exists?
+            try (OutputStream out = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW)) {
+                writer.write(out);
+                out.flush();
+                out.close();
+            }
+            moveAtomicIfSupported(null, tmpFile, target);
+        }
+    }
 
     /** Delete a path if it is an empty directory */
     public void deleteDirectoryIfEmpty(Path path) throws IOException {
