@@ -148,6 +148,11 @@ public class FileUtils {
         }
 
         if (!(Boolean.TRUE.equals(fileExists) && OverwriteAction.SKIP.equals(overwriteAction))) {
+            Path parent = target.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
             boolean allowOverwrite = OverwriteAction.OVERWRITE.equals(overwriteAction);
             // What to do if the tmp file already exists?
             try (OutputStream out = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW)) {
