@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.aksw.commons.lambda.throwing.ThrowingConsumer;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
@@ -115,10 +117,6 @@ public class FileUtils {
         }
     }
 
-    public interface IOWriter {
-        void write(OutputStream out) throws IOException;
-    }
-
     /** Actions if the target already exists */
     public static enum OverwriteMode {
         /** Raise an error */
@@ -131,7 +129,7 @@ public class FileUtils {
         SKIP
     }
 
-    public static void safeCreate(Path target, OverwriteMode overwriteAction, IOWriter writer) throws IOException {
+    public static void safeCreate(Path target, OverwriteMode overwriteAction, ThrowingConsumer<OutputStream> writer) throws Exception {
         Objects.requireNonNull(overwriteAction);
 
         String fileName = target.getFileName().toString();
@@ -156,7 +154,7 @@ public class FileUtils {
             boolean allowOverwrite = OverwriteMode.OVERWRITE.equals(overwriteAction);
             // What to do if the tmp file already exists?
             try (OutputStream out = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW)) {
-                writer.write(out);
+                writer.accept(out);
                 out.flush();
                 out.close();
             }
