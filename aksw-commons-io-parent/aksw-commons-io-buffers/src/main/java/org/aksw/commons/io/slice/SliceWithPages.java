@@ -9,6 +9,7 @@ public interface SliceWithPages<T>
     @Override
     long getPageSize();
 
+    @Override
     default SliceAccessor<T> newSliceAccessor() {
         return new SliceAccessorImpl<>(this);
     }

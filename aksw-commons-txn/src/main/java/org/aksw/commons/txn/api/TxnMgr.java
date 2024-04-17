@@ -40,5 +40,11 @@ public interface TxnMgr
      */
     void deleteResources() throws IOException;
 
+    /** The time interval between two heartbeats for when
+     * transaction metadata in the backend (e.g. a file in the filesystem) is updated to indicate that a transaction's
+     * process is still running.
+     * Conversely, exceeding the heartbeat duration (with a little margin) indicates that the process managing a transaction
+     * must have stopped or is terminated and the transaction can be rolled back.
+     */
     TemporalAmount getHeartbeatDuration();
 }

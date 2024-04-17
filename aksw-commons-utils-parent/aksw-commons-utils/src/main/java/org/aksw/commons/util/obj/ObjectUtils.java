@@ -3,6 +3,7 @@ package org.aksw.commons.util.obj;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -53,6 +54,20 @@ public class ObjectUtils {
         return result;
     }
 
+
+    /**
+     * If both arguments are non-null then invoke the merger with them and return its result.
+     * If both arguments are null return null;
+     * Otherwise return the non-null argument.
+     */
+    public static <T> T mergeNonNull(T a, T b, BinaryOperator<T> merger) {
+        T result = a == null
+                ? b
+                : b == null
+                    ? a
+                    : merger.apply(a, b);
+        return result;
+    }
 
     /**
      * Supplier-based coalesce function as described in

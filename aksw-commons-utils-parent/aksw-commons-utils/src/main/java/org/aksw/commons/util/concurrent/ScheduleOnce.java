@@ -3,7 +3,6 @@ package org.aksw.commons.util.concurrent;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -57,10 +56,14 @@ public class ScheduleOnce {
             lastRequestTime = Instant.now();
             if (lastExecTime != null && lastRequestTime.isAfter(lastExecTime)) {
 
-                logger.info("Scheduled task with a delay of " + execDelay);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Scheduled task with a delay of " + execDelay);
+                }
                 lastExecTime = null;
                 scheduledExecutorService.schedule(() -> {
-                    logger.info("Running task " + task);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Running task " + task);
+                    }
 
                     synchronized (lock) {
                         lastExecTime = Instant.now();
@@ -69,7 +72,9 @@ public class ScheduleOnce {
                     try {
                         return task.call();
                     } catch (Exception e) {
-                        logger.warn("Task execution failed", e);
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("Task execution failed", e);
+                        }
                         throw new RuntimeException(e);
                     }
                 }, execDelay.toMillis(), TimeUnit.MILLISECONDS);

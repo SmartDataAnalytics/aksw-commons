@@ -7,6 +7,8 @@ import org.aksw.commons.util.range.RangeUtils;
 
 import com.google.common.collect.Range;
 
+import io.reactivex.rxjava3.core.Single;
+
 /**
  * I think the ListService interface should be changed to:
  * ListService.createPaginator(Concept)
@@ -23,10 +25,18 @@ public interface MapPaginator<K, V>
         return fetchMap(RangeUtils.rangeStartingWithZero);
     }
 
+    default Single<Map<K, V>> toMap() {
+        Single<Map<K, V>> result = toMap(RangeUtils.rangeStartingWithZero);
+        return result;
+    }
+
+    default Single<Map<K, V>> toMap(Range<Long> range) {
+        Single<Map<K, V>> result = apply(range).toMap(Entry::getKey, Entry::getValue);
+        return result;
+    }
+
     default Map<K, V> fetchMap(Range<Long> range) {
-        Map<K, V> result = apply(range)
-                .toMap(Entry::getKey, Entry::getValue)
-                .blockingGet();
+        Map<K, V> result = toMap(range).blockingGet();
 //                .collect(Collectors.toMap(
 //                        Entry::getKey,
 //                        Entry::getValue,

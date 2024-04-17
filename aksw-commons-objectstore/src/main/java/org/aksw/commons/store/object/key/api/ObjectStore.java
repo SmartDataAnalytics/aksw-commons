@@ -6,12 +6,17 @@ import org.aksw.commons.txn.impl.PathDiffState;
 import org.aksw.commons.util.ref.RefFuture;
 
 public interface ObjectStore
-	extends AutoCloseable
+    extends AutoCloseable
 {
-	RefFuture<ObjectInfo> claim(Path<String> key);
-	
-	// Get the recency status of a resource outside of any transaction
-	PathDiffState fetchRecencyStatus(Path<String> key);
-	
-	ObjectStoreConnection getConnection();	
+    /**
+     * Asynchronously attempt to claim to the given resource.
+     * @param key
+     * @return
+     */
+    RefFuture<ObjectInfo> claim(Path<String> key);
+
+    // Get the recency status of a resource outside of any transaction
+    PathDiffState fetchRecencyStatus(Path<String> key);
+
+    ObjectStoreConnection getConnection();
 }

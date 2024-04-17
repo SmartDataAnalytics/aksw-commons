@@ -19,9 +19,10 @@ import org.aksw.commons.txn.api.TxnResourceApi;
 import org.aksw.commons.txn.impl.FileSync;
 import org.aksw.commons.txn.impl.FileSyncImpl;
 import org.aksw.commons.txn.impl.PathDiffState;
+import org.aksw.commons.txn.impl.TxnHandlerImpl;
 import org.aksw.commons.txn.impl.TxnHandler;
 import org.aksw.commons.txn.impl.TxnMgrImpl;
-import org.aksw.commons.util.array.Array;
+import org.aksw.commons.txn.impl.TxnUtils;
 import org.aksw.commons.util.ref.RefFuture;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -32,7 +33,7 @@ public class ObjectStoreImpl
     implements ObjectStore
 {
     protected TxnMgr txnMgr;
-    protected TxnHandler txnHandler;
+    protected TxnHandlerImpl txnHandler;
     protected ObjectSerializer objectSerializer;
 
     // The content cache can save object state to disk
@@ -42,18 +43,13 @@ public class ObjectStoreImpl
     // Read transactions must not access entries which may be modified by a write transaction (MRSW locking)
     protected AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectInfo> contentCache;
 
-
     // Accessors provide a thread-safe api to read metadata about a resource and load the content
     // Accessors should be generally cheap to create but they can hold certain state that should only exist once
     // to avoid redundant checks or inconsistent data (e.g. when content was loaded) so it makes sense to manage
     // them in a claiming cache
     protected AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectResource> accessorCache; // accessorCache
 
-
-
-
-
-    public ObjectStoreImpl(TxnMgr txnMgr, TxnHandler txnHandler, ObjectSerializer objectSerializer,
+    public ObjectStoreImpl(TxnMgr txnMgr, TxnHandlerImpl txnHandler, ObjectSerializer objectSerializer,
             AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectInfo> contentCache,
             AsyncClaimingCache<org.aksw.commons.path.core.Path<String>, ObjectResource> accessorCache) {
         super();
@@ -63,7 +59,6 @@ public class ObjectStoreImpl
         this.contentCache = contentCache;
         this.accessorCache = accessorCache;
     }
-
 
     @Override
     public PathDiffState fetchRecencyStatus(org.aksw.commons.path.core.Path<String> key) {
@@ -76,7 +71,7 @@ public class ObjectStoreImpl
 
     public static ObjectStore create(Path rootPath, ObjectSerializer objectSerializer) {
         TxnMgr txnMgr = TxnMgrImpl.createSimple(rootPath);
-        TxnHandler txnHandler = new TxnHandler(txnMgr);
+        TxnHandlerImpl txnHandler = new TxnHandlerImpl(txnMgr);
 
         try {
             txnHandler.cleanupStaleTxns();
@@ -168,7 +163,7 @@ public class ObjectStoreImpl
         return new ObjectStoreImpl(txnMgr, txnHandler, objectSerializer, contentCache, null);
     }
 
-    protected static void save(TxnMgr txnMgr, ObjectSerializer objectSerializer, TxnHandler txnHandler, org.aksw.commons.path.core.Path<String> key, ObjectInfo v) throws IOException {
+    protected static void save(TxnMgr txnMgr, ObjectSerializer objectSerializer, TxnHandlerImpl txnHandler, org.aksw.commons.path.core.Path<String> key, ObjectInfo v) throws IOException {
         Txn txn;
         txn = txnMgr.newTxn(true, true);
         TxnResourceApi api = txn.getResourceApi(key);
@@ -184,23 +179,19 @@ public class ObjectStoreImpl
         txnHandler.commit(txn);
     }
 
-
     @Override
     public RefFuture<ObjectInfo> claim(org.aksw.commons.path.core.Path<String> key) {
         return contentCache.claim(key);
     }
-
 
     @Override
     public ObjectStoreConnection getConnection() {
         return new ObjectStoreConnectionImpl();
     }
 
-
     @Override
     public void close() throws Exception {
     }
-
 
     class ObjectStoreConnectionImpl
         implements ObjectStoreConnection {
@@ -228,6 +219,14 @@ public class ObjectStoreImpl
         }
 
         @Override
+        public void commit(TxnHandler customHandler) {
+            Objects.requireNonNull(txn, "Cannot commit because there is no active transaction; Perhaps missing call to .begin()?");
+            // txnHandler.commit(txn);
+            TxnUtils.commit(txn, customHandler);
+            txn = null;
+        }
+
+        @Override
         public void abort() {
             Objects.requireNonNull(txn, "Cannot abort because there is no active transaction; Perhaps missing call to .begin()?");
             txnHandler.abort(txn);
@@ -241,9 +240,8 @@ public class ObjectStoreImpl
             api.declareAccess();
             api.lock(txn.isWrite());
 
-            return new Kor(api);
+            return new ObjectResourceImpl(api);
         }
-
 
         @Override
         public void close() throws Exception {
@@ -253,21 +251,18 @@ public class ObjectStoreImpl
             }
         }
 
-
-        class Kor
+        class ObjectResourceImpl
             implements ObjectResource {
 
             protected TxnResourceApi res;
 
-            public Kor(TxnResourceApi res) {
+            public ObjectResourceImpl(TxnResourceApi res) {
                 super();
                 this.res = res;
             }
 
             @Override
             public void close() throws Exception {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
@@ -318,9 +313,7 @@ public class ObjectStoreImpl
                     throw new RuntimeException(e);
                 }
                 // TODO Auto-generated method stub
-
             }
-
         }
 
 //		class KorOld
@@ -512,7 +505,6 @@ public class ObjectStoreImpl
 //
 //			}
 //		}
-
     }
 }
 

@@ -14,6 +14,12 @@ import com.google.common.cache.Cache;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Single;
 
+/**
+ * A lookup service builds a cold flowable that upon execution retrieves data for the given set of keys. 
+ * 
+ * @param <K>
+ * @param <V>
+ */
 public interface LookupService<K, V>
     extends Function<Iterable<K>, Flowable<Entry<K, V>>> //CompletableFuture<Map<K, V>>>
 {
