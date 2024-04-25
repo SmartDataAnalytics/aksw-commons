@@ -147,6 +147,10 @@ public class FileUtils {
     }
 
     public static void safeCreate(Path target, OverwriteMode overwriteAction, ThrowingConsumer<OutputStream> writer) throws Exception {
+        safeCreate(target, null, overwriteAction, writer);
+    }
+
+    public static void safeCreate(Path target, Function<OutputStream, OutputStream> encoder, OverwriteMode overwriteAction, ThrowingConsumer<OutputStream> writer) throws Exception {
         Objects.requireNonNull(overwriteAction);
 
         String fileName = target.getFileName().toString();
@@ -170,10 +174,10 @@ public class FileUtils {
 
             boolean allowOverwrite = OverwriteMode.OVERWRITE.equals(overwriteAction);
             // What to do if the tmp file already exists?
-            try (OutputStream out = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW)) {
+            try (OutputStream raw = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW);
+                 OutputStream out = encoder != null ? encoder.apply(raw) : raw) {
                 writer.accept(out);
                 out.flush();
-                out.close();
             }
             moveAtomicIfSupported(null, tmpFile, target);
         }
