@@ -30,6 +30,23 @@ import com.google.common.io.RecursiveDeleteOption;
 
 public class FileUtils {
 
+    /** Attempt to open an output stream to the given file */
+    @SuppressWarnings("resource")
+    public static OutputStream newOutputStream(OutputConfig config) throws IOException {
+        OutputStream result;
+        String fileName = config.getTargetFile();
+        boolean allowOverwrite = config.isOverwriteAllowed();
+
+        if (fileName == null || "-".equals(fileName)) {
+            result = StdIo.openStdOutWithCloseShield();
+        } else {
+            Path path = Path.of(fileName);
+            result = Files.newOutputStream(path, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW);
+        }
+
+        return result;
+    }
+
     public static void deleteRecursivelyIfExists(Path path, RecursiveDeleteOption ... options) throws IOException {
         if (Files.exists(path)) {
             MoreFiles.deleteRecursively(path, options);
