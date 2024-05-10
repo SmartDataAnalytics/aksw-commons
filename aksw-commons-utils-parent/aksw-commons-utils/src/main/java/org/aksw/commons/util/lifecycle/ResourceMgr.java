@@ -3,6 +3,7 @@ package org.aksw.commons.util.lifecycle;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.aksw.commons.util.exception.FinallyRunAll;
 import org.aksw.commons.util.exception.FinallyRunAll.ThrowingConsumer;
@@ -21,6 +22,8 @@ public class ResourceMgr
     private final Map<Object, ThrowingRunnable> resourceToCloser =
             Collections.synchronizedMap(new IdentityHashMap<>());
 
+    private AtomicBoolean isClosed = new AtomicBoolean(false);
+
     public ResourceMgr() {
         super();
     }
@@ -33,13 +36,31 @@ public class ResourceMgr
         return register(obj, () -> closer.accept(obj));
     }
 
+    /**
+     * If the resource manager has already been closed then resources are immediately closed
+     * upon registration.
+     */
     public <T> T register(T obj, ThrowingRunnable closeAction) {
-        resourceToCloser.put(obj, closeAction);
+        if (isClosed.get()) {
+            try {
+                closeAction.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            resourceToCloser.put(obj, closeAction);
+        }
         return obj;
     }
 
     @Override
     public void close() {
-        FinallyRunAll.runAll(resourceToCloser.entrySet(), e -> e.getValue().run(), null);
+        if (!isClosed.get()) {
+            FinallyRunAll.runAll(resourceToCloser.entrySet(), e -> e.getValue().run(), null);
+        }
+    }
+
+    public boolean isClosed() {
+        return isClosed.get();
     }
 }
