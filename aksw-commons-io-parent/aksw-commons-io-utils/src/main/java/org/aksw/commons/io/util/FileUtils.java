@@ -42,7 +42,11 @@ public class FileUtils {
             result = StdIo.openStdOutWithCloseShield();
         } else {
             Path path = Path.of(fileName);
-            result = Files.newOutputStream(path, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW);
+            if (allowOverwrite) {
+                result = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            } else {
+                result = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW);
+            }
         }
 
         return result;
