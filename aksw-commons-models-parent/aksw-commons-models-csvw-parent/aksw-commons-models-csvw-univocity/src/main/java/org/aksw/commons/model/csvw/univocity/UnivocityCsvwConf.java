@@ -1,6 +1,5 @@
 package org.aksw.commons.model.csvw.univocity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.aksw.commons.model.csvw.domain.api.DialectMutable;
 import org.aksw.commons.model.csvw.domain.impl.DialectMutableImpl;
 import org.aksw.commons.model.csvw.jackson.DialectMutableForwardingJackson;
