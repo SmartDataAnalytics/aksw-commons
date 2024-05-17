@@ -11,7 +11,6 @@ import picocli.CommandLine;
  * execCmd: Run command and terminate the JVM using System.exit with the exit code
  *
  * @author raven
- *
  */
 public class CmdUtils {
     private static final Logger logger = LoggerFactory.getLogger(CmdUtils.class);
@@ -26,6 +25,10 @@ public class CmdUtils {
         System.exit(exitCode);
     }
 
+    public static void execCmd(CommandLine cl, String[] args) {
+        int exitCode = callCmd(cl, args);
+        System.exit(exitCode);
+    }
 
     /**
      *
@@ -73,6 +76,29 @@ public class CmdUtils {
                 return 0;
             })
             .execute(args);
+        return result;
+    }
+
+    /**
+     * Attempt to register a command by class name. If a {@link ClassNotFoundException} is raised
+     * then the command is ignored. Useful to deal with commands provided by
+     * maven dependencies that may needed to be excluded.
+     */
+    public static CommandLine registerIfAvailable(CommandLine commandLine, String className) {
+        CommandLine result = null;
+        try {
+            Class<?> cmdCls = Class.forName(className);
+            Object cmd;
+            try {
+                cmd = cmdCls.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            result = commandLine.addSubcommand(cmd);
+        } catch (ClassNotFoundException e) {
+            logger.debug("A command was was not found: " + className);
+        }
+
         return result;
     }
 }
