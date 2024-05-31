@@ -8,6 +8,7 @@ public class ReadableByteChannelDecoratorBase<T extends ReadableByteChannel>
     protected T delegate;
 
     public ReadableByteChannelDecoratorBase(T delegate) {
+        super();
         this.delegate = delegate;
     }
 
