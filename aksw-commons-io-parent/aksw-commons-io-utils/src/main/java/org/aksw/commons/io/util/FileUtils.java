@@ -16,8 +16,11 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -139,52 +142,131 @@ public class FileUtils {
         }
     }
 
-    /** Actions if the target already exists */
-    public static enum OverwriteMode {
+    /** Policies for when the target file already exists */
+    public static enum OverwritePolicy {
         /** Raise an error */
         ERROR,
 
-        /** Overwrite the target */
+        /** Overwrite the target (unless the target is newer, then ignore) */
         OVERWRITE,
 
         /** Skip the write */
-        SKIP
+        SKIP,
+
+        /** Overwrite the target (even if the target is newer) */
+        OVERWRITE_ALWAYS,
+
+        /** Overwrite the target, unless it was changed then raise an error */
+        OVERWRITE_ERROR
     }
 
-    public static void safeCreate(Path target, OverwriteMode overwriteAction, ThrowingConsumer<OutputStream> writer) throws Exception {
-        safeCreate(target, null, overwriteAction, writer);
+    // error on change
+    // OVERWRITE_IF_NEWER (default) overwrite only if tmp file is newer than the existing file
+    // 		(don't overwrite on concurrent change)
+    // OVERWRITE_FORCE (overwrite even the existing file is newer than the tmp file)
+
+    // keep tmp file on error
+
+    public static void safeCreate(Path target, OverwritePolicy overwritePolicy, ThrowingConsumer<OutputStream> writer) throws Exception {
+        safeCreate(target, null, overwritePolicy, writer);
     }
 
-    public static void safeCreate(Path target, Function<OutputStream, OutputStream> encoder, OverwriteMode overwriteAction, ThrowingConsumer<OutputStream> writer) throws Exception {
-        Objects.requireNonNull(overwriteAction);
+    public static FileTime getLastModifiedTimeOrNull(Path path) {
+        // Get the time so that we can check whether the target was changed concurrently
+        FileTime result = null;
+        try {
+            BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+            result = attr.lastModifiedTime();
+        } catch (Exception e) {
+            // Ignore if failed
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param target
+     * @param encoder A function that can wrap the OutputStream to the target file. May be null.
+     * @param overwritePolicy
+     * @param writer The action that writes to the (possibly encoded) output stream.
+     * @throws Exception
+     */
+    public static void safeCreate(Path target, Function<OutputStream, OutputStream> encoder, OverwritePolicy overwritePolicy, ThrowingConsumer<OutputStream> writer) throws Exception {
+        Objects.requireNonNull(overwritePolicy);
+
+        boolean isCheckedOverwrite = OverwritePolicy.OVERWRITE.equals(overwritePolicy)
+                || OverwritePolicy.OVERWRITE_ERROR.equals(overwritePolicy);
+
+        boolean isOverwriteMode =  isCheckedOverwrite
+                || OverwritePolicy.OVERWRITE_ALWAYS.equals(overwritePolicy);
+
+        // Get the time so that we can check whether the target was changed concurrently
+        FileTime targetFileTimeAtStart = isCheckedOverwrite ? getLastModifiedTimeOrNull(target) : null;
 
         String fileName = target.getFileName().toString();
-        String tmpFileName = "." + fileName + ".tmp"; // + new Random().nextInt();
+        String randomPart = "." + new Random().nextInt();
+        String tmpFileName = "." + fileName + randomPart + ".tmp";
         Path tmpFile = target.resolveSibling(tmpFileName);
 
-        Boolean fileExists = OverwriteMode.SKIP.equals(overwriteAction) || OverwriteMode.ERROR.equals(overwriteAction)
+        // true, false, null=not relevant
+        Boolean fileExists = OverwritePolicy.SKIP.equals(overwritePolicy) || OverwritePolicy.ERROR.equals(overwritePolicy)
                 ? Files.exists(target)
                 : null;
 
         // Check whether the target already exists before we start writing the tmpFile
-        if (Boolean.TRUE.equals(fileExists) && OverwriteMode.ERROR.equals(overwriteAction)) {
+        if (Boolean.TRUE.equals(fileExists) && OverwritePolicy.ERROR.equals(overwritePolicy)) {
             throw new FileAlreadyExistsException(target.toAbsolutePath().toString());
         }
 
-        if (!(Boolean.TRUE.equals(fileExists) && OverwriteMode.SKIP.equals(overwriteAction))) {
+        if (!(Boolean.TRUE.equals(fileExists) && OverwritePolicy.SKIP.equals(overwritePolicy))) {
             Path parent = target.getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
             }
 
-            boolean allowOverwrite = OverwriteMode.OVERWRITE.equals(overwriteAction);
-            // What to do if the tmp file already exists?
+            boolean allowOverwrite = isOverwriteMode;
+//            Thread hook = new Thread(() -> {
+//                try {
+//                    Files.deleteIfExists(tmpFile);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            });
+//            Runtime.getRuntime().addShutdownHook(hook);
+
+            // Note: using a random id makes it highly unlikely that the tmp file already exists
             try (OutputStream raw = Files.newOutputStream(tmpFile, allowOverwrite ? StandardOpenOption.CREATE : StandardOpenOption.CREATE_NEW);
                  OutputStream out = encoder != null ? encoder.apply(raw) : raw) {
                 writer.accept(out);
                 out.flush();
             }
-            moveAtomicIfSupported(null, tmpFile, target);
+
+            boolean doFinalMove = true; // OverwriteMode.OVERWRITE_ALWAYS
+            if (targetFileTimeAtStart != null) {
+                if (OverwritePolicy.OVERWRITE_ERROR.equals(overwritePolicy)) {
+                    // Raise an error if the target file was modified while creating the tmp file
+                    FileTime targetFileTimeAtEnd = getLastModifiedTimeOrNull(target);
+                    if (targetFileTimeAtEnd.compareTo(targetFileTimeAtStart) != 0) {
+                        Files.delete(tmpFile);
+                        throw new ConcurrentModificationException("Concurrent modification to file: " + target);
+                    }
+                } else if (OverwritePolicy.OVERWRITE.equals(overwritePolicy)) {
+                    // Suppress overwrite if tmpFile is older than the target
+                    FileTime tmpFileTime = getLastModifiedTimeOrNull(tmpFile);
+                    if (tmpFileTime != null) {
+                        if (tmpFileTime.compareTo(targetFileTimeAtStart) < 0) {
+                            doFinalMove = false;
+                        }
+                    }
+                }
+            }
+
+            if (doFinalMove) {
+                moveAtomicIfSupported(null, tmpFile, target);
+            } else {
+                Files.delete(tmpFile);
+            }
+            // Runtime.getRuntime().removeShutdownHook(hook);
         }
     }
 
