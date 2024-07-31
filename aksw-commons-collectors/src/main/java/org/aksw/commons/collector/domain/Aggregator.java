@@ -8,12 +8,11 @@ import org.aksw.commons.collector.core.AggFinish;
 import org.aksw.commons.lambda.serializable.SerializableFunction;
 
 /**
+* Interface for agregators.
 *
-* @author raven
-*
-*
-* @param <B> The type of bindings being accumulated by the accumulator
-* @param <T> The result object of the accumulation
+* @param <B> The type of bindings being accumulated by the accumulator.
+* @param <E> The environment/context to be passed to accumulator.
+* @param <T> The result object of the accumulation.
 */
 @FunctionalInterface
 public interface Aggregator<B, E, T> {

@@ -29,6 +29,10 @@ public interface Path<T>
 
     Path<T> subpath(int beginIndex, int endIndex);
 
+//    default Path<T> subpath(int beginIndex) {
+//        return subpath(beginIndex, getNameCount());
+//    }
+
     boolean startsWith(Path<T> other);
     boolean endsWith(Path<T> other);
 
@@ -53,6 +57,9 @@ public interface Path<T>
         return result;
     }
 
-    /** May return e.g. the file system underlying a path. Return null if not applicable. */
+    /**
+     * Returns an object such as the file system underlying this path. Returns null if not applicable.
+     * Experimental.
+     */
     Object getSystem();
 }

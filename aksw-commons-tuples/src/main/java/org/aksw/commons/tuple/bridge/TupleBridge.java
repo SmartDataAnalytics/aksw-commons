@@ -47,7 +47,7 @@ public interface TupleBridge<D, C>
         int r = getDimension();
 
         if (cl != r) {
-            throw new IllegalArgumentException("components.length must equal rank but " + cl + " != " + r);
+            throw new IllegalArgumentException("components.length must equal dimension but " + cl + " != " + r);
         }
     }
 

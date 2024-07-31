@@ -1,6 +1,7 @@
 package org.aksw.commons.collector.core;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.function.Function;
 
 import org.aksw.commons.collector.domain.Accumulator;
@@ -14,6 +15,8 @@ import org.aksw.commons.collector.domain.Aggregator;
 public class AggFinish<B, I, E, O, C extends Aggregator<B, E, I>>
     implements Aggregator<B, E, O>, Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private C subAgg;
     private Function<? super I, O> transform;
 
@@ -26,8 +29,16 @@ public class AggFinish<B, I, E, O, C extends Aggregator<B, E, I>>
     @Override
     public Accumulator<B, E, O> createAccumulator() {
         Accumulator<B, E, I> baseAcc = subAgg.createAccumulator();
-        Accumulator<B, E, O> result = new AccFinish(baseAcc);
+        Accumulator<B, E, O> result = new AccFinish<>(baseAcc, transform);
         return result;
+    }
+
+    public C getSubAgg() {
+        return subAgg;
+    }
+
+    public Function<? super I, O> getTransform() {
+        return transform;
     }
 
     public static <B, I, E, O, C extends Aggregator<B, E, I>> AggFinish<B, I, E, O, C> create(C subAgg, Function<? super I, O> transform) {
@@ -73,36 +84,43 @@ public class AggFinish<B, I, E, O, C extends Aggregator<B, E, I>>
     }
 
 
-    public class AccFinish
-        implements Accumulator<B, E, O>, Serializable
+    public static class AccFinish<I, E, O, V>
+        implements Accumulator<I, E, V>, Serializable
     {
         private static final long serialVersionUID = 1L;
 
-        protected Accumulator<B, E, I> subAcc;
+        protected Accumulator<I, E, O> subAcc;
+        protected Function<? super O, V> transform;
 
-        public AccFinish(Accumulator<B, E, I> subAcc) {
+        public AccFinish(Accumulator<I, E, O> subAcc, Function<? super O, V> transform) {
             this.subAcc = subAcc;
+            this.transform = transform;
         }
 
         @Override
-        public void accumulate(B binding, E env) {
-            subAcc.accumulate(binding, env);
+        public void accumulate(I input, E env) {
+            subAcc.accumulate(input, env);
+        }
+
+        public Accumulator<I, E, O> getSubAcc() {
+            return subAcc;
         }
 
         @Override
-        public O getValue() {
-            I input = subAcc.getValue();
-            O result = transform.apply(input);
+        public V getValue() {
+            O accValue = subAcc.getValue();
+            V result = transform.apply(accValue);
             return result;
+        }
+
+        /** Shortcut for {@code getEnclosingInstance().getTransform()} */
+        public Function<? super O, V> getTransform() {
+            return transform;
         }
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + getEnclosingInstance().hashCode();
-            result = prime * result + ((subAcc == null) ? 0 : subAcc.hashCode());
-            return result;
+            return Objects.hash(subAcc, transform);
         }
 
         @Override
@@ -114,18 +132,7 @@ public class AggFinish<B, I, E, O, C extends Aggregator<B, E, I>>
             if (getClass() != obj.getClass())
                 return false;
             AccFinish other = (AccFinish) obj;
-            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
-                return false;
-            if (subAcc == null) {
-                if (other.subAcc != null)
-                    return false;
-            } else if (!subAcc.equals(other.subAcc))
-                return false;
-            return true;
-        }
-
-        private AggFinish getEnclosingInstance() {
-            return AggFinish.this;
+            return Objects.equals(subAcc, other.subAcc) && Objects.equals(transform, other.transform);
         }
 
 //	    public static <B, I, O> Accumulator<B, O> create(Accumulator<B, I> subAcc, Function<? super I, O> transform) {

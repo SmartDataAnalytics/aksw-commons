@@ -69,6 +69,20 @@ public class ObjectUtils {
         return result;
     }
 
+    /** Similar to {@link #mergeNonNull(Object, Object, BinaryOperator)}
+     *  but with an additional supplier if both arguments are null. */
+    public static <T> T mergeNonNull(T a, T b, BinaryOperator<T> combiner, Supplier<T> nullCase) {
+        T result = a == null
+            ? b == null
+                ? nullCase.get()
+                : b
+            : b == null
+                ? a
+                : combiner.apply(a, b);
+        return result;
+    }
+
+
     /**
      * Supplier-based coalesce function as described in
      * https://benjiweber.co.uk/blog/2013/12/08/null-coalescing-in-java-8/
