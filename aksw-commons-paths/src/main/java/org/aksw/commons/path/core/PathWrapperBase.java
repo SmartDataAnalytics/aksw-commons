@@ -103,6 +103,11 @@ public abstract class PathWrapperBase<T, F extends Path<T>>
     }
 
     @Override
+    public F subpath(int beginIndex) {
+        return wrapOrNull(getDelegate().subpath(beginIndex));
+    }
+
+    @Override
     public boolean startsWith(Path<T> other) {
         return getDelegate().startsWith(unwrap(other));
     }

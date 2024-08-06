@@ -51,6 +51,20 @@ public interface TupleBridge<D, C>
         }
     }
 
+    /** If the dimension is 1 then return the component, otherwise the tuple. */
+    // FIXME What's the best name for this method? compact?
+    default Object compact(D domainObject) {
+        Object result = getDimension() == 1
+                ? get(domainObject, 0)
+                : domainObject;
+        return result;
+    }
+
+    /** If dimension == 1 then return the object as is, otherwise interpret it as a domain tuple. */
+//    default Object fromObject(Object componentOrTuple) {
+//
+//    }
+
     default C[] toComponentArray(D domainObject) {
         int len = getDimension();
         @SuppressWarnings("unchecked")

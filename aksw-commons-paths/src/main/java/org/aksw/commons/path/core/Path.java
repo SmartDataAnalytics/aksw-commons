@@ -29,6 +29,9 @@ public interface Path<T>
 
     Path<T> subpath(int beginIndex, int endIndex);
 
+    /** Experimental. Not part of nio Path.*/
+    Path<T> subpath(int beginIndex);
+
 //    default Path<T> subpath(int beginIndex) {
 //        return subpath(beginIndex, getNameCount());
 //    }

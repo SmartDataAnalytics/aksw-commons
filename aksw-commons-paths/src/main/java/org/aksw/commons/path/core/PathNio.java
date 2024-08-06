@@ -93,6 +93,12 @@ public class PathNio implements Path<String> // PathSys<String, FileSystem>
     }
 
     @Override
+    public Path<String> subpath(int beginIndex) {
+        int endIndex = getNameCount();
+        return subpath(beginIndex, endIndex);
+    }
+
+    @Override
     public boolean startsWith(Path<String> other) {
         return getDelegate().startsWith(((PathNio)other).getDelegate());
     }

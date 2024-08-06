@@ -147,6 +147,12 @@ public class PathBase<T, P extends Path<T>>
     }
 
     @Override
+    public P subpath(int beginIndex) {
+        int endIndex = getNameCount();
+        return subpath(beginIndex, endIndex);
+    }
+
+    @Override
     public boolean startsWith(Path<T> other) {
         boolean result;
         int n = other.getNameCount();
