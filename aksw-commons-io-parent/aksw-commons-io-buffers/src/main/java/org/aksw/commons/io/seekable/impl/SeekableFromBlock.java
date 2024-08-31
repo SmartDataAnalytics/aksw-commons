@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
 import org.aksw.commons.io.block.api.Block;
-import org.aksw.commons.io.block.impl.BlockIterState;
+import org.aksw.commons.io.block.impl.BlockEnumerator;
 import org.aksw.commons.io.seekable.api.Seekable;
 import org.aksw.commons.util.closeable.AutoCloseableWithLeakDetectionBase;
 import org.aksw.commons.util.ref.Ref;
@@ -229,7 +229,7 @@ public class SeekableFromBlock
         // TODO Test for currentSeekable.isPosAfterEnd() and there is no non-zero size next block
         boolean result = currentSeekable.isPosAfterEnd();
         if(result) {
-            BlockIterState it = BlockIterState.fwd(false, currentBlockRef, currentSeekable);
+            BlockEnumerator it = BlockEnumerator.fwd(false, currentBlockRef, currentSeekable);
             while(it.hasNext()) {
                 it.advance();
                 if(!it.seekable.isPosAfterEnd()) {
@@ -408,8 +408,8 @@ public class SeekableFromBlock
     }
 
 
-    void setCurrent(BlockIterState state) {
-        if (currentBlockRef != state.blockRef) {
+    void setCurrent(BlockEnumerator state) {
+        if (currentBlockRef != state.getCurrentBlockRef()) {
             currentBlockRef.close();
             try {
                 currentBlock.close();
@@ -419,9 +419,9 @@ public class SeekableFromBlock
             }
         }
 
-        currentBlockRef = state.blockRef;
-        currentBlock = state.block;
-        currentSeekable = state.seekable;
+        currentBlockRef = state.getCurrentBlockRef();
+        currentBlock = state.getCurrentBlock();
+        currentSeekable = state.getCurrentSeekable();
     }
 
     // void setActiveBlock(Reference<T>)
@@ -438,7 +438,7 @@ public class SeekableFromBlock
         if(contrib >= len) {
             // nothing do do
         } else {
-            BlockIterState it = BlockIterState.fwd(false, currentBlockRef, currentSeekable);
+            BlockEnumerator it = BlockEnumerator.fwd(false, currentBlockRef, currentSeekable);
             while(it.hasNext()) {
                 int remaining = len - result;
 
@@ -480,7 +480,7 @@ public class SeekableFromBlock
         if(contrib >= len) {
             // nothing do do
         } else {
-            BlockIterState it = BlockIterState.bwd(false, currentBlockRef, currentSeekable);
+            BlockEnumerator it = BlockEnumerator.bwd(false, currentBlockRef, currentSeekable);
             while(it.hasNext()) {
                 int remaining = len - result;
 
@@ -694,23 +694,11 @@ public class SeekableFromBlock
     public int read(ByteBuffer dst) throws IOException {
         int contrib = 0;
 
-        BlockIterState it = BlockIterState.fwd(true, currentBlockRef, currentSeekable);
-//        boolean isFirstIteration = true;
+        BlockEnumerator it = BlockEnumerator.fwd(true, currentBlockRef, currentSeekable);
         while (it.hasNext() && dst.remaining() > 0) {
             it.advance();
+            //setCurrent(it);
 
-//            if(isFirstIteration) {
-//                isFirstIteration = false;
-//            } else {
-//                it.seekable.posToStart();
-//                it.seekable.nextPos(1);
-//            }
-            // Position before the start - if there are no bytes, the contrib is 0
-            // it.seekable.posToStart();
-
-            setCurrent(it);
-
-            //while(it.seekable != null && dst.remaining() > 0) {
             while (dst.remaining() > 0) {
                 int n = it.seekable.read(dst);
                 if(n == 0) {
@@ -730,10 +718,7 @@ public class SeekableFromBlock
 
         setCurrent(it);
 
-
-        // && dst.remaining() > 0
         int result = contrib == 0 ? -1 : contrib;
-
         return result;
     }
 

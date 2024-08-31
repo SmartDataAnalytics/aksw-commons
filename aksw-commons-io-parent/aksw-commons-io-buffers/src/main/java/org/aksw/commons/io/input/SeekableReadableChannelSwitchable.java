@@ -1,5 +1,7 @@
 package org.aksw.commons.io.input;
 
+import java.io.IOException;
+
 public class SeekableReadableChannelSwitchable<A>
     extends ReadableChannelSwitchableBase<A, SeekableReadableChannel<A>>
     implements SeekableReadableChannel<A>
@@ -9,12 +11,12 @@ public class SeekableReadableChannelSwitchable<A>
     }
 
     @Override
-    public long position() {
+    public long position() throws IOException {
         return decoratee.position();
     }
 
     @Override
-    public void position(long pos) {
+    public void position(long pos) throws IOException {
         decoratee.position(pos);
     }
 

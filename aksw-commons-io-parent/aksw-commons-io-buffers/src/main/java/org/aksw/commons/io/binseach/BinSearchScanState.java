@@ -11,8 +11,8 @@ package org.aksw.commons.io.binseach;
  *
  */
 public class BinSearchScanState {
-    public long firstDelimPos; // The match position found by scanning backwards with Pattern.match
-    public long matchDelimPos; // The match position found by binary search
-    public byte[] prefixBytes; // Generalize using lambda with a compatible signature to Pattern.match
-    public long size;          // Absolute end of the data region on which the match was run
+    public long firstDelimPos; // The first match position of a run.
+    public long matchDelimPos; // A match position within a run (found by binary search).
+    public byte[] prefixBytes; // The prefix used for matching. XXX Generalize using lambda with a compatible signature to Pattern.match.
+    public long size;          // Absolute end of the data region on which the match was run.
 }

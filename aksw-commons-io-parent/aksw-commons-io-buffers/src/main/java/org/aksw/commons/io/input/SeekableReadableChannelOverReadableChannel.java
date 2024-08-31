@@ -2,10 +2,6 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 
-import org.aksw.commons.io.buffer.array.ArrayOps;
-
-import com.google.common.primitives.Ints;
-
 public class SeekableReadableChannelOverReadableChannel<A>
     extends ReadableChannelDecoratorBase<A, ReadableChannel<A>>
     implements SeekableReadableChannel<A>

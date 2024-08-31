@@ -3,12 +3,10 @@ package org.aksw.commons.io.buffer.plain;
 import java.io.IOException;
 import java.util.AbstractList;
 
-import com.google.common.primitives.Ints;
-
 /**
  * List view over a buffer.
  *
- * @param <T> The item type. Casts to this type are be unchecked.
+ * @param <T> The item type. Casts to this type are unchecked.
  */
 public class ListOverBuffer<T>
     extends AbstractList<T>

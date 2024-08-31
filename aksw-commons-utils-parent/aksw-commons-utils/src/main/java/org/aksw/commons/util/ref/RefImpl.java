@@ -87,7 +87,7 @@ public class RefImpl<T>
             AutoCloseable releaseAction,
             Object comment) {
         super();
-        
+
         // logger.debug("Acquired reference " + comment + " from " + parent);
 
         this.parent = parent;
@@ -140,11 +140,11 @@ public class RefImpl<T>
     @Override
     public T get() {
         if (isClosed) {
-        	
+
             String msg = "Cannot get value of a closed reference:\n"
                     + "Acquired at " + StackTraceUtils.toString(acquisitionStackTrace) + "\n"
-            		+ "Closed at " + StackTraceUtils.toString(closeStackTrace) + "\n"
-    				+ "Close Triggered at " + StackTraceUtils.toString(closeTriggerStackTrace);
+                    + "Closed at " + StackTraceUtils.toString(closeStackTrace) + "\n"
+                    + "Close Triggered at " + StackTraceUtils.toString(closeTriggerStackTrace);
             logger.warn(msg);
 
             throw new RuntimeException("Cannot get value of a closed reference");
@@ -207,13 +207,14 @@ public class RefImpl<T>
     @Override
     public void close() {
         synchronized (synchronizer) {
-        	
+
 //        	System.out.println("Closing with synchronizer: " + synchronizer);
 
-        	if (isClosed) {
+            if (isClosed) {
                 String msg = "Reference was already closed." +
                         "\nReleased at: " + StackTraceUtils.toString(closeStackTrace) +
-                        "\nAcquired at: " + StackTraceUtils.toString(acquisitionStackTrace);
+                        "\nAcquired at: " + StackTraceUtils.toString(acquisitionStackTrace) +
+                        "\nTriggered at " + StackTraceUtils.toString(closeTriggerStackTrace);
 
                 throw new RuntimeException(msg);
             }

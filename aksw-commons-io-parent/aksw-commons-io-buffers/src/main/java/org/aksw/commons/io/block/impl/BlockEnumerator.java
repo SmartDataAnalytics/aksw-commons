@@ -8,12 +8,9 @@ import org.aksw.commons.io.seekable.api.Seekable;
 import org.aksw.commons.util.ref.Ref;
 
 /**
- * A helper iterator that automatically closes
- * the previous item when next() is called.
- *
- * Actually, we do not need next to return an object, instead it could
- * just set properties directly:
- *
+ * A helper that holds a reference to the current block
+ * and automatically closes it when advancing to the next one.
+ * *
  * IterState.advance();
  * IterState.closeCurrent();
  * IterState.current();
@@ -21,21 +18,16 @@ import org.aksw.commons.util.ref.Ref;
  * @author raven
  *
  */
-public class BlockIterState {
-//    implements Iterator<OpenBlock> {
-
-//    protected OpenBlock current;
+public class BlockEnumerator {
     public Ref<? extends Block> blockRef;
     public Block block;
     public Seekable seekable;
-
 
     protected boolean yieldSelf;
     protected boolean skipFirstClose;
     protected boolean isFwd;
 
-    public BlockIterState(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable, boolean isFwd, boolean skipFirstClose) {
-        // this.current = new OpenBlock(blockRef, seekable);
+    protected BlockEnumerator(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable, boolean isFwd, boolean skipFirstClose) {
         Objects.requireNonNull(blockRef);
 
         this.blockRef = blockRef;
@@ -47,23 +39,18 @@ public class BlockIterState {
         this.isFwd = isFwd;
     }
 
-    public static BlockIterState fwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable) {
-        return new BlockIterState(yieldSelf, blockRef, seekable, true, true);
+    public Ref<? extends Block> getCurrentBlockRef() {
+        return blockRef;
     }
 
-    public static BlockIterState fwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable, boolean skipFirstClose) {
-        return new BlockIterState(yieldSelf, blockRef, seekable, true, skipFirstClose);
+    public Block getCurrentBlock() {
+        return block;
     }
 
-    public static BlockIterState fwd(boolean yieldSelf, Ref<? extends Block> blockRef, boolean skipFirstClose) {
-        return new BlockIterState(yieldSelf, blockRef, blockRef.get().newChannel(), true, skipFirstClose);
+    public Seekable getCurrentSeekable() {
+        return seekable;
     }
 
-    public static BlockIterState bwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable) {
-        return new BlockIterState(yieldSelf, blockRef, seekable, false, true);
-    }
-
-    //@Override
     public boolean hasNext() {
         boolean result;
         try {
@@ -74,11 +61,10 @@ public class BlockIterState {
                     : block.hasPrev();
 
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
         return result;
     }
-
 
     public void closeCurrent() {
         if(!skipFirstClose) {
@@ -96,6 +82,7 @@ public class BlockIterState {
         }
     }
 
+    /** Move to the next or previous block based on the configured direction. */
     public void advance() {
         try {
             if(yieldSelf) {
@@ -114,16 +101,26 @@ public class BlockIterState {
                     blockRef = next;
                     block = next.get();
                     seekable = block.newChannel();
-
-                    //current = new OpenBlock(next, next.get().newChannel());
-                    //result = current;
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        // return result;
     }
 
+    public static BlockEnumerator fwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable) {
+        return new BlockEnumerator(yieldSelf, blockRef, seekable, true, true);
+    }
+
+    public static BlockEnumerator fwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable, boolean skipFirstClose) {
+        return new BlockEnumerator(yieldSelf, blockRef, seekable, true, skipFirstClose);
+    }
+
+    public static BlockEnumerator fwd(boolean yieldSelf, Ref<? extends Block> blockRef, boolean skipFirstClose) {
+        return new BlockEnumerator(yieldSelf, blockRef, blockRef.get().newChannel(), true, skipFirstClose);
+    }
+
+    public static BlockEnumerator bwd(boolean yieldSelf, Ref<? extends Block> blockRef, Seekable seekable) {
+        return new BlockEnumerator(yieldSelf, blockRef, seekable, false, true);
+    }
 }

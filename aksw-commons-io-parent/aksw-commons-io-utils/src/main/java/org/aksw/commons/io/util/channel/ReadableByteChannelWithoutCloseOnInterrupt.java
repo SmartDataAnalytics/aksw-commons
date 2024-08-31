@@ -18,6 +18,7 @@ public class ReadableByteChannelWithoutCloseOnInterrupt
         this.in = in;
     }
 
+    @Override
     public int read(ByteBuffer dst) throws IOException {
         int len = dst.remaining();
         int totalRead = 0;
@@ -27,8 +28,9 @@ public class ReadableByteChannelWithoutCloseOnInterrupt
                     TRANSFER_SIZE);
             if (buf.length < bytesToRead)
                 buf = new byte[bytesToRead];
-            if ((totalRead > 0) && !(in.available() > 0))
-                break; // block at most once
+// Disabled because available depends on size() which may not be known ~Claus 2024-09-01
+//            if ((totalRead > 0) && !(in.available() > 0))
+//                break; // block at most once
             bytesRead = in.read(buf, 0, bytesToRead);
             if (bytesRead < 0)
                 break;

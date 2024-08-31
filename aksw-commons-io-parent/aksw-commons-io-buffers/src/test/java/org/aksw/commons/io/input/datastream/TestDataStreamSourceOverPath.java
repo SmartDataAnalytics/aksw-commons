@@ -15,6 +15,7 @@ import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSource;
 import org.aksw.commons.io.input.ReadableChannelSources;
 import org.aksw.commons.io.input.ReadableChannels;
+import org.aksw.commons.io.input.SeekableReadableChannels;
 import org.aksw.commons.io.slice.SliceInMemoryCache;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -32,7 +33,7 @@ public class TestDataStreamSourceOverPath {
 
     @Test
     public void testIteratorOverByteDataStream() {
-        ReadableChannel<byte[]> xxx = ReadableChannels.of(ArrayOps.BYTE, new byte[] {'a', 'b', 'c'});
+        ReadableChannel<byte[]> xxx = SeekableReadableChannels.of(ArrayOps.BYTE, new byte[] {'a', 'b', 'c'});
         Iterator<Byte> it = ReadableChannels.newBoxedIterator(xxx);
         while (it.hasNext()) {
             System.out.println((char)it.next().byteValue());

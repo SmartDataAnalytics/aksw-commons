@@ -18,6 +18,9 @@ public abstract class ReadableByteChannelBase
 
     @Override
     public void close() throws IOException {
+        if (!isOpen) {
+            throw new RuntimeException("Already closed");
+        }
         isOpen = false;
     }
 

@@ -40,12 +40,12 @@ public class AutoCloseableBase
             synchronized (this) {
                 if (!isClosed) {
                     closeStackTrace = enableCloseStackTrace ? StackTraceUtils.getStackTraceIfEnabled() : null;
-                    isClosed = true;
-
                     try {
                         closeActual();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
+                    } finally {
+                        isClosed = true;
                     }
                 }
             }

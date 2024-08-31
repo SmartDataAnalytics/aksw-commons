@@ -32,14 +32,14 @@ public class SeekableReadableChannelWithOffset<A, X extends SeekableReadableChan
     }
 
     @Override
-    public long position() {
+    public long position() throws IOException {
         long physicalPos = decoratee.position();
         long result = physicalPos - offset;
         return result;
     }
 
     @Override
-    public void position(long position) {
+    public void position(long position) throws IOException {
         long p = offset + position;
         decoratee.position(p);
     }

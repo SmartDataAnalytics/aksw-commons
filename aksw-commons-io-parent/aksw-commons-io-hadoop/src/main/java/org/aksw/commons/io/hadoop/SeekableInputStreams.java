@@ -2,27 +2,28 @@ package org.aksw.commons.io.hadoop;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
-import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Objects;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
+import org.aksw.commons.io.input.GetPosition;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.input.SeekableReadableChannelBase;
-import org.aksw.commons.io.input.SeekableReadableChannelDecoratorBase;
-import org.aksw.commons.io.util.channel.ReadableByteChannelDecoratorBase;
+import org.aksw.commons.io.input.SeekableReadableChannels;
+import org.aksw.commons.io.input.SetPosition;
 import org.apache.hadoop.fs.Seekable;
 
 public class SeekableInputStreams
 {
-    public interface GetPosition { long call() throws IOException; }
-    public interface SetPosition { void accept(long position) throws IOException; }
+    /* Functional interfaces that declare throwing of IOExceptions */
 
+    @FunctionalInterface
     public interface GetPositionFn<T> { long apply(T entity) throws IOException; }
-    public interface SetPositionFn<T> { void apply(T entity, long position) throws IOException; }
 
+    @FunctionalInterface
+    public interface SetPositionFn<T> { void apply(T entity, long position) throws IOException; }
 
     public static Seekable createSeekable(GetPosition getPosition, SetPosition setPosition) {
         return new Seekable() {
@@ -79,10 +80,20 @@ public class SeekableInputStreams
             }
             @Override
             protected void closeActual() throws Exception {
-            	in.close();
+                in.close();
             }
         };
     }
+
+    public static <T extends ReadableByteChannel> SeekableInputStream create(SeekableByteChannel channel) {
+        return create(channel, SeekableByteChannel::position, SeekableByteChannel::position);
+    }
+
+    public static <T extends ReadableByteChannel> SeekableInputStream create(SeekableReadableChannel<byte[]> channel) {
+        SeekableByteChannel adaptedChannel = SeekableReadableChannels.adapt(channel);
+        return create(adaptedChannel);
+    }
+
 
     public static <T extends ReadableByteChannel> SeekableInputStream create(
         InputStream in,
@@ -106,7 +117,7 @@ public class SeekableInputStreams
      * The argument for invoking this methods must be a seekable input streams that implements
      * hadoop's protocol for splittable codecs using READ_MODE.BYBLOCK.
      *
-     * Whereas hadoop's protocol will alawys read 1 byte beyond the split boundary,
+     * Whereas hadoop's protocol will always read 1 byte beyond the split boundary,
      * this wrapper will stop exactly at that boundary. Internally a push-back input stream is used
      * to push that single "read-ahead" byte back once it is encountered.
      *
@@ -120,53 +131,19 @@ public class SeekableInputStreams
      * @return
      * @throws IOException
      */
-    public static ReadableByteChannel advertiseEndOfBlock(InputStream decodedIn, int endOfBlockMarker) throws IOException {
-        org.apache.hadoop.fs.Seekable s = (org.apache.hadoop.fs.Seekable)decodedIn;
-
-        long[] decodedStartPos = new long[] { s.getPos() };
-
-        // We need to check one byte in advance to detect block boundaries
-        PushbackInputStream pushbackIn = new PushbackInputStream(decodedIn, 1);
-
-        // Decode *exactly* a single block:
-        // The way the bzip2 codec works is that only *AFTER* reading one byte into the
-        // next block the read method returns with the new position advertised.
-        // However, we must avoid to read this one byte too many.
-        // For this reason we use a pushback inputstream in order to read one byte ahead
-        // and then decide whether it needs to be emitted or pushed back again.
-        ReadableByteChannel wrapper = new ReadableByteChannelDecoratorBase<ReadableByteChannel>(Channels.newChannel(pushbackIn)) {
-            @Override
-            public int read(ByteBuffer byteBuffer) throws IOException {
-
-                int backupPos = byteBuffer.position();
-                byte before = byteBuffer.get(backupPos);
-
-                int result = super.read(byteBuffer);
-
-                // If only a single byte was read and the position changed then
-                // undo the read and indicate end-of-block (file)
-                if (result == 1) {
-                    long decodedPos = s.getPos();
-                    boolean change = decodedStartPos[0] != decodedPos;
-
-                    if (change) {
-                        // Unread the byte
-                        byte after = byteBuffer.get(backupPos);
-                        pushbackIn.unread(after);
-
-                        // Revert the buffer state
-                        byteBuffer.put(backupPos, before);
-                        byteBuffer.position(backupPos);
-
-                        decodedStartPos[0] = decodedPos;
-
-                        result = endOfBlockMarker;
-                    }
-                }
-                return result;
-            }
-        };
-        return wrapper;
+    public static ReadableChannelWithBlockAdvertisement advertiseEndOfBlock(InputStream decodedIn) throws IOException {
+        return advertiseEndOfBlock(decodedIn, -2);
     }
 
+    public static ReadableChannelWithBlockAdvertisement advertiseEndOfBlock(InputStream decodedIn, int endOfBlockMarker) throws IOException {
+        return new ReadableChannelWithBlockAdvertisement(decodedIn, endOfBlockMarker);
+    }
+
+    /**
+     * Only for use in combination with {@link #advertiseEndOfBlock(InputStream, int)}:
+     * Report end of stream if a given position is exceeded.
+     */
+//    public ReadableByteChannel limitByPosition() {
+//
+//    }
 }

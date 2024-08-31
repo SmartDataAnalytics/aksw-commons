@@ -8,7 +8,7 @@ import java.io.InputStream;
 /**
  * Workaround for HADOOP-17453: read(bts, off, len) with off != 0 is broken in several version of BZip2Codec
  * Invoking read with a non-zero offset creates a in intermediate buffer to which is read with a zero offset
- * The content of the intermidate buffer is then copied to the requesting buffer bts at the appropriate offset.
+ * The content of the intermediate buffer is then copied to the requesting buffer bts at the appropriate offset.
  */
 public class InputStreamWithZeroOffsetRead
     extends ProxyInputStream

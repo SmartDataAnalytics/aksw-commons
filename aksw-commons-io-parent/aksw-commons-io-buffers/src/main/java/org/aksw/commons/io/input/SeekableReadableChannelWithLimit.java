@@ -22,12 +22,12 @@ public class SeekableReadableChannelWithLimit<A, X extends SeekableReadableChann
     }
 
     @Override
-    public long position() {
+    public long position() throws IOException {
         return decoratee.position();
     }
 
     @Override
-    public void position(long pos) {
+    public void position(long pos) throws IOException {
         decoratee.position(pos);
     }
 

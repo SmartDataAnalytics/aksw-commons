@@ -6,14 +6,18 @@ import java.nio.channels.ReadableByteChannel;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
-public class ReadableChannelOverReadableByteChannel
+public class ReadableChannelOverNio<T extends ReadableByteChannel>
     implements ReadableChannel<byte[]>
 {
-    protected ReadableByteChannel channel;
+    protected T delegate;
 
-    public ReadableChannelOverReadableByteChannel(ReadableByteChannel channel) {
+    public ReadableChannelOverNio(T channel) {
         super();
-        this.channel = channel;
+        this.delegate = channel;
+    }
+
+    public T getDelegate() {
+        return delegate;
     }
 
     @Override
@@ -23,19 +27,18 @@ public class ReadableChannelOverReadableByteChannel
 
     @Override
     public void close() throws IOException {
-        channel.close();
+        getDelegate().close();
     }
 
     @Override
     public boolean isOpen() {
-        return channel.isOpen();
+        return getDelegate().isOpen();
     }
 
     @Override
     public int read(byte[] array, int position, int length) throws IOException {
         ByteBuffer buf = ByteBuffer.wrap(array, position, length);
-        int result = channel.read(buf);
+        int result = getDelegate().read(buf);
         return result;
     }
-
 }
