@@ -38,7 +38,7 @@ public class BinSearch {
         BinarySearcher bs = BinarySearchBuilder.newBuilder()
                 .setSource(bz2Path)
                 .setCodec(new BZip2Codec())
-                .setBinSearchCache(BinSearchLevelCache.dftCache())
+                // .setBinSearchCache(BinSearchLevelCache.dftCache())
                 .build();
 //        BinarySearcher bs = BinarySearchBuilder.newBuilder()
 //                .setSource(plainPath)

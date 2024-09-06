@@ -54,11 +54,11 @@ public class BinSearchUtils {
         return cmp;
     }
 
-
-    public static InputStream configureStream(SeekableReadableChannel<byte[]> channel, long end, byte[] prefix) throws IOException {
+    public static InputStream configureStream(
+            SeekableReadableChannel<byte[]> channel, long end, byte[] prefix, BinSearchLevelCache levelCache) throws IOException {
         InputStream result;
         SeekableInputStream in = SeekableInputStreams.create(channel);
-        Match match = BinarySearcherOverPlainSource.binarySearch(in,SearchMode.BOTH, 0, 0, end, (byte)'\n', prefix, BinSearchLevelCache.noCache());
+        Match match = BinarySearcherOverPlainSource.binarySearch(in,SearchMode.BOTH, 0, 0, end, (byte)'\n', prefix, levelCache);
         if (match != null) {
             in.position(match.start());
 
@@ -73,7 +73,7 @@ public class BinSearchUtils {
                     new ReadableByteChannelForLinesMatchingPrefix(
                             SeekableInputStreams.wrap(in), scanState));
         } else {
-            System.err.println("NO MATCH");
+            System.err.println("NO MATCH for " + new String(prefix));
             in.close();
             result = InputStream.nullInputStream(); // ReadableChannels.newInputStream(ReadableChannels.limit(in, 0));
         }

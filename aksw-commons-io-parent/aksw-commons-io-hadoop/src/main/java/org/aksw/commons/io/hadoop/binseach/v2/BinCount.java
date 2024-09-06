@@ -158,11 +158,11 @@ public class BinCount {
 
         // if (true) { return; }
 
-        BinarySearcherOverBlockSource binSearcher = new BinarySearcherOverBlockSource(blockSource, BinSearchLevelCache.noCache(), 10000);
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(binSearcher.search(lookup)))) {
-            br.lines().forEach(x -> System.out.println(x));
-        }
+//        BinarySearcherOverBlockSource binSearcher = new BinarySearcherOverBlockSource(blockSource, BinSearchLevelCache.noCache(), 10000);
+//
+//        try (BufferedReader br = new BufferedReader(new InputStreamReader(binSearcher.search(lookup)))) {
+//            br.lines().forEach(x -> System.out.println(x));
+//        }
     }
 
 //    public static void main3(String[] args) throws IOException {

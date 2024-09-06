@@ -22,7 +22,6 @@ public class ReadableChannelOverIterator<T>
         this.closeAction = closeAction;
     }
 
-
     public void setCloseAction(Runnable closeAction) {
         this.closeAction = closeAction;
     }
@@ -35,7 +34,6 @@ public class ReadableChannelOverIterator<T>
     public Iterator<T> getIterator() {
         return iterator;
     }
-
 
     @Override
     public void closeActual() throws IOException {

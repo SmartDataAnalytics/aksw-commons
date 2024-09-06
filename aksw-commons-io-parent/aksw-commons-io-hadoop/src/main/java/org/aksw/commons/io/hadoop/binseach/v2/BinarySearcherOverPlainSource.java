@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.binseach.BinarySearcher;
 import org.aksw.commons.io.hadoop.SeekableInputStream;
+import org.aksw.commons.io.hadoop.binseach.v2.BinSearchResourceCache.CacheEntry;
 import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSources;
 import org.aksw.commons.io.input.ReadableChannelSupplier;
@@ -30,12 +32,12 @@ public class BinarySearcherOverPlainSource
     private static final Logger logger = LoggerFactory.getLogger(BinarySearcherOverPlainSource.class);
 
     protected SeekableReadableChannelSource<byte[]> source;
-    protected BinSearchLevelCache cache;
+    protected Supplier<CacheEntry> cacheSupplier;
 
-    protected BinarySearcherOverPlainSource(SeekableReadableChannelSource<byte[]> source, BinSearchLevelCache cache) {
+    protected BinarySearcherOverPlainSource(SeekableReadableChannelSource<byte[]> source, Supplier<CacheEntry> cacheSupplier) {
         super();
         this.source = source;
-        this.cache = cache;
+        this.cacheSupplier = cacheSupplier;
     }
 
     @Override
@@ -46,19 +48,25 @@ public class BinarySearcherOverPlainSource
         return binarySearch(channel, SearchMode.BOTH, 0, 0, end, (byte)'\n', prefix, BinSearchLevelCache.noCache());
     }
 
-    public static BinarySearcherOverPlainSource of(SeekableReadableChannelSource<byte[]> source, BinSearchLevelCache cache) {
-        return new BinarySearcherOverPlainSource(source, cache);
+    public static BinarySearcherOverPlainSource of(SeekableReadableChannelSource<byte[]> source, Supplier<CacheEntry> cacheSupplier) {
+        return new BinarySearcherOverPlainSource(source, cacheSupplier);
     }
 
-    public static BinarySearcherOverPlainSource of(Path path, BinSearchLevelCache cache) {
-        return of(new SeekableReadableChannelSourceOverNio(path), cache);
+    public static BinarySearcherOverPlainSource of(Path path, Supplier<CacheEntry> cacheSupplier) {
+        return of(new SeekableReadableChannelSourceOverNio(path), cacheSupplier);
     }
 
     @Override
     public InputStream search(byte[] prefix) throws IOException {
+        CacheEntry cacheEntry = cacheSupplier.get();
+        BinSearchLevelCache levelCache = cacheEntry == null ? null : cacheEntry.levelCache();
+        if (levelCache == null) {
+            levelCache = BinSearchLevelCache.noCache();
+        }
+
         SeekableReadableChannel<byte[]> channel = source.newReadableChannel();
         long searchRangeEnd = source.size();
-        InputStream result = BinSearchUtils.configureStream(channel, searchRangeEnd, prefix);
+        InputStream result = BinSearchUtils.configureStream(channel, searchRangeEnd, prefix, levelCache);
         return result;
     }
 

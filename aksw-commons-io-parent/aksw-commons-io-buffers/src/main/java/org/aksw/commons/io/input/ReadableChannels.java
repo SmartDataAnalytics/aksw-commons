@@ -42,7 +42,11 @@ public class ReadableChannels {
     }
 
     public static <T> ReadableChannel<T[]> wrap(Stream<T> stream, ArrayOps<T[]> arrayOps) {
-        return new ReadableChannelOverIterator<>(arrayOps, stream.iterator(), stream::close);
+        return wrap(stream.iterator(), stream::close, arrayOps);
+    }
+
+    public static <T> ReadableChannel<T[]> wrap(Iterator<T> iterator, Runnable closeAction, ArrayOps<T[]> arrayOps) {
+        return new ReadableChannelOverIterator<>(arrayOps, iterator, closeAction);
     }
 
     public static <T extends ReadableChannel<byte[]>> ReadableByteChannelAdapter<T> newChannel(T dataStream) {

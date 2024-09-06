@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.aksw.commons.io.binseach.BinarySearcher;
 import org.aksw.commons.io.hadoop.SeekableInputStreams;
+import org.aksw.commons.io.hadoop.binseach.v2.BinSearchResourceCache.CacheEntry;
 import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSources;
 import org.aksw.commons.io.input.ReadableChannelSupplier;
@@ -30,18 +32,18 @@ public class BinarySearcherOverBlockSource
     private static final Logger logger = LoggerFactory.getLogger(BinarySearcherOverBlockSource.class);
 
     protected BlockSource blockSource;
-    protected BinSearchLevelCache cache;
-    protected Cache<Long, Block> pageCache;
+    protected Supplier<CacheEntry> cacheSupplier;
+    // protected BinSearchLevelCache cache;
+    // protected Cache<Long, Block> pageCache;
 
-    public BinarySearcherOverBlockSource(BlockSource blockSource, BinSearchLevelCache cache, int pageCacheSize) {
-        this(blockSource, cache, Caffeine.newBuilder().maximumSize(pageCacheSize).build());
-    }
+//    public BinarySearcherOverBlockSource(BlockSource blockSource, BinSearchLevelCache cache, int pageCacheSize) {
+//        this(blockSource, cache, Caffeine.newBuilder().maximumSize(pageCacheSize).build());
+//    }
 
-    public BinarySearcherOverBlockSource(BlockSource blockSource, BinSearchLevelCache cache, Cache<Long, Block> pageCache) {
+    public BinarySearcherOverBlockSource(BlockSource blockSource, Supplier<CacheEntry> cacheSupplier) {
         super();
         this.blockSource = blockSource;
-        this.cache = cache;
-        this.pageCache = pageCache;
+        this.cacheSupplier = cacheSupplier;
     }
 
     @Override
@@ -50,17 +52,28 @@ public class BinarySearcherOverBlockSource
 
     @Override
     public InputStream search(byte[] prefix) throws IOException {
+        CacheEntry cacheEntry = cacheSupplier.get();
+        BinSearchLevelCache levelCache = cacheEntry == null ? null : cacheEntry.levelCache();
+        if (levelCache == null) {
+            levelCache = BinSearchLevelCache.noCache();
+        }
+
         InputStream result;
-        Match match = binarySearch(blockSource, prefix, cache);
+        Match match = binarySearch(blockSource, prefix, levelCache);
         if (match != null) {
             // System.out.println("Match found: " + match);
 
+            Cache<Long, Block> blockCache = cacheEntry == null ? null : cacheEntry.blockCache();
+            if (blockCache == null) {
+                blockCache = Caffeine.newBuilder().maximumSize(16).build();
+            }
+
             long startBlockId = match.start();
 
-            SeekableReadableChannelOverBlocks channel = new SeekableReadableChannelOverBlocks(blockSource, startBlockId, pageCache);
+            SeekableReadableChannelOverBlocks channel = new SeekableReadableChannelOverBlocks(blockSource, startBlockId, blockCache);
             long blockSize = channel.getStartingBlockSize();
             blockSize = 900000;
-            result = BinSearchUtils.configureStream(channel, blockSize * 2, prefix);
+            result = BinSearchUtils.configureStream(channel, blockSize * 2, prefix, BinSearchLevelCache.noCache());
 
             boolean showKnownBlocks = false;
             if (showKnownBlocks) {
