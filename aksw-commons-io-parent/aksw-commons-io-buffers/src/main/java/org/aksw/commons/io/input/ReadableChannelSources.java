@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfig;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfigImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
@@ -26,6 +28,11 @@ public class ReadableChannelSources {
 
     public static ReadableChannelSource<byte[]> of(java.nio.file.Path path) throws IOException {
         return of(path, true);
+    }
+
+    /** Create a source where channels are based on creating a new stream and skipping to the specified offset. */
+    public static <T> ReadableChannelSource<T[]> ofStreamFactory(Supplier<Stream<T>> streamFactory) {
+        return new ReadableChannelSourceOverStreamFactory<>(ArrayOps.forObjects(), streamFactory);
     }
 
     /**

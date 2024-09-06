@@ -75,6 +75,10 @@ public class BinarySearcherOverBlockSource
             blockSize = 900000;
             result = BinSearchUtils.configureStream(channel, blockSize * 2, prefix, BinSearchLevelCache.noCache());
 
+            // TODO Find the end record in the last block
+            // TODO We need to track the start offset of the last block (if known):
+            //   Adjust the end offset e to e', then find an preceeding offset p such that p' := adjust(p) and adjust(p' + 1) = e'
+
             boolean showKnownBlocks = false;
             if (showKnownBlocks) {
                 for (Block block : channel.getKnownBlocks()) {
@@ -280,14 +284,18 @@ public class BinarySearcherOverBlockSource
                     }
                 }
             }
-            boolean findEndOfRun = false;
+            boolean findEndOfRun = true;
             if (findEndOfRun) {
                 if (SearchMode.RIGHT.equals(searchMode) || SearchMode.BOTH.equals(searchMode)) {
                     long nextStart = nextBlockId + 1;
-                    long nextStartAfter = adjustStart(blockSource, nextStart + 1 , depth, cache);
-                    Match expandRight = binarySearch(blockSource, SearchMode.RIGHT, depth, nextStart, nextStartAfter, end, delimiter, prefix, cache);
-                    if (expandRight != null) {
-                        right = expandRight.end();
+
+                    // Don't expand beyond end
+                    if (nextStart <= end) {
+                        long nextStartAfter = adjustStart(blockSource, nextStart + 1 , depth, cache);
+                        Match expandRight = binarySearch(blockSource, SearchMode.RIGHT, depth, nextStart, nextStartAfter, end, delimiter, prefix, cache);
+                        if (expandRight != null) {
+                            right = expandRight.end();
+                        }
                     }
                 }
             }

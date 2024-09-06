@@ -73,10 +73,11 @@ public class ReadableChannelOverSliceWithCache<A>
 
 
     protected long currentOffset;
-    protected int maxReadAheadItemCount = 100;
+    protected int maxReadAheadItemCount;
 
-    public ReadableChannelOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange) {
+    public ReadableChannelOverSliceWithCache(AdvancedRangeCacheImpl<A> cache, Range<Long> requestRange, int maxReadAheadItemCount) {
         super();
+        this.maxReadAheadItemCount = maxReadAheadItemCount;
         this.requestRange = requestRange;
         this.cache = cache;
         this.slice = cache.getSlice();
@@ -347,8 +348,8 @@ public class ReadableChannelOverSliceWithCache<A>
                         long knownMaxSize;
                         // TODO We need to ensure the whole read range is covered
                         while (
-                        		(failures = failedRanges.get(currentOffset)) == null &&
-                        		(entry = loadedRanges.rangeContaining(currentOffset)) == null &&
+                                (failures = failedRanges.get(currentOffset)) == null &&
+                                (entry = loadedRanges.rangeContaining(currentOffset)) == null &&
                                 ((knownMaxSize = slice.getMaximumKnownSize()) < 0 || currentOffset < knownMaxSize)) {
 
                             boolean enableSanityCheck = false;
