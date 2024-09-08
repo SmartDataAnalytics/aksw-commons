@@ -73,7 +73,7 @@ public class BinSearchUtils {
                     new ReadableByteChannelForLinesMatchingPrefix(
                             SeekableInputStreams.wrap(in), scanState));
         } else {
-            System.err.println("NO MATCH for " + new String(prefix));
+            // System.err.println("NO MATCH for " + new String(prefix));
             in.close();
             result = InputStream.nullInputStream(); // ReadableChannels.newInputStream(ReadableChannels.limit(in, 0));
         }
