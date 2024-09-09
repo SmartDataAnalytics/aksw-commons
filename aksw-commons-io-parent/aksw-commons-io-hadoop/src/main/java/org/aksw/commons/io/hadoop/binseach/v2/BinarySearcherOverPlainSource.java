@@ -202,7 +202,8 @@ public class BinarySearcherOverPlainSource
             if (SearchMode.LEFT.equals(searchMode) || SearchMode.BOTH.equals(searchMode)) {
                 // Find the start of a run:
                 // Continue searching left - if there is no match then return the candidate result
-                Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
+                // Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
+                Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, mid - 1, delimiter, prefix, cache);
                 if (expandLeft != null) {
                     left = expandLeft.start();
                 }
@@ -219,7 +220,8 @@ public class BinarySearcherOverPlainSource
             }
             result = new Match(left, right);
         } else if(cmp < 0) {
-            result = binarySearch(in, searchMode, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
+            // result = binarySearch(in, searchMode, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
+            result = binarySearch(in, searchMode, depth + 1, start, mid - 1, delimiter, prefix, cache);
         } else {
             result = binarySearch(in, searchMode, depth + 1, nextDelimPos + 1, end, delimiter, prefix, cache);
         }
