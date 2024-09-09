@@ -125,50 +125,69 @@ public class BinarySearcherOverPlainSource
 
         long mid = (start + end) >> 1; // division by 2
 
+        if (false) {
+            System.out.println(String.format("%d <= %d < %d)", start, mid, end));
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("%d <= %d < %d)", start, mid, end));
         }
-        in.position(mid);
 
         int cmp = 0;
         // Find the next record start
 
         long nextDelimPos = cache.getDisposition(mid);
+        long bytesToNextDelimiter = -1;
         if (nextDelimPos == -1) {
-            long bytesToNextDelimiter = 0;
+            in.position(mid);
+
             if (mid > 0) {
                 long allowedSearchBytes = end - mid;
                 bytesToNextDelimiter = BinSearchUtils.readUntilDelimiter(in, delimiter, allowedSearchBytes);
             }
 
+            // -1 means that no delimiter was found
+            // if there is no more record starting from mid then continue searching on the left half
             if (bytesToNextDelimiter < 0) {
-                nextDelimPos = mid;
-                cmp = -1;
+                nextDelimPos = mid - 1; // Slightly hacky using mid-1 to signal no more delimiter
             } else {
                 nextDelimPos = mid + bytesToNextDelimiter;
             }
             cache.setDisposition(depth, mid, nextDelimPos);
         }
 
+        if (nextDelimPos < mid) {
+            cmp = -1;
+            nextDelimPos = mid;
+        }
+
         if (cmp == 0) {
             HeaderRecord headerRecord = cache.getHeader(nextDelimPos);
             int l = prefix.length;
             if (headerRecord == null || (headerRecord.data().length < prefix.length && !headerRecord.isDataConsumed())) {
+                // If bytesToNextDelimiter is -1 it means that the next delimiter position
+                // was taken from cache - we then need to position 'in' to the delimiter position
+                if (bytesToNextDelimiter == -1) {
+                    in.position(nextDelimPos);
+                }
+
                 boolean isDataConsumed = false;
-                // byte[] header = headerRecord.data();
                 int blockSize = Math.max(prefix.length, 256);
                 byte[] header = new byte[blockSize];
                 // XXX resort to a readFully without extra wrapping
+                // TODO Input stream may need to be reinitialized
                 int n = ReadableChannels.readFully(ReadableChannels.wrap(in), header, 0, blockSize);
                 if (n < blockSize) {
                     isDataConsumed = true;
                     header = Arrays.copyOf(header, n);
                 }
-                if (header.length < prefix.length) {
-                    cmp = -1;
-                }
                 headerRecord = new HeaderRecord(nextDelimPos, 0, header, isDataConsumed);
                 cache.setHeader(depth, headerRecord);
+            }
+            // FIXME This condition seems wrong
+            // We need to compare the available bytes and if all match then ...?
+            if (headerRecord.data().length < prefix.length) {
+                cmp = -1;
             }
             if (cmp == 0) {
                 cmp = Arrays.compare(prefix, 0, l, headerRecord.data(), 0, l);

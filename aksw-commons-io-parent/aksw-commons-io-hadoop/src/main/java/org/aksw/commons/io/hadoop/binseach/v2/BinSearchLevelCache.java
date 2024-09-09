@@ -1,7 +1,7 @@
 package org.aksw.commons.io.hadoop.binseach.v2;
 
 public class BinSearchLevelCache {
-    protected int flowLevel;
+    protected int fluidLevel;
     protected BinSearchCache fixedCache;
     protected BinSearchCache fluidCache;
 
@@ -9,9 +9,9 @@ public class BinSearchLevelCache {
         this(16, new BinSearchCacheFixed(), new BinSearchCacheFluid());
     }
 
-    public BinSearchLevelCache(int flowLevel, BinSearchCache fixedCache, BinSearchCache flowCache) {
+    public BinSearchLevelCache(int fluidLevel, BinSearchCache fixedCache, BinSearchCache flowCache) {
         super();
-        this.flowLevel = flowLevel;
+        this.fluidLevel = fluidLevel;
         this.fixedCache = fixedCache;
         this.fluidCache = flowCache;
     }
@@ -30,7 +30,7 @@ public class BinSearchLevelCache {
 //    }
 
     public void setHeader(int depth, HeaderRecord headerRecord) {
-        BinSearchCache target = depth < flowLevel ? fixedCache : fluidCache;
+        BinSearchCache target = depth < fluidLevel ? fixedCache : fluidCache;
         target.setHeader(headerRecord);
     }
 
@@ -43,7 +43,7 @@ public class BinSearchLevelCache {
     }
 
     public void setDisposition(int depth, long from, long to) {
-        BinSearchCache target = depth < flowLevel ? fixedCache : fluidCache;
+        BinSearchCache target = depth < fluidLevel ? fixedCache : fluidCache;
         target.setDisposition(from, to);
     }
 

@@ -16,6 +16,7 @@ public class BinSearchResourceCache {
     public BinSearchResourceCache(int maxCacheSize) {
         this(Caffeine.newBuilder().maximumSize(maxCacheSize).build(), () -> {
             return new CacheEntry(BinSearchLevelCache.dftCache(), Caffeine.newBuilder().maximumSize(16).build());
+            // return new CacheEntry(BinSearchLevelCache.noCache(), Caffeine.newBuilder().maximumSize(16).build());
         });
     }
 

@@ -160,6 +160,13 @@ public class BinarySearcherOverBlockSource
     /**
      * When this method returns the input stream's position is unspecified.
      *
+     * <p>
+     * Note on cache semantics:
+     * <ol>
+     *   <li>Disposition is the mapping from the current offset to that of the next block (NOT the record).</li>
+     *   <li>The header map maps the block id to the first record</li>
+     * </ol>
+     *
      * @param in The seekable input stream on which to perform binary search for the given prefix.
      * @param searchMode Whether we are searching the initial match, or the start or end of a run of matches.
      * @param start
