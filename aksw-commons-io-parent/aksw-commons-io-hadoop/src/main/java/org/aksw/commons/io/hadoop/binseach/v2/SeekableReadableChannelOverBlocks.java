@@ -25,7 +25,7 @@ public class SeekableReadableChannelOverBlocks
     private static final Logger logger = LoggerFactory.getLogger(SeekableReadableChannelOverBlocks.class);
 
     protected BlockSource blockSource;
-    protected BlockSourceChannelAdapter channel; // = blockSource.newReadableChannel(startBlockId, true);
+    protected BlockSourceChannel channel; // = blockSource.newReadableChannel(startBlockId, true);
 
     // The first block id - logical positioning starts at 0 relative to the beginning of this block
     protected long firstBlockId;
@@ -281,7 +281,7 @@ public class SeekableReadableChannelOverBlocks
         currentBlockLogicalOffset = -1;
     }
 
-    public static Block loadBlock(BlockSource blockSource, BlockSourceChannelAdapter channel, long thisBlockId) throws IOException {
+    public static Block loadBlock(BlockSource blockSource, BlockSourceChannel channel, long thisBlockId) throws IOException {
         ByteArrayOutputStream blockBytes = new ByteArrayOutputStream();
         byte[] buffer = new byte[4 * 1024];
 

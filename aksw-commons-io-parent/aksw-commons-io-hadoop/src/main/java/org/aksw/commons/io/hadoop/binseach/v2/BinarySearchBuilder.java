@@ -12,10 +12,13 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 public class BinarySearchBuilder {
     protected Path path;
+    protected SeekableReadableChannelSource<byte[]> source;
+
     protected SplittableCompressionCodec codec;
     // protected Cache<Long, Block> blockCache;
     //protected BinSearchLevelCache binSearchCache;
     protected BinSearchResourceCache resourceCache;
+
 
     public static BinarySearchBuilder newBuilder() {
         return new BinarySearchBuilder();
@@ -23,6 +26,13 @@ public class BinarySearchBuilder {
 
     public BinarySearchBuilder setSource(Path path) {
         this.path = path;
+        return this;
+    }
+
+    /** Usually the source is derived from the path, however, it can be overridden such that a
+     *  wrapped source can be specified, such as one that tracks read operations. */
+    public BinarySearchBuilder setSource(SeekableReadableChannelSource<byte[]> source) {
+        this.source = source;
         return this;
     }
 
@@ -63,11 +73,14 @@ public class BinarySearchBuilder {
 //                ? binSearchCache
 //                : BinSearchLevelCache.dftCache();
 
+        SeekableReadableChannelSource<byte[]> finalSource = source != null
+                ? source
+                : new SeekableReadableChannelSourceOverNio(path);
+
         if (codec == null) {
-            SeekableReadableChannelSource<byte[]> source = new SeekableReadableChannelSourceOverNio(path);
-            result = new BinarySearcherOverPlainSource(source, cacheSupplier);
+            result = new BinarySearcherOverPlainSource(finalSource, cacheSupplier);
         } else {
-            BlockSource blockSource = BlockSource.of(path, codec);
+            BlockSource blockSource = BlockSource.of(finalSource, codec);
 
 //            Cache<Long, Block> finalBlockCache = blockCache != null
 //                    ? blockCache

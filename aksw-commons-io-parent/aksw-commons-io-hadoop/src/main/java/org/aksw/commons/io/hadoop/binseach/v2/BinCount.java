@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -14,14 +12,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.aksw.commons.io.binseach.BinarySearcher;
-import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSupplier;
-import org.aksw.commons.io.input.ReadableChannelWithLimitByDelimiter;
 import org.aksw.commons.io.input.ReadableChannels;
-import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.apache.hadoop.io.compress.BZip2Codec;
 
 import com.google.common.base.Stopwatch;
@@ -137,7 +131,7 @@ public class BinCount {
         // pos = 0;
         for (int x = 0; x < 0; ++x) {
 
-            BlockSourceChannelAdapter channel = blockSource.newReadableChannel(pos, true);
+            BlockSourceChannel channel = blockSource.newReadableChannel(pos, true);
             try (InputStream in = ReadableChannels.newInputStream(channel)) {
                 long startBlockId = channel.getStartingBlockId();
                 // channel.adjustToNextBlock();

@@ -25,7 +25,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import net.sansa_stack.io.util.InputStreamWithZeroOffsetRead;
 
-
+/**
+ * Binary search implementation that finds lines matching a prefix in a
+ * 'block' source such as a bzip2 compressed file.
+ */
 public class BinarySearcherOverBlockSource
     implements BinarySearcher
 {
@@ -33,12 +36,6 @@ public class BinarySearcherOverBlockSource
 
     protected BlockSource blockSource;
     protected Supplier<CacheEntry> cacheSupplier;
-    // protected BinSearchLevelCache cache;
-    // protected Cache<Long, Block> pageCache;
-
-//    public BinarySearcherOverBlockSource(BlockSource blockSource, BinSearchLevelCache cache, int pageCacheSize) {
-//        this(blockSource, cache, Caffeine.newBuilder().maximumSize(pageCacheSize).build());
-//    }
 
     public BinarySearcherOverBlockSource(BlockSource blockSource, Supplier<CacheEntry> cacheSupplier) {
         super();
@@ -145,7 +142,7 @@ public class BinarySearcherOverBlockSource
     public static long adjustStart(BlockSource blockSource, long start, int depth, BinSearchLevelCache cache) throws IOException {
         long currentBlockId = cache.getDisposition(start);
         if (currentBlockId == -1) {
-            try (BlockSourceChannelAdapter channel = blockSource.newReadableChannel(start)) {
+            try (BlockSourceChannel channel = blockSource.newReadableChannel(start)) {
                 currentBlockId = channel.getStartingBlockId();
                 if (currentBlockId == -1) {
                     throw new IllegalStateException("Should not happen: Block id not set after read.");
@@ -204,7 +201,7 @@ public class BinarySearcherOverBlockSource
             if (mid > 0) {
                 nextBlockId = cache.getDisposition(mid);
                 if (nextBlockId == -1) {
-                    BlockSourceChannelAdapter channel = blockSource.newReadableChannel(mid);
+                    BlockSourceChannel channel = blockSource.newReadableChannel(mid);
                     in = new InputStreamWithZeroOffsetRead(SeekableInputStreams.create(channel));
 
                     // The start blockId is the position such that
@@ -232,7 +229,7 @@ public class BinarySearcherOverBlockSource
                 byte[] header = new byte[blockSize];
                 if (in == null) {
                     // TODO mid should be replaced by nextBlockId (probably -1)
-                    BlockSourceChannelAdapter channel = blockSource.newReadableChannel(mid);
+                    BlockSourceChannel channel = blockSource.newReadableChannel(mid);
                     in = new InputStreamWithZeroOffsetRead(SeekableInputStreams.create(channel));
                 }
                 long bytesToNextDelimiter = BinSearchUtils.readUntilDelimiter(in, delimiter, Long.MAX_VALUE);

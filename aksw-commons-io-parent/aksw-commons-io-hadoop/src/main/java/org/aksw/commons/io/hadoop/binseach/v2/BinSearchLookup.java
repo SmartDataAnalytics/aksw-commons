@@ -13,7 +13,7 @@ public class BinSearchLookup {
 
         Path path = Paths.get("/media/raven/T9/raven/datasets/wikidata/2024-08-24_wikidata-truthy.sorted.nt.bz2");
 
-        BlockSource blockSource = BlockSource.of(path, new BZip2Codec());
+        BlockSource blockSource = BlockSource.of(SeekableReadableChannelSources.of(path), new BZip2Codec());
 
         byte[] data = new byte[10];
         // e -> 44580

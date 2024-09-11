@@ -58,7 +58,7 @@ public class BinSearchUtils {
             SeekableReadableChannel<byte[]> channel, long end, byte[] prefix, BinSearchLevelCache levelCache) throws IOException {
         InputStream result;
         SeekableInputStream in = SeekableInputStreams.create(channel);
-        Match match = BinarySearcherOverPlainSource.binarySearch(in,SearchMode.BOTH, 0, 0, end, (byte)'\n', prefix, levelCache);
+        Match match = BinarySearcherOverPlainSource.binarySearch(in,SearchMode.BOTH, 0, 0, end, end, (byte)'\n', prefix, levelCache);
         if (match != null) {
             in.position(match.start());
 

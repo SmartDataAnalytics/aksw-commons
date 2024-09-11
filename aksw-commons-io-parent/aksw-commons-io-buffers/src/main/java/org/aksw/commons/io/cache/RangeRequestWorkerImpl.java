@@ -229,9 +229,9 @@ public class RangeRequestWorkerImpl<A>
             // disposable = (Disposable)iterator;
 
             // TODO Init the reader
-        	Range<Long> range = requestLimit == 0 || requestLimit == Long.MAX_VALUE
-        			? Range.atLeast(requestOffset)
-        			: Range.closedOpen(requestOffset, LongMath.saturatedAdd(requestOffset, requestLimit));
+            Range<Long> range = requestLimit == 0 || requestLimit == Long.MAX_VALUE
+                    ? Range.atLeast(requestOffset)
+                    : Range.closedOpen(requestOffset, LongMath.saturatedAdd(requestOffset, requestLimit));
             dataStream = cacheSystem.getDataSource().newReadableChannel(range);
 
         } else {
@@ -241,23 +241,22 @@ public class RangeRequestWorkerImpl<A>
 
     @Override
     public void run() {
-//        if (offset == 4516) {
-//            System.out.println("debug point");
-//        }
-
         try {
             checkpoint();
             // If the checkpoint offset was not advanced then we reached end of data
             if (offset != nextCheckpointOffset) {
                 runCore();
             }
-
-//            if (offset == 62997688) {
-//                System.out.println("debug point");
-//            }
-            logger.debug("RangeRequestWorker normal termination at offset " + offset);
-        } catch (Exception e) {
-            logger.error("RangeRequestWorker exceptional termination at offset " + offset, e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("RangeRequestWorker normal termination at offset " + offset);
+            }
+        } catch (Exception | Error e) {
+            // Catch also e.g. StackOverflowErrors
+            // FIXME Deadlock if a worker encounters an exception when opening a channel because
+            //       consumers are not notified!
+            if (logger.isErrorEnabled()) {
+                logger.error("RangeRequestWorker exceptional termination at offset " + offset, e);
+            }
             throw new RuntimeException(e);
         } finally {
             close();

@@ -2,13 +2,13 @@ package org.aksw.commons.io.hadoop;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.util.Objects;
 
 import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.input.GetPosition;
+import org.aksw.commons.io.input.InputStreamOverChannel;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.input.SeekableReadableChannelBase;
 import org.aksw.commons.io.input.SeekableReadableChannels;
@@ -42,9 +42,9 @@ public class SeekableInputStreams
             GetPositionFn<? super T> getPosition,
             SetPositionFn<? super T> setPosition
     ) {
-
         return create(
-                Channels.newInputStream(channel),
+                // Channels.newInputStream(channel), relies on size() which is not always implemented
+                new InputStreamOverChannel(channel),
                 () -> getPosition.apply(channel),
                 position -> setPosition.apply(channel, position));
 

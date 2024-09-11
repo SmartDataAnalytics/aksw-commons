@@ -26,9 +26,13 @@ public class Block {
         }
     }
 
-    public BlockSource getBlockSource() {
-        return blockSource;
+    public Block(Buffer<byte[]> buffer, long thisBlockId, long nextBlockId) {
+        this(null, buffer, thisBlockId, nextBlockId);
     }
+
+//    public BlockSource getBlockSource() {
+//        return blockSource;
+//    }
 
     public Buffer<byte[]> getBuffer() {
         return buffer;

@@ -2,6 +2,7 @@ package org.aksw.commons.io.hadoop.binseach.v2;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -45,7 +46,7 @@ public class BinarySearcherOverPlainSource
     }
 
     public static Match binarySearch(SeekableInputStream channel, long end, byte[] prefix) throws IOException {
-        return binarySearch(channel, SearchMode.BOTH, 0, 0, end, (byte)'\n', prefix, BinSearchLevelCache.noCache());
+        return binarySearch(channel, SearchMode.BOTH, 0, 0, end, end, (byte)'\n', prefix, BinSearchLevelCache.noCache());
     }
 
     public static BinarySearcherOverPlainSource of(SeekableReadableChannelSource<byte[]> source, Supplier<CacheEntry> cacheSupplier) {
@@ -116,7 +117,7 @@ public class BinarySearcherOverPlainSource
      * @throws IOException
      */
     public static Match binarySearch(
-            SeekableInputStream in, SearchMode searchMode, int depth, long start, long end, byte delimiter, byte[] prefix,
+            SeekableInputStream in, SearchMode searchMode, int depth, long start, long end, long knownDelimPos, byte delimiter, byte[] prefix,
             BinSearchLevelCache cache
             ) throws IOException {
         if (start > end) {
@@ -138,32 +139,38 @@ public class BinarySearcherOverPlainSource
 
         long nextDelimPos = cache.getDisposition(mid);
         long bytesToNextDelimiter = -1;
+
+        // Allowed search bytes restricts the search range; we must not read over 'knownDelimPos'.
+        long allowedSearchBytes;
         if (nextDelimPos == -1) {
             in.position(mid);
 
             if (mid > 0) {
-                long allowedSearchBytes = end - mid;
+                // Example: prefixLength=1 mid=5, end=10 ->
+                //          last position where we could find a prefix = 9 -> allwowed range [5, 9] -> 5 bytes
+                //          (at offsets 5, 6, 7, 8, 9)
+                // -> end - mid - prefixLength + 1
+                allowedSearchBytes = knownDelimPos - mid - prefix.length + 1;
                 bytesToNextDelimiter = BinSearchUtils.readUntilDelimiter(in, delimiter, allowedSearchBytes);
             }
 
-            // -1 means that no delimiter was found
-            // if there is no more record starting from mid then continue searching on the left half
+            // if no delimiter was found the next known delimiter remains knownDelimPos
             if (bytesToNextDelimiter < 0) {
-                nextDelimPos = mid - 1; // Slightly hacky using mid-1 to signal no more delimiter
+                nextDelimPos = knownDelimPos;
             } else {
                 nextDelimPos = mid + bytesToNextDelimiter;
             }
             cache.setDisposition(depth, mid, nextDelimPos);
         }
 
-        if (nextDelimPos < mid) {
+        // We couldn't find a delimiter after mid - try to search left
+        if (nextDelimPos == knownDelimPos) {
             cmp = -1;
-            nextDelimPos = mid;
         }
 
+        HeaderRecord headerRecord;
         if (cmp == 0) {
-            HeaderRecord headerRecord = cache.getHeader(nextDelimPos);
-            int l = prefix.length;
+            headerRecord = cache.getHeader(nextDelimPos);
             if (headerRecord == null || (headerRecord.data().length < prefix.length && !headerRecord.isDataConsumed())) {
                 // If bytesToNextDelimiter is -1 it means that the next delimiter position
                 // was taken from cache - we then need to position 'in' to the delimiter position
@@ -184,13 +191,22 @@ public class BinarySearcherOverPlainSource
                 headerRecord = new HeaderRecord(nextDelimPos, 0, header, isDataConsumed);
                 cache.setHeader(depth, headerRecord);
             }
-            // FIXME This condition seems wrong
-            // We need to compare the available bytes and if all match then ...?
-            if (headerRecord.data().length < prefix.length) {
-                cmp = -1;
-            }
+
+            // Compare the available bytes; with the condition: compare(prefixByte, EOF) := 1
             if (cmp == 0) {
+                int l = Math.min(prefix.length, headerRecord.data().length);
                 cmp = Arrays.compare(prefix, 0, l, headerRecord.data(), 0, l);
+
+                // The header was shorter than the prefix
+                if (cmp == 0 && l < prefix.length) {
+                    cmp = 1;
+                }
+                if (false) {
+                    System.out.println("Compared:");
+                    System.out.println("  " + new String(prefix, 0, l, StandardCharsets.UTF_8));
+                    System.out.println("  " + new String(headerRecord.data(), 0, l, StandardCharsets.UTF_8));
+                    System.out.println("  " + cmp);
+                }
             }
         }
 
@@ -203,7 +219,8 @@ public class BinarySearcherOverPlainSource
                 // Find the start of a run:
                 // Continue searching left - if there is no match then return the candidate result
                 // Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
-                Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, mid - 1, delimiter, prefix, cache);
+                // Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, mid - 1, delimiter, prefix, cache);
+                Match expandLeft = binarySearch(in, SearchMode.LEFT, depth + 1, start, mid - 1, nextDelimPos, delimiter, prefix, cache);
                 if (expandLeft != null) {
                     left = expandLeft.start();
                 }
@@ -211,19 +228,19 @@ public class BinarySearcherOverPlainSource
             // TODO Find the right end when streaming the data - not here
             boolean findEndOfRun = false;
             if (findEndOfRun) {
-                if (SearchMode.RIGHT.equals(searchMode) || SearchMode.BOTH.equals(searchMode)) {
-                    Match expandRight = binarySearch(in, SearchMode.RIGHT, depth + 1, nextDelimPos + 1, end, delimiter, prefix, cache);
-                    if (expandRight != null) {
-                        right = expandRight.end();
-                    }
-                }
+//                if (SearchMode.RIGHT.equals(searchMode) || SearchMode.BOTH.equals(searchMode)) {
+//                    Match expandRight = binarySearch(in, SearchMode.RIGHT, depth + 1, nextDelimPos + 1, end, delimiter, prefix, cache);
+//                    if (expandRight != null) {
+//                        right = expandRight.end();
+//                    }
+//                }
             }
             result = new Match(left, right);
         } else if(cmp < 0) {
             // result = binarySearch(in, searchMode, depth + 1, start, nextDelimPos - 1, delimiter, prefix, cache);
-            result = binarySearch(in, searchMode, depth + 1, start, mid - 1, delimiter, prefix, cache);
+            result = binarySearch(in, searchMode, depth + 1, start, mid - 1, nextDelimPos, delimiter, prefix, cache);
         } else {
-            result = binarySearch(in, searchMode, depth + 1, nextDelimPos + 1, end, delimiter, prefix, cache);
+            result = binarySearch(in, searchMode, depth + 1, nextDelimPos + 1, end, knownDelimPos, delimiter, prefix, cache);
         }
 
         return result;
