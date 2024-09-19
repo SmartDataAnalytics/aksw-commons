@@ -21,7 +21,7 @@
  * <keiron@aftexsw.com> to whom the Ant project is very grateful for his
  * great code.
  */
-package org.aksw.commons.io.hadoop.bzip2;
+package org.aksw.commons.io.hadoop.compress.bzip2;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

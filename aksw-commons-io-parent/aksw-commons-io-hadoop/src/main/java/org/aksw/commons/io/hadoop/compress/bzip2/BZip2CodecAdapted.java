@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.aksw.commons.io.hadoop.bzip2;
+package org.aksw.commons.io.hadoop.compress.bzip2;
 
 import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT;
 import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_KEY;
