@@ -17,6 +17,7 @@ import org.aksw.commons.io.input.ReadableChannelWithLimitByDelimiter;
 import org.aksw.commons.io.input.ReadableChannelWithSkipDelimiter;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
+import org.aksw.commons.io.input.SeekableReadableSourceWithMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,13 +85,19 @@ public class BinarySearcherOverBlockSource
                     byte[] buffer = new byte[(int)block.getBuffer().size()];
                     block.getBuffer().readInto(buffer, 0, 0, buffer.length);
 
-                    System.out.println(new String(buffer, StandardCharsets.UTF_8));
+                    System.err.println(new String(buffer, StandardCharsets.UTF_8));
                 }
             }
 
         } else {
             result = InputStream.nullInputStream();
         }
+
+        if (blockSource.getDelegate() instanceof SeekableReadableSourceWithMonitor<byte[], ?> m) {
+            System.err.println(String.format("Total Reads: %d - Total read amount: %d", m.getChannelMonitor().getReadCounter(), m.getChannelMonitor().getReadAmount()));
+            // m.getChannelMonitor().dumpJson(System.err);
+        }
+
         return result;
     }
 

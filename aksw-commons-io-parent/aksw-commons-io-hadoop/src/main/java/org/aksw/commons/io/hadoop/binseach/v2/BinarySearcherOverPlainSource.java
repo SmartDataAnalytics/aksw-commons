@@ -19,6 +19,7 @@ import org.aksw.commons.io.input.ReadableChannelWithSkipDelimiter;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.input.SeekableReadableChannelSource;
+import org.aksw.commons.io.input.SeekableReadableSourceWithMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +69,12 @@ public class BinarySearcherOverPlainSource
         SeekableReadableChannel<byte[]> channel = source.newReadableChannel();
         long searchRangeEnd = source.size();
         InputStream result = BinSearchUtils.configureStream(channel, searchRangeEnd, prefix, levelCache);
+
+        if (source instanceof SeekableReadableSourceWithMonitor<byte[], ?> m) {
+            System.err.println(String.format("Total Reads: %d - Total read amount: %d", m.getChannelMonitor().getReadCounter(), m.getChannelMonitor().getReadAmount()));
+            // m.getChannelMonitor().dumpJson(System.err);
+        }
+
         return result;
     }
 

@@ -77,6 +77,8 @@ public class BinarySearchBuilder {
                 ? source
                 : new SeekableReadableChannelSourceOverNio(path);
 
+        finalSource = SeekableReadableChannelSources.monitor(finalSource);
+
         if (codec == null) {
             result = new BinarySearcherOverPlainSource(finalSource, cacheSupplier);
         } else {
