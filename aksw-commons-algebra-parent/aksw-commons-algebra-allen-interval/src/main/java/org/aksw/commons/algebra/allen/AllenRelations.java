@@ -28,6 +28,16 @@ public class AllenRelations {
         return AllenRelation.of(pattern);
     }
 
+    /** A comparator that returns 0 when the argument ranges overlap, -1 if the first argument is before the other one, and 1 otherwise. */
+    public static <T extends Comparable<T>> int compare(Range<T> x, Range<T> y) {
+        int result = isBefore(x, y)
+                ? -1
+                : isAfter(x, y)
+                    ? 1
+                    : 0;
+        return result;
+    }
+
     /** is strictly before (not meeting) */
     public static <T extends Comparable<T>> boolean isBefore(Range<T> x, Range<T> y) {
         boolean result =
