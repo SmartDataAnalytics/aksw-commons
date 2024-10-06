@@ -60,11 +60,11 @@
 		<rxjava.version>3.1.8</rxjava.version>
 		<commons-validator.version>1.7</commons-validator.version>
 		<protonpack.version>1.16</protonpack.version>
-		<commons-io.version>2.15.0</commons-io.version>
+		<commons-io.version>2.17.0</commons-io.version>
 		<jcraft.version>0.0.9</jcraft.version>
 		<jgit.version>5.6.0.201912101111-r</jgit.version>
 
-		<hadoop.version>3.3.6</hadoop.version>
+		<hadoop.version>3.4.0</hadoop.version>
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<jackson.version>2.15.2</jackson.version>
 		<streamex.version>0.8.2</streamex.version>

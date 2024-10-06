@@ -77,7 +77,6 @@ public class ResourceMgr
 
     /** Create a path and register the filesystem with the resource manager. */
     public static Path toPath(ResourceMgr resourceMgr, Class<?> clz, String classPath) throws IOException {
-        // GtfsMadridBench.class.getResource(name).toURI());
         URL url = clz.getResource(classPath);
         return toPath(resourceMgr, url);
     }
