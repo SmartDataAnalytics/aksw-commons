@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
@@ -18,6 +19,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -394,4 +396,32 @@ public class FileUtils {
             .orElse(null);
     }
 
+    public static void copyDirectory(Path source, Path target, CopyOption... options) throws IOException {
+        Path src = source.toAbsolutePath();
+        Path tgt = target.toAbsolutePath();
+        Files.createDirectories(tgt);
+        copyDirectoryInternal(src, tgt, options);
+    }
+
+    protected static void copyDirectoryInternal(Path source, Path target, CopyOption... options) throws IOException {
+        try (Stream<Path> children = Files.list(source)) {
+            Iterator<Path> it = children.iterator();
+            while (it.hasNext()) {
+                Path src = it.next();
+                Path relPath = source.relativize(src);
+
+                // Need to go via segments because source and target path may be in different file systems
+                String[] segments = PathUtils.getPathSegments(relPath);
+                Path tgt = PathUtils.resolve(target, segments);
+
+                // TODO Coypu symbolic links?
+                if (Files.isDirectory(src)) {
+                    Files.createDirectories(tgt);
+                    copyDirectoryInternal(src, tgt, options);
+                } else if (Files.isRegularFile(src)) {
+                    Files.copy(src, tgt, options);
+                }
+            }
+        }
+    }
 }
