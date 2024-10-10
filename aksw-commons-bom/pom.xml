@@ -56,7 +56,7 @@
 		<univocity.version>2.9.1</univocity.version>
 		<caffeine.version>3.1.8</caffeine.version>
 		<kryo-serializers.version>0.42</kryo-serializers.version>
-		<commons-lang3.version>3.13.0</commons-lang3.version>
+		<commons-lang3.version>3.17.0</commons-lang3.version>
 		<rxjava.version>3.1.8</rxjava.version>
 		<commons-validator.version>1.7</commons-validator.version>
 		<protonpack.version>1.16</protonpack.version>
