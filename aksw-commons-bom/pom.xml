@@ -6,7 +6,7 @@
 	<groupId>org.aksw.commons</groupId>
 	<artifactId>aksw-commons-bom</artifactId>
 	<packaging>pom</packaging>
-	<version>0.9.8</version>
+	<version>0.9.9</version>
 	<name>AKSW Commons BOM</name>
 	<description>A library of commonly used classes in AKSW applications.</description>
 	<url>https://github.com/SmartDataAnalytics/aksw-commons</url>
@@ -40,7 +40,7 @@
 		<!-- tell the compiler we can use 1.6 -->
 		<!-- <maven.compiler.source>1.8</maven.compiler.source> -->
 		<!-- <maven.compiler.target>1.8</maven.compiler.target> -->
-		<maven.compiler.release>11</maven.compiler.release>
+		<maven.compiler.release>17</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<gpg.keyname>AKSW</gpg.keyname>
 
@@ -56,15 +56,15 @@
 		<univocity.version>2.9.1</univocity.version>
 		<caffeine.version>3.1.8</caffeine.version>
 		<kryo-serializers.version>0.42</kryo-serializers.version>
-		<commons-lang3.version>3.13.0</commons-lang3.version>
+		<commons-lang3.version>3.17.0</commons-lang3.version>
 		<rxjava.version>3.1.8</rxjava.version>
 		<commons-validator.version>1.7</commons-validator.version>
 		<protonpack.version>1.16</protonpack.version>
-		<commons-io.version>2.15.0</commons-io.version>
+		<commons-io.version>2.17.0</commons-io.version>
 		<jcraft.version>0.0.9</jcraft.version>
 		<jgit.version>5.6.0.201912101111-r</jgit.version>
 
-		<hadoop.version>3.3.6</hadoop.version>
+		<hadoop.version>3.4.0</hadoop.version>
 		<!-- <slf4j.version>2.0.0-alpha5</slf4j.version> -->
 		<jackson.version>2.15.2</jackson.version>
 		<streamex.version>0.8.2</streamex.version>

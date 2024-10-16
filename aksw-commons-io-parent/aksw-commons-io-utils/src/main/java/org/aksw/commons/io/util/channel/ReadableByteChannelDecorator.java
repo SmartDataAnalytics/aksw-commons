@@ -7,7 +7,7 @@ import java.nio.channels.ReadableByteChannel;
 public interface ReadableByteChannelDecorator<T extends ReadableByteChannel>
         extends ReadableByteChannel
 {
-     T getDelegate();
+    T getDelegate();
 
     @Override
     default boolean isOpen() {

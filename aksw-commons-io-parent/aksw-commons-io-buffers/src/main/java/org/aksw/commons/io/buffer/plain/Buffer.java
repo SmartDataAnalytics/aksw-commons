@@ -10,6 +10,7 @@ public interface Buffer<A>
     extends BufferLike<A>
 {
     /** Create a sub-buffer view of this buffer */
+    @Override
     default Buffer<A> slice(long offset, long length) {
         if (LongMath.checkedAdd(offset, length) > getCapacity()) {
             throw new RuntimeException("Sub-buffer extends over capacity of this buffer");

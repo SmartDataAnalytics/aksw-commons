@@ -23,6 +23,7 @@ public class PredicateFromConverter<T>
             converter.convert(casted);
             result = true;
         } catch(Exception e) {
+            // TODO We want to forward some exceptions such as UnsupportedPolymorphismException - use a predicate to decide whether to raise an exception?
             result = false;
         }
         return result;

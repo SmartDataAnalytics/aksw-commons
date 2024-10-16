@@ -1,5 +1,7 @@
 package org.aksw.commons.io.buffer.plain;
 
+import java.io.IOException;
+
 import org.aksw.commons.io.buffer.array.ArrayOps;
 
 import com.google.common.primitives.Ints;
@@ -34,11 +36,16 @@ public class BufferOverArray<A>
     }
 
     public A getArray() {
-		return array;
-	}
-    
+        return array;
+    }
+
     @Override
     public long getCapacity() {
+        return arrayOps.length(array);
+    }
+
+    @Override
+    public long size() throws IOException {
         return arrayOps.length(array);
     }
 

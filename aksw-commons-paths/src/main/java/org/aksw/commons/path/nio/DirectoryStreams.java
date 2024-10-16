@@ -41,7 +41,7 @@ public class DirectoryStreams {
         public void close() throws IOException {
             base.close();
         }
-    };
+    }
 
     private static class DirectoryStreamFilter<T>
         implements DirectoryStream<T>
@@ -74,5 +74,5 @@ public class DirectoryStreams {
         public void close() throws IOException {
             base.close();
         }
-    };
+    }
 }

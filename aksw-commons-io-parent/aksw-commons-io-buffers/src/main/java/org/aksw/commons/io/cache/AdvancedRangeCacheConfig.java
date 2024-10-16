@@ -15,4 +15,7 @@ public interface AdvancedRangeCacheConfig {
     long getMaxRequestSize();
     Duration getTerminationDelay();
     int getInternalWorkerSize();
+
+    /** How far a channel may by default read ahead. */
+    int getMaxReadAheadItemCount();
 }

@@ -42,7 +42,7 @@ public class ReadableChannelSourceOverPath
 
         ContiguousSet<Long> set = ContiguousSet.create(range, DiscreteDomain.longs());
         if (set.isEmpty()) {
-            result = ReadableChannels.empty(ArrayOps.BYTE);
+            result = SeekableReadableChannels.empty(ArrayOps.BYTE);
         } else {
             long pos = set.first();
             Preconditions.checkArgument(pos >= 0, "Ranges must start with 0 or greater");

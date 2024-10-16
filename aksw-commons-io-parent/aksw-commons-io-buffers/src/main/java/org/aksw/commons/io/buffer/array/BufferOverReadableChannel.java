@@ -21,7 +21,7 @@ import org.aksw.commons.io.input.ReadableChannel;
 import org.aksw.commons.io.input.ReadableChannelSwitchable;
 import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
-import org.aksw.commons.io.input.SeekableReadableChannelSwitchable;
+import org.aksw.commons.io.input.SeekableReadableChannels;
 import org.aksw.commons.io.shared.ChannelBase;
 import org.apache.commons.io.input.BoundedInputStream;
 
@@ -31,7 +31,6 @@ import com.google.common.hash.Funnels;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
-import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
 
 /**
@@ -574,7 +573,7 @@ public class BufferOverReadableChannel<A>
 
     @Override
     public void write(long offsetInBuffer, A arrayWithItemsOfTypeT, int arrOffset, int arrLength) throws IOException {
-        write(offsetInBuffer, ReadableChannels.of(arrayOps, arrayWithItemsOfTypeT, arrOffset), arrLength);
+        write(offsetInBuffer, SeekableReadableChannels.of(arrayOps, arrayWithItemsOfTypeT, arrOffset), arrLength);
     }
 
     @Override
@@ -719,7 +718,7 @@ public class BufferOverReadableChannel<A>
                         // bc.position(pos);
                         //bc.read(b, 0, 1);
                         // actual = b[0];
-                        CharSequence cs = ReadableChannels.asCharSequence(bc2, Ints.saturatedCast(size));
+                        CharSequence cs = SeekableReadableChannels.asCharSequence(bc2, Ints.saturatedCast(size));
                         actual = (byte)cs.charAt(Ints.checkedCast(pos));
                     }
 

@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 public class BlockSources {
     private static final Logger logger = LoggerFactory.getLogger(BlockSources.class);
 
-
     public static BinarySearcher createBinarySearcherBz2(Path path) throws IOException {
         return createBinarySearcherBz2(path, PageManagerForFileChannel.DEFAULT_PAGE_SIZE);
     }
@@ -42,14 +41,12 @@ public class BlockSources {
         return result;
     }
 
-
     public static BinarySearcher createBinarySearcherBz2(SeekableSource seekableSource) throws IOException {
         BlockSource blockSource = BlockSourceBzip2.create(seekableSource);
 
         BinarySearcher result = new BinarySearchOnBlockSource(blockSource, null);
         return result;
     }
-
 
     public static BinarySearcher createBinarySearcherText(Path path) throws IOException {
         return createBinarySearcherText(path, PageManagerForFileChannel.DEFAULT_PAGE_SIZE);
@@ -66,8 +63,6 @@ public class BlockSources {
         BinarySearcher result = new BinarySearchOnBlockSource(pageManager, closeChannel ? fileChannel::close : null);
         return result;
     }
-
-
 
     /**
      * Binary search over blocks
@@ -111,9 +106,6 @@ public class BlockSources {
         // For records larger than the block we'd need to create a seekable over
         // all blocks starting from the current block
         try(SeekableFromBlock seekable = new SeekableFromBlock(blockRef.acquire(), 0, 0)) {
-
-
-
             // TODO obtain correct flag
             boolean isNotFirstBlock = block.hasPrev();
             if(isNotFirstBlock) {

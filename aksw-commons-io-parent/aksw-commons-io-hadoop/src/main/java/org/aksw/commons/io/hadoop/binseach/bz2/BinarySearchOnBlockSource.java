@@ -10,7 +10,7 @@ import org.aksw.commons.io.binseach.BinarySearchOnSortedFile;
 import org.aksw.commons.io.binseach.BinarySearcher;
 import org.aksw.commons.io.block.api.Block;
 import org.aksw.commons.io.block.api.BlockSource;
-import org.aksw.commons.io.block.impl.BlockIterState;
+import org.aksw.commons.io.block.impl.BlockEnumerator;
 import org.aksw.commons.io.seekable.impl.SeekableFromBlock;
 import org.aksw.commons.util.ref.Ref;
 
@@ -59,7 +59,7 @@ public class BinarySearchOnBlockSource
 
 
             int extraBytes = 0;
-            BlockIterState it = BlockIterState.fwd(true, blockRef.acquire(), false);
+            BlockEnumerator it = BlockEnumerator.fwd(true, blockRef.acquire(), false);
             while(it.hasNext()) {
                 it.advance();
                 try(SeekableFromBlock seekable = new SeekableFromBlock(it.blockRef.acquire(), 0, 0)) {

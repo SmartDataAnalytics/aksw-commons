@@ -23,12 +23,12 @@ public class SeekableReadableChannelDecoratorBase<A, X extends SeekableReadableC
     }
 
     @Override
-    public long position() {
+    public long position() throws IOException {
         return decoratee.position();
     }
 
     @Override
-    public void position(long pos) {
+    public void position(long pos) throws IOException {
         decoratee.position(pos);
     }
 

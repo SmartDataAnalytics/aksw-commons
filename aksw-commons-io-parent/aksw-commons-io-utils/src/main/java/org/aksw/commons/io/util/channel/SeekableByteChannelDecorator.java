@@ -1,4 +1,4 @@
-package net.sansa_stack.nio.util;
+package org.aksw.commons.io.util.channel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

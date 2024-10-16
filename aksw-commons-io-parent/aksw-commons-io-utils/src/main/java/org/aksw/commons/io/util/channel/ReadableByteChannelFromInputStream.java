@@ -1,4 +1,4 @@
-package net.sansa_stack.nio.util;
+package org.aksw.commons.io.util.channel;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,10 +12,10 @@ import java.nio.channels.ReadableByteChannel;
  * - Does not close the underlying stream on interrupt
  * - This implementation's read method just delegates to the input stream
  *   (without additional buffering / repeated reads).
- *   This way hadoop's posititon advertising remains usable.
+ *   This way hadoop's position advertising remains usable.
  */
 public class ReadableByteChannelFromInputStream
-        implements ReadableByteChannel {
+    implements ReadableByteChannel {
 
     private static final int TRANSFER_SIZE = 8192;
     protected InputStream in;
@@ -26,6 +26,7 @@ public class ReadableByteChannelFromInputStream
         this.in = in;
     }
 
+    @Override
     public int read(ByteBuffer dst) throws IOException {
         if (!open) {
             throw new ClosedChannelException();

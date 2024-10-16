@@ -3,7 +3,8 @@ package org.aksw.commons.io.util.channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.function.Predicate;
+
+import org.aksw.commons.lambda.throwing.ThrowingPredicate;
 
 /**
  * Readable byte channel wrapper that before every read checks for an
@@ -12,22 +13,28 @@ import java.util.function.Predicate;
  * Used to prevent reading across hadoop split boundaries
  */
 public class ReadableByteChannelWithConditionalBound<T extends ReadableByteChannel>
-        extends ReadableByteChannelDecoratorBase<T>
+    extends ReadableByteChannelDecoratorBase<T>
 {
-    protected Predicate<? super ReadableByteChannelWithConditionalBound<T>> testForEof;
+    protected ThrowingPredicate<? super ReadableByteChannelWithConditionalBound<T>> testForEof;
     protected boolean isInEofState = false;
     protected long bytesRead = 0;
 
     public ReadableByteChannelWithConditionalBound(
             T delegate,
-            Predicate<? super ReadableByteChannelWithConditionalBound<T>> testForEof) {
+            ThrowingPredicate<? super ReadableByteChannelWithConditionalBound<T>> testForEof) {
         super(delegate);
         this.testForEof = testForEof;
     }
 
     @Override
     public int read(ByteBuffer byteBuffer) throws IOException {
-        isInEofState = isInEofState || testForEof.test(this);
+        if (!isInEofState) {
+            try {
+                isInEofState = testForEof.test(this);
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+        }
 
         int result;
         if (isInEofState) {

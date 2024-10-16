@@ -1,11 +1,10 @@
 package net.sansa_stack.nio.util;
 
-import com.google.common.primitives.Ints;
-import net.sansa_stack.nio.util.SeekableByteChannelDecoratorBase;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+
+import com.google.common.primitives.Ints;
 
 public class InterruptingSeekableByteChannel
     extends SeekableByteChannelDecoratorBase<SeekableByteChannel>

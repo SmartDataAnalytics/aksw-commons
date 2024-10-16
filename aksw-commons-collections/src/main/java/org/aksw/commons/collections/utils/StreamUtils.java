@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -229,13 +230,18 @@ public class StreamUtils {
             }
 
             if (enumerable == null) {
-                try {
-                    if (resource == null) {
+                if (resource == null) {
+                    try {
                         resource = resourceSupplier.call();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
-                    enumerable = toEnumerable.apply(resource);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    Objects.requireNonNull(resource, "Resource supplier was expected to supply a resource but returned null.");
+                    try {
+                        enumerable = toEnumerable.apply(resource);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 

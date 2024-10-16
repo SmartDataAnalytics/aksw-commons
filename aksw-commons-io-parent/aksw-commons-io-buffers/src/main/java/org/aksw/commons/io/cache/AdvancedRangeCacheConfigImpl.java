@@ -13,16 +13,19 @@ public class AdvancedRangeCacheConfigImpl
     // Not yet wired up; read items before the requested offset
     protected long readBeforeSize;
 
+    protected int maxReadAheadItemCount;
+
     public AdvancedRangeCacheConfigImpl() {
     }
 
     public AdvancedRangeCacheConfigImpl(int pageSize, long maxRequestSize, Duration terminationDelay,
-            int internalWorkerSize) {
+            int internalWorkerSize, int maxReadAheadItemCount) {
         super();
         this.pageSize = pageSize;
         this.maxRequestSize = maxRequestSize;
         this.terminationDelay = terminationDelay;
         this.internalWorkerSize = internalWorkerSize;
+        this.maxReadAheadItemCount = maxReadAheadItemCount;
     }
 
     /**
@@ -40,7 +43,7 @@ public class AdvancedRangeCacheConfigImpl
     }
 
     public static AdvancedRangeCacheConfigImpl newDefaultsForObjects(long requestSize) {
-        return new AdvancedRangeCacheConfigImpl(100000, requestSize, Duration.ofSeconds(5), 1024);
+        return new AdvancedRangeCacheConfigImpl(100000, requestSize, Duration.ofSeconds(5), 1024, 0);
     }
 
     /**
@@ -58,7 +61,7 @@ public class AdvancedRangeCacheConfigImpl
     }
 
     public static AdvancedRangeCacheConfigImpl newDefaultForBytes(long requestSize) {
-        return new AdvancedRangeCacheConfigImpl(16 * 1024 * 1024, requestSize, Duration.ofSeconds(5), 1024 * 8);
+        return new AdvancedRangeCacheConfigImpl(16 * 1024 * 1024, requestSize, Duration.ofSeconds(5), 1024 * 8, 0);
     }
 
     @Override
@@ -107,6 +110,14 @@ public class AdvancedRangeCacheConfigImpl
 
     public void setReadBeforeSize(long readBeforeSize) {
         this.readBeforeSize = readBeforeSize;
+    }
+
+    public int getMaxReadAheadItemCount() {
+        return maxReadAheadItemCount;
+    }
+
+    public void setMaxReadAheadItemCount(int maxReadAheadItemCount) {
+        this.maxReadAheadItemCount = maxReadAheadItemCount;
     }
 
     @Override

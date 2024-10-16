@@ -2,6 +2,8 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 
+import com.google.common.collect.Range;
+
 public interface SeekableReadableChannelSource<A>
     extends ReadableChannelSource<A>
 {
@@ -13,6 +15,16 @@ public interface SeekableReadableChannelSource<A>
         SeekableReadableChannel<A> result = newReadableChannel();
         result.position(offset);
         return result;
+    }
+
+    @Override
+    default SeekableReadableChannel<A> newReadableChannel(long start, long end) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default SeekableReadableChannel<A> newReadableChannel(Range<Long> range) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
 

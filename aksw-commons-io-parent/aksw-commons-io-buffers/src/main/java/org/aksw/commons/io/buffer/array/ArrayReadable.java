@@ -2,9 +2,9 @@ package org.aksw.commons.io.buffer.array;
 
 import java.io.IOException;
 
-import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.input.SeekableReadableChannel;
 import org.aksw.commons.io.input.SeekableReadableChannelSource;
+import org.aksw.commons.io.input.SeekableReadableChannels;
 
 public interface ArrayReadable<A>
     extends SeekableReadableChannelSource<A>
@@ -15,7 +15,7 @@ public interface ArrayReadable<A>
     @Override
     default SeekableReadableChannel<A> newReadableChannel() throws IOException {
         // Preconditions.checkArgument(start <= end, String.format("Start (%d) must be <= end (%d)", start, end));
-        SeekableReadableChannel<A> result = ReadableChannels.newChannel(this, 0);
+        SeekableReadableChannel<A> result = SeekableReadableChannels.newChannel(this, 0);
 //        if (Long.MAX_VALUE != end) {
 //            long length = end - start;
 //            result = ReadableChannels.ra(result, length);

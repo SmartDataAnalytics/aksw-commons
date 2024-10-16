@@ -1,7 +1,6 @@
 package org.aksw.commons.io.hadoop.binseach.bz2;
 
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
 
 import org.aksw.commons.io.block.api.Block;
 import org.aksw.commons.io.block.api.BlockSource;
@@ -13,16 +12,15 @@ public class DecodedDataBlock
     implements Block
 {
     protected BlockSource blockSource;
-
     protected long blockStart;
-
-    // protected long blockEnd;
+    protected ChannelFactory<Seekable> channelFactory;
 
     @Override
     public boolean hasNext() throws IOException {
         return blockSource.hasBlockAfter(blockStart);
     }
 
+    @Override
     public boolean hasPrev() throws IOException {
         return blockSource.hasBlockBefore(blockStart);
     }
@@ -42,13 +40,6 @@ public class DecodedDataBlock
         return blockStart;
     }
 
-//    public long blockSize() {
-//        return data.length;
-//    }
-
-    // TODO: Replaces 'data'
-    protected ChannelFactory<Seekable> channelFactory;
-
     public DecodedDataBlock(
             BlockSource blockSource,
             long blockStart,
@@ -66,10 +57,6 @@ public class DecodedDataBlock
     public long getBlockStart() {
         return blockStart;
     }
-
-//    public long getBlockEnd() {
-//        return blockEnd;
-//    }
 
     public ChannelFactory<Seekable> getChannelFactory() {
         return channelFactory;
@@ -90,13 +77,4 @@ public class DecodedDataBlock
         long result = blockSource.getSizeOfBlock(blockStart);
         return result;
     }
-
-//    public byte[] getData() {
-//        return data;
-//    }
-//
-//    @Override
-//    public ByteBuffer newBuffer() {
-//        return ByteBuffer.wrap(data);
-//    }
 }

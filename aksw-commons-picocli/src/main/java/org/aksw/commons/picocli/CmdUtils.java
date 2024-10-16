@@ -11,7 +11,6 @@ import picocli.CommandLine;
  * execCmd: Run command and terminate the JVM using System.exit with the exit code
  *
  * @author raven
- *
  */
 public class CmdUtils {
     private static final Logger logger = LoggerFactory.getLogger(CmdUtils.class);
@@ -21,11 +20,15 @@ public class CmdUtils {
         System.exit(exitCode);
     }
 
-    public static void execCmd(Object cmdInstance, String[] args) {
-        int exitCode = callCmd(cmdInstance, args);
+    public static void execCmdObject(Object cmdInstance, String[] args) {
+        int exitCode = callCmdObject(cmdInstance, args);
         System.exit(exitCode);
     }
 
+    public static void execCmd(CommandLine cl, String[] args) {
+        int exitCode = callCmd(cl, args);
+        System.exit(exitCode);
+    }
 
     /**
      *
@@ -36,7 +39,7 @@ public class CmdUtils {
     public static int callCmd(Class<?> cmdClass, String[] args) {
         try {
             Object cmd = cmdClass.getDeclaredConstructor().newInstance();
-            int result = callCmd(cmd, args);
+            int result = callCmdObject(cmd, args);
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -57,8 +60,13 @@ public class CmdUtils {
      * @param cmdInstance
      * @return
      */
-    public static int callCmd(Object cmdInstance, String[] args) {
-        int result = new CommandLine(cmdInstance)
+    public static int callCmdObject(Object cmdInstance, String[] args) {
+        CommandLine cl = new CommandLine(cmdInstance);
+        return callCmd(cl, args);
+    }
+
+    public static int callCmd(CommandLine cl, String[] args) {
+        int result = cl
             .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
                 Object cmd = commandLine.getCommand();
                 boolean debugMode = cmd instanceof HasDebugMode
@@ -73,6 +81,29 @@ public class CmdUtils {
                 return 0;
             })
             .execute(args);
+        return result;
+    }
+
+    /**
+     * Attempt to register a command by class name. If a {@link ClassNotFoundException} is raised
+     * then the command is ignored. Useful to deal with commands provided by
+     * maven dependencies that may needed to be excluded.
+     */
+    public static CommandLine registerIfAvailable(CommandLine commandLine, String className) {
+        CommandLine result = null;
+        try {
+            Class<?> cmdCls = Class.forName(className);
+            Object cmd;
+            try {
+                cmd = cmdCls.getConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            result = commandLine.addSubcommand(cmd);
+        } catch (ClassNotFoundException e) {
+            logger.debug("A command was was not found: " + className);
+        }
+
         return result;
     }
 }

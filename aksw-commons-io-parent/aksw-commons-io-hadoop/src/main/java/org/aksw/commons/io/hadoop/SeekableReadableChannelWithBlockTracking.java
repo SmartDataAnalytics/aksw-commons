@@ -5,19 +5,21 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.util.NavigableMap;
 
-import net.sansa_stack.nio.util.SeekableByteChannelDecorator;
+import org.aksw.commons.io.util.channel.SeekableByteChannelDecorator;
 
 public class SeekableReadableChannelWithBlockTracking<T extends SeekableByteChannel>
     implements SeekableByteChannelDecorator
-    // implements SeekableByteChannel
 {
     protected T delegate;
     protected int endOfBlockMarker;
     protected long currentBlock = -1;
     protected NavigableMap<Long, Long> blockToSuccessor;
 
+    public SeekableReadableChannelWithBlockTracking(T delegate) {
+        this(delegate, -2);
+    }
+
     public SeekableReadableChannelWithBlockTracking(T delegate, int endOfBlockMarker) {
-        // super(delegate);
         this.delegate = delegate;
         this.endOfBlockMarker = endOfBlockMarker;
     }
@@ -26,7 +28,6 @@ public class SeekableReadableChannelWithBlockTracking<T extends SeekableByteChan
     public SeekableByteChannel getDecoratee() {
         return delegate;
     }
-
 
     @Override
     public int read(ByteBuffer byteBuffer) throws IOException {
@@ -37,6 +38,11 @@ public class SeekableReadableChannelWithBlockTracking<T extends SeekableByteChan
             if (currentBlock != -1) {
                 blockToSuccessor.put(currentBlock, pos);
                 currentBlock = pos;
+            }
+
+            result = delegate.read(byteBuffer);
+            if (result == endOfBlockMarker) {
+                throw new IllegalStateException("Encountered consecutive end-of-block markers (with no data in between).");
             }
         }
 

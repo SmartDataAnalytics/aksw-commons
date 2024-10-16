@@ -1,8 +1,8 @@
 package net.sansa_stack.nio.util;
 
-import net.sansa_stack.nio.util.SeekableByteChannelDecorator;
-
 import java.nio.channels.SeekableByteChannel;
+
+import org.aksw.commons.io.util.channel.SeekableByteChannelDecorator;
 
 public class SeekableByteChannelDecoratorBase<T extends SeekableByteChannel>
     implements SeekableByteChannelDecorator

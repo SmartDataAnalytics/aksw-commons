@@ -41,19 +41,21 @@ public class AdvancedRangeCacheImpl<T>
     protected long readBeforeSize;
     protected long requestLimit;
     protected Duration terminationDelay;
+    protected int maxReadAheadItemCount;
 
     // Number of items a worker processes in bulk before signalling available data
     protected int workerBulkSize;
 
-    protected ExecutorService executorService =
-            MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
+    protected ExecutorService executorService;
 
     public AdvancedRangeCacheImpl(
             ReadableChannelSource<T> dataSource,
             Slice<T> slice,
             long requestLimit,
             int workerBulkSize,
-            Duration terminationDelay) {
+            Duration terminationDelay,
+            int maxReadAheadItemCount,
+            ExecutorService executorService) {
 
         this.dataSource = dataSource;
 
@@ -61,6 +63,8 @@ public class AdvancedRangeCacheImpl<T>
         this.requestLimit = requestLimit;
         this.workerBulkSize = workerBulkSize;
         this.terminationDelay = terminationDelay;
+        this.maxReadAheadItemCount = maxReadAheadItemCount;
+        this.executorService = executorService;
     }
 
     @Override
@@ -68,15 +72,16 @@ public class AdvancedRangeCacheImpl<T>
         return slice.getArrayOps();
     }
 
-    public static <A> AdvancedRangeCacheImpl<A> create(
-            ReadableChannelSource<A> dataSource,
-            Slice<A> slice,
-            long requestLimit,
-            int workerBulkSize,
-            Duration terminationDelay) {
-
-        return new AdvancedRangeCacheImpl<>(dataSource, slice, requestLimit, workerBulkSize, terminationDelay);
-    }
+//    public static <A> AdvancedRangeCacheImpl<A> create(
+//            ReadableChannelSource<A> dataSource,
+//            Slice<A> slice,
+//            long requestLimit,
+//            int workerBulkSize,
+//            Duration terminationDelay,
+//            int maxReadAheadItemCount) {
+//
+//        return new AdvancedRangeCacheImpl<>(dataSource, slice, requestLimit, workerBulkSize, terminationDelay, maxReadAheadItemCount);
+//    }
 
 
     public ReadableChannelSource<T> getDataSource() {
@@ -200,7 +205,7 @@ public class AdvancedRangeCacheImpl<T>
      */
     @Override
     public ReadableChannel<T> newReadableChannel(Range<Long> range) {
-        ReadableChannelOverSliceWithCache<T> result = new ReadableChannelOverSliceWithCache<>(this, range);
+        ReadableChannelOverSliceWithCache<T> result = new ReadableChannelOverSliceWithCache<>(this, range, maxReadAheadItemCount);
         // RangeRequestIterator<T> result = new RangeRequestIterator<>(this, requestRange);
 
         return result;
@@ -219,6 +224,9 @@ public class AdvancedRangeCacheImpl<T>
         protected long requestLimit;
         // protected Duration syncDelay;
         protected Duration terminationDelay;
+
+        protected int maxReadAheadItemCount;
+        protected ExecutorService executorService;
 
         public ReadableChannelSource<A> getDataSource() {
             return dataSource;
@@ -265,6 +273,21 @@ public class AdvancedRangeCacheImpl<T>
             return this;
         }
 
+        public int getMaxReadAheadItemCount() {
+            return maxReadAheadItemCount;
+        }
+
+        public Builder<A> setMaxReadAheadItemCount(int maxReadAheadItemCount) {
+            this.maxReadAheadItemCount = maxReadAheadItemCount;
+            return this;
+        }
+
+        public Builder<A> setExecutorService(ExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+
 //		public Duration getSyncDelay() {
 //			return syncDelay;
 //		}
@@ -275,7 +298,11 @@ public class AdvancedRangeCacheImpl<T>
 //		}
 
         public AdvancedRangeCacheImpl<A> build() {
-            return AdvancedRangeCacheImpl.create(dataSource, slice, requestLimit, workerBulkSize, terminationDelay);
+            ExecutorService finalExecutorService = executorService != null
+                ? executorService
+                : MoreExecutors.getExitingExecutorService((ThreadPoolExecutor)Executors.newCachedThreadPool());
+
+            return new AdvancedRangeCacheImpl<>(dataSource, slice, requestLimit, workerBulkSize, terminationDelay, maxReadAheadItemCount, finalExecutorService);
         }
     }
 

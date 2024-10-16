@@ -2,8 +2,13 @@ package org.aksw.commons.io.input;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.aksw.commons.io.buffer.array.ArrayOps;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfig;
 import org.aksw.commons.io.cache.AdvancedRangeCacheConfigImpl;
 import org.aksw.commons.io.cache.AdvancedRangeCacheImpl;
@@ -23,6 +28,11 @@ public class ReadableChannelSources {
 
     public static ReadableChannelSource<byte[]> of(java.nio.file.Path path) throws IOException {
         return of(path, true);
+    }
+
+    /** Create a source where channels are based on creating a new stream and skipping to the specified offset. */
+    public static <T> ReadableChannelSource<T[]> ofStreamFactory(Supplier<Stream<T>> streamFactory) {
+        return new ReadableChannelSourceOverStreamFactory<>(ArrayOps.forObjects(), streamFactory);
     }
 
     /**
@@ -109,4 +119,30 @@ public class ReadableChannelSources {
         return result;
     }
 
+    /** Create a number of splits of the given source. */
+    public static <A, T extends ReadableChannelSource<A>> Stream<SourceSplit<A, T>> splitByCount(T source, int splitCount) throws IOException {
+        long sourceSize = source.size();
+        long splitSize = sourceSize / splitCount;
+        List<Integer> splitIds = IntStream.range(0, splitCount).boxed().toList();
+        return splitIds.parallelStream().map(splitId -> {
+            long start = splitId * splitSize;
+            boolean isLastSplit = splitId == splitCount - 1;
+            long end = isLastSplit ? sourceSize : start + splitSize;
+            return new SourceSplit<>(source, start, end);
+        });
+    }
+
+    /** Create splits of the given size. */
+    public static <A, T extends ReadableChannelSource<A>> Stream<SourceSplit<A, T>> splitBySize(T source, long splitSize) throws IOException {
+        long sourceSize = source.size();
+        int evenSplitCount = (int)(sourceSize / splitSize);
+        int splitCount = evenSplitCount + 1;
+        List<Integer> splitIds = IntStream.range(0, splitCount).boxed().toList();
+        return splitIds.parallelStream().map(splitId -> {
+            long start = splitId * splitSize;
+            boolean isLastSplit = splitId == splitCount - 1;
+            long end = isLastSplit ? sourceSize : start + splitSize;
+            return new SourceSplit<>(source, start, end);
+        });
+    }
 }

@@ -3,7 +3,6 @@ package org.aksw.commons.io.hadoop.binseach.bz2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,6 +13,8 @@ import org.aksw.commons.io.deprecated.MatcherFactory;
 import org.aksw.commons.io.hadoop.SeekableInputStream;
 import org.aksw.commons.io.hadoop.SeekableInputStreams;
 import org.aksw.commons.io.hadoop.binseach.bz2.BufferOverInputStream.ByteArrayChannel;
+import org.aksw.commons.io.input.ReadableChannel;
+import org.aksw.commons.io.input.ReadableChannels;
 import org.aksw.commons.io.seekable.api.Seekable;
 import org.aksw.commons.io.seekable.api.SeekableSource;
 import org.aksw.commons.util.ref.Ref;
@@ -158,8 +159,8 @@ public class BlockSourceBzip2
 
             BZip2Codec codec = new BZip2Codec();
             InputStream decodedIn = codec.createInputStream(seekableIn, null, blockStart, Long.MAX_VALUE, READ_MODE.BYBLOCK);
-            ReadableByteChannel wrapper = SeekableInputStreams.advertiseEndOfBlock(decodedIn, -1);
-            effectiveIn = Channels.newInputStream(wrapper);
+            ReadableChannel<byte[]> wrapper = SeekableInputStreams.advertiseEndOfBlock(decodedIn, -1);
+            effectiveIn = ReadableChannels.newInputStream(wrapper);
 
         }
 
@@ -301,23 +302,29 @@ public class BlockSourceBzip2
 
     @Override
     public Ref<Block> contentAtOrAfter(long requestPos, boolean inclusive) throws IOException {
-        logger.trace(String.format("contentAtOrAfter(%d, %b)", requestPos, inclusive));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("contentAtOrAfter(%d, %b)", requestPos, inclusive));
+        }
 
         long internalRequestPos = requestPos + (inclusive ? 0 : 1);
-        Ref<Block> result = blockContentCache.getIfPresent(internalRequestPos);
+        Ref<Block> ref = blockContentCache.getIfPresent(internalRequestPos);
 
-        if(result == null) {
+        if(ref == null) {
             Seekable seekable = seekableSource.get(internalRequestPos);
 
             long blockStart = findBlockAtOrAfterCached(seekable);
             if (blockStart >= 0) {
-                result = cache(blockStart, seekable);
+                ref = cache(blockStart, seekable);
             } else {
                 seekable.close();
             }
         }
 
-        return result == null ? null : result.acquire(null);
+        Ref<Block> result = ref == null
+                ? null
+                : ref.acquire(null);
+
+        return result;
     }
 
     @Override
